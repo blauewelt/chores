@@ -2,6 +2,17 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-09 — v2.3: Zero-config sync
+
+- Hardcoded the household's Supabase URL + publishable key as `DEFAULT_SYNC`;
+  devices now sync automatically with no setup (key is public by design)
+- Empty-backend seeding moved into `pull()` so the first device to launch
+  uploads its local state (previously only the manual connect flow seeded);
+  also prevents an empty backend from wiping local chores
+- v2.2 (earlier today): `DEFAULT_SYNC` scaffolding, "Trennen" became an
+  explicit opt-out stored as `{"off":true}`
+- SW cache → `haushalt-v5`
+
 ## 2026-06-09 — v2.1: Auto-sync + repo documentation
 
 - Added automatic background sync: full pull every 20 s while the app is
