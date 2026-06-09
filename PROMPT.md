@@ -1,7 +1,7 @@
 # PROMPT.md — Haushalt App Specification
 
 > Living spec for the "Haushalt" chores PWA at https://blauewelt.github.io/chores/.
-> Maintained by Claude; updated with every change to the app. Last updated: 2026-06-09 (v2.1).
+> Maintained by Claude; updated with every change to the app. Last updated: 2026-06-09 (v2.3).
 
 ## Concept
 
@@ -52,8 +52,12 @@ mechanics.
 - **Backend:** Supabase (free tier), three tables per `supabase-setup.sql`
   (RLS enabled with open policies — household-trust security model;
   the anon key + obscure URL are the only gate)
-- **Config:** in-app Sync sheet; project URL + anon key stored per device in
-  localStorage. No keys in the repo. App works purely locally if unconfigured.
+- **Config:** project URL + publishable key are **hardcoded** (`DEFAULT_SYNC`
+  in index.html) so all devices sync with zero setup — a deliberate trade-off:
+  the key is public in the repo, gating only trivially sensitive data. The
+  in-app Sync sheet can override per device; "Trennen" is an explicit opt-out.
+- **Seeding:** if a pull finds an empty backend (no members), the device
+  uploads its local state via upsert instead of adopting the empty remote.
 - **Strategy:** optimistic local writes pushed via Supabase REST
   (`POST`/`PATCH`/`DELETE`); full pull on app load, on visibility change, and
   **every 20 s while visible** (polling, no websockets). Last-write-wins; no
