@@ -246,7 +246,10 @@
   if (!state.members.length) state.members = [{ id: uid(), name: 'Ich', color: palette[0] }];
 
   // Fest eingebaute Sync-Konfiguration (gilt für alle Geräte; im Sync-Sheet übersteuerbar)
-  const DEFAULT_SYNC = null; // z. B. { url: 'https://xxxx.supabase.co', key: 'sb_publishable_…' }
+  const DEFAULT_SYNC = {
+    url: 'https://uggipomhmnnmiqpbpxcc.supabase.co',
+    key: 'sb_publishable_dUNwr1xg5TJxkAoYjmR1Ug_y1U3SNt8'
+  };
 
   let cfg = null;
   try {
@@ -276,6 +279,18 @@
     return method === 'GET' ? r.json() : null;
   }
 
+  async function upsert(table, rows) {
+    if (!rows.length) return;
+    const r = await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/' + table, {
+      method: 'POST',
+      headers: { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(rows)
+    });
+    if (!r.ok) throw new Error('upsert ' + table + ' → ' + r.status);
+  }
+
   async function pull() {
     if (!cfg) return;
     try {
@@ -284,9 +299,16 @@
         sb('chores?select=*&order=points.desc,name'),
         sb('log?select=*&order=done_at.desc&limit=300')
       ]);
-      if (members.length) state.members = members;
-      state.chores = chores;
-      state.log = log;
+      if (!members.length) {
+        // Leeres Backend → dieses Gerät lädt seinen lokalen Stand hoch
+        await upsert('members', state.members);
+        await upsert('chores', state.chores);
+        await upsert('log', state.log);
+      } else {
+        state.members = members;
+        state.chores = chores;
+        state.log = log;
+      }
       syncOk = true; save(); render();
     } catch (e) { syncOk = false; render(); }
   }
