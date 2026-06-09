@@ -2,6 +2,17 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-09 — v2.5: Visual refresh
+
+- Chore tiles redesigned as pressable 3D "keys": gradient face, hard drop
+  shadow that compresses on press (translateY), giant point-number watermark
+  in the display face; chores worth 10+ points get a gold finish
+- Typography scaled up: body 17px, header 34px, tile names 18px, scoreboard
+  numbers 34px with larger avatars and thicker bars; bigger tabs, FAB, log
+- v2.4 (earlier today): Sync sheet shows app version, prefills built-in
+  defaults, and gained "Auf Standard zurücksetzen" to clear local overrides
+- SW cache → `haushalt-v7`
+
 ## 2026-06-09 — v2.3: Zero-config sync
 
 - Hardcoded the household's Supabase URL + publishable key as `DEFAULT_SYNC`;
