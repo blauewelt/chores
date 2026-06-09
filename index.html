@@ -567,6 +567,7 @@
   // ---------- Start ----------
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
   document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
+  setInterval(() => { if (!document.hidden && cfg) pull(); }, 20000); // Auto-Sync alle 20 s
   render();
   pull();
 })();
