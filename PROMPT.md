@@ -1,7 +1,7 @@
 # PROMPT.md — Haushalt App Specification
 
 > Living spec for the "Haushalt" chores PWA at https://blauewelt.github.io/chores/.
-> Maintained by Claude; updated with every change to the app. Last updated: 2026-06-09 (v2.3).
+> Maintained by Claude; updated with every change to the app. Last updated: 2026-06-09 (v2.5).
 
 ## Concept
 
@@ -72,6 +72,10 @@ mechanics.
 - Palette: sage-tinted background `#F1F3EF`, ink `#21302A`, spruce `#2F6B4F`
   (primary), gold `#B8860B`, red `#B23A2E` (errors/danger)
 - Type: Bricolage Grotesque (display, via Google Fonts) + system stack (body)
+- **Signature element:** chore tiles styled as physical pressable keys —
+  gradient face, hard 6px drop shadow compressing on :active, oversized point
+  watermark; ≥10-point chores render in a gold finish
+- Type scale: body 17px, h1 34px, tile names 18px, score numbers 34px
 - Bottom sheets (`<dialog>`), pill chips, FAB; respects `prefers-reduced-motion`
 
 ## Constraints & conventions
