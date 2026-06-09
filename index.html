@@ -245,8 +245,14 @@
   }
   if (!state.members.length) state.members = [{ id: uid(), name: 'Ich', color: palette[0] }];
 
+  // Fest eingebaute Sync-Konfiguration (gilt für alle Geräte; im Sync-Sheet übersteuerbar)
+  const DEFAULT_SYNC = null; // z. B. { url: 'https://xxxx.supabase.co', key: 'sb_publishable_…' }
+
   let cfg = null;
-  try { cfg = JSON.parse(localStorage.getItem(LS_CFG)); } catch {}
+  try {
+    const stored = JSON.parse(localStorage.getItem(LS_CFG));
+    cfg = stored && stored.off ? null : (stored || DEFAULT_SYNC);
+  } catch { cfg = DEFAULT_SYNC; }
   let me = localStorage.getItem(LS_ME) || null;
   let view = 'chores';
   let period = 'week';
@@ -560,7 +566,7 @@
     }
   });
   document.getElementById('disconnectSync').addEventListener('click', () => {
-    cfg = null; syncOk = null; localStorage.removeItem(LS_CFG);
+    cfg = null; syncOk = null; localStorage.setItem(LS_CFG, '{"off":true}');
     syncSheet.close(); render();
   });
 
