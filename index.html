@@ -227,6 +227,7 @@
 
 <script>
 (() => {
+  const APP_VERSION = '2.4';
   const LS_STATE = 'haushalt.v2';
   const LS_CFG   = 'haushalt.sync';
   const LS_ME    = 'haushalt.me';
@@ -556,11 +557,19 @@
   // ---------- Sync-Sheet ----------
   const syncSheet = document.getElementById('syncSheet');
   document.getElementById('openSync').addEventListener('click', () => {
-    document.getElementById('sUrl').value = cfg ? cfg.url : '';
-    document.getElementById('sKey').value = cfg ? cfg.key : '';
-    document.getElementById('syncStatus').textContent = cfg
+    const pre = cfg || DEFAULT_SYNC || { url: '', key: '' };
+    document.getElementById('sUrl').value = pre.url;
+    document.getElementById('sKey').value = pre.key;
+    document.getElementById('syncStatus').innerHTML = (cfg
       ? (syncOk === false ? 'Verbunden, aber letzter Abgleich fehlgeschlagen.' : 'Verbunden.')
-      : 'Nicht verbunden – Daten bleiben nur auf diesem Gerät.';
+      : 'Nicht verbunden – Daten bleiben nur auf diesem Gerät.')
+      + ' <button id="resetSync" style="border:none;background:none;color:var(--spruce);font-weight:600;cursor:pointer;padding:0">Auf Standard zurücksetzen</button>'
+      + `<div style="margin-top:6px;color:var(--muted)">App-Version ${APP_VERSION}</div>`;
+    document.getElementById('resetSync').onclick = () => {
+      localStorage.removeItem(LS_CFG);
+      cfg = DEFAULT_SYNC; syncOk = null;
+      syncSheet.close(); render(); pull();
+    };
     syncSheet.showModal();
   });
   document.getElementById('saveSync').addEventListener('click', async () => {
