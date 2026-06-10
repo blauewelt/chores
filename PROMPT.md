@@ -1,7 +1,7 @@
 # PROMPT.md — Rossi WG App Specification
 
 > Living spec for the "Rossi WG" chores PWA at https://blauewelt.github.io/chores/.
-> Maintained by Claude; updated with every change to the app. Last updated: 2026-06-10 (v3.0).
+> Maintained by Claude; updated with every change to the app. Last updated: 2026-06-10 (v3.1).
 
 ## Concept
 
@@ -22,7 +22,7 @@ the rota.
 
 ```
 members: { id, name, color }
-chores:  { id, name, points }            // points: 1–100, set at creation, editable by anyone
+chores:  { id, name, points }            // points: 0–15 via slider, editable by anyone
 log:     { id, chore_id, chore_name,     // names denormalized so history survives deletions
            member_id, member_name,
            points, done_at }             // append-only; undo = delete entry
@@ -39,6 +39,9 @@ mechanics.
 
 - **Aufgaben** tab: grid of chore buttons showing name and `+N` points; tap to
   log a completion for the active person; ✎ to edit/delete; FAB to add
+- **Sheet UX:** action buttons (Abbrechen/Speichern/Fertig) live in a top bar
+  so the soft keyboard never covers them; points use a 0–15 slider (no
+  keyboard); delete is a full-width danger button at the sheet bottom
 - **"Ich bin"** selector: per-device active person (localStorage, not synced)
 - **Punkte** tab: scoreboard with totals and completion counts; periods
   "Diese Woche" (Monday start) and "Gesamt"; 👑 for the leader; bars scaled to max
