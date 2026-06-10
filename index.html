@@ -72,17 +72,21 @@
   }
   .chore:active{transform:translateY(5px);
     box-shadow:0 1px 0 color-mix(in srgb, var(--c) 32%, #0A0E0C), 0 4px 8px rgba(0,0,0,.3)}
+  .chore .art{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    opacity:.55; z-index:0; pointer-events:none}
+  .chore::after{content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
+    background:linear-gradient(180deg, rgba(10,14,12,.6), rgba(10,14,12,.12) 55%, rgba(10,14,12,.55))}
   .chore .watermark{position:absolute; right:-4px; bottom:-24px; font-family:var(--display);
     font-weight:800; font-size:88px; line-height:1; letter-spacing:-.04em;
-    color:color-mix(in srgb, var(--c) 32%, transparent); pointer-events:none; user-select:none}
-  .chore .cname{font-weight:700; font-size:18px; line-height:1.25; overflow-wrap:break-word; padding-right:24px; position:relative; color:#fff}
-  .chore .pts{align-self:flex-start; position:relative;
+    color:color-mix(in srgb, var(--c) 32%, transparent); pointer-events:none; user-select:none; z-index:1}
+  .chore .cname{font-weight:700; font-size:18px; line-height:1.25; overflow-wrap:break-word; padding-right:24px; position:relative; color:#fff; z-index:2; text-shadow:0 1px 4px rgba(0,0,0,.6)}
+  .chore .pts{align-self:flex-start; position:relative; z-index:2;
     font-family:var(--display); font-weight:800; font-size:20px;
     color:color-mix(in srgb, var(--c) 65%, #fff);
     background:color-mix(in srgb, var(--c) 28%, transparent);
     border-radius:999px; padding:4px 15px}
   .chore .edit{position:absolute; top:8px; right:8px; border:none; background:none;
-    color:rgba(255,255,255,.55); font-size:16px; padding:7px; cursor:pointer; border-radius:8px; z-index:2}
+    color:rgba(255,255,255,.7); font-size:16px; padding:7px; cursor:pointer; border-radius:8px; z-index:2}
   .chore.flash{animation:flash .5s ease}
   @keyframes flash{0%{filter:brightness(1.4) saturate(1.4)} 100%{filter:none}}
 
@@ -252,7 +256,7 @@
 
 <script>
 (() => {
-  const APP_VERSION = '3.3';
+  const APP_VERSION = '3.4';
   const LS_STATE = 'haushalt.v2';
   const LS_CFG   = 'haushalt.sync';
   const LS_ME    = 'haushalt.me';
@@ -263,6 +267,14 @@
     let x = 0; for (const ch of String(id)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
     return CHORE_COLORS[x % CHORE_COLORS.length];
   };
+  const choreSeed = id => {
+    let x = 0; for (const ch of String(id)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
+    return x % 100000;
+  };
+  const choreArt = c => 'https://image.pollinations.ai/prompt/' +
+    encodeURIComponent('minimalist flat vector illustration of household chore: ' + c.name +
+      ', single object, dark moody background, vibrant accent color, no text') +
+    '?width=440&height=300&seed=' + choreSeed(c.id) + '&nologo=true';
   const palette = ['#2F6B4F','#B8860B','#3A6EA5','#B23A2E','#7A4FA0','#3E8E7E'];
 
   // ---------- State ----------
@@ -392,6 +404,7 @@
       listEl.innerHTML = state.chores.length
         ? `<div class="grid">` + state.chores.map(c =>
             `<button class="chore" data-cid="${c.id}" style="--c:${choreColor(c.id)}">
+              <img class="art" src="${choreArt(c)}" alt="" loading="lazy" onerror="this.remove()">
               <span class="watermark">${c.points}</span>
               <span class="cname">${esc(c.name)}</span>
               <span class="pts">${c.points >= 10 ? '★ ' : ''}+${c.points}</span>
