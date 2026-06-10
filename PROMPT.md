@@ -1,7 +1,7 @@
-# PROMPT.md — Haushalt App Specification
+# PROMPT.md — Rossi WG App Specification
 
-> Living spec for the "Haushalt" chores PWA at https://blauewelt.github.io/chores/.
-> Maintained by Claude; updated with every change to the app. Last updated: 2026-06-09 (v2.5).
+> Living spec for the "Rossi WG" chores PWA at https://blauewelt.github.io/chores/.
+> Maintained by Claude; updated with every change to the app. Last updated: 2026-06-10 (v3.0).
 
 ## Concept
 
@@ -69,12 +69,16 @@ mechanics.
 
 ## Visual design
 
-- Palette: sage-tinted background `#F1F3EF`, ink `#21302A`, spruce `#2F6B4F`
-  (primary), gold `#B8860B`, red `#B23A2E` (errors/danger)
+- **Dark theme** (v3.0): background `#141A17`, cards `#1D2521`, text `#EAF1EB`,
+  mint accent `#52C08A`; gradient wordmark "Rossi WG"
+- **Per-chore colors:** each chore's hue is derived deterministically from its
+  id (djb2-style hash into a 10-color vivid palette) — identical on every
+  device, no schema change, no user step. Tiles tint face, border, shadow,
+  watermark, and points pill via `color-mix` with a per-tile `--c` variable.
 - Type: Bricolage Grotesque (display, via Google Fonts) + system stack (body)
 - **Signature element:** chore tiles styled as physical pressable keys —
   gradient face, hard 6px drop shadow compressing on :active, oversized point
-  watermark; ≥10-point chores render in a gold finish
+  watermark; ≥10-point chores get a ★ before their points
 - Type scale: body 17px, h1 34px, tile names 18px, score numbers 34px
 - Bottom sheets (`<dialog>`), pill chips, FAB; respects `prefers-reduced-motion`
 
