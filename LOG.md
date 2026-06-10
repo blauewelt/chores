@@ -2,6 +2,19 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-10 — v3.5: Tile art moved to new Pollinations gateway
+
+- Tile art was failing: Pollinations migrated from the legacy keyless
+  `image.pollinations.ai/prompt/` to `gen.pollinations.ai/image/` with API
+  keys + pollen billing; switched to the new endpoint on the anonymous tier
+- SW fix: cross-origin images are opaque responses (ok=false), which the
+  cache condition rejected — art is now cached despite opacity
+- Open risk: anonymous tier limits are opaque too; if tiles stay blank, the
+  options are a free pk_ key from enter.pollinations.ai, an OpenAI image API
+  behind a Supabase Edge Function, or emoji-based tile art
+- Not the cause: prompt language (German chore nouns are fine for Flux)
+- SW cache → `haushalt-v16`
+
 ## 2026-06-10 — v3.4: AI tile art
 
 - Each chore tile gets an AI-generated illustration via Pollinations.ai
