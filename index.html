@@ -55,11 +55,12 @@
 
   main{padding:10px 14px 0}
 
-  /* Chore-Tasten: jede Aufgabe in ihrer eigenen Farbe */
-  .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  /* Chore-Tasten: Masonry, Grösse nach Punktwert, Reihenfolge nach Nutzung */
+  .grid{columns:2; column-gap:12px}
   .chore{
     position:relative; overflow:hidden; text-align:left; cursor:pointer;
-    font-family:var(--body); color:var(--ink); min-height:124px;
+    width:100%; margin-bottom:12px; break-inside:avoid;
+    font-family:var(--body); color:var(--ink); min-height:104px;
     background:linear-gradient(168deg,
       color-mix(in srgb, var(--c) 30%, var(--card)),
       color-mix(in srgb, var(--c) 10%, var(--card)));
@@ -256,7 +257,7 @@
 
 <script>
 (() => {
-  const APP_VERSION = '3.5';
+  const APP_VERSION = '3.6';
   const LS_STATE = 'haushalt.v2';
   const LS_CFG   = 'haushalt.sync';
   const LS_ME    = 'haushalt.me';
@@ -401,9 +402,14 @@
       </button>`).join('');
 
     if (view === 'chores') {
-      listEl.innerHTML = state.chores.length
-        ? `<div class="grid">` + state.chores.map(c =>
-            `<button class="chore" data-cid="${c.id}" style="--c:${choreColor(c.id)}">
+      // Meistgenutzte zuerst; Höhe wächst mit dem Punktwert
+      const counts = {};
+      state.log.forEach(e => counts[e.chore_id] = (counts[e.chore_id] || 0) + 1);
+      const ordered = state.chores.slice().sort((a, b) =>
+        (counts[b.id] || 0) - (counts[a.id] || 0) || b.points - a.points || a.name.localeCompare(b.name));
+      listEl.innerHTML = ordered.length
+        ? `<div class="grid">` + ordered.map(c =>
+            `<button class="chore" data-cid="${c.id}" style="--c:${choreColor(c.id)}; min-height:${104 + c.points * 9}px">
               <img class="art" src="${choreArt(c)}" alt="" loading="lazy" onerror="this.remove()">
               <span class="watermark">${c.points}</span>
               <span class="cname">${esc(c.name)}</span>
