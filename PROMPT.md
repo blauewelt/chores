@@ -1,7 +1,7 @@
 # PROMPT.md — Rossi WG App Specification
 
 > Living spec for the "Rossi WG" chores PWA at https://blauewelt.github.io/chores/.
-> Maintained by Claude; updated with every change to the app. Last updated: 2026-06-10 (v3.2).
+> Maintained by Claude; updated with every change to the app. Last updated: 2026-06-10 (v3.3).
 
 ## Concept
 
@@ -98,8 +98,9 @@ mechanics.
 
 ## Deployment
 
-Push to `main` → GitHub Pages auto-deploys. Installed PWAs pick up changes
-after the service worker updates (close/reopen the app, possibly twice).
+Push to `main` → GitHub Pages auto-deploys. Installed PWAs self-update: the
+page reloads once when a new service worker takes control, and checks for
+updates on every return to the foreground (since v3.3).
 
 ## Backlog / ideas
 
