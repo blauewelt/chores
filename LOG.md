@@ -2,6 +2,15 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-10 — v3.6: Worth-sized masonry tiles
+
+- Aufgaben view is now a two-column masonry flow (CSS multi-column,
+  break-inside:avoid): tiles flow down the columns at natural heights
+- Tile height scales with point value (104 + 9·points px) — high-worth chores
+  are visually and physically bigger tap targets
+- Order is by usage count derived from the completion log (most-used first),
+  then points, then name; reorders live as habits change
+
 ## 2026-06-10 — v3.5: Tile art moved to new Pollinations gateway
 
 - Tile art was failing: Pollinations migrated from the legacy keyless
