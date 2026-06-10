@@ -2,6 +2,15 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-10 — v3.2: Rename behind an edit button
+
+- In the edit sheet the chore name now renders as static text with an
+  "✎ Ändern" button; the input (and thus the keyboard) only appears on demand.
+  Fixes the dialog auto-focusing the text field on open — slider, save, and
+  delete are all visible immediately. New chores still open with the input
+  active.
+- SW cache → `haushalt-v11`
+
 ## 2026-06-10 — v3.1: Slider + keyboard-safe sheets
 
 - Points input replaced with a 0–15 slider (filled track, large live value);
