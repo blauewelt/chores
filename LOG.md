@@ -2,6 +2,14 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-10 — v3.9: Logarithmic tile sizing
+
+- Tile height now `104 + 34 * log2(points + 1)` px (was linear `104 + 9p`);
+  `+1` guards the zero-points case
+- Same overall range (104–240px for 0–15 points), but low-value chores
+  differentiate more and high values compress
+- SW cache → `haushalt-v20`
+
 ## 2026-06-10 — v3.8: Flat tiles
 
 - Removed the solid 6px bottom ledge (3D "sticking out" effect) from chore
