@@ -2,6 +2,19 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-10 — v3.4: AI tile art
+
+- Each chore tile gets an AI-generated illustration via Pollinations.ai
+  (keyless, free): URL built deterministically from chore name + id-derived
+  seed, so all devices fetch the identical image; nothing stored in the DB
+- Art renders at 55% opacity under a dark legibility gradient; text gets a
+  subtle shadow; graceful fallback to the plain colored tile if the image
+  fails to load (onerror removes the img)
+- SW now caches pollinations images (immutable per URL — safe, unlike the
+  v3.0.1 API-caching bug) for offline tiles and snappy reloads
+- Trade-off accepted: chore names are sent to a third-party service; free
+  tier means occasional slowness. SW cache → `haushalt-v14`
+
 ## 2026-06-10 — v3.3: Self-updating app
 
 - App now reloads itself once when a new service worker takes control
