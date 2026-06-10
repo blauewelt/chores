@@ -2,6 +2,13 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-10 — v3.8: Flat tiles
+
+- Removed the solid 6px bottom ledge (3D "sticking out" effect) from chore
+  tiles; soft drop shadow retained
+- Press feedback softened to a 2px sink to match the flat look
+- SW cache → `haushalt-v19`
+
 ## 2026-06-10 — v3.7: Pollinations tile art live
 
 - Added a Pollinations publishable key (`pk_s3BNDnxTvRHULT3z`, scoped to the
