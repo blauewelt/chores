@@ -1,7 +1,7 @@
 # PROMPT.md — Rossi WG App Specification
 
 > Living spec for the "Rossi WG" chores PWA at https://blauewelt.github.io/chores/.
-> Maintained by Claude; updated with every change to the app. Last updated: 2026-06-10 (v3.4).
+> Maintained by Claude; updated with every change to the app. Last updated: 2026-06-10 (v3.6).
 
 ## Concept
 
@@ -37,8 +37,11 @@ mechanics.
 
 ## Features (v2.1)
 
-- **Aufgaben** tab: grid of chore buttons showing name and `+N` points; tap to
-  log a completion for the active person; ✎ to edit/delete; FAB to add
+- **Aufgaben** tab: two-column masonry (CSS `columns:2`) of chore buttons;
+  tile height grows with point value (`104 + points*9` px) so valuable chores
+  are physically bigger; ordered by usage count from the log (most-pressed
+  first), tie-broken by points then name; tap to log a completion for the
+  active person; ✎ to edit/delete; FAB to add
 - **Sheet UX:** action buttons (Abbrechen/Speichern/Fertig) live in a top bar
   so the soft keyboard never covers them; points use a 0–15 slider (no
   keyboard); delete is a full-width danger button at the sheet bottom. When
