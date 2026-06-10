@@ -136,6 +136,24 @@
   .btn.danger{color:var(--red); border-color:var(--red); background:none}
   .hint{font-size:13px; color:var(--muted); margin-top:10px}
 
+  .sheetbar{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:16px}
+  .sheetbar h2{margin:0; font-size:18px; flex:1; text-align:center}
+  .barbtn{border:none; background:none; font-size:16px; font-weight:600; color:var(--muted);
+    cursor:pointer; padding:8px 4px; font-family:var(--body); min-width:84px; text-align:left}
+  .barbtn.strong{color:var(--accent); font-weight:800; text-align:right}
+  .btn.wide{width:100%; margin-top:6px}
+
+  .ptsrow{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:2px}
+  .ptsrow output{font-family:var(--display); font-weight:800; font-size:30px; color:var(--accent)}
+  input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:40px; background:none; margin:0}
+  input[type=range]::-webkit-slider-runnable-track{height:12px; border-radius:999px;
+    background:linear-gradient(to right, var(--accent) var(--fill,20%), #252F29 var(--fill,20%))}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:30px; height:30px; border-radius:50%;
+    background:#fff; border:4px solid var(--accent); margin-top:-9px; box-shadow:0 2px 8px rgba(0,0,0,.45)}
+  input[type=range]::-moz-range-track{height:12px; border-radius:999px; background:#252F29}
+  input[type=range]::-moz-range-progress{height:12px; border-radius:999px; background:var(--accent)}
+  input[type=range]::-moz-range-thumb{width:26px; height:26px; border-radius:50%; background:#fff; border:4px solid var(--accent)}
+
   .mrow{display:flex; gap:8px; align-items:center; margin-bottom:8px}
   .mrow input[type=text]{flex:1; padding:10px 12px; font-size:16px; border:1px solid var(--line); border-radius:10px; background:#161D19; color:var(--ink)}
   .mrow input[type=color]{width:42px; height:42px; border:none; background:none; padding:0; cursor:pointer}
@@ -173,29 +191,32 @@
 
 <dialog id="choreSheet">
   <form class="sheet" method="dialog" id="choreForm">
-    <h2 id="choreSheetTitle">Neue Aufgabe</h2>
+    <div class="sheetbar">
+      <button type="button" class="barbtn" id="cancelChore">Abbrechen</button>
+      <h2 id="choreSheetTitle">Neue Aufgabe</h2>
+      <button type="submit" class="barbtn strong">Speichern</button>
+    </div>
     <div class="field">
       <label for="cName">Aufgabe</label>
       <input type="text" id="cName" placeholder="z. B. Geschirrspüler ausräumen" required maxlength="80" autocomplete="off">
     </div>
     <div class="field">
-      <label for="cPts">Punkte</label>
-      <input type="number" id="cPts" min="1" max="100" value="3" required>
+      <div class="ptsrow"><label for="cPts">Punkte</label><output id="cPtsVal" for="cPts">3</output></div>
+      <input type="range" id="cPts" min="0" max="15" step="1" value="3">
     </div>
-    <div class="actions">
-      <button type="button" class="btn danger" id="deleteChore" style="display:none">Löschen</button>
-      <button type="button" class="btn" id="cancelChore">Abbrechen</button>
-      <button type="submit" class="btn primary">Speichern</button>
-    </div>
+    <button type="button" class="btn danger wide" id="deleteChore" style="display:none">Aufgabe löschen</button>
   </form>
 </dialog>
 
 <dialog id="memberSheet">
   <div class="sheet">
-    <h2>Personen im Haushalt</h2>
+    <div class="sheetbar">
+      <span></span>
+      <h2>Personen</h2>
+      <button type="button" class="barbtn strong" id="closeMembers">Fertig</button>
+    </div>
     <div id="memberRows"></div>
     <button class="addmember" id="addMember">+ Person hinzufügen</button>
-    <div class="actions"><button class="btn primary" id="closeMembers">Fertig</button></div>
   </div>
 </dialog>
 
@@ -223,7 +244,7 @@
 
 <script>
 (() => {
-  const APP_VERSION = '3.0.1';
+  const APP_VERSION = '3.1';
   const LS_STATE = 'haushalt.v2';
   const LS_CFG   = 'haushalt.sync';
   const LS_ME    = 'haushalt.me';
@@ -465,12 +486,20 @@
   const choreSheet = document.getElementById('choreSheet');
   let editingChore = null;
 
+  function setPtsSlider(v) {
+    const sl = document.getElementById('cPts');
+    sl.value = v;
+    document.getElementById('cPtsVal').textContent = v;
+    sl.style.setProperty('--fill', (v / 15 * 100) + '%');
+  }
+  document.getElementById('cPts').addEventListener('input', e => setPtsSlider(e.target.value));
+
   function openChoreSheet(id) {
     editingChore = id || null;
     const c = id ? state.chores.find(x => x.id === id) : null;
-    document.getElementById('choreSheetTitle').textContent = c ? 'Aufgabe bearbeiten' : 'Neue Aufgabe';
+    document.getElementById('choreSheetTitle').textContent = c ? 'Bearbeiten' : 'Neue Aufgabe';
     document.getElementById('cName').value = c ? c.name : '';
-    document.getElementById('cPts').value = c ? c.points : 3;
+    setPtsSlider(c ? c.points : 3);
     document.getElementById('deleteChore').style.display = c ? '' : 'none';
     choreSheet.showModal();
   }
@@ -486,7 +515,7 @@
   });
   document.getElementById('choreForm').addEventListener('submit', () => {
     const name = document.getElementById('cName').value.trim();
-    const points = Math.max(1, Math.min(100, parseInt(document.getElementById('cPts').value) || 1));
+    const points = Math.max(0, Math.min(15, parseInt(document.getElementById('cPts').value) || 0));
     if (!name) return;
     if (editingChore) {
       const c = state.chores.find(x => x.id === editingChore);
