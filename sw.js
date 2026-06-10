@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v15';
+const CACHE = 'haushalt-v16';
 const SHELL = [
   './',
   './index.html',
@@ -27,14 +27,15 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   const isShell = url.origin === location.origin;
   const isFont = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
-  const isArt = url.hostname === 'image.pollinations.ai'; // Bild pro URL unveränderlich
+  const isArt = url.hostname === 'gen.pollinations.ai' || url.hostname === 'image.pollinations.ai';
   if (!isShell && !isFont && !isArt) return;
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
       return fetch(e.request).then(resp => {
         const copy = resp.clone();
-        if (resp.ok) caches.open(CACHE).then(c => c.put(e.request, copy));
+        // Cross-Origin-Bilder kommen als 'opaque' (ok=false) – trotzdem cachen
+        if (resp.ok || (isArt && resp.type === 'opaque')) caches.open(CACHE).then(c => c.put(e.request, copy));
         return resp;
       }).catch(() => cached);
     })
