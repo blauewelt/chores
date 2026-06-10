@@ -66,13 +66,13 @@
       color-mix(in srgb, var(--c) 10%, var(--card)));
     border:1px solid color-mix(in srgb, var(--c) 45%, var(--card));
     border-radius:18px;
-    box-shadow:0 6px 0 color-mix(in srgb, var(--c) 32%, #0A0E0C), 0 12px 20px rgba(0,0,0,.35);
+    box-shadow:0 12px 20px rgba(0,0,0,.35);
     padding:18px 16px 15px;
     display:flex; flex-direction:column; justify-content:space-between; gap:10px;
     transition:transform .08s ease, box-shadow .08s ease;
   }
-  .chore:active{transform:translateY(5px);
-    box-shadow:0 1px 0 color-mix(in srgb, var(--c) 32%, #0A0E0C), 0 4px 8px rgba(0,0,0,.3)}
+  .chore:active{transform:translateY(2px);
+    box-shadow:0 4px 8px rgba(0,0,0,.3)}
   .chore .art{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
     opacity:.55; z-index:0; pointer-events:none}
   .chore::after{content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
