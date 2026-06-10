@@ -256,7 +256,7 @@
 
 <script>
 (() => {
-  const APP_VERSION = '3.4';
+  const APP_VERSION = '3.4.1';
   const LS_STATE = 'haushalt.v2';
   const LS_CFG   = 'haushalt.sync';
   const LS_ME    = 'haushalt.me';
@@ -524,7 +524,7 @@
     document.getElementById('nameText').textContent = c ? c.name : '';
     document.getElementById('nameStatic').style.display = c ? '' : 'none';
     document.getElementById('cName').style.display = c ? 'none' : '';
-    setPtsSlider(c ? c.points : 3);
+    setPtsSlider(c ? c.points : 1);
     document.getElementById('deleteChore').style.display = c ? '' : 'none';
     choreSheet.showModal();
   }
