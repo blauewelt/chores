@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v21';
+const CACHE = 'haushalt-v22';
 const SHELL = [
   './',
   './index.html',
@@ -9,7 +9,13 @@ const SHELL = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => Promise.all(SHELL.map(u =>
+        fetch(new Request(u, { cache: 'reload' })).then(r => { if (r.ok) return c.put(u, r); })
+      )))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', e => {
