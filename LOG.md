@@ -2,6 +2,17 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-10 — v3.0: "Rossi WG" — dark colorful theme
+
+- Renamed app to "Rossi WG" (header wordmark with mint gradient, title,
+  manifest name/short_name); regenerated icons in dark/mint
+- Full dark theme: bg `#141A17`, cards `#1D2521`, mint accent `#52C08A`
+- Per-chore colors: hue derived deterministically from the chore id (hash into
+  a 10-color palette), applied to tile face/border/shadow/watermark/points via
+  CSS `color-mix` — consistent across devices with zero setup
+- Gold tier replaced by a ★ marker on 10+ point chores (color is now per-chore)
+- SW cache → `haushalt-v8`
+
 ## 2026-06-09 — v2.5: Visual refresh
 
 - Chore tiles redesigned as pressable 3D "keys": gradient face, hard drop
