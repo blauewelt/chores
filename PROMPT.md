@@ -1,7 +1,7 @@
 # PROMPT.md — Rossi WG App Specification
 
 > Living spec for the "Rossi WG" chores PWA at https://blauewelt.github.io/chores/.
-> Maintained by Claude; updated with every change to the app. Last updated: 2026-06-10 (v3.3).
+> Maintained by Claude; updated with every change to the app. Last updated: 2026-06-10 (v3.4).
 
 ## Concept
 
@@ -76,6 +76,10 @@ mechanics.
 
 - **Dark theme** (v3.0): background `#141A17`, cards `#1D2521`, text `#EAF1EB`,
   mint accent `#52C08A`; gradient wordmark "Rossi WG"
+- **AI tile art:** each tile shows a generated illustration from
+  Pollinations.ai (no key); URL = f(chore name, seed from id) so devices agree;
+  55% opacity under a dark gradient; falls back to plain color on error; SW
+  caches these images (immutable per URL)
 - **Per-chore colors:** each chore's hue is derived deterministically from its
   id (djb2-style hash into a 10-color vivid palette) — identical on every
   device, no schema change, no user step. Tiles tint face, border, shadow,
