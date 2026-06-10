@@ -2,6 +2,12 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-10 — v3.9.1: Fix stale version display
+
+- `APP_VERSION` constant had been left at 3.6 through v3.7–3.9; now 3.9.
+  Reminder for future changes: bump `APP_VERSION` alongside the SW cache name
+- SW cache → `haushalt-v21`
+
 ## 2026-06-10 — v3.9: Logarithmic tile sizing
 
 - Tile height now `104 + 34 * log2(points + 1)` px (was linear `104 + 9p`);
