@@ -2,6 +2,15 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-10 — v3.9.2: SW shell cache bypasses HTTP cache
+
+- GitHub Pages serves assets with `max-age=600`; the SW's install step was
+  pre-caching `index.html` from the browser's HTTP cache, so rapid successive
+  deploys installed new SWs containing stale HTML
+- Install now fetches the shell with `{cache: 'reload'}` so every new SW
+  caches truly fresh files
+- SW cache → `haushalt-v22`
+
 ## 2026-06-10 — v3.9.1: Fix stale version display
 
 - `APP_VERSION` constant had been left at 3.6 through v3.7–3.9; now 3.9.
