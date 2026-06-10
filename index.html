@@ -252,7 +252,7 @@
 
 <script>
 (() => {
-  const APP_VERSION = '3.2';
+  const APP_VERSION = '3.3';
   const LS_STATE = 'haushalt.v2';
   const LS_CFG   = 'haushalt.sync';
   const LS_ME    = 'haushalt.me';
@@ -651,7 +651,20 @@
   });
 
   // ---------- Start ----------
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('serviceWorker' in navigator) {
+    let hadController = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      // Neue Version hat übernommen → einmal neu laden (nicht bei Erstinstallation)
+      if (hadController && !reloaded) { reloaded = true; location.reload(); }
+      hadController = true;
+    });
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => {
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update(); });
+      })
+      .catch(() => {});
+  }
   document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
   setInterval(() => { if (!document.hidden && cfg) pull(); }, 20000); // Auto-Sync alle 20 s
   render();
