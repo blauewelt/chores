@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v13';
+const CACHE = 'haushalt-v14';
 const SHELL = [
   './',
   './index.html',
@@ -27,7 +27,8 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   const isShell = url.origin === location.origin;
   const isFont = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
-  if (!isShell && !isFont) return;
+  const isArt = url.hostname === 'image.pollinations.ai'; // Bild pro URL unveränderlich
+  if (!isShell && !isFont && !isArt) return;
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
