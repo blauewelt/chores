@@ -2,6 +2,17 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-10 — v3.3: Self-updating app
+
+- App now reloads itself once when a new service worker takes control
+  (controllerchange listener, guarded against first-install and reload loops)
+  and checks for SW updates every time it returns to the foreground.
+  Ends the "close and reopen twice" ritual: from this version on, updates
+  apply on the next foreground at the latest.
+- Context: user's installed PWA was stuck on v3.0.x because swiping an app
+  from Android recents doesn't reliably kill it; force-stop required once.
+- SW cache → `haushalt-v12`
+
 ## 2026-06-10 — v3.2: Rename behind an edit button
 
 - In the edit sheet the chore name now renders as static text with an
