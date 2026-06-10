@@ -2,6 +2,15 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-10 — v3.7: Pollinations tile art live
+
+- Added a Pollinations publishable key (`pk_s3BNDnxTvRHULT3z`, scoped to the
+  `flux` model, 50 Pollen budget) to the `choreArt` image URL — tile art now
+  authenticates against the migrated gen.pollinations.ai API
+- Key is client-safe by design (publishable type); the secret key stays out
+  of the repo
+- SW cache → `haushalt-v18`
+
 ## 2026-06-10 — v3.6: Worth-sized masonry tiles
 
 - Aufgaben view is now a two-column masonry flow (CSS multi-column,
