@@ -409,7 +409,7 @@
         (counts[b.id] || 0) - (counts[a.id] || 0) || b.points - a.points || a.name.localeCompare(b.name));
       listEl.innerHTML = ordered.length
         ? `<div class="grid">` + ordered.map(c =>
-            `<button class="chore" data-cid="${c.id}" style="--c:${choreColor(c.id)}; min-height:${104 + c.points * 9}px">
+            `<button class="chore" data-cid="${c.id}" style="--c:${choreColor(c.id)}; min-height:${Math.round(104 + 34 * Math.log2(c.points + 1))}px">
               <img class="art" src="${choreArt(c)}" alt="" loading="lazy" onerror="this.remove()">
               <span class="watermark">${c.points}</span>
               <span class="cname">${esc(c.name)}</span>
