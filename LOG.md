@@ -2,6 +2,15 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-10 — v3.1: Slider + keyboard-safe sheets
+
+- Points input replaced with a 0–15 slider (filled track, large live value);
+  editing points no longer opens the keyboard at all
+- Sheets restructured: Abbrechen/Speichern (chore) and Fertig (members) moved
+  to a top action bar that stays visible above the soft keyboard; "Aufgabe
+  löschen" is now a full-width danger button at the sheet bottom
+- SW cache → `haushalt-v10`
+
 ## 2026-06-10 — v3.0.1: Critical sync bugfix
 
 - **Bug:** the service worker's cache-first fetch handler cached Supabase REST
