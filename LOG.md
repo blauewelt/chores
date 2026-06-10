@@ -2,6 +2,17 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-10 — v3.0.1: Critical sync bugfix
+
+- **Bug:** the service worker's cache-first fetch handler cached Supabase REST
+  GET responses, so after the first pull every subsequent "refresh" returned a
+  stale snapshot from the device cache — edits (e.g. chore points) appeared to
+  revert, although the PATCH had succeeded server-side
+- **Fix:** SW now only intercepts same-origin requests and Google Fonts; all
+  API traffic goes straight to the network. Cache bump to `haushalt-v9`
+  purges the poisoned caches on update
+- Lesson recorded: never let an app-shell SW cache dynamic API endpoints
+
 ## 2026-06-10 — v3.0: "Rossi WG" — dark colorful theme
 
 - Renamed app to "Rossi WG" (header wordmark with mint gradient, title,
