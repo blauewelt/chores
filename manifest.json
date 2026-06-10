@@ -1,13 +1,13 @@
 {
-  "name": "Haushalt – Aufgaben",
-  "short_name": "Haushalt",
-  "description": "Aufgaben im Haushalt – wer macht was, und wann.",
+  "name": "Rossi WG – Aufgaben",
+  "short_name": "Rossi WG",
+  "description": "Aufgaben in der Rossi WG – wer macht was, und wer punktet.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#F1F3EF",
-  "theme_color": "#2F6B4F",
+  "background_color": "#141A17",
+  "theme_color": "#141A17",
   "lang": "de",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
