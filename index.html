@@ -256,7 +256,7 @@
 
 <script>
 (() => {
-  const APP_VERSION = '3.4.1';
+  const APP_VERSION = '3.5';
   const LS_STATE = 'haushalt.v2';
   const LS_CFG   = 'haushalt.sync';
   const LS_ME    = 'haushalt.me';
@@ -271,10 +271,10 @@
     let x = 0; for (const ch of String(id)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
     return x % 100000;
   };
-  const choreArt = c => 'https://image.pollinations.ai/prompt/' +
+  const choreArt = c => 'https://gen.pollinations.ai/image/' +
     encodeURIComponent('minimalist flat vector illustration of household chore: ' + c.name +
       ', single object, dark moody background, vibrant accent color, no text') +
-    '?width=440&height=300&seed=' + choreSeed(c.id) + '&nologo=true';
+    '?model=flux&width=440&height=300&seed=' + choreSeed(c.id);
   const palette = ['#2F6B4F','#B8860B','#3A6EA5','#B23A2E','#7A4FA0','#3E8E7E'];
 
   // ---------- State ----------
