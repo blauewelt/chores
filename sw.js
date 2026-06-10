@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v8';
+const CACHE = 'haushalt-v9';
 const SHELL = [
   './',
   './index.html',
@@ -23,6 +23,11 @@ self.addEventListener('activate', e => {
 // App-Shell: cache-first; alles andere (z. B. Google Fonts): network-first mit Cache-Fallback
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // Nur App-Shell und Fonts cachen – API-Aufrufe (Supabase) IMMER ans Netz
+  const url = new URL(e.request.url);
+  const isShell = url.origin === location.origin;
+  const isFont = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
+  if (!isShell && !isFont) return;
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
