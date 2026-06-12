@@ -13,8 +13,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#141A17; --card:#1D2521; --ink:#EAF1EB; --muted:#93A89A;
-    --line:#2B362F; --accent:#52C08A; --accent-press:#3FA873;
+    --bg:#12161F; --card:#1A2230; --ink:#EAF1EB; --muted:#91A1B8;
+    --line:#2A3447; --accent:#84B2FF; --accent-press:#6B99E6;
     --gold:#E8B931; --red:#E8746A;
     --radius:14px;
     --shadow:0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
@@ -86,8 +86,11 @@
     color:color-mix(in srgb, var(--c) 65%, #fff);
     background:color-mix(in srgb, var(--c) 28%, transparent);
     border-radius:999px; padding:4px 15px}
-  .chore .edit{position:absolute; top:8px; right:8px; border:none; background:none;
-    color:rgba(255,255,255,.7); font-size:16px; padding:7px; cursor:pointer; border-radius:8px; z-index:2}
+  .chore .edit{position:absolute; top:0; right:0; width:52px; height:52px;
+    display:flex; align-items:center; justify-content:center; border:none;
+    background:none; color:rgba(255,255,255,.75); font-size:17px; cursor:pointer;
+    border-radius:0 14px 0 14px; z-index:2}
+  .chore .edit:active{background:rgba(255,255,255,.12)}
   .chore.flash{animation:flash .5s ease}
   @keyframes flash{0%{filter:brightness(1.4) saturate(1.4)} 100%{filter:none}}
 
@@ -257,7 +260,7 @@
 
 <script>
 (() => {
-  const APP_VERSION = '3.9';
+  const APP_VERSION = '4.0';
   const LS_STATE = 'haushalt.v2';
   const LS_CFG   = 'haushalt.sync';
   const LS_ME    = 'haushalt.me';
