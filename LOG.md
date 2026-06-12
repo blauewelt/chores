@@ -2,6 +2,14 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-12 — v4.0.2: Finales Icon — Gelb/Koralle auf Creme
+
+- App-Icon final: gelber Schwamm mit Koralle-Scrubschicht und -Blasen auf
+  warmem Creme-Verlauf (Variante 3 aus dem Auswahlbogen); helle Platte
+  statt Navy, damit es sich auf dem Homescreen neben den hellen
+  System-Icons einreiht
+- APP_VERSION → 4.0.2, SW cache → `haushalt-v25`
+
 ## 2026-06-12 — v4.0.1: Wasserzeichen-Ziffer entfernt
 
 - Punkte waren dreifach kodiert (Badge, Wasserzeichen, Kachelhoehe);
