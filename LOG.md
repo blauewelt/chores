@@ -2,6 +2,19 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-12 — v4.0: Navy/Kornblume rebrand, neues Icon, Edit-Tap-Target
+
+- Akzentfarbe Mint → Kornblume leuchtend (`#84B2FF`, press `#6B99E6`);
+  Hintergrund-Neutrals von gruen- auf navy-getoent (`--bg #12161F`,
+  `--card #1A2230`, `--line #2A3447`, `--muted #91A1B8`)
+- Neues App-Icon: flacher gelber Schwamm mit Scrubschicht im Akzentblau,
+  Seifenblasen, Navy-Verlauf (192/512/maskable, als SVG via cairosvg gebaut)
+- Edit-Stift auf Kacheln: Tap-Target von ~30px auf 52x52px vergroessert
+  (Ecke der Kachel), :active-Feedback ergaenzt — Fehltipps buchten Punkte
+- APP_VERSION → 4.0, SW cache → `haushalt-v23`
+- Hinweis: Android cached PWA-Icons im WebAPK; Homescreen-Icon erneuert sich
+  ggf. erst nach Re-Add der App
+
 ## 2026-06-10 — v3.9.2: SW shell cache bypasses HTTP cache
 
 - GitHub Pages serves assets with `max-age=600`; the SW's install step was
