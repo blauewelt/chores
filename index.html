@@ -77,9 +77,6 @@
     opacity:.55; z-index:0; pointer-events:none}
   .chore::after{content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
     background:linear-gradient(180deg, rgba(10,14,12,.6), rgba(10,14,12,.12) 55%, rgba(10,14,12,.55))}
-  .chore .watermark{position:absolute; right:-4px; bottom:-24px; font-family:var(--display);
-    font-weight:800; font-size:88px; line-height:1; letter-spacing:-.04em;
-    color:color-mix(in srgb, var(--c) 32%, transparent); pointer-events:none; user-select:none; z-index:1}
   .chore .cname{font-weight:700; font-size:18px; line-height:1.25; overflow-wrap:break-word; padding-right:24px; position:relative; color:#fff; z-index:2; text-shadow:0 1px 4px rgba(0,0,0,.6)}
   .chore .pts{align-self:flex-start; position:relative; z-index:2;
     font-family:var(--display); font-weight:800; font-size:20px;
@@ -260,7 +257,7 @@
 
 <script>
 (() => {
-  const APP_VERSION = '4.0';
+  const APP_VERSION = '4.0.1';
   const LS_STATE = 'haushalt.v2';
   const LS_CFG   = 'haushalt.sync';
   const LS_ME    = 'haushalt.me';
@@ -414,7 +411,6 @@
         ? `<div class="grid">` + ordered.map(c =>
             `<button class="chore" data-cid="${c.id}" style="--c:${choreColor(c.id)}; min-height:${Math.round(104 + 34 * Math.log2(c.points + 1))}px">
               <img class="art" src="${choreArt(c)}" alt="" loading="lazy" onerror="this.remove()">
-              <span class="watermark">${c.points}</span>
               <span class="cname">${esc(c.name)}</span>
               <span class="pts">${c.points >= 10 ? '★ ' : ''}+${c.points}</span>
               <span class="edit" data-edit="${c.id}" role="button" aria-label="Bearbeiten">✎</span>
