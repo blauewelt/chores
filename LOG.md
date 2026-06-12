@@ -2,6 +2,25 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-12 — v4.1.0: Mehrfamilien-Betrieb mit Link-Auth
+
+- DB: `family_id` auf members/chores/log (+ Indizes), `url_slug` auf members;
+  Migration via GitHub-Action `db-migrate` (Repo-Secret SUPABASE_DB_PASSWORD,
+  psql gegen Session-Pooler) — bestehende Daten der Rossi-Familie automatisch
+  migriert
+- Routing: `#f/<familie>` = Familien-Link (voller Zugriff),
+  `#f/<familie>/u/<slug>` = persönlicher Link (Ich-bin fest verriegelt,
+  Punkte nur für sich; Aufgaben anlegen/ändern/löschen weiterhin erlaubt;
+  Personen- und Sync-Sheet ausgeblendet); Route wird in localStorage
+  gemerkt, damit die installierte PWA ohne Hash startet; ungültiger Slug
+  zeigt eine Fehlerseite
+- Alle REST-Zugriffe zentral familien-skopiert (famScope/famRows in sb()
+  und upsert()); localStorage-Keys pro Familie namespaced
+- Personen-Sheet: 🔗 pro Person erzeugt/kopiert persönlichen Link,
+  Button für Familien-Link; Slugs revozierbar (neu generieren)
+- Ohne Link: Onboarding-Screen mit «Neue Familie erstellen»
+- APP_VERSION → 4.1.0, SW cache → `haushalt-v27`
+
 ## 2026-06-12 — v4.0.3: Header-Gradient auf Akzentfarbe
 
 - "Rossi WG"-Titel hatte das alte Mint (#52C08A) hart im Textgradient
