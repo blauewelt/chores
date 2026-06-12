@@ -2,6 +2,12 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-12 — v4.0.1: Wasserzeichen-Ziffer entfernt
+
+- Punkte waren dreifach kodiert (Badge, Wasserzeichen, Kachelhoehe);
+  die grosse Hintergrund-Ziffer ist raus, Badge bleibt die eine Quelle
+- APP_VERSION → 4.0.1, SW cache → `haushalt-v24`
+
 ## 2026-06-12 — v4.0: Navy/Kornblume rebrand, neues Icon, Edit-Tap-Target
 
 - Akzentfarbe Mint → Kornblume leuchtend (`#84B2FF`, press `#6B99E6`);
