@@ -115,3 +115,13 @@ updates on every return to the foreground (since v3.3).
 - Weekly summary / streaks; "Wochensieger" history
 - Supabase Realtime (websockets) instead of polling
 - Offline write queue with replay
+
+
+## Mehrfamilien-Modell (v4.1)
+
+Eine Supabase-Instanz, alle Tabellen per `family_id` partitioniert. Auth ist
+Link-basiert: Familien-Slug in der URL = Zugriff. Persönliche Links binden
+das Gerät zusätzlich an ein Mitglied (`members.url_slug`, revozierbar durch
+Neugenerierung). Schema-Änderungen laufen als SQL-Dateien in
+`supabase/migrations/` über den GitHub-Action-Workflow `db-migrate`
+(workflow_dispatch; Secret `SUPABASE_DB_PASSWORD`).
