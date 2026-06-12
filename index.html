@@ -167,6 +167,7 @@
   .mrow input[type=text]{flex:1; padding:10px 12px; font-size:16px; border:1px solid var(--line); border-radius:10px; background:#161D19; color:var(--ink)}
   .mrow input[type=color]{width:42px; height:42px; border:none; background:none; padding:0; cursor:pointer}
   .mrow .del{border:none; background:none; font-size:20px; color:var(--muted); cursor:pointer; padding:6px}
+  .mrow .mlink{border:none; background:none; font-size:17px; cursor:pointer; padding:6px; min-width:36px}
   .addmember{border:1px dashed var(--line); background:none; width:100%; padding:11px; border-radius:10px; color:var(--muted); font-weight:600; cursor:pointer; font-size:15px}
 
   #toast{position:fixed; left:50%; transform:translateX(-50%) translateY(20px);
@@ -257,11 +258,30 @@
 
 <script>
 (() => {
-  const APP_VERSION = '4.0.3';
-  const LS_STATE = 'haushalt.v2';
-  const LS_CFG   = 'haushalt.sync';
-  const LS_ME    = 'haushalt.me';
+  const APP_VERSION = '4.1.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
+
+  // ---------- Familien-Routing ----------
+  // #f/<familie>           → Familien-Link (voller Zugriff)
+  // #f/<familie>/u/<slug>  → persönlicher Link (Punkte nur für sich selbst)
+  const LS_ROUTE = 'haushalt.route';
+  function parseHash() {
+    const m = location.hash.match(/^#\/?f\/([a-z0-9-]{4,64})(?:\/u\/([a-z0-9]{4,64}))?$/i);
+    return m ? { family: m[1].toLowerCase(), userSlug: m[2] ? m[2].toLowerCase() : null } : null;
+  }
+  let route = parseHash();
+  if (route) localStorage.setItem(LS_ROUTE, JSON.stringify(route));
+  else { try { route = JSON.parse(localStorage.getItem(LS_ROUTE)); } catch {} }
+  const FAMILY = (route && route.family) || null;
+  const USER_SLUG = (route && route.userSlug) || null;
+  window.addEventListener('hashchange', () => {
+    const r = parseHash();
+    if (r) { localStorage.setItem(LS_ROUTE, JSON.stringify(r)); location.reload(); }
+  });
+
+  const LS_STATE = 'haushalt.v2:' + FAMILY;
+  const LS_CFG   = 'haushalt.sync';
+  const LS_ME    = 'haushalt.me:' + FAMILY;
   const CHORE_COLORS = ['#52C08A','#E8B931','#5FA8E8','#E8746A','#B585E8',
                         '#E89C4B','#4BC4C4','#E86AA8','#A8C45B','#8A93E8'];
   const choreColor = id => {
@@ -277,6 +297,19 @@
       ', single object, dark moody background, vibrant accent color, no text') +
     '?model=flux&width=440&height=300&key=pk_s3BNDnxTvRHULT3z&seed=' + choreSeed(c.id);
   const palette = ['#2F6B4F','#B8860B','#3A6EA5','#B23A2E','#7A4FA0','#3E8E7E'];
+
+  // ---------- Onboarding (kein Familien-Link) ----------
+  if (!FAMILY) {
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;inset:0;z-index:99;background:var(--bg);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:32px;gap:14px';
+    d.innerHTML = `
+      <h1 style="font-family:var(--display);font-weight:800;font-size:32px;margin:0;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Haushalt</h1>
+      <p style="color:var(--muted);max-width:300px;margin:0">Öffne den Einladungs-Link deiner Familie, um loszulegen — oder starte einen neuen Haushalt.</p>
+      <button id="newFam" style="margin-top:10px;border:none;border-radius:999px;padding:14px 26px;font-size:16px;font-weight:700;background:var(--accent);color:#0C1220;cursor:pointer">Neue Familie erstellen</button>`;
+    document.body.appendChild(d);
+    document.getElementById('newFam').onclick = () => { location.hash = '#f/fam-' + uid() + uid(); };
+    return;
+  }
 
   // ---------- State ----------
   let state = { members: [], chores: [], log: [] };
@@ -311,8 +344,13 @@
   const initial = n => (n || '?').trim().charAt(0).toUpperCase();
 
   // ---------- Supabase REST ----------
+  const famScope = path => path + (path.includes('?') ? '&' : '?') + 'family_id=eq.' + encodeURIComponent(FAMILY);
+  const famRows = b => Array.isArray(b)
+    ? b.map(r => Object.assign({ family_id: FAMILY }, r))
+    : Object.assign({ family_id: FAMILY }, b);
   async function sb(path, method = 'GET', body) {
-    const r = await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/' + path, {
+    if (body && (method === 'POST' || method === 'PATCH')) body = famRows(body);
+    const r = await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/' + famScope(path), {
       method,
       headers: {
         apikey: cfg.key, Authorization: 'Bearer ' + cfg.key,
@@ -326,7 +364,8 @@
 
   async function upsert(table, rows) {
     if (!rows.length) return;
-    const r = await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/' + table, {
+    rows = famRows(rows);
+    const r = await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/' + famScope(table), {
       method: 'POST',
       headers: { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key,
         'Content-Type': 'application/json',
@@ -354,8 +393,23 @@
         state.chores = chores;
         state.log = log;
       }
+      if (USER_SLUG) {
+        const lm = state.members.find(m => (m.url_slug || '').toLowerCase() === USER_SLUG);
+        if (lm) { me = lm.id; localStorage.setItem(LS_ME, me); }
+        else if (state.members.length) { showBadLink(); return; }
+      }
       syncOk = true; save(); render();
     } catch (e) { syncOk = false; render(); }
+  }
+
+  let badLinkShown = false;
+  function showBadLink() {
+    if (badLinkShown) return; badLinkShown = true;
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;inset:0;z-index:99;background:var(--bg);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:32px;gap:12px';
+    d.innerHTML = `<h2 style="font-family:var(--display);margin:0">Link ungültig</h2>
+      <p style="color:var(--muted);max-width:300px;margin:0">Dieser persönliche Link wurde nicht gefunden oder zurückgezogen. Bitte einen neuen Link anfordern.</p>`;
+    document.body.appendChild(d);
   }
 
   function push(fn) {           // optimistisches Schreiben
@@ -394,12 +448,13 @@
     document.querySelectorAll('.tab').forEach(b =>
       b.setAttribute('aria-selected', String(b.dataset.view === view)));
 
-    // Ich bin
+    // Ich bin — im persönlichen Link fest auf eine Person verriegelt
     const iam = document.getElementById('iamRow');
-    iam.innerHTML = '<span class="lbl">Ich bin</span>' + state.members.map(m =>
-      `<button class="chip" data-mid="${m.id}" aria-pressed="${me === m.id}">
+    const shown = USER_SLUG ? state.members.filter(m => m.id === me) : state.members;
+    iam.innerHTML = '<span class="lbl">Ich bin</span>' + shown.map(m =>
+      `<button class="chip" data-mid="${m.id}" aria-pressed="${me === m.id}" ${USER_SLUG ? 'style="cursor:default"' : ''}>
         <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>${esc(m.name)}
-      </button>`).join('');
+      </button>`).join('') + (USER_SLUG && !shown.length ? '<span class="lbl">…</span>' : '');
 
     if (view === 'chores') {
       // Meistgenutzte zuerst; Höhe wächst mit dem Punktwert
@@ -468,9 +523,14 @@
   });
 
   document.getElementById('iamRow').addEventListener('click', e => {
+    if (USER_SLUG) return; // persönlicher Link: Person ist fixiert
     const c = e.target.closest('.chip'); if (!c) return;
     me = c.dataset.mid; localStorage.setItem(LS_ME, me); render();
   });
+  if (USER_SLUG) {
+    document.getElementById('openMembers').style.display = 'none';
+    document.getElementById('openSync').style.display = 'none';
+  }
 
   let pressLock = false;
   listEl.addEventListener('click', e => {
@@ -574,12 +634,22 @@
       `<div class="mrow" data-mid="${m.id}">
         <input type="color" value="${esc(m.color)}" aria-label="Farbe">
         <input type="text" maxlength="30" aria-label="Name">
+        <button class="mlink" aria-label="Persönlichen Link kopieren" title="Persönlicher Link">🔗</button>
         <button class="del" aria-label="Person entfernen">×</button>
       </div>`).join('');
     wrap.querySelectorAll('.mrow').forEach((r, i) => r.querySelector('input[type=text]').value = state.members[i].name);
   }
   document.getElementById('openMembers').addEventListener('click', () => {
-    changedMembers.clear(); renderMemberRows(); memberSheet.showModal();
+    changedMembers.clear(); renderMemberRows();
+    let fl = document.getElementById('famLink');
+    if (!fl) {
+      fl = document.createElement('button');
+      fl.id = 'famLink'; fl.textContent = 'Familien-Link kopieren';
+      fl.style.cssText = 'margin-top:12px;width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:12px;font-size:15px;font-weight:600;cursor:pointer';
+      fl.onclick = async () => toast((await copyText(appBase() + '#f/' + FAMILY)) ? 'Familien-Link kopiert' : appBase() + '#f/' + FAMILY);
+      document.getElementById('memberRows').after(fl);
+    }
+    memberSheet.showModal();
   });
   document.getElementById('memberRows').addEventListener('input', e => {
     const row = e.target.closest('.mrow'); if (!row) return;
@@ -588,7 +658,23 @@
     if (e.target.type === 'color') m.color = e.target.value;
     changedMembers.add(m.id); save();
   });
-  document.getElementById('memberRows').addEventListener('click', e => {
+  async function copyText(t) {
+    try { await navigator.clipboard.writeText(t); return true; }
+    catch { try { return !!(navigator.share && (await navigator.share({ url: t }), true)); } catch { return false; } }
+  }
+  const appBase = () => location.origin + location.pathname;
+  document.getElementById('memberRows').addEventListener('click', async e => {
+    const lk = e.target.closest('.mlink');
+    if (lk) {
+      const m = memberById(lk.closest('.mrow').dataset.mid); if (!m) return;
+      if (!m.url_slug) {
+        m.url_slug = uid() + uid();
+        save(); push(() => upsert('members', [m]));
+      }
+      const url = appBase() + '#f/' + FAMILY + '/u/' + m.url_slug;
+      toast((await copyText(url)) ? 'Link für ' + (m.name || '—') + ' kopiert' : url);
+      return;
+    }
     if (!e.target.closest('.del')) return;
     const row = e.target.closest('.mrow');
     if (state.members.length <= 1) { alert('Mindestens eine Person wird benötigt.'); return; }
