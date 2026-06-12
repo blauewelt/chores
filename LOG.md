@@ -2,6 +2,12 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-12 — v4.0.3: Header-Gradient auf Akzentfarbe
+
+- "Rossi WG"-Titel hatte das alte Mint (#52C08A) hart im Textgradient
+  kodiert; nutzt jetzt `var(--accent)` und folgt damit jedem Rebrand
+- APP_VERSION → 4.0.3, SW cache → `haushalt-v26`
+
 ## 2026-06-12 — v4.0.2: Finales Icon — Gelb/Koralle auf Creme
 
 - App-Icon final: gelber Schwamm mit Koralle-Scrubschicht und -Blasen auf
