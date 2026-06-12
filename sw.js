@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v22';
+const CACHE = 'haushalt-v23';
 const SHELL = [
   './',
   './index.html',
