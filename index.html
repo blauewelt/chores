@@ -258,7 +258,7 @@
 
 <script>
 (() => {
-  const APP_VERSION = '4.2.1';
+  const APP_VERSION = '4.2.2';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -502,9 +502,27 @@
       </button>`).join('') + (USER_SLUG && !shown.length ? '<span class="lbl">…</span>' : '');
 
     if (view === 'chores') {
-      // Alphabetisch nach Name (verwandte Aufgaben stehen zusammen)
-      const ordered = state.chores.slice().sort((a, b) =>
-        a.name.localeCompare(b.name, 'de', { sensitivity: 'base' }));
+      // Gruppiert nach erstem Wort: häufigste Gruppe zuerst, innerhalb A–Z.
+      // So bleiben verwandte Aufgaben («Wäsche …») zusammen und oft genutzte
+      // Gruppen wandern nach oben.
+      const counts = {};
+      state.log.forEach(e => counts[e.chore_id] = (counts[e.chore_id] || 0) + 1);
+      const groupKey = n => (n || '').trim().split(/\s+/)[0].toLowerCase();
+      const groupUse = {};   // Summe der Nutzungen je Gruppe
+      const groupName = {};  // erster (alphabetisch kleinster) Name je Gruppe, für Tie-Break
+      state.chores.forEach(c => {
+        const g = groupKey(c.name);
+        groupUse[g] = (groupUse[g] || 0) + (counts[c.id] || 0);
+        if (!groupName[g] || c.name.localeCompare(groupName[g], 'de', { sensitivity: 'base' }) < 0)
+          groupName[g] = c.name;
+      });
+      const ordered = state.chores.slice().sort((a, b) => {
+        const ga = groupKey(a.name), gb = groupKey(b.name);
+        if (ga !== gb)
+          return (groupUse[gb] - groupUse[ga])                                  // häufigere Gruppe zuerst
+              || groupName[ga].localeCompare(groupName[gb], 'de', { sensitivity: 'base' }); // sonst Gruppe A–Z
+        return a.name.localeCompare(b.name, 'de', { sensitivity: 'base' });     // innerhalb der Gruppe A–Z
+      });
       listEl.innerHTML = ordered.length
         ? `<div class="grid">` + ordered.map(c =>
             `<button class="chore" data-cid="${c.id}" style="--c:${choreColor(c.id)}; min-height:${Math.round(104 + 34 * Math.log2(c.points + 1))}px">
