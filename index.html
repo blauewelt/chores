@@ -258,7 +258,7 @@
 
 <script>
 (() => {
-  const APP_VERSION = '4.2.2';
+  const APP_VERSION = '4.2.3';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -486,6 +486,42 @@
     dot.className = 'syncdot' + (cfg ? (syncOk === false ? ' err' : ' on') : '');
   }
 
+  // ---------- Eingefrorene Kachel-Reihenfolge ----------
+  // Wird einmal berechnet und erst neu gebildet, wenn der Nutzer es erwartet
+  // (App-Start, Tab-Wechsel, Aufgabe angelegt/geändert/gelöscht) – nie durch
+  // einen Hintergrund-Sync, damit nichts unter dem Finger wegspringt.
+  let _orderCache = null;
+  function invalidateOrder() { _orderCache = null; }
+  function choreOrder() {
+    const ids = state.chores.map(c => c.id).sort().join('|');
+    if (_orderCache && _orderCache.ids === ids) {
+      // Gleiche Aufgaben-Menge → gemerkte Reihenfolge halten, nur fehlende
+      // (theoretisch) ans Ende, gelöschte raus.
+      const byId = new Map(state.chores.map(c => [c.id, c]));
+      const kept = _orderCache.order.filter(id => byId.has(id)).map(id => byId.get(id));
+      return kept;
+    }
+    const counts = {};
+    state.log.forEach(e => counts[e.chore_id] = (counts[e.chore_id] || 0) + 1);
+    const groupKey = n => (n || '').trim().split(/\s+/)[0].toLowerCase();
+    const groupUse = {}, groupName = {};
+    state.chores.forEach(c => {
+      const g = groupKey(c.name);
+      groupUse[g] = (groupUse[g] || 0) + (counts[c.id] || 0);
+      if (!groupName[g] || c.name.localeCompare(groupName[g], 'de', { sensitivity: 'base' }) < 0)
+        groupName[g] = c.name;
+    });
+    const ordered = state.chores.slice().sort((a, b) => {
+      const ga = groupKey(a.name), gb = groupKey(b.name);
+      if (ga !== gb)
+        return (groupUse[gb] - groupUse[ga])
+            || groupName[ga].localeCompare(groupName[gb], 'de', { sensitivity: 'base' });
+      return a.name.localeCompare(b.name, 'de', { sensitivity: 'base' });
+    });
+    _orderCache = { ids, order: ordered.map(c => c.id) };
+    return ordered;
+  }
+
   function render() {
     renderSyncDot();
     const h1 = document.querySelector('header h1');
@@ -502,27 +538,9 @@
       </button>`).join('') + (USER_SLUG && !shown.length ? '<span class="lbl">…</span>' : '');
 
     if (view === 'chores') {
-      // Gruppiert nach erstem Wort: häufigste Gruppe zuerst, innerhalb A–Z.
-      // So bleiben verwandte Aufgaben («Wäsche …») zusammen und oft genutzte
-      // Gruppen wandern nach oben.
-      const counts = {};
-      state.log.forEach(e => counts[e.chore_id] = (counts[e.chore_id] || 0) + 1);
-      const groupKey = n => (n || '').trim().split(/\s+/)[0].toLowerCase();
-      const groupUse = {};   // Summe der Nutzungen je Gruppe
-      const groupName = {};  // erster (alphabetisch kleinster) Name je Gruppe, für Tie-Break
-      state.chores.forEach(c => {
-        const g = groupKey(c.name);
-        groupUse[g] = (groupUse[g] || 0) + (counts[c.id] || 0);
-        if (!groupName[g] || c.name.localeCompare(groupName[g], 'de', { sensitivity: 'base' }) < 0)
-          groupName[g] = c.name;
-      });
-      const ordered = state.chores.slice().sort((a, b) => {
-        const ga = groupKey(a.name), gb = groupKey(b.name);
-        if (ga !== gb)
-          return (groupUse[gb] - groupUse[ga])                                  // häufigere Gruppe zuerst
-              || groupName[ga].localeCompare(groupName[gb], 'de', { sensitivity: 'base' }); // sonst Gruppe A–Z
-        return a.name.localeCompare(b.name, 'de', { sensitivity: 'base' });     // innerhalb der Gruppe A–Z
-      });
+      // Reihenfolge ist eingefroren (siehe choreOrder()); Hintergrund-Syncs
+      // aktualisieren Daten/Punkte, ordnen die Kacheln aber nicht um.
+      const ordered = choreOrder();
       listEl.innerHTML = ordered.length
         ? `<div class="grid">` + ordered.map(c =>
             `<button class="chore" data-cid="${c.id}" style="--c:${choreColor(c.id)}; min-height:${Math.round(104 + 34 * Math.log2(c.points + 1))}px">
@@ -580,7 +598,7 @@
   // ---------- Events ----------
   document.querySelector('.tabs').addEventListener('click', e => {
     const b = e.target.closest('.tab'); if (!b) return;
-    view = b.dataset.view; render();
+    view = b.dataset.view; invalidateOrder(); render();
   });
 
   document.getElementById('iamRow').addEventListener('click', e => {
@@ -665,7 +683,7 @@
     const c = state.chores.find(x => x.id === editingChore);
     if (c && confirm(`«${c.name}» löschen? Bisherige Punkte bleiben erhalten.`)) {
       state.chores = state.chores.filter(x => x.id !== c.id);
-      save(); choreSheet.close(); render();
+      invalidateOrder(); save(); choreSheet.close(); render();
       push(() => sb('chores?id=eq.' + c.id, 'DELETE'));
     }
   });
@@ -682,7 +700,7 @@
       state.chores.push(c);
       push(() => sb('chores', 'POST', c));
     }
-    state.chores.sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
+    invalidateOrder();
     save(); render();
   });
 
@@ -830,7 +848,7 @@
       })
       .catch(() => {});
   }
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { invalidateOrder(); pull(); } });
   setInterval(() => { if (!document.hidden && cfg) pull(); }, 20000); // Auto-Sync alle 20 s
   render();
   pull();
