@@ -2,6 +2,18 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-14 — v4.2.0: Echter Mehrfamilien-Start + Manifest-Rebrand
+
+- `families`-Tabelle (family_id, name); Haushaltsname wird geladen und als
+  Titel/H1 gerendert statt hartem "Rossi WG"
+- Ersteinrichtung für komplett neue Familien: Name, Personen (eine pro Zeile),
+  optionales Vorausfüllen typischer Aufgaben — danach ist der Haushalt sofort
+  bespielbar
+- manifest.json generisch: Name "Haushalt", Navy-Farben (#12161F) statt
+  altem Gruen, Icon-Cache-Buster `?v=41` damit Android das neue Icon zieht
+- index.html: Titel/Description/H1-Default neutralisiert (nur vor Sync sichtbar)
+- APP_VERSION → 4.2.0, SW cache → `haushalt-v28`
+
 ## 2026-06-12 — v4.1.0: Mehrfamilien-Betrieb mit Link-Auth
 
 - DB: `family_id` auf members/chores/log (+ Indizes), `url_slug` auf members;
