@@ -2,6 +2,14 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-14 — v4.3.3: Share-Text nutzt Haushaltsnamen
+
+- Teilen-Text «… mach mit bei unseren Haushalts-Aufgaben» (klobig, und
+  «Hausaufgaben» hiesse Schulaufgaben) → «… mach mit bei <Haushaltsname>»,
+  z. B. «Jana, mach mit bei Rossi WG:». Fallback «unseren Aufgaben», falls
+  kein Name gesetzt
+- APP_VERSION → 4.3.3, SW cache → haushalt-v35
+
 ## 2026-06-14 — v4.3.2: Onboarding-Flow repariert
 
 - BUG: Der 20-Sekunden-Auto-Sync (und visibilitychange) rief firstRunSetup()
