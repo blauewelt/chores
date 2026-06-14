@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Haushalt</title>
-<meta name="description" content="Wer macht was im Haushalt – und wer sammelt die Punkte.">
+<title>Fairli</title>
+<meta name="description" content="Fairli – wer macht was im Haushalt, und wer sammelt die Punkte.">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#141A17">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -190,7 +190,7 @@
 </head>
 <body>
 <header>
-  <h1>Haushalt</h1>
+  <h1>Fairli</h1>
   <div class="headbtns">
     <button class="iconbtn" id="openSync"><span class="syncdot" id="syncDot"></span>Sync</button>
     <button class="iconbtn" id="openMembers">Personen</button>
@@ -269,7 +269,7 @@
 <script src="qrcode.min.js"></script>
 <script>
 (() => {
-  const APP_VERSION = '4.3.0';
+  const APP_VERSION = '4.3.1';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -314,7 +314,7 @@
     const d = document.createElement('div');
     d.style.cssText = 'position:fixed;inset:0;z-index:99;background:var(--bg);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:32px;gap:14px';
     d.innerHTML = `
-      <h1 style="font-family:var(--display);font-weight:800;font-size:32px;margin:0;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Haushalt</h1>
+      <h1 style="font-family:var(--display);font-weight:800;font-size:32px;margin:0;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Fairli</h1>
       <p style="color:var(--muted);max-width:300px;margin:0">Öffne den Einladungs-Link deiner Familie, um loszulegen — oder starte einen neuen Haushalt.</p>
       <button id="newFam" style="margin-top:10px;border:none;border-radius:999px;padding:14px 26px;font-size:16px;font-weight:700;background:var(--accent);color:#0C1220;cursor:pointer">Neue Familie erstellen</button>`;
     document.body.appendChild(d);
