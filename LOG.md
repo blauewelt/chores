@@ -2,6 +2,16 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-14 — v4.3.1: App heisst «Fairli»
+
+- App-Name (Manifest, Titel, Onboarding-Screen, Default-H1) → «Fairli»
+  (Swiss-Touch-Variante von «Fairly»); der pro-Familie gespeicherte
+  Haushaltsname bleibt davon unberührt und überschreibt weiterhin den
+  Titel im laufenden Betrieb
+- «Neuer Haushalt»-Einrichtungsdialog und «Name des Haushalts» bewusst
+  beibehalten — das ist haushalt-, nicht app-spezifisch
+- Icon-Cache-Buster → ?v=43, SW cache → haushalt-v33, APP_VERSION → 4.3.1
+
 ## 2026-06-14 — v4.3.0: Reibungsloses Teilen — Share-Sheet, Native Share, QR
 
 - Neues «Links teilen»-Sheet: listet alle persönlichen Links + Familien-Link,
