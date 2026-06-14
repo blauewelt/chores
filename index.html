@@ -168,6 +168,16 @@
   .mrow input[type=color]{width:42px; height:42px; border:none; background:none; padding:0; cursor:pointer}
   .mrow .del{border:none; background:none; font-size:20px; color:var(--muted); cursor:pointer; padding:6px}
   .mrow .mlink{border:none; background:none; font-size:17px; cursor:pointer; padding:6px; min-width:36px}
+  #shareSheet{border:none; background:var(--card); color:var(--ink); border-radius:20px 20px 0 0; padding:0; width:100%; max-width:520px; margin:auto auto 0; position:fixed; inset:auto 0 0 0}
+  #shareSheet::backdrop{background:rgba(0,0,0,.5)}
+  #shareSheet .x{border:none; background:none; color:var(--muted); font-size:24px; cursor:pointer; line-height:1; padding:0 4px}
+  .shrow{padding:14px 0; border-top:1px solid var(--line); display:flex; flex-direction:column; align-items:center; gap:10px}
+  .shrow:first-of-type{border-top:none}
+  .shhead{display:flex; align-items:center; gap:10px; width:100%}
+  .shname{flex:1; font-weight:600; font-size:16px}
+  .shbtn{border:none; border-radius:999px; padding:9px 18px; font-size:15px; font-weight:700; background:var(--accent); color:#0C1220; cursor:pointer}
+  .shqr{border-radius:12px; background:#fff; padding:8px}
+  .shfam .shname{color:var(--muted); font-size:14px}
   .addmember{border:1px dashed var(--line); background:none; width:100%; padding:11px; border-radius:10px; color:var(--muted); font-weight:600; cursor:pointer; font-size:15px}
 
   #toast{position:fixed; left:50%; transform:translateX(-50%) translateY(20px);
@@ -256,9 +266,10 @@
 
 <div id="toast" role="status"></div>
 
+<script src="qrcode.min.js"></script>
 <script>
 (() => {
-  const APP_VERSION = '4.2.3';
+  const APP_VERSION = '4.3.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -442,6 +453,7 @@
         if (state.chores.length) await upsert('chores', state.chores);
       } catch {}
       d.remove(); render();
+      openShareSheet('Fertig! Teile jetzt jedem seinen persönlichen Link – damit ist er sofort dabei, ganz ohne Installation oder Konto.');
     };
   }
 
@@ -725,7 +737,8 @@
       fl = document.createElement('button');
       fl.id = 'famLink'; fl.textContent = 'Familien-Link kopieren';
       fl.style.cssText = 'margin-top:12px;width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:12px;font-size:15px;font-weight:600;cursor:pointer';
-      fl.onclick = async () => toast((await copyText(appBase() + '#f/' + FAMILY)) ? 'Familien-Link kopiert' : appBase() + '#f/' + FAMILY);
+      fl.textContent = 'Links teilen …';
+      fl.onclick = () => { memberSheet.close(); openShareSheet(''); };
       document.getElementById('memberRows').after(fl);
     }
     memberSheet.showModal();
@@ -737,23 +750,74 @@
     if (e.target.type === 'color') m.color = e.target.value;
     changedMembers.add(m.id); save();
   });
-  async function copyText(t) {
-    try { await navigator.clipboard.writeText(t); return true; }
-    catch { try { return !!(navigator.share && (await navigator.share({ url: t }), true)); } catch { return false; } }
-  }
   const appBase = () => location.origin + location.pathname;
+  const familyLink = () => appBase() + '#f/' + FAMILY;
+  function ensureSlug(m) {
+    if (!m.url_slug) { m.url_slug = uid() + uid(); save(); push(() => upsert('members', [m])); }
+    return m.url_slug;
+  }
+  const userLink = m => appBase() + '#f/' + FAMILY + '/u/' + ensureSlug(m);
+
+  // Teilen: native Share-Sheet bevorzugt, sonst Clipboard, sonst Anzeige
+  async function shareLink(url, title, text) {
+    if (navigator.share) {
+      try { await navigator.share({ title, text, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    try { await navigator.clipboard.writeText(url); toast(title + ' kopiert'); }
+    catch { toast(url); }
+  }
+  function qrDataUrl(text) {
+    try {
+      const q = qrcode(0, 'M'); q.addData(text); q.make();
+      return q.createDataURL(6, 16); // cellSize, margin
+    } catch { return null; }
+  }
+
+  // Wiederverwendbares Sheet: alle persönlichen Links + Familien-Link, je mit
+  // Teilen-Button und QR-Code.
+  function openShareSheet(intro) {
+    let sh = document.getElementById('shareSheet');
+    if (!sh) {
+      sh = document.createElement('dialog');
+      sh.id = 'shareSheet';
+      document.body.appendChild(sh);
+    }
+    const rows = state.members.map(m => {
+      const url = userLink(m);
+      const qr = qrDataUrl(url);
+      return `<div class="shrow">
+        <div class="shhead">
+          <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>
+          <span class="shname">${esc(m.name || '—')}</span>
+          <button class="shbtn" data-share="${esc(url)}" data-name="${esc(m.name || '')}">Teilen</button>
+        </div>
+        ${qr ? `<img class="shqr" src="${qr}" alt="QR-Code für ${esc(m.name)}" width="120" height="120">` : ''}
+      </div>`;
+    }).join('');
+    const famQr = qrDataUrl(familyLink());
+    sh.innerHTML = `<div class="sheet">
+      <div class="sheetbar"><h2>Links teilen</h2><button class="x" id="closeShare" aria-label="Schließen">×</button></div>
+      ${intro ? `<p style="color:var(--muted);margin:0 0 14px">${esc(intro)}</p>` : ''}
+      ${rows}
+      <div class="shrow shfam">
+        <div class="shhead">
+          <span class="shname">Ganze Familie (voller Zugriff)</span>
+          <button class="shbtn" data-share="${esc(familyLink())}" data-name="Familie">Teilen</button>
+        </div>
+        ${famQr ? `<img class="shqr" src="${famQr}" alt="Familien-QR" width="120" height="120">` : ''}
+      </div>
+    </div>`;
+    sh.querySelector('#closeShare').onclick = () => sh.close();
+    sh.querySelectorAll('.shbtn').forEach(b => b.onclick = () => {
+      const nm = b.dataset.name;
+      shareLink(b.dataset.share, nm ? 'Link für ' + nm : 'Familien-Link',
+                nm ? nm + ', mach mit bei unseren Haushalts-Aufgaben:' : 'Mach mit bei unseren Haushalts-Aufgaben:');
+    });
+    sh.showModal();
+  }
   document.getElementById('memberRows').addEventListener('click', async e => {
     const lk = e.target.closest('.mlink');
-    if (lk) {
-      const m = memberById(lk.closest('.mrow').dataset.mid); if (!m) return;
-      if (!m.url_slug) {
-        m.url_slug = uid() + uid();
-        save(); push(() => upsert('members', [m]));
-      }
-      const url = appBase() + '#f/' + FAMILY + '/u/' + m.url_slug;
-      toast((await copyText(url)) ? 'Link für ' + (m.name || '—') + ' kopiert' : url);
-      return;
-    }
+    if (lk) { memberSheet.close(); openShareSheet(''); return; }
     if (!e.target.closest('.del')) return;
     const row = e.target.closest('.mrow');
     if (state.members.length <= 1) { alert('Mindestens eine Person wird benötigt.'); return; }
