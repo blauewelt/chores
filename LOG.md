@@ -2,6 +2,14 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-14 — v4.2.2: Kacheln nach Gruppe sortiert
+
+- Kompromiss-Sortierung: Aufgaben nach erstem Wort gruppiert; Gruppen nach
+  Gesamtnutzung absteigend (haeufigste oben), innerhalb jeder Gruppe A–Z.
+  «Wäsche waschen/aufhängen/falten» bleiben zusammen, oft genutzte Gruppen
+  wandern nach oben. Tie-Break zwischen gleich genutzten Gruppen: A–Z.
+- APP_VERSION → 4.2.2, SW cache → `haushalt-v30`
+
 ## 2026-06-14 — v4.2.1: Kacheln alphabetisch sortiert
 
 - Aufgaben-Kacheln jetzt alphabetisch nach Name (locale 'de', akzent-/
