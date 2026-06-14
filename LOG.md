@@ -2,6 +2,20 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-14 — v4.3.2: Onboarding-Flow repariert
+
+- BUG: Der 20-Sekunden-Auto-Sync (und visibilitychange) rief firstRunSetup()
+  erneut auf, solange die Familie leer war → Dialog wurde neu aufgebaut und
+  überschrieb laufende Eingaben (Haushaltsname/Personen wurden gelöscht).
+  Fix: firstRunSetup() ist jetzt idempotent (Guard + DOM-Check); pull()
+  fasst während offener Einrichtung weder DOM noch State an; Auto-Sync und
+  visibilitychange pausieren, solange firstRunOpen
+- Einrichtung wird beim Start einer brandneuen Familie sofort gezeigt, nicht
+  erst nach dem ersten Netzwerk-Pull (kein kurzes leeres Raster mehr,
+  keine Verzögerung)
+- Doppelten pull()-Aufruf bei Init entfernt
+- APP_VERSION → 4.3.2, SW cache → haushalt-v34
+
 ## 2026-06-14 — v4.3.1: App heisst «Fairli»
 
 - App-Name (Manifest, Titel, Onboarding-Screen, Default-H1) → «Fairli»
