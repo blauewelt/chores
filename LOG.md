@@ -2,6 +2,13 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-14 — v4.2.1: Kacheln alphabetisch sortiert
+
+- Aufgaben-Kacheln jetzt alphabetisch nach Name (locale 'de', akzent-/
+  grossschreibungsunabhaengig) statt nach Nutzungshaeufigkeit — verwandte
+  Aufgaben wie «Wäsche waschen / aufhängen / falten» stehen beieinander
+- APP_VERSION → 4.2.1, SW cache → `haushalt-v29`
+
 ## 2026-06-14 — v4.2.0: Echter Mehrfamilien-Start + Manifest-Rebrand
 
 - `families`-Tabelle (family_id, name); Haushaltsname wird geladen und als
