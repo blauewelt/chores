@@ -1,8 +1,9 @@
-const CACHE = 'haushalt-v31';
+const CACHE = 'haushalt-v32';
 const SHELL = [
   './',
   './index.html',
   './manifest.json',
+  './qrcode.min.js',
   './icon-192.png',
   './icon-512.png',
   './icon-512-maskable.png'
