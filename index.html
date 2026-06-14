@@ -269,7 +269,7 @@
 <script src="qrcode.min.js"></script>
 <script>
 (() => {
-  const APP_VERSION = '4.3.1';
+  const APP_VERSION = '4.3.2';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -396,9 +396,12 @@
         sb('families?select=name')
       ]);
       state.famName = (fam[0] && fam[0].name) || '';
+      // Während die Ersteinrichtung offen ist, NICHTS am DOM/State anfassen –
+      // sonst werden Eingaben überschrieben.
+      if (firstRunOpen) { syncOk = true; return; }
       if (!members.length && !state.famName && !USER_SLUG) {
-        // Komplett neue Familie → Ersteinrichtung
-        syncOk = true; render(); firstRunSetup(); return;
+        // Komplett neue Familie → Ersteinrichtung (nur einmal)
+        syncOk = true; firstRunSetup(); return;
       }
       if (!members.length) {
         // Leeres Backend → dieses Gerät lädt seinen lokalen Stand hoch
@@ -419,7 +422,10 @@
     } catch (e) { syncOk = false; render(); }
   }
 
+  let firstRunOpen = false;
   function firstRunSetup() {
+    if (firstRunOpen || document.getElementById('firstRun')) return; // nie doppelt
+    firstRunOpen = true;
     const SEED = [
       ['Küche aufräumen', 1], ['Geschirr ausräumen', 1], ['Einkaufen', 2],
       ['Kochen', 2], ['Wäsche waschen', 1], ['Bad putzen', 3], ['Müll rausbringen', 1]
@@ -452,6 +458,7 @@
         await upsert('members', state.members);
         if (state.chores.length) await upsert('chores', state.chores);
       } catch {}
+      firstRunOpen = false;
       d.remove(); render();
       openShareSheet('Fertig! Teile jetzt jedem seinen persönlichen Link – damit ist er sofort dabei, ganz ohne Installation oder Konto.');
     };
@@ -912,9 +919,12 @@
       })
       .catch(() => {});
   }
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { invalidateOrder(); pull(); } });
-  setInterval(() => { if (!document.hidden && cfg) pull(); }, 20000); // Auto-Sync alle 20 s
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && !firstRunOpen) { invalidateOrder(); pull(); } });
+  setInterval(() => { if (!document.hidden && cfg && !firstRunOpen) pull(); }, 20000); // Auto-Sync alle 20 s
   render();
+  // Brandneue Familie ohne lokalen Stand: Einrichtung sofort zeigen, nicht
+  // erst nach dem ersten Netzwerk-Pull.
+  if (!USER_SLUG && !state.members.length && !state.famName) firstRunSetup();
   pull();
 })();
 </script>
