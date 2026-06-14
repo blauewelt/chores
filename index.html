@@ -269,7 +269,7 @@
 <script src="qrcode.min.js"></script>
 <script>
 (() => {
-  const APP_VERSION = '4.3.2';
+  const APP_VERSION = '4.3.3';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -818,7 +818,7 @@
     sh.querySelectorAll('.shbtn').forEach(b => b.onclick = () => {
       const nm = b.dataset.name;
       shareLink(b.dataset.share, nm ? 'Link für ' + nm : 'Familien-Link',
-                nm ? nm + ', mach mit bei unseren Haushalts-Aufgaben:' : 'Mach mit bei unseren Haushalts-Aufgaben:');
+                nm ? nm + ', mach mit bei ' + (state.famName || 'unseren Aufgaben') + ':' : 'Mach mit bei ' + (state.famName || 'unseren Aufgaben') + ':');
     });
     sh.showModal();
   }
