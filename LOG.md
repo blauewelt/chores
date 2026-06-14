@@ -2,6 +2,17 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-14 — v4.2.3: Reihenfolge waehrend der Sitzung eingefroren
+
+- Kachel-Reihenfolge wird einmal berechnet und gecacht; 20-Sekunden-Auto-Sync
+  und Wechsel in den Vordergrund aktualisieren weiterhin Daten und Punkte,
+  ordnen die Kacheln aber NICHT mehr um — nichts springt unter dem Finger weg
+- Neuberechnung nur bei erwartbaren Anlaessen: Tab-Wechsel, App in den
+  Vordergrund holen, Aufgabe anlegen/aendern/loeschen
+- Bei gleicher Aufgaben-Menge bleibt die gemerkte Reihenfolge bestehen,
+  auch wenn sich Nutzungszahlen im Hintergrund aendern
+- APP_VERSION → 4.2.3, SW cache → `haushalt-v31`
+
 ## 2026-06-14 — v4.2.2: Kacheln nach Gruppe sortiert
 
 - Kompromiss-Sortierung: Aufgaben nach erstem Wort gruppiert; Gruppen nach
