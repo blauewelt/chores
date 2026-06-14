@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Rossi WG</title>
-<meta name="description" content="Wer macht was in der Rossi WG – und wer sammelt die Punkte.">
+<title>Haushalt</title>
+<meta name="description" content="Wer macht was im Haushalt – und wer sammelt die Punkte.">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#141A17">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -180,7 +180,7 @@
 </head>
 <body>
 <header>
-  <h1>Rossi WG</h1>
+  <h1>Haushalt</h1>
   <div class="headbtns">
     <button class="iconbtn" id="openSync"><span class="syncdot" id="syncDot"></span>Sync</button>
     <button class="iconbtn" id="openMembers">Personen</button>
@@ -258,7 +258,7 @@
 
 <script>
 (() => {
-  const APP_VERSION = '4.1.0';
+  const APP_VERSION = '4.2.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -312,7 +312,7 @@
   }
 
   // ---------- State ----------
-  let state = { members: [], chores: [], log: [] };
+  let state = { members: [], chores: [], log: [], famName: '' };
   try { state = JSON.parse(localStorage.getItem(LS_STATE)) || state; } catch {}
   // einmalige Übernahme der Personen aus v1
   if (!state.members.length) {
@@ -378,11 +378,17 @@
   async function pull() {
     if (!cfg) return;
     try {
-      const [members, chores, log] = await Promise.all([
+      const [members, chores, log, fam] = await Promise.all([
         sb('members?select=*&order=name'),
         sb('chores?select=*&order=points.desc,name'),
-        sb('log?select=*&order=done_at.desc&limit=300')
+        sb('log?select=*&order=done_at.desc&limit=300'),
+        sb('families?select=name')
       ]);
+      state.famName = (fam[0] && fam[0].name) || '';
+      if (!members.length && !state.famName && !USER_SLUG) {
+        // Komplett neue Familie → Ersteinrichtung
+        syncOk = true; render(); firstRunSetup(); return;
+      }
       if (!members.length) {
         // Leeres Backend → dieses Gerät lädt seinen lokalen Stand hoch
         await upsert('members', state.members);
@@ -400,6 +406,43 @@
       }
       syncOk = true; save(); render();
     } catch (e) { syncOk = false; render(); }
+  }
+
+  function firstRunSetup() {
+    const SEED = [
+      ['Küche aufräumen', 1], ['Geschirr ausräumen', 1], ['Einkaufen', 2],
+      ['Kochen', 2], ['Wäsche waschen', 1], ['Bad putzen', 3], ['Müll rausbringen', 1]
+    ];
+    const d = document.createElement('div');
+    d.id = 'firstRun';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99;background:var(--bg);overflow:auto;padding:32px 22px calc(32px + env(safe-area-inset-bottom))';
+    d.innerHTML = `
+      <div style="max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:18px">
+        <h1 style="font-family:var(--display);font-weight:800;font-size:30px;margin:0;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Neuer Haushalt</h1>
+        <label style="display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:14px">Name des Haushalts
+          <input id="frName" type="text" maxlength="40" placeholder="z. B. WG Sonnenstrasse" style="padding:12px;font-size:16px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink)"></label>
+        <div style="color:var(--muted);font-size:14px">Personen (eine pro Zeile)</div>
+        <textarea id="frMembers" rows="4" placeholder="Anna&#10;Ben&#10;Carla" style="padding:12px;font-size:16px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);resize:vertical"></textarea>
+        <label style="display:flex;gap:9px;align-items:center;color:var(--ink);font-size:15px"><input id="frSeed" type="checkbox" checked style="width:18px;height:18px"> Typische Aufgaben vorausfüllen</label>
+        <button id="frGo" style="border:none;border-radius:999px;padding:14px;font-size:16px;font-weight:700;background:var(--accent);color:#0C1220;cursor:pointer">Los geht's</button>
+      </div>`;
+    document.body.appendChild(d);
+    document.getElementById('frGo').onclick = async () => {
+      const name = document.getElementById('frName').value.trim() || 'Haushalt';
+      const names = document.getElementById('frMembers').value.split('\n').map(s => s.trim()).filter(Boolean);
+      const seed = document.getElementById('frSeed').checked;
+      state.famName = name;
+      state.members = (names.length ? names : ['Ich']).map((n, i) => ({ id: uid(), name: n, color: palette[i % palette.length] }));
+      state.chores = seed ? SEED.map(([n, p]) => ({ id: uid(), name: n, points: p })) : [];
+      state.log = [];
+      save();
+      try {
+        await sb('families', 'POST', { family_id: FAMILY, name });
+        await upsert('members', state.members);
+        if (state.chores.length) await upsert('chores', state.chores);
+      } catch {}
+      d.remove(); render();
+    };
   }
 
   let badLinkShown = false;
@@ -445,6 +488,8 @@
 
   function render() {
     renderSyncDot();
+    const h1 = document.querySelector('header h1');
+    if (h1 && state.famName) { h1.textContent = state.famName; document.title = state.famName; }
     document.querySelectorAll('.tab').forEach(b =>
       b.setAttribute('aria-selected', String(b.dataset.view === view)));
 
