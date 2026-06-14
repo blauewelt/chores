@@ -1,7 +1,7 @@
 {
-  "name": "Haushalt",
-  "short_name": "Haushalt",
-  "description": "Aufgaben im Haushalt – wer macht was, und wer punktet.",
+  "name": "Fairli",
+  "short_name": "Fairli",
+  "description": "Fairli – wer macht was im Haushalt, und wer punktet.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -10,8 +10,8 @@
   "theme_color": "#12161F",
   "lang": "de",
   "icons": [
-    { "src": "icon-192.png?v=41", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png?v=41", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512-maskable.png?v=41", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icon-192.png?v=43", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png?v=43", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512-maskable.png?v=43", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
