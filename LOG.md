@@ -2,6 +2,21 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-14 — v4.3.0: Reibungsloses Teilen — Share-Sheet, Native Share, QR
+
+- Neues «Links teilen»-Sheet: listet alle persönlichen Links + Familien-Link,
+  je mit Teilen-Button und QR-Code (für Einrichtung vor Ort: scannen statt
+  tippen)
+- Teilen nutzt jetzt primär das native Share-Sheet (WhatsApp/Signal/…),
+  Clipboard nur als Fallback — ein Tipp vom Link zur Familien-Chatgruppe
+- Nach der Ersteinrichtung öffnet sich das Share-Sheet automatisch mit Hinweis,
+  damit neue Familien das Teilen sofort finden (vorher versteckt im
+  Personen-Sheet)
+- QR-Generierung offline: qrcode-generator (21 KB, dependency-free) inline,
+  im SW-Cache; funktioniert ohne Netz
+- Personen-Sheet: 🔗 und Familien-Button öffnen jetzt dieses Sheet
+- APP_VERSION → 4.3.0, SW cache → `haushalt-v32`
+
 ## 2026-06-14 — v4.2.3: Reihenfolge waehrend der Sitzung eingefroren
 
 - Kachel-Reihenfolge wird einmal berechnet und gecacht; 20-Sekunden-Auto-Sync
