@@ -269,7 +269,7 @@
 <script src="qrcode.min.js"></script>
 <script>
 (() => {
-  const APP_VERSION = '4.3.3';
+  const APP_VERSION = '4.3.4';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -510,7 +510,9 @@
   // (App-Start, Tab-Wechsel, Aufgabe angelegt/geändert/gelöscht) – nie durch
   // einen Hintergrund-Sync, damit nichts unter dem Finger wegspringt.
   let _orderCache = null;
+  let _pinned = [];                       // frisch hinzugefügte Aufgaben: vorne, neueste zuerst
   function invalidateOrder() { _orderCache = null; }
+  function pinChore(id) { _pinned = _pinned.filter(x => x !== id); _pinned.unshift(id); invalidateOrder(); }
   function choreOrder() {
     const ids = state.chores.map(c => c.id).sort().join('|');
     if (_orderCache && _orderCache.ids === ids) {
@@ -518,7 +520,7 @@
       // (theoretisch) ans Ende, gelöschte raus.
       const byId = new Map(state.chores.map(c => [c.id, c]));
       const kept = _orderCache.order.filter(id => byId.has(id)).map(id => byId.get(id));
-      return kept;
+      return applyPins(kept);
     }
     const counts = {};
     state.log.forEach(e => counts[e.chore_id] = (counts[e.chore_id] || 0) + 1);
@@ -537,8 +539,16 @@
             || groupName[ga].localeCompare(groupName[gb], 'de', { sensitivity: 'base' });
       return a.name.localeCompare(b.name, 'de', { sensitivity: 'base' });
     });
-    _orderCache = { ids, order: ordered.map(c => c.id) };
-    return ordered;
+    const pinnedFirst = applyPins(ordered);
+    _orderCache = { ids, order: pinnedFirst.map(c => c.id) };
+    return pinnedFirst;
+  }
+  function applyPins(list) {
+    if (!_pinned.length) return list;
+    const byId = new Map(list.map(c => [c.id, c]));
+    const front = _pinned.map(id => byId.get(id)).filter(Boolean);
+    const frontIds = new Set(_pinned);
+    return front.concat(list.filter(c => !frontIds.has(c.id)));
   }
 
   function render() {
@@ -669,6 +679,7 @@
   // ---------- Aufgaben-Sheet ----------
   const choreSheet = document.getElementById('choreSheet');
   let editingChore = null;
+  let justAdded = null;
 
   function setPtsSlider(v) {
     const sl = document.getElementById('cPts');
@@ -718,9 +729,16 @@
       const c = { id: uid(), name, points };
       state.chores.push(c);
       push(() => sb('chores', 'POST', c));
+      pinChore(c.id);
+      justAdded = c.id;
     }
     invalidateOrder();
     save(); render();
+    if (justAdded) {
+      const el = document.querySelector('.chore[data-cid="' + justAdded + '"]');
+      if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 500); }
+      justAdded = null;
+    }
   });
 
   // ---------- Personen-Sheet ----------
