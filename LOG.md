@@ -2,6 +2,17 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-14 — v4.3.4: Neue Aufgabe erscheint sofort ganz oben
+
+- BUG: Nach «Aufgabe hinzufügen» sortierte die Gruppierung die neue Kachel
+  irgendwo nach unten (alphabetisch in ihre Gruppe) → wirkte, als erschiene
+  sie gar nicht; erst ein Tab-Wechsel machte sie sichtbar
+- Frisch hinzugefügte Aufgaben werden jetzt für die Sitzung «angepinnt»:
+  sie stehen vorne (neueste zuerst), bis die Reihenfolge natürlich neu
+  berechnet wird (App-Start, Tab-Wechsel). Beim Hinzufügen scrollt die Liste
+  zur neuen Kachel und sie blinkt kurz auf
+- APP_VERSION → 4.3.4, SW cache → haushalt-v36
+
 ## 2026-06-14 — v4.3.3: Share-Text nutzt Haushaltsnamen
 
 - Teilen-Text «… mach mit bei unseren Haushalts-Aufgaben» (klobig, und
