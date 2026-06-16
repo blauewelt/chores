@@ -2,6 +2,18 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-16 — v4.4.0: Neues Icon — blaue Seifenblasen auf Weiss
+
+- App-Icon ersetzt (Schwamm war bei Launcher-Grösse schlecht erkennbar):
+  vier blaue, klar getrennte Seifenblasen unterschiedlicher Grösse auf
+  reinweissem Grund. Per Pollinations/flux generiert, Hintergrund
+  programmatisch auf reines #FFFFFF bereinigt und zentriert
+- Maskable-Variante mit nach innen gezogenem Motiv (~62 %), damit Androids
+  Kreis-/Squircle-Zuschnitt keine Blase abschneidet
+- Splash/Theme-Farbe → Weiss (passt zum Icon), Icon-Cache-Buster ?v=44
+- APP_VERSION → 4.4.0, SW cache → haushalt-v37
+- Hinweis: Android-WebAPK cached das Icon; ggf. App neu hinzufügen
+
 ## 2026-06-14 — v4.3.4: Neue Aufgabe erscheint sofort ganz oben
 
 - BUG: Nach «Aufgabe hinzufügen» sortierte die Gruppierung die neue Kachel
