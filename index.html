@@ -270,7 +270,7 @@
 <script src="qrcode.min.js"></script>
 <script>
 (() => {
-  const APP_VERSION = '4.7.0';
+  const APP_VERSION = '4.7.1';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -359,28 +359,34 @@
       return null;
     }
     const d = document.createElement('div');
-    d.style.cssText = 'position:fixed;inset:0;z-index:99;background:var(--bg);overflow:auto;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:32px;gap:14px';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99;background:var(--bg);overflow:auto;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:32px;gap:16px';
+    const btn = 'border:none;border-radius:999px;padding:15px 28px;font-size:16px;font-weight:700;cursor:pointer;width:100%;max-width:300px';
     d.innerHTML = `
-      <h1 style="font-family:var(--display);font-weight:800;font-size:32px;margin:0;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Fairli</h1>
-      ${last && last.family ? `
-        <p style="color:var(--muted);max-width:320px;margin:0">Willkommen zurück!</p>
-        <button id="resume" style="border:none;border-radius:999px;padding:14px 26px;font-size:16px;font-weight:700;background:var(--accent);color:#0C1220;cursor:pointer">Zu meinem Haushalt</button>
-        <div style="color:var(--muted);font-size:13px;margin:4px 0">oder</div>` : `
-        <p style="color:var(--muted);max-width:320px;margin:0">Füge den Einladungs-Link deiner Familie ein, um beizutreten.</p>`}
-      <input id="joinLink" type="text" inputmode="url" autocomplete="off" autocapitalize="off"
-        placeholder="Einladungs-Link einfügen" style="width:100%;max-width:340px;padding:12px;font-size:15px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink)">
-      <button id="joinBtn" style="border:none;border-radius:999px;padding:13px 24px;font-size:15px;font-weight:700;background:var(--card);border:1px solid var(--line);color:var(--ink);cursor:pointer">Beitreten</button>
-      <div style="color:var(--muted);font-size:13px;margin:8px 0 0">Noch kein Haushalt?</div>
-      <button id="newFam" style="border:none;background:none;color:var(--accent);font-size:15px;font-weight:600;cursor:pointer;text-decoration:underline">Neuen Haushalt erstellen</button>`;
+      <h1 style="font-family:var(--display);font-weight:800;font-size:34px;margin:0 0 4px;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Fairli</h1>
+      <p style="color:var(--muted);max-width:300px;margin:0 0 8px">Aufgaben im Haushalt – fair verteilt.</p>
+      ${last && last.family ? `<button id="resume" style="${btn};background:var(--accent);color:#0C1220">Zu meinem Haushalt</button>` : ''}
+      <button id="newFam" style="${btn};background:${last && last.family ? 'var(--card);border:1px solid var(--line);color:var(--ink)' : 'var(--accent);color:#0C1220'}">Neuen Haushalt erstellen</button>
+      <button id="showJoin" style="border:none;background:none;color:var(--muted);font-size:14px;cursor:pointer;margin-top:4px">Ich habe einen Einladungs-Link</button>
+      <div id="joinWrap" style="display:none;flex-direction:column;gap:10px;width:100%;max-width:300px;margin-top:4px">
+        <input id="joinLink" type="text" inputmode="url" autocomplete="off" autocapitalize="off"
+          placeholder="Link einfügen" style="width:100%;padding:12px;font-size:15px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);box-sizing:border-box">
+        <button id="joinBtn" style="${btn};background:var(--card);border:1px solid var(--line);color:var(--ink)">Beitreten</button>
+      </div>`;
     document.body.appendChild(d);
     const resume = document.getElementById('resume');
     if (resume) resume.onclick = () => goto(last.family, last.userSlug);
+    document.getElementById('newFam').onclick = () => goto('fam-' + uid() + uid(), null);
+    document.getElementById('showJoin').onclick = () => {
+      const w = document.getElementById('joinWrap');
+      w.style.display = 'flex';
+      document.getElementById('showJoin').style.display = 'none';
+      document.getElementById('joinLink').focus();
+    };
     document.getElementById('joinBtn').onclick = () => {
       const p = parseAny(document.getElementById('joinLink').value);
       if (!p) { toast('Link nicht erkannt'); return; }
       goto(p.family, p.slug);
     };
-    document.getElementById('newFam').onclick = () => goto('fam-' + uid() + uid(), null);
     return;
   }
 
