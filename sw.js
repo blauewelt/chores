@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v40';
+const CACHE = 'haushalt-v41';
 const SHELL = [
   './',
   './index.html',
@@ -30,6 +30,16 @@ self.addEventListener('activate', e => {
 // App-Shell: cache-first; alles andere (z. B. Google Fonts): network-first mit Cache-Fallback
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // Navigationsanfragen auf tiefe Pfade (/chores/f/...) → App-Shell ausliefern
+  if (e.request.mode === 'navigate') {
+    const u = new URL(e.request.url);
+    if (u.origin === location.origin && u.pathname.startsWith('/chores/')) {
+      e.respondWith(
+        caches.match('./index.html').then(c => c || fetch('./index.html')).catch(() => fetch(e.request))
+      );
+      return;
+    }
+  }
   // Nur App-Shell und Fonts cachen – API-Aufrufe (Supabase) IMMER ans Netz
   const url = new URL(e.request.url);
   const isShell = url.origin === location.origin;
