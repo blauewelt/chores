@@ -31,7 +31,7 @@
   header{padding:calc(16px + env(safe-area-inset-top)) 18px 4px; position:relative}
   header h1{font-family:var(--display); font-weight:800; font-size:34px; letter-spacing:-.02em; margin:0;
     background:linear-gradient(100deg, #EAF1EB, var(--accent)); -webkit-background-clip:text; background-clip:text; color:transparent}
-  .headbtns{position:absolute; top:calc(16px + env(safe-area-inset-top)); right:14px; display:flex; gap:6px}
+  .headbtns{position:absolute; top:calc(16px + env(safe-area-inset-top)); right:14px; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; max-width:62%}
   .iconbtn{border:1px solid var(--line); background:var(--card); border-radius:999px;
     padding:7px 13px; font-size:14px; font-weight:600; color:var(--ink); cursor:pointer}
   .syncdot{display:inline-block; width:8px; height:8px; border-radius:50%; background:#445248; margin-right:5px; vertical-align:1px}
@@ -193,6 +193,7 @@
   <h1>Fairli</h1>
   <div class="headbtns">
     <button class="iconbtn" id="openSync"><span class="syncdot" id="syncDot"></span>Sync</button>
+    <button class="iconbtn" id="openShareTop">Teilen</button>
     <button class="iconbtn" id="openMembers">Personen</button>
   </div>
 </header>
@@ -269,7 +270,7 @@
 <script src="qrcode.min.js"></script>
 <script>
 (() => {
-  const APP_VERSION = '4.6.1';
+  const APP_VERSION = '4.7.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -350,9 +351,9 @@
       location.href = routeUrl(fam, slug);
     };
     function parseAny(input) {
-      // akzeptiert vollen Link, nur den Hash, oder nur den Familien-Slug
+      // akzeptiert vollen Pfad-Link, Hash-Link, oder nur den Familien-Slug
       input = (input || '').trim();
-      const m = input.match(/#\/?f\/([a-z0-9-]{4,64})(?:\/u\/([a-z0-9]{4,64}))?/i);
+      const m = input.match(/f\/([a-z0-9-]{4,64})(?:\/u\/([a-z0-9]{4,64}))?/i);
       if (m) return { family: m[1].toLowerCase(), slug: m[2] ? m[2].toLowerCase() : null };
       if (/^[a-z0-9-]{4,64}$/i.test(input)) return { family: input.toLowerCase(), slug: null };
       return null;
@@ -521,7 +522,7 @@
       } catch {}
       firstRunOpen = false;
       d.remove(); render();
-      openShareSheet('Fertig! Teile jetzt jedem seinen persönlichen Link – damit ist er sofort dabei, ganz ohne Installation oder Konto.');
+      openShareSheet('Fertig! Füge Fairli zu deinem Home-Bildschirm hinzu (siehe unten), und teile jedem seinen persönlichen Link – damit ist er sofort dabei, ohne Installation oder Konto.');
     };
   }
 
@@ -699,6 +700,7 @@
   if (USER_SLUG) {
     document.getElementById('openMembers').style.display = 'none';
     document.getElementById('openSync').style.display = 'none';
+    const st = document.getElementById('openShareTop'); if (st) st.style.display = 'none';
   }
 
   let pressLock = false;
@@ -816,6 +818,8 @@
       </div>`).join('');
     wrap.querySelectorAll('.mrow').forEach((r, i) => r.querySelector('input[type=text]').value = state.members[i].name);
   }
+  const _shareTop = document.getElementById('openShareTop');
+  if (_shareTop) _shareTop.addEventListener('click', () => openShareSheet(''));
   document.getElementById('openMembers').addEventListener('click', () => {
     changedMembers.clear(); renderMemberRows();
     let fl = document.getElementById('famLink');
@@ -881,9 +885,21 @@
       </div>`;
     }).join('');
     const famQr = qrDataUrl(familyLink());
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const installTip = isIOS
+      ? 'Tippe unten auf «Teilen» und dann «Zum Home-Bildschirm», um Fairli wie eine App zu öffnen.'
+      : 'Menü (⋮) → «Zum Startbildschirm hinzufügen», um Fairli wie eine App zu öffnen.';
     sh.innerHTML = `<div class="sheet">
       <div class="sheetbar"><h2>Links teilen</h2><button class="x" id="closeShare" aria-label="Schließen">×</button></div>
-      ${intro ? `<p style="color:var(--muted);margin:0 0 14px">${esc(intro)}</p>` : ''}
+      ${intro ? `<p style="color:var(--muted);margin:0 0 12px">${esc(intro)}</p>` : ''}
+      <div style="background:color-mix(in srgb, var(--accent) 14%, transparent);border:1px solid color-mix(in srgb, var(--accent) 35%, transparent);border-radius:14px;padding:12px 14px;margin:0 0 14px;text-align:left">
+        <div style="font-weight:700;margin-bottom:4px">Dein Haushalts-Link</div>
+        <div style="color:var(--muted);font-size:13px;word-break:break-all;margin-bottom:8px">${esc(familyLink())}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="shbtn" data-share="${esc(familyLink())}" data-name="Familie">Teilen / Kopieren</button>
+        </div>
+        <div style="color:var(--muted);font-size:12.5px;margin-top:10px">📲 ${esc(installTip)}</div>
+      </div>
       ${rows}
       <div class="shrow shfam">
         <div class="shhead">
