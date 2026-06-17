@@ -269,7 +269,7 @@
 <script src="qrcode.min.js"></script>
 <script>
 (() => {
-  const APP_VERSION = '4.4.1';
+  const APP_VERSION = '4.4.2';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -280,14 +280,41 @@
     const m = location.hash.match(/^#\/?f\/([a-z0-9-]{4,64})(?:\/u\/([a-z0-9]{4,64}))?$/i);
     return m ? { family: m[1].toLowerCase(), userSlug: m[2] ? m[2].toLowerCase() : null } : null;
   }
+  function saveRoute(r) { try { localStorage.setItem(LS_ROUTE, JSON.stringify(r)); } catch {} }
+  function loadRoute() { try { return JSON.parse(localStorage.getItem(LS_ROUTE)); } catch { return null; } }
+
   let route = parseHash();
-  if (route) localStorage.setItem(LS_ROUTE, JSON.stringify(route));
-  else { try { route = JSON.parse(localStorage.getItem(LS_ROUTE)); } catch {} }
+  if (route) {
+    saveRoute(route);
+  } else {
+    // Kein Hash (z. B. iOS-Homescreen-Start über start_url ohne Hash):
+    // letzte bekannte Route wiederherstellen UND den Hash zurückschreiben,
+    // damit Reloads/Standalone-Starts konsistent in der Familie bleiben.
+    route = loadRoute();
+    if (route && route.family) {
+      const h = '#f/' + route.family + (route.userSlug ? '/u/' + route.userSlug : '');
+      try { history.replaceState(null, '', h); } catch { location.hash = h; }
+    }
+  }
   const FAMILY = (route && route.family) || null;
   const USER_SLUG = (route && route.userSlug) || null;
+
+  // iOS-Fix: Manifest dynamisch erzeugen, damit der Homescreen-Start die
+  // Familie (und ggf. den persönlichen Slug) im start_url trägt. Sonst startet
+  // iOS am blanken start_url ohne Hash und landet in der Ersteinrichtung.
+  if (FAMILY) {
+    fetch('manifest.json').then(r => r.json()).then(mf => {
+      const h = '#f/' + FAMILY + (USER_SLUG ? '/u/' + USER_SLUG : '');
+      mf.start_url = './index.html' + h;
+      mf.scope = './';
+      const blob = new Blob([JSON.stringify(mf)], { type: 'application/manifest+json' });
+      const link = document.querySelector('link[rel="manifest"]');
+      if (link) link.href = URL.createObjectURL(blob);
+    }).catch(() => {});
+  }
   window.addEventListener('hashchange', () => {
     const r = parseHash();
-    if (r) { localStorage.setItem(LS_ROUTE, JSON.stringify(r)); location.reload(); }
+    if (r) { saveRoute(r); location.reload(); }
   });
 
   const LS_STATE = 'haushalt.v2:' + FAMILY;
@@ -318,7 +345,11 @@
       <p style="color:var(--muted);max-width:300px;margin:0">Öffne den Einladungs-Link deiner Familie, um loszulegen — oder starte einen neuen Haushalt.</p>
       <button id="newFam" style="margin-top:10px;border:none;border-radius:999px;padding:14px 26px;font-size:16px;font-weight:700;background:var(--accent);color:#0C1220;cursor:pointer">Neue Familie erstellen</button>`;
     document.body.appendChild(d);
-    document.getElementById('newFam').onclick = () => { location.hash = '#f/fam-' + uid() + uid(); };
+    document.getElementById('newFam').onclick = () => {
+      const fam = 'fam-' + uid() + uid();
+      saveRoute({ family: fam, userSlug: null });
+      location.hash = '#f/' + fam;
+    };
     return;
   }
 
