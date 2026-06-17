@@ -269,39 +269,55 @@
 <script src="qrcode.min.js"></script>
 <script>
 (() => {
-  const APP_VERSION = '4.5.0';
+  const APP_VERSION = '4.6.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
   // #f/<familie>           → Familien-Link (voller Zugriff)
   // #f/<familie>/u/<slug>  → persönlicher Link (Punkte nur für sich selbst)
   const LS_ROUTE = 'haushalt.route';
-  function parseHash() {
-    const m = location.hash.match(/^#\/?f\/([a-z0-9-]{4,64})(?:\/u\/([a-z0-9]{4,64}))?$/i);
+  const BASE = location.pathname.replace(/index\.html$/, '').replace(/[^/]*$/, '');
+  function parseRouteString(s) {
+    if (!s) return null;
+    const m = s.match(/f\/([a-z0-9-]{4,64})(?:\/u\/([a-z0-9]{4,64}))?/i);
     return m ? { family: m[1].toLowerCase(), userSlug: m[2] ? m[2].toLowerCase() : null } : null;
   }
   function saveRoute(r) { try { localStorage.setItem(LS_ROUTE, JSON.stringify(r)); } catch {} }
   function loadRoute() { try { return JSON.parse(localStorage.getItem(LS_ROUTE)); } catch { return null; } }
+  // kanonische Pfad-URL einer Familie/Person (für Teilen & Homescreen-Install)
+  function routeUrl(family, slug) {
+    return location.origin + BASE + 'f/' + family + (slug ? '/u/' + slug : '');
+  }
 
-  let route = parseHash();
+  // Reihenfolge der Quellen: ?r= (vom 404-Handoff), echter Pfad, Hash (legacy).
+  let route = null;
+  const qr = new URLSearchParams(location.search).get('r');
+  if (qr) route = parseRouteString(qr);
+  if (!route) {
+    const afterBase = location.pathname.slice(BASE.length);
+    route = parseRouteString(afterBase);
+  }
+  if (!route) route = parseRouteString(location.hash.replace(/^#\/?/, ''));
+
   if (route) {
     saveRoute(route);
+    // URL auf saubere Pfadform bringen, ohne Reload (auch für Standalone-Reloads)
+    try { history.replaceState(null, '', routeUrl(route.family, route.userSlug)); } catch {}
   } else {
-    // Kein Hash (z. B. iOS-Homescreen-Start über start_url ohne Hash):
-    // letzte bekannte Route wiederherstellen UND den Hash zurückschreiben,
-    // damit Reloads/Standalone-Starts konsistent in der Familie bleiben.
     route = loadRoute();
     if (route && route.family) {
-      const h = '#f/' + route.family + (route.userSlug ? '/u/' + route.userSlug : '');
-      try { history.replaceState(null, '', h); } catch { location.hash = h; }
+      try { history.replaceState(null, '', routeUrl(route.family, route.userSlug)); } catch {}
     }
   }
   const FAMILY = (route && route.family) || null;
   const USER_SLUG = (route && route.userSlug) || null;
 
-  window.addEventListener('hashchange', () => {
-    const r = parseHash();
-    if (r) { saveRoute(r); location.reload(); }
+  window.addEventListener('popstate', () => {
+    const r = parseRouteString(location.pathname.slice(BASE.length)) ||
+              parseRouteString(location.hash.replace(/^#\/?/, ''));
+    if (r && (!route || r.family !== route.family || r.userSlug !== route.userSlug)) {
+      saveRoute(r); location.reload();
+    }
   });
 
   const LS_STATE = 'haushalt.v2:' + FAMILY;
@@ -331,7 +347,7 @@
     const last = loadRoute();
     const goto = (fam, slug) => {
       saveRoute({ family: fam, userSlug: slug || null });
-      location.hash = '#f/' + fam + (slug ? '/u/' + slug : '');
+      location.href = routeUrl(fam, slug);
     };
     function parseAny(input) {
       // akzeptiert vollen Link, nur den Hash, oder nur den Familien-Slug
@@ -821,12 +837,12 @@
     changedMembers.add(m.id); save();
   });
   const appBase = () => location.origin + location.pathname;
-  const familyLink = () => appBase() + '#f/' + FAMILY;
+  const familyLink = () => routeUrl(FAMILY, null);
   function ensureSlug(m) {
     if (!m.url_slug) { m.url_slug = uid() + uid(); save(); push(() => upsert('members', [m])); }
     return m.url_slug;
   }
-  const userLink = m => appBase() + '#f/' + FAMILY + '/u/' + ensureSlug(m);
+  const userLink = m => routeUrl(FAMILY, ensureSlug(m));
 
   // Teilen: native Share-Sheet bevorzugt, sonst Clipboard, sonst Anzeige
   async function shareLink(url, title, text) {
