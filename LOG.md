@@ -2,6 +2,22 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-16 — v4.5.0: Einstiegs-Screen statt iOS-Sackgasse
+
+- Erkenntnis: iOS startet Homescreen-PWAs IMMER am statischen start_url ohne
+  Hash und ignoriert dynamische Manifeste/Hash im start_url (bekanntes
+  WebKit-Verhalten, vgl. GitLab-Issue). Der v4.4.2-Ansatz (dynamisches
+  Manifest) konnte auf iOS nie greifen → entfernt
+- Neuer Einstiegs-Screen, wenn keine Familie aktiv ist (statt Sackgasse mit
+  nur «Neue Familie»):
+  * «Zu meinem Haushalt» (falls letzte Route in localStorage vorhanden)
+  * Einladungs-Link einfügen (akzeptiert vollen Link, nur #-Hash, oder nur
+    den Familien-Slug) → Beitreten
+  * «Neuen Haushalt erstellen» als nachrangige Option
+- Damit kommt auch eine frisch installierte iOS-Verknüpfung mit isoliertem
+  Storage per Link-Einfügen in einem Schritt in die Familie
+- APP_VERSION → 4.5.0, SW cache → haushalt-v40
+
 ## 2026-06-16 — v4.4.2: iOS-Homescreen landet wieder in der Familie
 
 - BUG (iPhone/Chrome → Zum Homescreen): Der installierte Start öffnete
