@@ -2,6 +2,25 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-16 — v4.6.0: Pfad-basierte Familien-URLs (1-Klick-iOS-Install)
+
+- Familien-Links sind jetzt echte Pfade statt Hash:
+  `…/chores/f/<familie>` bzw. `…/chores/f/<familie>/u/<slug>`. iOS bäckt den
+  vollen Pfad in start_url ein → Homescreen-Icon startet direkt in der Familie,
+  ohne Einfüge-/Wiederbeitreten-Schritt
+- `404.html`: GitHub Pages liefert es für jeden unbekannten Pfad; es leitet
+  `…/chores/f/...` auf `…/chores/index.html?r=f/...` um (Standard-SPA-Trick),
+  damit der tiefe Pfad „existiert" und iOS ihn erfassen kann
+- App liest Route aus `?r=` (404-Handoff), echtem Pfad und — abwärtskompatibel
+  — aus dem Hash; kanonisiert per history.replaceState auf die Pfadform
+- Teilen-Links und Navigation auf Pfadform umgestellt; Manifest: scope
+  `/chores/`, start_url `/chores/index.html`, stabile `id`
+- Service Worker: Navigationsanfragen auf tiefe `/chores/...`-Pfade liefern die
+  App-Shell (offline-fähig, kein 404 in der installierten App); Cache v41
+- Bestehende Hash-Links (`#f/...`) funktionieren weiterhin
+- APP_VERSION → 4.6.0, SW cache → haushalt-v41
+- Für 1-Klick: neuen Pfad-Link öffnen und damit zum Homescreen hinzufügen
+
 ## 2026-06-16 — v4.5.0: Einstiegs-Screen statt iOS-Sackgasse
 
 - Erkenntnis: iOS startet Homescreen-PWAs IMMER am statischen start_url ohne
