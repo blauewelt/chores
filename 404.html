@@ -2,15 +2,20 @@
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Fairli</title>
+<link rel="manifest" href="/chores/manifest.json">
+<link rel="apple-touch-icon" href="/chores/icon-192.png?v=45">
+<link rel="icon" href="/chores/icon-192.png?v=45">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="apple-mobile-web-app-title" content="Fairli">
+<style>html,body{margin:0;height:100%;background:#fff}</style>
 <script>
 // GitHub Pages 404 fallback for path-based routing.
-// Capture the deep path (e.g. /chores/f/rossi-xxx[/u/slug]) and redirect to the
-// app's index, preserving the route as a query that index.html turns into state.
+// Forward the deep path (e.g. /chores/f/rossi-xxx[/u/slug]) into the app at
+// /chores/index.html?r=..., which index.html turns into the active route.
 (function () {
   var BASE = '/chores/';
   var path = location.pathname;
   var rest = path.indexOf(BASE) === 0 ? path.slice(BASE.length) : path.replace(/^\//, '');
-  // rest looks like "f/rossi-xxx" or "f/rossi-xxx/u/slug"
   var target = BASE + 'index.html';
   if (rest) target += '?r=' + encodeURIComponent(rest);
   location.replace(target);
