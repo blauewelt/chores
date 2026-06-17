@@ -2,6 +2,14 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-16 — v4.4.1: Icon in Royalblau, drei Blasen
+
+- Icon-Farbe auf sattes Royalblau und auf drei klar getrennte Blasen reduziert
+  (winzige Blasen entfernt — bei Launcher-Grösse ohnehin unsichtbar);
+  Geistre-Ring der entfernten Mini-Blase sauber entfernt (nur 3 Blobs übrig)
+- Maskable mit nach innen gezogenem Motiv, kein Beschnitt
+- Icon-Cache-Buster ?v=45, APP_VERSION → 4.4.1, SW cache → haushalt-v38
+
 ## 2026-06-16 — v4.4.0: Neues Icon — blaue Seifenblasen auf Weiss
 
 - App-Icon ersetzt (Schwamm war bei Launcher-Grösse schlecht erkennbar):
