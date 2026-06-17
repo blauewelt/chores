@@ -2,6 +2,17 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-16 — v4.6.1: Icon/Name beim Pfad-Install korrigiert
+
+- BUG: Beim Hinzufügen über einen Pfad-Link (…/chores/f/...) las iOS die
+  Metadaten aus 404.html, die kein Manifest/Icon/Titel hatte → Verknüpfung
+  ohne Icon, falscher Name (heller «R» auf dunkel)
+- 404.html bekommt denselben PWA-Kopf wie index.html: Manifest-Link,
+  apple-touch-icon, Titel «Fairli», theme-color, apple-mobile-web-app-title.
+  Bewusst KEIN apple-mobile-web-app-capable (würde start_url-Handling brechen)
+- APP_VERSION → 4.6.1, SW cache → haushalt-v42
+- Betroffene Verknüpfung einmal entfernen und über den Pfad-Link neu hinzufügen
+
 ## 2026-06-16 — v4.6.0: Pfad-basierte Familien-URLs (1-Klick-iOS-Install)
 
 - Familien-Links sind jetzt echte Pfade statt Hash:
