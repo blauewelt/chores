@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fairli</title>
+<script>
+// GitHub Pages 404 fallback for path-based routing.
+// Capture the deep path (e.g. /chores/f/rossi-xxx[/u/slug]) and redirect to the
+// app's index, preserving the route as a query that index.html turns into state.
+(function () {
+  var BASE = '/chores/';
+  var path = location.pathname;
+  var rest = path.indexOf(BASE) === 0 ? path.slice(BASE.length) : path.replace(/^\//, '');
+  // rest looks like "f/rossi-xxx" or "f/rossi-xxx/u/slug"
+  var target = BASE + 'index.html';
+  if (rest) target += '?r=' + encodeURIComponent(rest);
+  location.replace(target);
+})();
+</script>
+</head><body></body></html>
