@@ -2,6 +2,16 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-16 — v4.7.1: Startseite vereinfacht
+
+- Einstiegs-Screen aufgeräumt und auf den Hauptfall ausgerichtet:
+  «Neuen Haushalt erstellen» ist jetzt der primäre Button (zuoberst bzw.
+  als Akzent-Button). «Zu meinem Haushalt» erscheint nur bei vorhandener
+  letzter Familie. Der Einladungs-Link-Fall ist hinter «Ich habe einen
+  Einladungs-Link» eingeklappt (Eingabefeld erscheint erst auf Tippen)
+- Weniger Text, klare Hierarchie statt prominentem Paste-Feld
+- APP_VERSION → 4.7.1, SW cache → haushalt-v44
+
 ## 2026-06-16 — v4.7.0: Onboarding-Flow aufgeräumt
 
 - (Bugfix) Beitreten-Feld akzeptierte die neuen PFAD-Links nicht (nur Hash/
