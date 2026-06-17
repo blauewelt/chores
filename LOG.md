@@ -2,6 +2,22 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-16 — v4.7.0: Onboarding-Flow aufgeräumt
+
+- (Bugfix) Beitreten-Feld akzeptierte die neuen PFAD-Links nicht (nur Hash/
+  Slug) → parseAny erkennt jetzt auch `…/chores/f/<fam>[/u/<slug>]`
+- Bare-Link merkt die letzte Familie weiterhin («Zu meinem Haushalt»),
+  verhindert versehentliches Anlegen einer zweiten Familie
+- Share-Sheet nach Setup hebt den EIGENEN Haushalts-Link des Erstellers
+  hervor (eigener Block oben, Teilen/Kopieren) + plattformspezifischer
+  «Zum Home-Bildschirm»-Hinweis (iOS: Teilen→Zum Home-Bildschirm; Android:
+  ⋮→Zum Startbildschirm)
+- Neuer Header-Button «Teilen»: öffnet das Link-/QR-Sheet jederzeit vom
+  Hauptscreen (falls jemand die beim Setup geteilten Links vergessen hat);
+  bei persönlichen Links ausgeblendet
+- Header darf bei drei Buttons umbrechen, kollidiert nicht mit dem Titel
+- APP_VERSION → 4.7.0, SW cache → haushalt-v43
+
 ## 2026-06-16 — v4.6.1: Icon/Name beim Pfad-Install korrigiert
 
 - BUG: Beim Hinzufügen über einen Pfad-Link (…/chores/f/...) las iOS die
