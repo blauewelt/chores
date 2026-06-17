@@ -2,6 +2,17 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-16 — v4.7.2: Teilen-Sheet entschlackt
+
+- Familien-Link erschien doppelt (oben Block + unten «Ganze Familie») →
+  auf EINEN Block oben reduziert: Familien-Link + QR + Installationshinweis
+- «siehe unten» entfernt (war irreführend, da langer Inhalt folgt);
+  Installationshinweis sitzt jetzt direkt beim Familien-Block, knapper Text
+- Klare Gliederung: «Ganze Familie» oben, darunter Überschrift
+  «Persönliche Links», dann die Personen
+- Titel «Links teilen» → «Teilen»; Intro nach Setup entfernt
+- APP_VERSION → 4.7.2, SW cache → haushalt-v45
+
 ## 2026-06-16 — v4.7.1: Startseite vereinfacht
 
 - Einstiegs-Screen aufgeräumt und auf den Hauptfall ausgerichtet:
