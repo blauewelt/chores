@@ -2,6 +2,25 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-16 — v4.4.2: iOS-Homescreen landet wieder in der Familie
+
+- BUG (iPhone/Chrome → Zum Homescreen): Der installierte Start öffnete
+  start_url OHNE Hash; die Route lag nur in localStorage, das iOS für die
+  Standalone-App separat hält → Start landete in der «Neue Familie»-Ersteinrichtung
+- Fix 1: Beim Start ohne Hash wird die letzte bekannte Route aus localStorage
+  geholt UND der Hash via history.replaceState zurückgeschrieben (konsistent
+  über Reloads/Standalone)
+- Fix 2 (eigentlicher iOS-Fix): dynamisches Manifest — sobald die Familie
+  bekannt ist, wird das <link rel=manifest> auf ein Blob mit
+  start_url=./index.html#f/<familie>(/u/<slug>) umgebogen. iOS liest start_url
+  beim Hinzufügen zum Homescreen → installierte Verknüpfung startet direkt
+  in der Familie bzw. im persönlichen Link
+- Fix 3: Beim Anlegen einer neuen Familie wird die Route sofort persistiert
+- WICHTIG für betroffene Geräte: bestehende Homescreen-Verknüpfung einmal
+  entfernen und über den (Familien-)Link neu hinzufügen, damit das neue
+  start_url greift
+- APP_VERSION → 4.4.2, SW cache → haushalt-v39
+
 ## 2026-06-16 — v4.4.1: Icon in Royalblau, drei Blasen
 
 - Icon-Farbe auf sattes Royalblau und auf drei klar getrennte Blasen reduziert
