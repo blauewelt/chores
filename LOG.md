@@ -2,6 +2,12 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-27 — v4.8.1: QR-Anzeige-Bug behoben
+
+- BUG: `.shqr{display:block}` überschrieb das `[hidden]`-Attribut → QR ließ
+  sich nicht mehr ein-/ausblenden. Regel `.shqr[hidden]{display:none}` ergänzt
+- APP_VERSION → 4.8.1, SW cache → haushalt-v48
+
 ## 2026-06-27 — v4.8.0: Teilen-Sheet kompakt (QR einklappbar)
 
 - QR-Codes standardmäßig eingeklappt; pro Zeile ein «QR»-Knopf blendet den
