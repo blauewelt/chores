@@ -176,7 +176,10 @@
   .shhead{display:flex; align-items:center; gap:10px; width:100%}
   .shname{flex:1; font-weight:600; font-size:16px}
   .shbtn{border:none; border-radius:999px; padding:9px 18px; font-size:15px; font-weight:700; background:var(--accent); color:#0C1220; cursor:pointer}
-  .shqr{border-radius:12px; background:#fff; padding:8px}
+  .shqr{border-radius:12px; background:#fff; padding:8px; margin:10px auto 0; display:block}
+  .qrtog{border:1px solid var(--line); background:var(--card); color:var(--muted); border-radius:999px;
+    padding:8px 13px; font-size:13px; font-weight:700; cursor:pointer; margin-right:8px}
+  .qrtog.on{background:color-mix(in srgb, var(--accent) 22%, transparent); color:var(--ink); border-color:transparent}
   .shfam .shname{color:var(--muted); font-size:14px}
   .addmember{border:1px dashed var(--line); background:none; width:100%; padding:11px; border-radius:10px; color:var(--muted); font-weight:600; cursor:pointer; font-size:15px}
 
@@ -270,7 +273,7 @@
 <script src="qrcode.min.js"></script>
 <script>
 (() => {
-  const APP_VERSION = '4.7.3';
+  const APP_VERSION = '4.8.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -886,12 +889,14 @@
         <div class="shhead">
           <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>
           <span class="shname">${esc(m.name || '—')}</span>
+          ${qr ? `<button class="qrtog" aria-label="QR-Code anzeigen">QR</button>` : ''}
           <button class="shbtn" data-share="${esc(url)}" data-name="${esc(m.name || '')}">Teilen</button>
         </div>
-        ${qr ? `<img class="shqr" src="${qr}" alt="QR-Code für ${esc(m.name)}" width="120" height="120">` : ''}
+        ${qr ? `<img class="shqr" src="${qr}" alt="QR-Code für ${esc(m.name)}" width="116" height="116" hidden>` : ''}
       </div>`;
     }).join('');
     const famQr = qrDataUrl(familyLink());
+    const appQr = qrDataUrl(appLink());
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
     const installTip = isIOS
       ? 'Zum Installieren: «Teilen» → «Zum Home-Bildschirm».'
@@ -901,21 +906,31 @@
       <div class="shrow shfam" style="border-top:none;padding-top:4px">
         <div class="shhead">
           <span class="shname">Ganze Familie<br><span style="font-weight:400;color:var(--muted);font-size:12.5px">voller Zugriff</span></span>
+          ${famQr ? `<button class="qrtog" aria-label="QR-Code anzeigen">QR</button>` : ''}
           <button class="shbtn" data-share="${esc(familyLink())}" data-name="Familie">Teilen</button>
         </div>
-        ${famQr ? `<img class="shqr" src="${famQr}" alt="Familien-QR" width="120" height="120">` : ''}
-        <div style="color:var(--muted);font-size:12.5px;text-align:center;margin-top:2px">📲 ${esc(installTip)}</div>
+        ${famQr ? `<img class="shqr" src="${famQr}" alt="Familien-QR" width="116" height="116" hidden>` : ''}
+        <div style="color:var(--muted);font-size:12px;text-align:center;margin-top:6px">📲 ${esc(installTip)}</div>
       </div>
       <div style="font-weight:700;font-size:14px;color:var(--muted);margin:18px 0 2px">Persönliche Links</div>
       ${rows}
       <div class="shrow" style="border-top:1px solid var(--line)">
         <div class="shhead">
           <span class="shname">Fairli weiterempfehlen<br><span style="font-weight:400;color:var(--muted);font-size:12.5px">Link für einen neuen Haushalt</span></span>
+          ${appQr ? `<button class="qrtog" aria-label="QR-Code anzeigen">QR</button>` : ''}
           <button class="shbtn" data-share="${esc(appLink())}" data-app="1">Teilen</button>
         </div>
+        ${appQr ? `<img class="shqr" src="${appQr}" alt="Fairli-QR" width="116" height="116" hidden>` : ''}
       </div>
     </div>`;
     sh.querySelector('#closeShare').onclick = () => sh.close();
+    sh.querySelectorAll('.qrtog').forEach(t => t.onclick = () => {
+      const img = t.closest('.shrow').querySelector('.shqr');
+      if (!img) return;
+      const show = img.hasAttribute('hidden');
+      if (show) { img.removeAttribute('hidden'); t.classList.add('on'); }
+      else { img.setAttribute('hidden', ''); t.classList.remove('on'); }
+    });
     sh.querySelectorAll('.shbtn').forEach(b => b.onclick = () => {
       if (b.dataset.app) {
         shareLink(b.dataset.share, 'Fairli', 'Fairli – Haushaltsaufgaben fair verteilt. Erstell hier euren Haushalt:');
