@@ -2,6 +2,13 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-16 — v4.7.3: App-Empfehlungslink im Teilen-Sheet
+
+- Neuer Eintrag «Fairli weiterempfehlen» unten im Teilen-Sheet: teilt den
+  blanken App-Link (ohne Familie), sodass Empfänger einen EIGENEN neuen
+  Haushalt erstellen können
+- APP_VERSION → 4.7.3, SW cache → haushalt-v46
+
 ## 2026-06-16 — v4.7.2: Teilen-Sheet entschlackt
 
 - Familien-Link erschien doppelt (oben Block + unten «Ganze Familie») →
