@@ -2,6 +2,14 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-27 — v4.8.0: Teilen-Sheet kompakt (QR einklappbar)
+
+- QR-Codes standardmäßig eingeklappt; pro Zeile ein «QR»-Knopf blendet den
+  Code bei Bedarf ein. Sheet ist dadurch viel kürzer und scannt sich schneller
+- «Fairli weiterempfehlen» bekommt jetzt ebenfalls einen QR-Code
+- QR beim Anzeigen zentriert, etwas kleiner (116 px)
+- APP_VERSION → 4.8.0, SW cache → haushalt-v47
+
 ## 2026-06-16 — v4.7.3: App-Empfehlungslink im Teilen-Sheet
 
 - Neuer Eintrag «Fairli weiterempfehlen» unten im Teilen-Sheet: teilt den
