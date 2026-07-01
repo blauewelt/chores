@@ -78,6 +78,9 @@
   .chore::after{content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
     background:linear-gradient(180deg, rgba(10,14,12,.6), rgba(10,14,12,.12) 55%, rgba(10,14,12,.55))}
   .chore .cname{font-weight:700; font-size:18px; line-height:1.25; overflow-wrap:break-word; padding-right:24px; position:relative; color:#fff; z-index:2; text-shadow:0 1px 4px rgba(0,0,0,.6)}
+  .chore .cnote{font-weight:500; font-size:12px; line-height:1.2; margin-top:2px; padding-right:24px;
+    position:relative; z-index:2; color:rgba(255,255,255,.82); text-shadow:0 1px 3px rgba(0,0,0,.7);
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
   .chore .pts{align-self:flex-start; position:relative; z-index:2;
     font-family:var(--display); font-weight:800; font-size:20px;
     color:color-mix(in srgb, var(--c) 65%, #fff);
@@ -233,6 +236,10 @@
       <div class="ptsrow"><label for="cPts">Punkte</label><output id="cPtsVal" for="cPts">3</output></div>
       <input type="range" id="cPts" min="0" max="15" step="1" value="3">
     </div>
+    <div class="field">
+      <label for="cNote">Notiz <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <input type="text" id="cNote" placeholder="kurze Erklärung, z. B. «nur Restmüll»" maxlength="60" autocomplete="off">
+    </div>
     <button type="button" class="btn danger wide" id="deleteChore" style="display:none">Aufgabe löschen</button>
   </form>
 </dialog>
@@ -274,7 +281,7 @@
 <script src="qrcode.min.js"></script>
 <script>
 (() => {
-  const APP_VERSION = '4.8.1';
+  const APP_VERSION = '4.9.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -647,6 +654,7 @@
             `<button class="chore" data-cid="${c.id}" style="--c:${choreColor(c.id)}; min-height:${Math.round(104 + 34 * Math.log2(c.points + 1))}px">
               <img class="art" src="${choreArt(c)}" alt="" loading="lazy" onerror="this.remove()">
               <span class="cname">${esc(c.name)}</span>
+              ${c.note ? `<span class="cnote">${esc(c.note)}</span>` : ''}
               <span class="pts">${c.points >= 10 ? '★ ' : ''}+${c.points}</span>
               <span class="edit" data-edit="${c.id}" role="button" aria-label="Bearbeiten">✎</span>
             </button>`).join('') + `</div>`
@@ -767,6 +775,7 @@
     const c = id ? state.chores.find(x => x.id === id) : null;
     document.getElementById('choreSheetTitle').textContent = c ? 'Bearbeiten' : 'Neue Aufgabe';
     document.getElementById('cName').value = c ? c.name : '';
+    document.getElementById('cNote').value = c && c.note ? c.note : '';
     // Beim Bearbeiten: Name als Text – Tastatur bleibt unten, alles sichtbar
     document.getElementById('nameText').textContent = c ? c.name : '';
     document.getElementById('nameStatic').style.display = c ? '' : 'none';
@@ -793,13 +802,14 @@
   document.getElementById('choreForm').addEventListener('submit', () => {
     const name = document.getElementById('cName').value.trim();
     const points = Math.max(0, Math.min(15, parseInt(document.getElementById('cPts').value) || 0));
+    const note = document.getElementById('cNote').value.trim() || null;
     if (!name) return;
     if (editingChore) {
       const c = state.chores.find(x => x.id === editingChore);
-      c.name = name; c.points = points;
-      push(() => sb('chores?id=eq.' + c.id, 'PATCH', { name, points }));
+      c.name = name; c.points = points; c.note = note;
+      push(() => sb('chores?id=eq.' + c.id, 'PATCH', { name, points, note }));
     } else {
-      const c = { id: uid(), name, points };
+      const c = { id: uid(), name, points, note };
       state.chores.push(c);
       push(() => sb('chores', 'POST', c));
       pinChore(c.id);
