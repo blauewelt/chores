@@ -2,6 +2,16 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-27 — v4.9.0: Optionale Notiz pro Aufgabe
+
+- DB: Spalte `note` auf chores (Migration via db-migrate)
+- Bearbeiten-Sheet: optionales Feld «Notiz» (max. 60 Zeichen) – niemand muss
+  etwas eintragen
+- Notiz erscheint klein und dezent unter dem Namen auf der Kachel (max. 2
+  Zeilen, abgeschnitten, damit sie passt); nur sichtbar wenn gesetzt
+- Speichern/Sync inkl. note
+- APP_VERSION → 4.9.0, SW cache → haushalt-v49
+
 ## 2026-06-27 — v4.8.1: QR-Anzeige-Bug behoben
 
 - BUG: `.shqr{display:block}` überschrieb das `[hidden]`-Attribut → QR ließ
