@@ -160,6 +160,7 @@
   .barbtn{border:none; background:none; font-size:16px; font-weight:600; color:var(--muted);
     cursor:pointer; padding:8px 4px; font-family:var(--body); min-width:84px; text-align:left}
   .barbtn.strong{color:var(--accent); font-weight:800; text-align:right}
+  .barbtn.del{color:var(--red); font-weight:700; text-align:right}
   .btn.wide{width:100%; margin-top:6px}
 
   .namerow{display:flex; align-items:center; justify-content:space-between; gap:10px;
@@ -233,7 +234,7 @@
     <div class="sheetbar">
       <button type="button" class="barbtn" id="cancelChore">Abbrechen</button>
       <h2 id="choreSheetTitle">Neue Aufgabe</h2>
-      <button type="submit" class="barbtn strong">Speichern</button>
+      <button type="button" class="barbtn del" id="deleteChore" style="visibility:hidden">Löschen</button>
     </div>
     <div class="field">
       <label for="cName">Aufgabe</label>
@@ -251,7 +252,7 @@
       <label for="cNote">Notiz <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
       <input type="text" id="cNote" placeholder="kurze Erklärung, z. B. «nur Restmüll»" maxlength="60" autocomplete="off">
     </div>
-    <button type="button" class="dellink" id="deleteChore" style="display:none">Aufgabe löschen</button>
+    <button type="submit" class="btn primary wide" id="saveChore">Speichern</button>
   </form>
 </dialog>
 
@@ -292,7 +293,7 @@
 <script src="qrcode.min.js"></script>
 <script>
 (() => {
-  const APP_VERSION = '4.10.1';
+  const APP_VERSION = '4.11.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -815,7 +816,7 @@
     document.getElementById('nameStatic').style.display = c ? '' : 'none';
     document.getElementById('cName').style.display = c ? 'none' : '';
     setPtsSlider(c ? c.points : 1);
-    document.getElementById('deleteChore').style.display = c ? '' : 'none';
+    document.getElementById('deleteChore').style.visibility = c ? 'visible' : 'hidden';
     choreSheet.showModal();
   }
   document.getElementById('editName').addEventListener('click', () => {
