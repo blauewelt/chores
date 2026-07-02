@@ -116,6 +116,17 @@
   .entry .when{font-size:12.5px; color:var(--muted)}
   .entry .pts{font-family:var(--display); font-weight:800; font-size:19px; color:var(--accent)}
   .entry .undo{border:none; background:none; color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; padding:6px}
+  .entry .enote{font-size:12.5px; color:var(--muted); margin:1px 0}
+  .entmenu{position:relative}
+  .kebab{border:none; background:none; color:var(--muted); font-size:20px; line-height:1; cursor:pointer; padding:6px 8px; border-radius:8px}
+  .kebab:active{background:rgba(255,255,255,.08)}
+  .menupop{position:absolute; right:0; top:100%; margin-top:4px; background:var(--card); border:1px solid var(--line);
+    border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.4); z-index:5; overflow:hidden; min-width:180px}
+  .menuitem{display:block; width:100%; text-align:left; border:none; background:none; color:var(--ink);
+    font-size:15px; padding:13px 16px; cursor:pointer}
+  .menuitem:active{background:rgba(255,255,255,.08)}
+  .dellink{display:block; margin:16px auto 0; border:none; background:none; color:var(--muted);
+    font-size:14px; cursor:pointer; padding:8px; text-decoration:underline}
 
   .empty{text-align:center; color:var(--muted); padding:48px 24px}
   .empty b{display:block; font-family:var(--display); font-weight:700; font-size:18px; color:var(--ink); margin-bottom:4px}
@@ -240,7 +251,7 @@
       <label for="cNote">Notiz <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
       <input type="text" id="cNote" placeholder="kurze Erklärung, z. B. «nur Restmüll»" maxlength="60" autocomplete="off">
     </div>
-    <button type="button" class="btn danger wide" id="deleteChore" style="display:none">Aufgabe löschen</button>
+    <button type="button" class="dellink" id="deleteChore" style="display:none">Aufgabe löschen</button>
   </form>
 </dialog>
 
@@ -281,7 +292,7 @@
 <script src="qrcode.min.js"></script>
 <script>
 (() => {
-  const APP_VERSION = '4.9.0';
+  const APP_VERSION = '4.10.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -683,18 +694,32 @@
         ? state.log.map(e => {
             const m = memberById(e.member_id);
             const d = new Date(e.done_at);
+            const ch = state.chores.find(x => x.id === e.chore_id);
+            const note = ch && ch.note ? ch.note : '';
             return `<div class="entry">
               <span class="dot" style="background:${esc(m ? m.color : '#C2CCC5')}"></span>
               <span class="what"><b>${esc(e.member_name)}</b> · ${esc(e.chore_name)}
+                ${note ? `<div class="enote">${esc(note)}</div>` : ''}
                 <div class="when">${d.toLocaleDateString('de-CH', { weekday: 'short', day: 'numeric', month: 'short' })}, ${d.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}</div>
               </span>
               <span class="pts">+${e.points}</span>
-              <button class="undo" data-undo="${e.id}">↩︎</button>
+              <div class="entmenu">
+                <button class="kebab" data-menu="${e.id}" aria-label="Optionen">⋯</button>
+                <div class="menupop" id="menu-${e.id}" hidden>
+                  <button class="menuitem" data-undo="${e.id}">Rückgängig machen</button>
+                </div>
+              </div>
             </div>`;
           }).join('')
         : `<div class="empty"><b>Noch nichts erledigt</b>Jede gedrückte Aufgabe landet hier.</div>`;
     }
   }
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.entmenu')) {
+      document.querySelectorAll('.menupop').forEach(p => p.hidden = true);
+    }
+  });
 
   let toastTimer;
   function toast(msg) {
@@ -729,7 +754,16 @@
     // Aufgabe bearbeiten
     const ed = e.target.closest('[data-edit]');
     if (ed) { e.stopPropagation(); openChoreSheet(ed.dataset.edit); return; }
-    // Rückgängig
+    // Verlauf: Kebab-Menü öffnen/schließen
+    const kb = e.target.closest('[data-menu]');
+    if (kb) {
+      e.stopPropagation();
+      const pop = document.getElementById('menu-' + kb.dataset.menu);
+      document.querySelectorAll('.menupop').forEach(p => { if (p !== pop) p.hidden = true; });
+      if (pop) pop.hidden = !pop.hidden;
+      return;
+    }
+    // Rückgängig (aus dem Menü)
     const u = e.target.closest('[data-undo]');
     if (u) {
       const id = u.dataset.undo;
