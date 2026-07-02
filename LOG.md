@@ -2,6 +2,15 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-27 — v4.11.0: Bearbeiten-Sheet — Speichern gross unten, Löschen klein oben
+
+- «Speichern» ist jetzt ein grosser Primär-Button unten (nicht mehr in der
+  Kopfzeile)
+- «Löschen» ist eine Nebenaktion oben rechts in Rot (nur beim Bearbeiten
+  sichtbar; per visibility umgeschaltet, damit der Titel zentriert bleibt)
+- Kopfzeile: Abbrechen | Titel | Löschen
+- APP_VERSION → 4.11.0, SW cache → haushalt-v52
+
 ## 2026-06-27 — v4.10.1: Verlauf-Menü «Löschen» statt «Rückgängig»
 
 - Menüpunkt korrekt benannt: der Eintrag wird gelöscht (Punkte raus), nicht
