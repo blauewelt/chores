@@ -292,7 +292,7 @@
 <script src="qrcode.min.js"></script>
 <script>
 (() => {
-  const APP_VERSION = '4.10.0';
+  const APP_VERSION = '4.10.1';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -706,7 +706,7 @@
               <div class="entmenu">
                 <button class="kebab" data-menu="${e.id}" aria-label="Optionen">⋯</button>
                 <div class="menupop" id="menu-${e.id}" hidden>
-                  <button class="menuitem" data-undo="${e.id}">Rückgängig machen</button>
+                  <button class="menuitem" data-undo="${e.id}" style="color:#E8705A">Löschen</button>
                 </div>
               </div>
             </div>`;
