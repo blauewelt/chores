@@ -2,6 +2,12 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-27 — v4.10.1: Verlauf-Menü «Löschen» statt «Rückgängig»
+
+- Menüpunkt korrekt benannt: der Eintrag wird gelöscht (Punkte raus), nicht
+  ein Zustand rückgängig gemacht → «Löschen» (in Warnfarbe)
+- APP_VERSION → 4.10.1, SW cache → haushalt-v51
+
 ## 2026-06-27 — v4.10.0: Notiz im Verlauf + weniger «Löschen» als Default
 
 - (1) Verlauf zeigt jetzt die Notiz der Aufgabe klein unter dem Eintrag
