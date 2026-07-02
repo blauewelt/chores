@@ -2,6 +2,17 @@
 
 All work on the Haushalt app, newest first. Maintained by Claude.
 
+## 2026-06-27 — v4.10.0: Notiz im Verlauf + weniger «Löschen» als Default
+
+- (1) Verlauf zeigt jetzt die Notiz der Aufgabe klein unter dem Eintrag
+- (2) Weniger versehentliches Löschen:
+  * Bearbeiten-Sheet: «Aufgabe löschen» ist kein breiter Danger-Button mehr,
+    sondern ein dezenter, unterstrichener Textlink unten. Primäraktion bleibt
+    «Speichern» oben
+  * Verlauf: das frühere sofort-löschende ↩︎ ist jetzt ein Drei-Punkte-Menü
+    (⋯) mit «Rückgängig machen»; schließt bei Tap außerhalb
+- APP_VERSION → 4.10.0, SW cache → haushalt-v50
+
 ## 2026-06-27 — v4.9.0: Optionale Notiz pro Aufgabe
 
 - DB: Spalte `note` auf chores (Migration via db-migrate)
