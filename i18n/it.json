@@ -84,7 +84,7 @@
   "«{name}» gibt es schon": "«{name}» esiste già",
   "Stattdessen verbuchen": "Registra invece",
   "Löschen fehlgeschlagen — wiederhergestellt": "Eliminazione non riuscita — ripristinato",
-  "Aus": "Disattivata",
+  "Aus": "Disattiva",
   "Max. Punkte": "Punti max",
   "Mehrfach tippen addiert — die Skala ist keine harte Grenze.": "Tocchi ripetuti si sommano — la scala non è un limite rigido.",
   "Fairli hat Neues — ansehen": "Novità in Fairli — guarda",
@@ -124,5 +124,12 @@
   "Mein Name": "Il mio nome",
   "Dieser Familien-Link wurde ersetzt": "Questo link famiglia è stato sostituito",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "Chiedete il nuovo link al vostro admin — i vostri dati sono al sicuro e vi aspettano lì.",
-  "Ohne eigenes Telefon": "Senza telefono proprio"
+  "Ohne eigenes Telefon": "Senza telefono proprio",
+  "Suche": "Ricerca",
+  "Suchen": "Cerca",
+  "An": "Attiva",
+  "Nichts gefunden": "Nessun risultato",
+  "Keine Aufgabe passt zu «{q}».": "Nessuna faccenda corrisponde a «{q}».",
+  "Kein Eintrag passt zu «{q}».": "Nessuna voce corrisponde a «{q}».",
+  "Leeren": "Svuota"
 }

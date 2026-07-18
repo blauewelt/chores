@@ -1134,6 +1134,61 @@ test.describe('Fairli', () => {
     await expect(page.locator('.entry', { hasText: 'Timon' }).first()).toBeVisible();
   });
 
+  test('Suche (v4.50.0): standardmässig AUS, per Einstellung an; filtert Aufgaben und Verlauf, diakritik-blind, Leer-Zustand, Fokus bleibt', async ({ context, page }) => {
+    await mockBackend(context, { logRows: () => [
+      { id: 'l-1', chore_id: 'c-1', chore_name: 'Küche aufräumen', chore_note: 'nur Abwasch',
+        member_id: 'm-mira', member_name: 'Mira', points: 2, done_at: '2026-07-18T10:00:00Z', family_id: FAM },
+      { id: 'l-2', chore_id: 'c-2', chore_name: 'Müll rausbringen', chore_note: '',
+        member_id: 'm-chris', member_name: 'Timon', points: 1, done_at: '2026-07-18T09:00:00Z', family_id: FAM },
+    ] });
+    await context.route(`${SB}/rest/v1/chores*`, route => route.request().method() === 'GET'
+      ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+          { id: 'c-1', name: 'Küche aufräumen', points: 2, note: 'nur Abwasch', family_id: FAM },
+          { id: 'c-2', name: 'Müll rausbringen', points: 1, note: '', family_id: FAM },
+          { id: 'c-3', name: 'Wäsche', points: 1, note: 'Küchentücher mitwaschen', family_id: FAM },
+        ]) })
+      : route.fallback());
+    await page.goto(`${BASE}/f/${FAM}`);
+    // AUS by default
+    await expect(page.locator('#searchBar')).toBeHidden();
+    // Einschalten über die Einstellungen
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setSearch .setval')).toHaveText('Aus');
+    await page.locator('#setSearch').click();
+    await expect(page.locator('#searchBar')).toBeVisible();
+    // a) Aufgaben filtern — «kü» findet Name UND Notiz-Treffer
+    await page.locator('#searchInput').fill('kü');
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await expect(page.locator('.chore[data-cid="c-3"]')).toBeVisible();   // «Küchentücher» in der Notiz
+    await expect(page.locator('.chore[data-cid="c-2"]')).toHaveCount(0);
+    await expect(page.locator('#oneOffTile')).toHaveCount(0);   // passt nicht zur Suche → raus
+    // Diakritik-blind: «ku» findet «Küche» genauso
+    await page.locator('#searchInput').fill('ku');
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    // Fokus bleibt beim Tippen erhalten (Leiste liegt ausserhalb der Liste)
+    await expect(page.locator('#searchInput')).toBeFocused();
+    // Leer-Zustand
+    await page.locator('#searchInput').fill('zzz');
+    await expect(page.locator('.empty')).toContainText('Nichts gefunden');
+    // b) Verlauf filtern — Aufgabe, Notiz und Person
+    await page.locator('#searchInput').fill('küche');
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('.entry', { hasText: 'Küche aufräumen' })).toHaveCount(1);
+    await expect(page.locator('.entry', { hasText: 'Müll' })).toHaveCount(0);
+    await page.locator('#searchInput').fill('timon');
+    await expect(page.locator('.entry', { hasText: 'Müll' })).toHaveCount(1);
+    // Punkte-Ansicht: keine Suchleiste
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('#searchBar')).toBeHidden();
+    // Leeren-Knopf + Ausschalten räumt auf
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await page.locator('#searchClear').click();
+    await expect(page.locator('.chore[data-cid="c-2"]')).toBeVisible();
+    await page.locator('#openSettings').click();
+    await page.locator('#setSearch').click();
+    await expect(page.locator('#searchBar')).toBeHidden();
+  });
+
   test('Boot-Splash: Overlay räumt sich weg, Kopf-Logo erscheint, nichts blockiert (v4.39.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);

@@ -124,5 +124,12 @@
   "Mein Name": "My name",
   "Dieser Familien-Link wurde ersetzt": "This family link has been replaced",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "Get the new link from your admin — your data is safe and waiting there.",
-  "Ohne eigenes Telefon": "No phone of their own"
+  "Ohne eigenes Telefon": "No phone of their own",
+  "Suche": "Search",
+  "Suchen": "Search",
+  "An": "On",
+  "Nichts gefunden": "Nothing found",
+  "Keine Aufgabe passt zu «{q}».": "No task matches \"{q}\".",
+  "Kein Eintrag passt zu «{q}».": "No entry matches \"{q}\".",
+  "Leeren": "Clear"
 }

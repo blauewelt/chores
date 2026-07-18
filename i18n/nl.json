@@ -124,5 +124,12 @@
   "Mein Name": "Mijn naam",
   "Dieser Familien-Link wurde ersetzt": "Deze gezinslink is vervangen",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "Vraag de nieuwe link aan je admin — jullie gegevens zijn veilig en wachten daar.",
-  "Ohne eigenes Telefon": "Zonder eigen telefoon"
+  "Ohne eigenes Telefon": "Zonder eigen telefoon",
+  "Suche": "Zoeken",
+  "Suchen": "Zoeken",
+  "An": "Aan",
+  "Nichts gefunden": "Niets gevonden",
+  "Keine Aufgabe passt zu «{q}».": "Geen taak komt overeen met «{q}».",
+  "Kein Eintrag passt zu «{q}».": "Geen invoer komt overeen met «{q}».",
+  "Leeren": "Wissen"
 }

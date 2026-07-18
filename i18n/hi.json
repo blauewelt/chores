@@ -124,5 +124,12 @@
   "Mein Name": "मेरा नाम",
   "Dieser Familien-Link wurde ersetzt": "यह परिवार लिंक बदल दिया गया है",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "अपने एडमिन से नया लिंक लें — आपका डेटा सुरक्षित है और वहां आपका इंतज़ार कर रहा है।",
-  "Ohne eigenes Telefon": "अपना फ़ोन नहीं है"
+  "Ohne eigenes Telefon": "अपना फ़ोन नहीं है",
+  "Suche": "खोज",
+  "Suchen": "खोजें",
+  "An": "चालू",
+  "Nichts gefunden": "कुछ नहीं मिला",
+  "Keine Aufgabe passt zu «{q}».": "«{q}» से कोई काम मेल नहीं खाता।",
+  "Kein Eintrag passt zu «{q}».": "«{q}» से कोई प्रविष्टि मेल नहीं खाती।",
+  "Leeren": "साफ़ करें"
 }

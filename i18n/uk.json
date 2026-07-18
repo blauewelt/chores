@@ -84,7 +84,7 @@
   "«{name}» gibt es schon": "«{name}» вже існує",
   "Stattdessen verbuchen": "Записати її",
   "Löschen fehlgeschlagen — wiederhergestellt": "Видалення не вдалося — відновлено",
-  "Aus": "Вимкнено",
+  "Aus": "Вимк.",
   "Max. Punkte": "Макс. бали",
   "Mehrfach tippen addiert — die Skala ist keine harte Grenze.": "Повторні дотики додаються — шкала не є жорсткою межею.",
   "Fairli hat Neues — ansehen": "У Fairli є новинки — переглянути",
@@ -124,5 +124,12 @@
   "Mein Name": "Моє ім’я",
   "Dieser Familien-Link wurde ersetzt": "Це сімейне посилання замінено",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "Візьміть нове посилання в адміністратора — ваші дані в безпеці й чекають там.",
-  "Ohne eigenes Telefon": "Без власного телефону"
+  "Ohne eigenes Telefon": "Без власного телефону",
+  "Suche": "Пошук",
+  "Suchen": "Шукати",
+  "An": "Увімк.",
+  "Nichts gefunden": "Нічого не знайдено",
+  "Keine Aufgabe passt zu «{q}».": "Немає завдань за запитом «{q}».",
+  "Kein Eintrag passt zu «{q}».": "Немає записів за запитом «{q}».",
+  "Leeren": "Очистити"
 }

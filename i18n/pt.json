@@ -124,5 +124,12 @@
   "Mein Name": "O meu nome",
   "Dieser Familien-Link wurde ersetzt": "Este link da família foi substituído",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "Peçam o novo link ao vosso admin — os vossos dados estão seguros e à vossa espera.",
-  "Ohne eigenes Telefon": "Sem telemóvel próprio"
+  "Ohne eigenes Telefon": "Sem telemóvel próprio",
+  "Suche": "Pesquisa",
+  "Suchen": "Pesquisar",
+  "An": "Ativada",
+  "Nichts gefunden": "Nada encontrado",
+  "Keine Aufgabe passt zu «{q}».": "Nenhuma tarefa corresponde a «{q}».",
+  "Kein Eintrag passt zu «{q}».": "Nenhum registo corresponde a «{q}».",
+  "Leeren": "Limpar"
 }

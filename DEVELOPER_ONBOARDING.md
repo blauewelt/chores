@@ -371,6 +371,14 @@ onFail)` — 1 Retry, dann Wiederherstellung + ehrlicher Toast
 Krone, Zähler. **NIE eine Variable `t` nennen** (schattet i18n; Live-Bug
 Punkte-Tab leer).
 
+### Suche (v4.50.0)
+Schalter `SEARCH_ON` (localStorage, Default AUS), Eingabe in `QUERY`.
+Gefiltert wird beim Rendern: Aufgaben über `matches(name, note)`, Log
+über `matches(chore_name, chore_note, member_name)`. `norm()` ist
+diakritik-blind (NFD + Marks weg, ß→ss). WICHTIG: die Leiste steht im
+statischen Markup AUSSERHALB von `#list` — sonst frisst render() bei
+jedem Tastendruck den Fokus.
+
 ### Betreute Mitglieder (v4.49.0)
 `members.assisted` markiert Personen ohne eigenes Telefon. Zentrale
 Helfer: `slugSelf()` = Identität des LINKS (Einstellungen, Mein Name —

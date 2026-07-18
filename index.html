@@ -85,6 +85,14 @@
   .chip .dot{width:18px; height:18px; border-radius:50%; display:grid; place-items:center; color:#10140F; font-size:11px; font-weight:800}
   .chip[aria-pressed="true"]{border-color:var(--accent); box-shadow:inset 0 0 0 1.5px var(--accent)}
 
+  #searchBar{display:flex; align-items:center; gap:6px; margin:0 14px 8px; padding:0 10px;
+    background:var(--card); border:1px solid var(--line); border-radius:999px}
+  #searchBar[hidden]{display:none}
+  #searchInput{flex:1; min-width:0; border:none; background:none; color:var(--ink);
+    font:inherit; font-size:15px; padding:9px 2px; outline:none}
+  #searchInput::-webkit-search-cancel-button{display:none}
+  #searchBar button{border:none; background:none; color:var(--muted); font-size:20px;
+    padding:2px 4px; cursor:pointer; flex:none; line-height:1}
   .tabs{display:flex; gap:6px; padding:12px 18px 10px; position:sticky; top:0;
     background:var(--bg); z-index:5}
   /* Weicher Auslauf UNTER der Leiste: Kacheln blenden aus, statt in die
@@ -431,6 +439,12 @@
   <button class="tab" role="tab" data-view="log" aria-selected="false" data-i18n>Verlauf</button>
 </div>
 
+<div id="searchBar" hidden>
+  <input id="searchInput" type="search" inputmode="search" autocomplete="off"
+         enterkeyhint="search" aria-label="Suchen" placeholder="Suchen">
+  <button id="searchClear" type="button" aria-label="Leeren" hidden>×</button>
+</div>
+
 <main id="list"></main>
 
 <button class="fab" id="openAdd" aria-label="Aufgabe hinzufügen">+</button>
@@ -485,7 +499,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.49.0';
+  const APP_VERSION = '4.50.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -735,6 +749,8 @@
         <span class="seticon">🌐</span><span class="setlabel">${t('Sprache')}</span><span class="setval">${LANGS[LANG]}</span><span class="chev">›</span></button>
       <button class="menuitem setrow" id="setSort" style="border-radius:12px">
         <span class="seticon">↕️</span><span class="setlabel">${t('Sortierung')}</span><span class="setval">${t(SORT === 'alpha' ? 'Alphabetisch' : SORT === 'usage' ? 'Nach Nutzung' : 'Nach Erstellung')}</span><span class="chev">›</span></button>
+      <button class="menuitem setrow" id="setSearch" style="border-radius:12px">
+        <span class="seticon">🔎</span><span class="setlabel">${t('Suche')}</span><span class="setval">${t(SEARCH_ON ? 'An' : 'Aus')}</span></button>
       <button class="menuitem setrow" id="setMaxPts" style="border-radius:12px">
         <span class="seticon">🎯</span><span class="setlabel">${t('Max. Punkte')}</span><span class="setval">${MAXPTS}</span><span class="chev">›</span></button>
       ${IS_ENC || USER_SLUG ? '' : `<button class="menuitem setrow" id="setEnc" style="border-radius:12px">
@@ -750,6 +766,11 @@
     if (smn) smn.onclick = () => { sh.close(); openMyNameSheet(); };
     sh.querySelector('#setLang').onclick = () => { sh.close(); openLangSheet(); };
     sh.querySelector('#setSort').onclick = () => { sh.close(); openSortSheet(); };
+    sh.querySelector('#setSearch').onclick = e => {
+      setSearchOn(!SEARCH_ON);
+      e.currentTarget.querySelector('.setval').textContent = t(SEARCH_ON ? 'An' : 'Aus');
+      if (SEARCH_ON) { sh.close(); document.getElementById('searchInput').focus(); }
+    };
     sh.querySelector('#setMaxPts').onclick = () => { sh.close(); openMaxPtsSheet(); };
     const se = sh.querySelector('#setEnc');
     if (se) se.onclick = () => { sh.close(); openMigrateSheet(); };
@@ -1541,6 +1562,26 @@
   // Sortier-Modus (v4.33.0): 'created' (Standard — Positionen stabil, Neues
   // hinten) | 'alpha' | 'usage' (bisheriges eingefrorenes Nutzungs-Ranking)
   const LS_SORT = 'haushalt.sort';
+  // Suche: pro Geraet, standardmaessig AUS (v4.50.0)
+  const LS_SEARCH = 'haushalt.search';
+  let SEARCH_ON = (() => { try { return localStorage.getItem(LS_SEARCH) === '1'; } catch { return false; } })();
+  let QUERY = '';
+  // Diakritik-blind in BEIDE Richtungen: «ku» findet «Küche», «kü» findet «Kuche»
+  const norm = v => (v == null ? '' : String(v)).toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ß/g, 'ss');
+  const matches = (...fields) => {
+    const q = norm(QUERY).trim();
+    if (!q) return true;
+    const hay = fields.map(norm).join(' ');
+    return q.split(/\s+/).every(w => hay.includes(w));   // mehrere Woerter: alle muessen vorkommen
+  };
+  function setSearchOn(v) {
+    SEARCH_ON = v; try { localStorage.setItem(LS_SEARCH, v ? '1' : '0'); } catch {}
+    if (!v) QUERY = '';
+    const inp = document.getElementById('searchInput');
+    if (inp && !v) inp.value = '';
+    render();
+  }
   const LS_MAXPTS = 'haushalt.maxpts';
   let MAXPTS = (() => { try { return +localStorage.getItem(LS_MAXPTS) || 5; } catch { return 5; } })();
   function setMaxPts(v) { MAXPTS = v; try { localStorage.setItem(LS_MAXPTS, String(v)); } catch {} }
@@ -1608,6 +1649,8 @@
     maybeOnboard();   // Erstbesuch (v4.45.0): «Zugriff sichern», sobald die Familie steht
     document.querySelectorAll('.tab').forEach(b =>
       b.setAttribute('aria-selected', String(b.dataset.view === view)));
+    const bar = document.getElementById('searchBar');
+    if (bar) bar.hidden = !SEARCH_ON || view === 'scores';
     const fab = document.getElementById('openAdd');
     if (fab) fab.setAttribute('aria-label', t(view === 'log' ? 'Einmalig eintragen' : 'Aufgabe hinzufügen'));
 
@@ -1652,7 +1695,7 @@
     if (view === 'chores') {
       // Reihenfolge ist eingefroren (siehe choreOrder()); Hintergrund-Syncs
       // aktualisieren Daten/Punkte, ordnen die Kacheln aber nicht um.
-      const ordered = sortedChores();
+      const ordered = sortedChores().filter(c => matches(c.name, c.note));
       // «Einmalig» ist IMMER die erste Kachel (oben links verankert):
       // eintragen ohne neue Kachel — gegen die Kachel-Inflation.
       const oneOffTile = `<button class="chore oneoff" id="oneOffTile" style="min-height:104px">
@@ -1661,7 +1704,7 @@
           <span class="cnote">${t('eintragen ohne Kachel')}</span>
           <span class="pts">＋</span>
         </button>`;
-      listEl.innerHTML = `<div class="grid">` + oneOffTile + ordered.map(c =>
+      listEl.innerHTML = `<div class="grid">` + (QUERY.trim() ? '' : oneOffTile) + ordered.map(c =>
             `<button class="chore" data-cid="${c.id}" style="--c:${choreColor(c.id)}; min-height:${Math.round(104 + 34 * Math.log2(c.points + 1))}px">
               <img class="art${ARTOK.has(choreArt(c)) ? ' ok' : ''}" src="${choreArt(c)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)">
               <span class="cname">${esc(c.name)}</span>
@@ -1669,7 +1712,9 @@
               <span class="pts">${c.points >= 10 ? '★ ' : ''}+${c.points}</span>
               <span class="edit" data-edit="${c.id}" role="button" aria-label="Bearbeiten">✎</span>
             </button>`).join('') + `</div>` +
-        (ordered.length ? '' : `<div class="empty"><b>${t('Noch keine Aufgaben')}</b>${t('Lege mit + die erste an – z. B. «Geschirrspüler ausräumen, 3 Punkte».')}</div>`);
+        (ordered.length ? '' : QUERY.trim()
+          ? `<div class="empty"><b>${t('Nichts gefunden')}</b>${t('Keine Aufgabe passt zu «{q}».', { q: QUERY.trim() })}</div>`
+          : `<div class="empty"><b>${t('Noch keine Aufgaben')}</b>${t('Lege mit + die erste an – z. B. «Geschirrspüler ausräumen, 3 Punkte».')}</div>`);
       listEl.querySelectorAll('img.art:not(.ok)').forEach(i => { if (i.complete && i.naturalWidth) artOk(i); });
     } else if (view === 'scores') {
       // WICHTIG: nie `t` nennen — das schattet die i18n-Funktion t()!
@@ -1697,7 +1742,7 @@
       // Folge («Einkaufen ×3») → EINE Zeile mit Summenpunkten. So braucht es
       // keine Gross/Klein-Kachel-Varianten — dreimal tippen genuegt.
       const groups = [];
-      for (const e of state.log) {
+      for (const e of state.log.filter(e => matches(e.chore_name, e.chore_note, e.member_name))) {
         // Serien enden an der Tagesgrenze (sonst zaehlt «×N» unter «Heute»
         // stillschweigend gestrige Eintraege mit)
         const key = e.member_id + '|' + (e.chore_id || 'n:' + e.chore_name) + '|' + new Date(e.done_at).toDateString();
@@ -1740,7 +1785,9 @@
             lastDay = day;
             return head + html;
           }).join('')
-        : `<div class="empty"><b>${t('Noch nichts erledigt')}</b>${t('Jede gedrückte Aufgabe landet hier.')}</div>`;
+        : QUERY.trim()
+          ? `<div class="empty"><b>${t('Nichts gefunden')}</b>${t('Kein Eintrag passt zu «{q}».', { q: QUERY.trim() })}</div>`
+          : `<div class="empty"><b>${t('Noch nichts erledigt')}</b>${t('Jede gedrückte Aufgabe landet hier.')}</div>`;
     }
   }
 
@@ -1780,6 +1827,23 @@
     const b = e.target.closest('.tab'); if (!b) return;
     view = b.dataset.view; invalidateOrder(); render();
   });
+
+  // Sucheingabe: filtert live; die Leiste liegt AUSSERHALB von #list und
+  // ueberlebt render() — der Fokus bleibt beim Tippen erhalten (v4.50.0).
+  (() => {
+    const inp = document.getElementById('searchInput');
+    const clr = document.getElementById('searchClear');
+    if (!inp) return;
+    inp.placeholder = t('Suchen');
+    inp.setAttribute('aria-label', t('Suchen'));
+    inp.addEventListener('input', () => {
+      QUERY = inp.value;
+      clr.hidden = !QUERY;
+      render();
+    });
+    inp.addEventListener('keydown', e => { if (e.key === 'Escape') { inp.value = ''; QUERY = ''; clr.hidden = true; render(); } });
+    clr.addEventListener('click', () => { inp.value = ''; QUERY = ''; clr.hidden = true; inp.focus(); render(); });
+  })();
 
   document.getElementById('iamRow').addEventListener('click', e => {
     const c = e.target.closest('.chip'); if (!c) return;

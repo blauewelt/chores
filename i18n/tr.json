@@ -124,5 +124,12 @@
   "Mein Name": "Adım",
   "Dieser Familien-Link wurde ersetzt": "Bu aile bağlantısı değiştirildi",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "Yeni bağlantıyı yöneticinizden alın — verileriniz güvende ve sizi orada bekliyor.",
-  "Ohne eigenes Telefon": "Kendi telefonu yok"
+  "Ohne eigenes Telefon": "Kendi telefonu yok",
+  "Suche": "Arama",
+  "Suchen": "Ara",
+  "An": "Açık",
+  "Nichts gefunden": "Bir şey bulunamadı",
+  "Keine Aufgabe passt zu «{q}».": "«{q}» ile eşleşen görev yok.",
+  "Kein Eintrag passt zu «{q}».": "«{q}» ile eşleşen kayıt yok.",
+  "Leeren": "Temizle"
 }

@@ -1,3 +1,27 @@
+## 2026-07-18 — v4.50.0: Suche (Einstellung, standardmässig AUS) für Aufgaben und Verlauf
+
+- NEUE FUNKTION (Maintainer): ⚙︎ → 🔎 «Suche» (An/Aus, pro Gerät,
+  standardmässig AUS). Eingeschaltet erscheint eine Suchleiste über der
+  Liste — in Aufgaben UND Verlauf, nicht in Punkte
+- FILTER: Aufgaben nach Name + Notiz, Verlauf nach Aufgabe, Notiz und
+  PERSON («timon» zeigt alles von Timon). Diakritik-blind in beide
+  Richtungen («ku» findet «Küche», «kü» findet «Kuche», ß=ss);
+  mehrere Wörter müssen ALLE vorkommen
+- DETAILS: Leiste liegt AUSSERHALB von #list und überlebt jedes
+  render() — der Fokus bleibt beim Tippen erhalten (sonst nach jedem
+  Zeichen weg). ×-Knopf und Esc leeren; eigener Leer-Zustand «Nichts
+  gefunden» statt «Lege die erste an»; die «Einmalig»-Kachel wird bei
+  aktiver Suche ausgeblendet (sie passt ja nicht zur Suche — Fund der
+  Emulator-Sichtprüfung). Einstellung bleibt über Neuladen erhalten,
+  die Eingabe bewusst NICHT
+- EMULATOR-CHECK (Regel): Standard aus ✓, Einschalten fokussiert direkt
+  ✓, Tippsequenz «kü» → «Küche aufräumen» + «Wäsche waschen»
+  (Notiz-Treffer «Küchentücher») ✓, Fokus bleibt ✓, Verlauf nach
+  Aufgabe und nach Person ✓, Punkte ohne Leiste ✓, Neuladen behält den
+  Schalter und leert das Feld ✓
+- 8 Schlüssel ×19. 74/74 Chromium, 73+1 WebKit
+- APP_VERSION 4.50.0, SW-Cache haushalt-v141
+
 ## 2026-07-18 — v4.49.0: Betreute Mitglieder — Personen ohne eigenes Telefon (sehr jung, ohne Gerät, oder eine Katze)
 
 - NEUE FUNKTION (Maintainer): im Personen-Menü (Admin) pro Person

@@ -124,5 +124,12 @@
   "Mein Name": "Tên của tôi",
   "Dieser Familien-Link wurde ersetzt": "Liên kết gia đình này đã được thay thế",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "Hãy lấy liên kết mới từ quản trị viên — dữ liệu của bạn an toàn và đang chờ ở đó.",
-  "Ohne eigenes Telefon": "Không có điện thoại riêng"
+  "Ohne eigenes Telefon": "Không có điện thoại riêng",
+  "Suche": "Tìm kiếm",
+  "Suchen": "Tìm",
+  "An": "Bật",
+  "Nichts gefunden": "Không tìm thấy",
+  "Keine Aufgabe passt zu «{q}».": "Không có việc nào khớp với «{q}».",
+  "Kein Eintrag passt zu «{q}».": "Không có mục nào khớp với «{q}».",
+  "Leeren": "Xoá"
 }

@@ -84,7 +84,7 @@
   "«{name}» gibt es schon": "«{name}» уже существует",
   "Stattdessen verbuchen": "Записать её",
   "Löschen fehlgeschlagen — wiederhergestellt": "Удаление не удалось — восстановлено",
-  "Aus": "Выключено",
+  "Aus": "Выкл.",
   "Max. Punkte": "Макс. очки",
   "Mehrfach tippen addiert — die Skala ist keine harte Grenze.": "Повторные нажатия суммируются — шкала не жёсткий предел.",
   "Fairli hat Neues — ansehen": "В Fairli есть новое — посмотреть",
@@ -124,5 +124,12 @@
   "Mein Name": "Моё имя",
   "Dieser Familien-Link wurde ersetzt": "Эта семейная ссылка была заменена",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "Возьмите новую ссылку у администратора — ваши данные в безопасности и ждут вас там.",
-  "Ohne eigenes Telefon": "Без своего телефона"
+  "Ohne eigenes Telefon": "Без своего телефона",
+  "Suche": "Поиск",
+  "Suchen": "Искать",
+  "An": "Вкл.",
+  "Nichts gefunden": "Ничего не найдено",
+  "Keine Aufgabe passt zu «{q}».": "Нет задач по запросу «{q}».",
+  "Kein Eintrag passt zu «{q}».": "Нет записей по запросу «{q}».",
+  "Leeren": "Очистить"
 }

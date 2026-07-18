@@ -84,7 +84,7 @@
   "«{name}» gibt es schon": "„{name}” już istnieje",
   "Stattdessen verbuchen": "Odnotuj tamto",
   "Löschen fehlgeschlagen — wiederhergestellt": "Usuwanie nieudane — przywrócono",
-  "Aus": "Wyłączone",
+  "Aus": "Wył.",
   "Max. Punkte": "Maks. punkty",
   "Mehrfach tippen addiert — die Skala ist keine harte Grenze.": "Kolejne dotknięcia się sumują — skala nie jest sztywnym limitem.",
   "Fairli hat Neues — ansehen": "Nowości w Fairli — zobacz",
@@ -124,5 +124,12 @@
   "Mein Name": "Moje imię",
   "Dieser Familien-Link wurde ersetzt": "Ten link rodzinny został zastąpiony",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "Poproście admina o nowy link — wasze dane są bezpieczne i tam czekają.",
-  "Ohne eigenes Telefon": "Bez własnego telefonu"
+  "Ohne eigenes Telefon": "Bez własnego telefonu",
+  "Suche": "Wyszukiwanie",
+  "Suchen": "Szukaj",
+  "An": "Wł.",
+  "Nichts gefunden": "Nic nie znaleziono",
+  "Keine Aufgabe passt zu «{q}».": "Żadne zadanie nie pasuje do „{q}”.",
+  "Kein Eintrag passt zu «{q}».": "Żaden wpis nie pasuje do „{q}”.",
+  "Leeren": "Wyczyść"
 }

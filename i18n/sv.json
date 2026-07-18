@@ -124,5 +124,12 @@
   "Mein Name": "Mitt namn",
   "Dieser Familien-Link wurde ersetzt": "Den här familjelänken har ersatts",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "Hämta den nya länken från er admin — era data är säkra och väntar där.",
-  "Ohne eigenes Telefon": "Utan egen telefon"
+  "Ohne eigenes Telefon": "Utan egen telefon",
+  "Suche": "Sök",
+  "Suchen": "Sök",
+  "An": "På",
+  "Nichts gefunden": "Inget hittades",
+  "Keine Aufgabe passt zu «{q}».": "Ingen syssla matchar ”{q}”.",
+  "Kein Eintrag passt zu «{q}».": "Ingen post matchar ”{q}”.",
+  "Leeren": "Rensa"
 }

@@ -84,7 +84,7 @@
   "«{name}» gibt es schon": "「{name}」已存在",
   "Stattdessen verbuchen": "改为记录它",
   "Löschen fehlgeschlagen — wiederhergestellt": "删除失败 — 已恢复",
-  "Aus": "关闭",
+  "Aus": "关",
   "Max. Punkte": "最高分",
   "Mehrfach tippen addiert — die Skala ist keine harte Grenze.": "多次点按会累加——刻度并非硬性上限。",
   "Fairli hat Neues — ansehen": "Fairli 有新内容——看看",
@@ -124,5 +124,12 @@
   "Mein Name": "我的名字",
   "Dieser Familien-Link wurde ersetzt": "此家庭链接已被更换",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "请向管理员索取新链接——你们的数据安然无恙，正在那里等着。",
-  "Ohne eigenes Telefon": "没有自己的手机"
+  "Ohne eigenes Telefon": "没有自己的手机",
+  "Suche": "搜索",
+  "Suchen": "搜索",
+  "An": "开",
+  "Nichts gefunden": "没有找到",
+  "Keine Aufgabe passt zu «{q}».": "没有与「{q}」匹配的任务。",
+  "Kein Eintrag passt zu «{q}».": "没有与「{q}」匹配的记录。",
+  "Leeren": "清除"
 }

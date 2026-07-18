@@ -84,7 +84,7 @@
   "«{name}» gibt es schon": "«{name}» existe déjà",
   "Stattdessen verbuchen": "Saisir plutôt celle-ci",
   "Löschen fehlgeschlagen — wiederhergestellt": "Suppression échouée — restauré",
-  "Aus": "Désactivé",
+  "Aus": "Désactivée",
   "Max. Punkte": "Points max",
   "Mehrfach tippen addiert — die Skala ist keine harte Grenze.": "Plusieurs appuis s'additionnent — l'échelle n'est pas une limite stricte.",
   "Fairli hat Neues — ansehen": "Du nouveau dans Fairli — voir",
@@ -124,5 +124,12 @@
   "Mein Name": "Mon nom",
   "Dieser Familien-Link wurde ersetzt": "Ce lien familial a été remplacé",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "Demandez le nouveau lien à votre admin — vos données sont en sécurité et vous y attendent.",
-  "Ohne eigenes Telefon": "Sans téléphone à soi"
+  "Ohne eigenes Telefon": "Sans téléphone à soi",
+  "Suche": "Recherche",
+  "Suchen": "Rechercher",
+  "An": "Activée",
+  "Nichts gefunden": "Rien trouvé",
+  "Keine Aufgabe passt zu «{q}».": "Aucune tâche ne correspond à « {q} ».",
+  "Kein Eintrag passt zu «{q}».": "Aucune entrée ne correspond à « {q} ».",
+  "Leeren": "Effacer"
 }

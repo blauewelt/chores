@@ -84,7 +84,7 @@
   "«{name}» gibt es schon": "«{name}» există deja",
   "Stattdessen verbuchen": "Înregistrează în schimb",
   "Löschen fehlgeschlagen — wiederhergestellt": "Ștergere eșuată — restaurat",
-  "Aus": "Dezactivat",
+  "Aus": "Dezactivată",
   "Max. Punkte": "Puncte max.",
   "Mehrfach tippen addiert — die Skala ist keine harte Grenze.": "Atingerile repetate se adună — scala nu e o limită strictă.",
   "Fairli hat Neues — ansehen": "Noutăți în Fairli — vezi",
@@ -124,5 +124,12 @@
   "Mein Name": "Numele meu",
   "Dieser Familien-Link wurde ersetzt": "Acest link de familie a fost înlocuit",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "Cereți noul link adminului — datele voastre sunt în siguranță și vă așteaptă acolo.",
-  "Ohne eigenes Telefon": "Fără telefon propriu"
+  "Ohne eigenes Telefon": "Fără telefon propriu",
+  "Suche": "Căutare",
+  "Suchen": "Caută",
+  "An": "Activată",
+  "Nichts gefunden": "Nimic găsit",
+  "Keine Aufgabe passt zu «{q}».": "Nicio sarcină nu se potrivește cu „{q}”.",
+  "Kein Eintrag passt zu «{q}».": "Nicio înregistrare nu se potrivește cu „{q}”.",
+  "Leeren": "Golește"
 }

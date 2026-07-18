@@ -84,7 +84,7 @@
   "«{name}» gibt es schon": "«{name}» ya existe",
   "Stattdessen verbuchen": "Registrar esa",
   "Löschen fehlgeschlagen — wiederhergestellt": "Error al eliminar — restaurado",
-  "Aus": "Desactivado",
+  "Aus": "Desactivada",
   "Max. Punkte": "Puntos máx.",
   "Mehrfach tippen addiert — die Skala ist keine harte Grenze.": "Varios toques se suman — la escala no es un límite estricto.",
   "Fairli hat Neues — ansehen": "Novedades en Fairli — ver",
@@ -124,5 +124,12 @@
   "Mein Name": "Mi nombre",
   "Dieser Familien-Link wurde ersetzt": "Este enlace familiar ha sido reemplazado",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "Pedid el nuevo enlace a vuestro admin — vuestros datos están a salvo y os esperan allí.",
-  "Ohne eigenes Telefon": "Sin teléfono propio"
+  "Ohne eigenes Telefon": "Sin teléfono propio",
+  "Suche": "Búsqueda",
+  "Suchen": "Buscar",
+  "An": "Activada",
+  "Nichts gefunden": "Sin resultados",
+  "Keine Aufgabe passt zu «{q}».": "Ninguna tarea coincide con «{q}».",
+  "Kein Eintrag passt zu «{q}».": "Ninguna entrada coincide con «{q}».",
+  "Leeren": "Borrar"
 }

@@ -124,5 +124,12 @@
   "Mein Name": "自分の名前",
   "Dieser Familien-Link wurde ersetzt": "この家族リンクは新しいものに置き換えられました",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "管理者から新しいリンクをもらってください — データは安全にそちらで待っています。",
-  "Ohne eigenes Telefon": "自分の電話なし"
+  "Ohne eigenes Telefon": "自分の電話なし",
+  "Suche": "検索",
+  "Suchen": "検索",
+  "An": "オン",
+  "Nichts gefunden": "見つかりません",
+  "Keine Aufgabe passt zu «{q}».": "「{q}」に一致する家事はありません。",
+  "Kein Eintrag passt zu «{q}».": "「{q}」に一致する記録はありません。",
+  "Leeren": "クリア"
 }

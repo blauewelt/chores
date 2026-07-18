@@ -124,5 +124,12 @@
   "Mein Name": "내 이름",
   "Dieser Familien-Link wurde ersetzt": "이 가족 링크는 교체되었습니다",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "관리자에게 새 링크를 받으세요 — 데이터는 안전하게 그곳에서 기다리고 있어요.",
-  "Ohne eigenes Telefon": "본인 전화 없음"
+  "Ohne eigenes Telefon": "본인 전화 없음",
+  "Suche": "검색",
+  "Suchen": "검색",
+  "An": "켜짐",
+  "Nichts gefunden": "찾을 수 없음",
+  "Keine Aufgabe passt zu «{q}».": "「{q}」와 일치하는 집안일이 없어요.",
+  "Kein Eintrag passt zu «{q}».": "「{q}」와 일치하는 기록이 없어요.",
+  "Leeren": "지우기"
 }

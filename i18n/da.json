@@ -124,5 +124,12 @@
   "Mein Name": "Mit navn",
   "Dieser Familien-Link wurde ersetzt": "Dette familielink er blevet erstattet",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "Få det nye link fra jeres admin — jeres data er sikre og venter dér.",
-  "Ohne eigenes Telefon": "Uden egen telefon"
+  "Ohne eigenes Telefon": "Uden egen telefon",
+  "Suche": "Søg",
+  "Suchen": "Søg",
+  "An": "Til",
+  "Nichts gefunden": "Intet fundet",
+  "Keine Aufgabe passt zu «{q}».": "Ingen opgave matcher »{q}«.",
+  "Kein Eintrag passt zu «{q}».": "Ingen post matcher »{q}«.",
+  "Leeren": "Ryd"
 }

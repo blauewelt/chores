@@ -124,5 +124,12 @@
   "Mein Name": "Nama saya",
   "Dieser Familien-Link wurde ersetzt": "Tautan keluarga ini telah diganti",
   "Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.": "Minta tautan baru dari admin kalian — data kalian aman dan menunggu di sana.",
-  "Ohne eigenes Telefon": "Tanpa ponsel sendiri"
+  "Ohne eigenes Telefon": "Tanpa ponsel sendiri",
+  "Suche": "Pencarian",
+  "Suchen": "Cari",
+  "An": "Aktif",
+  "Nichts gefunden": "Tidak ditemukan",
+  "Keine Aufgabe passt zu «{q}».": "Tidak ada tugas yang cocok dengan «{q}».",
+  "Kein Eintrag passt zu «{q}».": "Tidak ada entri yang cocok dengan «{q}».",
+  "Leeren": "Hapus"
 }
