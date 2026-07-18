@@ -1055,6 +1055,85 @@ test.describe('Fairli', () => {
     expect(JSON.stringify(posts[0])).toContain('Auditiert');
   });
 
+  test('Betreute Mitglieder (v4.49.0): Admin-Toggle 📵; persönlicher Link zeigt selbst+betreut, loggt für die Katze, Pull hält die Auswahl; Mein Name bleibt selbst', async ({ context, page }) => {
+    await mockBackend(context);
+    // --- Admin: Toggle im Personen-Menü + Persistenz ---
+    const posts = [];
+    await context.route(`${SB}/rest/v1/members*`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') { posts.push(req.postDataJSON()); return route.fulfill({ status: 201, body: '' }); }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.locator('#openMembers').click();
+    const row0 = page.locator('.mrow', { has: page.locator('[data-mmenu="m-chris"]') });
+    await row0.locator('.kebab').click();
+    await page.locator('[data-massist="m-chris"]').click();
+    await expect(row0.locator('.assistbadge')).toBeVisible();      // 📵 sofort sichtbar
+    await page.locator('#doneMembers').click();
+    await expect.poll(() => posts.length).toBeGreaterThan(0);
+    const saved = [].concat(posts[0]).find(r => r.id === 'm-chris');
+    expect(saved.assisted).toBe(true);
+    // Erneutes Öffnen: Häkchen im Menü, Badge in der Zeile (Zustand hält)
+    await page.locator('#openMembers').click();
+    await expect(page.locator('.mrow', { has: page.locator('[data-mmenu="m-chris"]') }).locator('.assistbadge')).toBeVisible();
+    await page.locator('[data-mmenu="m-chris"]').click();
+    await expect(page.locator('[data-massist="m-chris"]')).toContainText('✓');
+  });
+
+  test('Betreute Mitglieder: persönlicher Link — Chips, Fremd-Logging, Rechte (v4.49.0)', async ({ context, page }) => {
+    await mockBackend(context);
+    // Server sagt: Noel ist betreut
+    const logPosts = [];
+    await context.route(`${SB}/rest/v1/members*`, route => {
+      if (route.request().method() !== 'GET') return route.fallback();
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+        { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', assisted: false },
+        { id: 'm-timon', name: 'Timon', color: '#2E7D32', family_id: FAM, url_slug: 'slugt1', assisted: false },
+        { id: 'm-noel', name: 'Noel', color: '#B26500', family_id: FAM, url_slug: null, assisted: true },
+      ]) });
+    });
+    await context.route(`${SB}/rest/v1/log*`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') { logPosts.push(req.postDataJSON()); return route.fulfill({ status: 201, body: '' }); }
+      if (req.method() !== 'GET') return route.fallback();
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+        { id: 'l-n', chore_id: 'c-1', chore_name: 'Müll rausbringen', member_id: 'm-noel', member_name: 'Noel',
+          points: 1, done_at: '2026-07-18T10:00:00Z', family_id: FAM },
+        { id: 'l-t', chore_id: 'c-1', chore_name: 'Müll rausbringen', member_id: 'm-timon', member_name: 'Timon',
+          points: 1, done_at: '2026-07-18T09:00:00Z', family_id: FAM },
+      ]) });
+    });
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+    // Chips: selbst + betreut, NICHT Timon
+    await expect(page.locator('.iam .chip', { hasText: 'Mira' })).toBeVisible();
+    await expect(page.locator('.iam .chip', { hasText: 'Noel' })).toBeVisible();
+    await expect(page.locator('.iam .chip', { hasText: 'Timon' })).toHaveCount(0);
+    // Für die Katze eintragen
+    await page.locator('.iam .chip', { hasText: 'Noel' }).click();
+    await page.locator('.chore', { hasText: 'Müll rausbringen' }).click();
+    await page.waitForTimeout(350);
+    await expect.poll(() => logPosts.length).toBeGreaterThan(0);
+    expect(JSON.stringify(logPosts[0])).toContain('m-noel');
+    // Pull reisst die Auswahl NICHT zurück
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await page.waitForTimeout(600);
+    await expect(page.locator('.iam .chip', { hasText: 'Noel' })).toHaveAttribute('aria-pressed', 'true');
+    // «Mein Name» bleibt die LINK-Identität (Mira), nicht die Chip-Auswahl
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setMyName .setval')).toHaveText('Mira');
+    await page.locator('#setMyName').click();
+    await expect(page.locator('#myName')).toHaveValue('Mira');
+    await page.locator('#closeMyName').click();   // Einstellungen sind dabei schon zu
+    // Verlauf-Rechte: Noels Eintrag editierbar (Button), Timons nicht (DIV)
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    // Noels Eintrag ist editierbar (Button), Timons NICHT (DIV) — Rechte folgen
+    // der erlaubten Menge, nicht mehr nur «ich selbst»
+    await expect(page.locator('button.entry', { hasText: 'Noel' }).first()).toBeVisible();
+    await expect(page.locator('button.entry', { hasText: 'Timon' })).toHaveCount(0);
+    await expect(page.locator('.entry', { hasText: 'Timon' }).first()).toBeVisible();
+  });
+
   test('Boot-Splash: Overlay räumt sich weg, Kopf-Logo erscheint, nichts blockiert (v4.39.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);

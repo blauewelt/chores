@@ -1,3 +1,31 @@
+## 2026-07-18 — v4.49.0: Betreute Mitglieder — Personen ohne eigenes Telefon (sehr jung, ohne Gerät, oder eine Katze)
+
+- NEUE FUNKTION (Maintainer): im Personen-Menü (Admin) pro Person
+  «📵 Ohne eigenes Telefon» an-/abwählbar (Häkchen im Menü, 📵-Badge in
+  der Zeile). Wirkung: betreute Mitglieder erscheinen auf ALLEN
+  persönlichen Links — jede Mitbewohnerin darf für sie eintragen, nicht
+  nur Admins
+- SCHEMA: members.assisted boolean not null default false (unverschlüsselt
+  — reiner Boolean auf ohnehin opaker Zeile). Migration per CI-Workflow
+  ausgerollt (Spalte nach ~20 s live), Pull-Spalten erweitert
+- MECHANIK: neue Helfer slugSelf() (Identität des LINKS) und
+  allowedIds() (selbst + betreute). Chips am persönlichen Link zeigen
+  diese Menge und sind wählbar, sobald mehr als eine Person drin ist;
+  der Pull zieht die Auswahl nur zurück, wenn sie nicht (mehr) erlaubt
+  ist. canEditLog folgt derselben Menge → Verlauf-Einträge der Katze
+  sind für alle editierbar, fremde Einträge weiterhin nicht
+- WICHTIGE TRENNUNG: «Mein Name» in den Einstellungen zeigt/ändert
+  IMMER die Link-Identität (slugSelf), nie die Chip-Auswahl — sonst
+  benennt man aus Versehen die Katze um
+- EMULATOR-CHECK (neue Deploy-Regel, realistischer Zustand): Admin
+  toggelt Tigi → Server übernimmt; Mira (persönlicher Link, kein Admin)
+  sieht «Mira» + «Tigi», trägt für Tigi ein, sieht den Eintrag als
+  editierbar, und «Mein Name» zeigt weiterhin Mira ✓
+- «Ohne eigenes Telefon» ×19. Zwei neue Tests (Admin-Toggle inkl.
+  Persistenz und Häkchen; persönlicher Link mit Chips, Fremd-Logging,
+  Pull-Stabilität, Rechte-Abgrenzung). 73/73 Chromium, 72+1 WebKit
+- APP_VERSION 4.49.0, SW-Cache haushalt-v140
+
 ## 2026-07-18 — v4.48.0: Recap universell formuliert, Banner zündet wirklich — und neue Deploy-Regel: Emulator-Funktionscheck
 
 - ZWEI LIVE-FUNDE (Maintainer, mit Screenshot):

@@ -371,6 +371,13 @@ onFail)` — 1 Retry, dann Wiederherstellung + ehrlicher Toast
 Krone, Zähler. **NIE eine Variable `t` nennen** (schattet i18n; Live-Bug
 Punkte-Tab leer).
 
+### Betreute Mitglieder (v4.49.0)
+`members.assisted` markiert Personen ohne eigenes Telefon. Zentrale
+Helfer: `slugSelf()` = Identität des LINKS (Einstellungen, Mein Name —
+NIE die Chip-Auswahl verwenden!), `allowedIds()` = selbst + betreute
+(Chips, Chip-Klick, canEditLog, Pull-Rückzug). Wer eine neue
+Rechte-Frage stellt, fragt allowedIds() — nicht `me === x`.
+
 ### Mein Name (v4.46.0)
 Einstellungen → 👤 «Mein Name», NUR am persönlichen Link (Admin nutzt
 die Personen-Verwaltung). openMyNameSheet: lokal sofort, Server

@@ -280,7 +280,8 @@
   .mrow{display:flex; gap:8px; align-items:center; margin-bottom:8px}
   .mrow input[type=text]{flex:1; padding:10px 12px; font-size:16px; border:1px solid var(--line); border-radius:10px; background:#161D19; color:var(--ink)}
   .mrow input[type=color]{width:42px; height:42px; border:none; background:none; padding:0; cursor:pointer}
-  .mrow .menupop{top:auto; bottom:100%; margin:0 0 4px}   /* im Sheet nach OBEN aufklappen (kein Clipping) */
+  .mrow .menupop{top:auto; bottom:100%; margin:0 0 4px}
+  .assistbadge{flex:none; font-size:15px; opacity:.85}   /* im Sheet nach OBEN aufklappen (kein Clipping) */
   .shrow{padding:14px 0; border-top:1px solid var(--line); display:flex; flex-direction:column; align-items:center; gap:10px}
   .shrow:first-of-type{border-top:none}
   .shhead{display:flex; align-items:center; gap:10px; width:100%}
@@ -484,7 +485,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.48.0';
+  const APP_VERSION = '4.49.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -727,7 +728,7 @@
         <div class="slot end"><button class="x" id="closeSettings" aria-label="${t('Schließen')}">×</button></div>
       </div>
       ${USER_SLUG ? `<button class="menuitem setrow" id="setMyName" style="border-radius:12px">
-        <span class="seticon">👤</span><span class="setlabel">${t('Mein Name')}</span><span class="setval">${esc((state.members.find(m => m.id === me) || {}).name || '')}</span><span class="chev">›</span></button>` : ''}
+        <span class="seticon">👤</span><span class="setlabel">${t('Mein Name')}</span><span class="setval">${esc((slugSelf() || {}).name || '')}</span><span class="chev">›</span></button>` : ''}
       ${USER_SLUG ? '' : `<button class="menuitem setrow" id="setName" style="border-radius:12px">
         <span class="seticon">🏠</span><span class="setlabel">${t('Haushaltsname')}</span><span class="setval">${esc(state.famName || '')}</span><span class="chev">›</span></button>`}
       <button class="menuitem setrow" id="setLang" style="border-radius:12px">
@@ -796,7 +797,7 @@
 
   // ---------- Mein Name (v4.46.0, nur persoenlicher Link) ----------
   function openMyNameSheet() {
-    const self = state.members.find(m => m.id === me);
+    const self = slugSelf();                  // NICHT die Chip-Auswahl (Katze!) — v4.49.0
     if (!self) return;
     let sh = document.getElementById('myNameSheet');
     if (!sh) { sh = document.createElement('dialog'); sh.id = 'myNameSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
@@ -1065,6 +1066,18 @@
 
   // Persoenlicher Link: Person wird SYNCHRON aus dem Slug abgeleitet (kein
   // Flackern, keine Persistenz). Admin: gespeicherte Wahl.
+  // Slug-Selbst: die Identitaet des LINKS (fuer Einstellungen/Mein Name) —
+  // unabhaengig davon, WEN der Chip gerade zum Eintragen ausgewaehlt hat
+  // (betreute Mitglieder, v4.49.0).
+  const slugSelf = () => USER_SLUG
+    ? state.members.find(m => (m.url_slug || '').toLowerCase() === USER_SLUG) || null
+    : null;
+  const allowedIds = () => {
+    if (!USER_SLUG) return null;   // Admin: alle
+    const ids = new Set(state.members.filter(m => m.assisted).map(m => m.id));
+    const self = slugSelf(); if (self) ids.add(self.id);
+    return ids;
+  };
   let me = USER_SLUG
     ? ((state.members.find(m => (m.url_slug || '').toLowerCase() === USER_SLUG) || {}).id || null)
     : (localStorage.getItem(LS_ME) || null);
@@ -1240,7 +1253,7 @@
         ? `log?select=${LCOLS}&or=(created_at.gt.${encodeURIComponent(wm)},updated_at.gt.${encodeURIComponent(wm)})&order=done_at.desc&limit=300`
         : `log?select=${LCOLS}&order=done_at.desc&limit=300`;
       const [members, chores, logRows, fam] = await Promise.all([
-        sb('members?select=id,name,color,url_slug&order=name'),
+        sb('members?select=id,name,color,url_slug,assisted&order=name'),
         sb('chores?select=id,name,points,note,art,created_at&order=points.desc,name'),
         sb(logQ),
         sb('families?select=*')
@@ -1323,8 +1336,13 @@
                           .sort((a, b) => (a.done_at < b.done_at ? 1 : -1));
       }
       if (USER_SLUG) {
-        const lm = state.members.find(m => (m.url_slug || '').toLowerCase() === USER_SLUG);
-        if (lm) { me = lm.id; }   // bewusst NICHT persistieren (siehe LS_ME oben)
+        const lm = slugSelf();
+        if (lm) {
+          // v4.49.0: Auswahl eines BETREUTEN Mitglieds ueberlebt den Pull —
+          // zurueck auf selbst nur, wenn die Auswahl nicht (mehr) erlaubt ist
+          const allow = allowedIds();
+          if (!me || !allow || !allow.has(me)) me = lm.id;
+        }
         else if (state.members.length) { showBadLink(); return; }
       }
       syncOk = true; save(); render();
@@ -1595,9 +1613,14 @@
 
     // Ich bin — im persönlichen Link fest auf eine Person verriegelt
     const iam = document.getElementById('iamRow');
-    const shown = USER_SLUG ? state.members.filter(m => m.id === me) : state.members;
+    // Persoenlicher Link: selbst + BETREUTE Mitglieder (ohne eigenes Telefon —
+    // sehr jung, ohne Geraet, oder eine Katze; v4.49.0). Alle duerfen fuer
+    // Betreute eintragen, nicht nur Admins.
+    const allow = allowedIds();
+    const shown = allow ? state.members.filter(m => allow.has(m.id)) : state.members;
+    const locked = !!USER_SLUG && shown.length < 2;
     iam.innerHTML = '<span class="lbl">Ich bin</span>' + shown.map(m =>
-      `<button class="chip" data-mid="${m.id}" aria-pressed="${me === m.id}" ${USER_SLUG ? 'style="cursor:default"' : ''}>
+      `<button class="chip" data-mid="${m.id}" aria-pressed="${me === m.id}" ${locked ? 'style="cursor:default"' : ''}>
         <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>${esc(m.name)}
       </button>`).join('') + (USER_SLUG && !shown.length ? '<span class="lbl">…</span>' : '');
     // Mehrzeilig? Dann jede Zeile zentrieren — der Umbruch wirkt gewollt,
@@ -1759,9 +1782,17 @@
   });
 
   document.getElementById('iamRow').addEventListener('click', e => {
-    if (USER_SLUG) return; // persönlicher Link: Person ist fixiert
     const c = e.target.closest('.chip'); if (!c) return;
-    me = c.dataset.mid; localStorage.setItem(LS_ME, me); render();
+    if (USER_SLUG) {
+      // Persoenlicher Link: fixiert — AUSSER auf Betreute (v4.49.0). Die
+      // gerenderten Chips sind bereits die erlaubte Menge; hier trotzdem
+      // pruefen, falls sich der Zustand zwischen Render und Klick aendert.
+      const allow = allowedIds();
+      if (!allow || !allow.has(c.dataset.mid)) return;
+    }
+    me = c.dataset.mid;
+    if (!USER_SLUG) localStorage.setItem(LS_ME, me);   // Slug-Boot ignoriert LS_ME ohnehin
+    render();
   });
   if (USER_SLUG) {
     document.documentElement.classList.add('userlink');
@@ -1879,7 +1910,11 @@
   // Rechte-Modell (v4.38.0): Familien-Link = Admin (alles), persoenlicher
   // Link = nur eigene Verlaufs-Eintraege. Client-seitige Durchsetzung —
   // serverseitig teilen alle den Familien-Write-Key (siehe Onboarding-Doku).
-  const canEditLog = en => !USER_SLUG || (!!me && en.member_id === me);
+  const canEditLog = en => {
+    if (!USER_SLUG) return true;
+    const allow = allowedIds();               // selbst + betreute (v4.49.0)
+    return !!allow && allow.has(en.member_id);
+  };
   function localDT(iso) {
     const d = new Date(iso), p = x => String(x).padStart(2, '0');
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
@@ -2148,10 +2183,12 @@
       `<div class="mrow" data-mid="${m.id}">
         <input type="color" value="${esc(m.color)}" aria-label="Farbe">
         <input type="text" maxlength="30" aria-label="Name">
+        ${m.assisted ? `<span class="assistbadge" title="${t('Ohne eigenes Telefon')}">📵</span>` : ''}
         <div class="entmenu">
           <button class="kebab" data-mmenu="${m.id}" aria-label="Optionen">⋯</button>
           <div class="menupop" id="mmenu-${m.id}" hidden>
             <button class="menuitem" data-mshare="${m.id}">${t('Link teilen')}</button>
+            <button class="menuitem" data-massist="${m.id}">${m.assisted ? '✓ ' : ''}📵 ${t('Ohne eigenes Telefon')}</button>
             <button class="menuitem danger" data-mdel="${m.id}">${t('Löschen')}</button>
           </div>
         </div>
@@ -2528,6 +2565,14 @@
       const pop = document.getElementById('mmenu-' + kb.dataset.mmenu);
       document.querySelectorAll('.menupop').forEach(p => { if (p !== pop) p.hidden = true; });
       if (pop) pop.hidden = !pop.hidden;
+      return;
+    }
+    // Betreut-Toggle (ohne eigenes Telefon) — v4.49.0
+    const as_ = e.target.closest('[data-massist]');
+    if (as_) {
+      const m = memberById(as_.dataset.massist);
+      if (m) { m.assisted = !m.assisted; changedMembers.add(m.id); save(); renderMemberRows(); }
+      document.querySelectorAll('.menupop').forEach(p => p.hidden = true);
       return;
     }
     // Persönlichen Link dieser Person teilen
