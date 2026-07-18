@@ -624,7 +624,8 @@ Animations-GEFÜHL zeigen Screenshots nicht — das bleibt Geräte-Test
 - **famx-Klartext-Test erweitern:** der «sendet NIE Klartext»-Test
   exerziert den Personen-Upsert (finishMembers) nicht — genau dort sass
   das v4.46.0-Leck. Test um eine Personen-Änderung ergänzen.
-- **Fanti write_key_hash:** Backfill wartet auf den zweiten v4.36+-Start
+- ~~Fanti write_key_hash~~ seit der Link-Rotation (18.07.) erledigt —
+  die famx-Familie trägt den Hash ab Geburt. Historischer Punkt:
   eines Fanti-Geräts (SW-Staging). Danach live verifizieren; bis dahin
   ist die Familie verschlüsselt, aber schreib-offen.
 - **mutationSeq-Boot-Verursacher** (v4.36.2 beobachtet): irgendetwas

@@ -284,7 +284,7 @@ test.describe('Fairli', () => {
     let patches = 0;
     await mockBackend(context);
     await context.route(`${SB}/rest/v1/log**`, r =>
-      r.request().method() === 'PATCH' ? (patches++, r.fulfill({ status: 204, body: '' })) : r.fallback());
+      r.request().method() === 'POST' ? (patches++, r.fulfill({ status: 201, body: '' })) : r.fallback());   // seit v4.47.5 upsertRemote → POST
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     await page.locator('.entry').first().click();               // Zeile öffnet Sheet direkt (v4.31)
@@ -295,7 +295,7 @@ test.describe('Fairli', () => {
     await sh.locator('#saveLog').click();
     await expect(page.locator('.entry', { hasText: 'Müll & Papier' })).toBeVisible();
     await expect(page.locator('.entry .enote', { hasText: 'auch Karton' })).toBeVisible();
-    expect(patches).toBeGreaterThan(0);                             // PATCH ging raus
+    expect(patches).toBeGreaterThan(0);                             // Upsert ging raus
   });
 
   test('Einmalig: Kachel immer vorn, verbucht ohne neue Kachel (v4.23.0)', async ({ context, page }) => {
@@ -481,8 +481,12 @@ test.describe('Fairli', () => {
     let patches = 0, posts = 0;
     await mockBackend(context, { logRows: () => [old] });
     await context.route(`${SB}/rest/v1/log**`, r => {
-      if (r.request().method() === 'PATCH') { patches++; return r.fulfill({ status: 204, body: '' }); }
-      if (r.request().method() === 'POST') { posts++; return r.fulfill({ status: 201, body: '' }); }
+      // Seit v4.47.5 sind Create UND Merge POSTs — unterscheidbar am Body:
+      // createRemote sendet EIN Objekt, upsertRemote ein ARRAY (merge-duplicates)
+      if (r.request().method() === 'POST') {
+        if (Array.isArray(r.request().postDataJSON())) patches++; else posts++;
+        return r.fulfill({ status: 201, body: '' });
+      }
       return r.fallback();
     });
     await page.goto(`${BASE}/f/${FAM}`);
@@ -495,7 +499,7 @@ test.describe('Fairli', () => {
     await tile.click();                       // nochmal
     await page.waitForTimeout(400);
     expect(posts).toBe(1);                    // genau EINE neue Zeile
-    expect(patches).toBe(2);                  // zwei Akkumulations-PATCHes
+    expect(patches).toBe(2);                  // zwei Akkumulations-Upserts
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     const fresh = page.locator('.entry').first();
     await expect(fresh.locator('.pts')).toHaveText('+6');            // 3 × 2 Punkte, EINE Zeile
@@ -1014,6 +1018,32 @@ test.describe('Fairli', () => {
     const row = [].concat(posts[0])[0];
     expect(row.name).toBe('Frisch umbenannt');
     expect(row.id).toBe(cid);
+  });
+
+  test('Verlauf-Edit überlebt den Pull (v4.47.5 — letzte Race-Lücke aus dem Audit)', async ({ context, page }) => {
+    await mockBackend(context);
+    const posts = [];
+    await context.route(`${SB}/rest/v1/log*`, async route => {
+      const req = route.request();
+      if (req.method() === 'POST') {
+        posts.push(req.postDataJSON());
+        await new Promise(r => setTimeout(r, 2000));   // Commit-Fenster
+        return route.fulfill({ status: 201, body: '' });
+      }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('button.entry').first().click();
+    await page.locator('#lName').fill('Auditiert');
+    await page.locator('#saveLog').click();
+    await expect(page.locator('.entry', { hasText: 'Auditiert' }).first()).toBeVisible();
+    // Pull WÄHREND des offenen Commits: Änderung bleibt
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await page.waitForTimeout(600);
+    await expect(page.locator('.entry', { hasText: 'Auditiert' }).first()).toBeVisible();
+    await expect.poll(() => posts.length).toBeGreaterThan(0);
+    expect(JSON.stringify(posts[0])).toContain('Auditiert');
   });
 
   test('Boot-Splash: Overlay räumt sich weg, Kopf-Logo erscheint, nichts blockiert (v4.39.0)', async ({ context, page }) => {

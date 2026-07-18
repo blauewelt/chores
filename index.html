@@ -265,10 +265,7 @@
     cursor:pointer; padding:2px 4px; font-family:var(--body)}
   .btn.wide{width:100%; margin-top:6px}
 
-  .namerow{display:flex; align-items:center; justify-content:space-between; gap:10px;
     padding:11px 0 11px 12px; border:1px solid var(--line); border-radius:10px; background:#161D19}
-  .namerow span{font-weight:700; font-size:17px; overflow-wrap:anywhere}
-  .namerow .barbtn{min-width:auto; flex:0 0 auto; color:var(--accent); padding:8px 12px}
   .ptsrow{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:2px}
   .ptsrow output{font-family:var(--display); font-weight:800; font-size:30px; color:var(--accent)}
   input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:40px; background:none; margin:0}
@@ -297,7 +294,6 @@
   .savenote{margin-top:10px; padding:10px 12px; border-radius:12px; font-size:13px; line-height:1.5;
     background:rgba(240,190,80,.10); border:1px solid rgba(240,190,80,.35); color:var(--ink)}
   .shapp{border-top:1px solid var(--line); background:rgba(232,163,61,.06); border-radius:12px; padding:12px 10px; margin-top:6px}
-  .shbtn.ghost{background:var(--card); border:1px solid var(--line); color:var(--ink)}
   .qrtog{border:1px solid var(--line); background:var(--card); color:var(--muted); border-radius:999px;
     padding:8px 13px; font-size:13px; font-weight:700; cursor:pointer; margin-right:8px}
   .qrtog.on{background:color-mix(in srgb, var(--accent) 22%, transparent); color:var(--ink); border-color:transparent}
@@ -488,7 +484,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.47.4';
+  const APP_VERSION = '4.47.5';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1942,7 +1938,10 @@
         const body = { chore_name: name, chore_note: note, done_at: x.done_at };
         const lp = sh.querySelector('#lPts');
         if (lp && ids.length === 1) { x.points = Math.max(0, Math.min(99, +lp.value || 0)); body.points = x.points; }
-        push(() => sb('log?id=eq.' + id, 'PATCH', body));
+        // upsertRemote statt push(PATCH) (v4.47.5, Audit): letzter
+        // ungeschützter Edit-Pfad — Verlauf-Änderungen verloren das Race
+        // gegen pull wie zuvor Personen (v4.46.1) und Aufgaben (v4.47.1)
+        upsertRemote('log', [x]);
       }
       if (delta) state.log.sort((a, b) => new Date(b.done_at) - new Date(a.done_at));
       save(); render(); sh.close();   // save() entwertet laufende Pulls (mutationSeq)
@@ -1965,7 +1964,7 @@
       && Date.now() - new Date(e.done_at).getTime() < 3600e3);
     if (recent) {
       recent.points += choreLike.points;
-      push(() => sb('log?id=eq.' + recent.id, 'PATCH', { points: recent.points }));
+      upsertRemote('log', [recent]);   // v4.47.5: Punkte-Zusammenlegung pull-geschützt
       try { if (navigator.vibrate) navigator.vibrate(12); } catch {}
       toast(t('+{p} für {name}', { p: choreLike.points, name: m.name }));
       return true;
@@ -2412,7 +2411,8 @@
       sh = document.createElement('dialog');
       sh.id = 'shareSheet';
       document.body.appendChild(sh);
-      enableBackdropClose(sh);   // Backdrop-Tipp + Swipe wie ueberall (v4.42.2)
+      // Registrierung passiert unten pro Erst-Öffnung (dataset-Wache) —
+      // hier NICHT nochmal, sonst laufen Swipe/Close-Handler doppelt (Audit v4.47.5)
     }
     // Mitglieder duerfen die persoenlichen Links ALLER Personen teilen (sonst
     // koennen sie niemanden einladen — genau daran scheiterte das Onboarding eines neuen Mitglieds).

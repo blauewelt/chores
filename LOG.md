@@ -1,3 +1,33 @@
+## 2026-07-18 — v4.47.5: Konsistenz-Audit — letzte Race-Lücken (Verlauf), doppelte Sheet-Registrierung, Waisen weg
+
+- AUDIT (Maintainer: «haben wir etwas Inkonsistentes hinterlassen?»),
+  sechs Funde, alle behoben:
+  1. VERLAUF-EDITS waren die letzten ungeschützten Schreibpfade
+     (push+PATCH in saveLog UND in der <1-h-Punkte-Zusammenlegung) —
+     gleiche Race-Klasse wie Personen/Aufgaben. Jetzt upsertRemote;
+     damit läuft JEDER Edit-Pfad der App über den Pull-Schutz
+  2. Share-Sheet registrierte enableBackdropClose DOPPELT (einmal bei
+     Erzeugung, einmal bewacht pro Erst-Öffnung) → Handler liefen
+     zweifach. Die bewachte Registrierung bleibt
+  3. Waisen-CSS entfernt: .namerow (3 Regeln, Markup seit v4.47.3 weg),
+     .shbtn.ghost (letzter Nutzer seit v4.43.0 weg)
+  4. §12 aktualisiert: Fanti-write_key_hash-Punkt war seit der Rotation
+     erledigt (famx trägt den Hash ab Geburt)
+  5. Drei tote Wörterbuch-Schlüssel ×19 entfernt
+  6. Zwei Alt-Tests assertierten die PATCH-Mechanik von vor v4.47.5 —
+     auf POST-Realität umgestellt; der Akkumulations-Test unterscheidet
+     Create/Upsert jetzt ehrlich an der Body-Form (Objekt vs. Array)
+- SAUBER BEFUNDEN: Stift nur auf Kacheln, Chevron nur in
+  Einstellungs-Navigation, Speichern/Fertig-Labels konsistent
+  (Fertig nur wo nichts zu speichern ist), alle 13 Dialoge am
+  Sheet-System, i18n ohne Lücken, Doku ohne Leichen
+- OFFEN notiert: NEWS_VERSION (4.37) hinkt — updates.html-Recap
+  v4.38–v4.47 fällig; Haushaltsname-PATCH bleibt dokumentierte
+  kosmetische Ausnahme
+- Neuer Verlauf-Race-Test (2-s-Commit-Modell). 71/71 Chromium,
+  70+1 WebKit
+- APP_VERSION 4.47.5, SW-Cache haushalt-v137
+
 ## 2026-07-18 — v4.47.4: ✎ aus dem Verlauf entfernt — die ganze Zeile bedeutet Bearbeiten
 
 - Konsequenz der Stift-Semantik (v4.47.3): das ✎ ist nur dort ein
