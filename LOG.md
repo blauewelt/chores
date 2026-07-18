@@ -1,3 +1,26 @@
+## 2026-07-18 — v4.47.1: Aufgaben-Umbenennen — Namenszeile direkt tappbar, Änderung überlebt den Pull
+
+- NAMENSZEILE (Maintainer, Punkt 1): im Bearbeiten-Modus steht der Name
+  als statischer Text (bewusst: beim Öffnen springt keine Tastatur auf)
+  — aber nur der kleine ✎-Knopf machte ihn editierbar. Jetzt ist die
+  GANZE Zeile der Tap-Bereich (role=button, cursor, Stift bleibt als
+  Affordanz); ein Tipp auf den Namen selbst öffnet das Feld mit Fokus
+- UMBENENNEN HÄLT JETZT (Maintainer, Punkt 2 «alter Name bleibt
+  stehen»): der Bearbeiten-Zweig schrieb per ungeschütztem push(PATCH)
+  — ein Pull mit Vor-Commit-Snapshot drehte Name/Punkte/Notiz zurück,
+  und mit dem alten Namen kam auch die alte Kachel-Kunst (die
+  Prompt-URL hängt an name+note). GLEICHE Wurzel wie der Personen-Bug
+  v4.46.1, gleiche Medizin: upsertRemote (Overlay bis zur
+  Server-Bestätigung). Damit sind alle bekannten Schreibpfade
+  race-geschützt: Personen (v4.46.1), Aufgaben-Edit (v4.47.1);
+  Neu-Anlagen/Löschungen liefen schon über createRemote/deleteRemote.
+  Haushaltsname-PATCH bleibt als kosmetische Ausnahme notiert (§12)
+- Test (Race-Modell mit 2-s-Commit): Zeile tappbar → Feld fokussiert;
+  Kachel zeigt sofort neuen Namen; Kunst-Prompt trägt den neuen Namen;
+  Pull während des offenen Commits dreht nichts zurück; POST-Body
+  verifiziert. 70/70 Chromium, 69+1 WebKit
+- APP_VERSION 4.47.1, SW-Cache haushalt-v133
+
 ## 2026-07-18 — v4.47.0: Ersetzter-Link-Hinweis, Personen-Knopf «Speichern»; Ginge-Vorfall diagnostiziert
 
 - ERSETZTER-LINK-HINWEIS: der Server-Grabstein (retired_families)

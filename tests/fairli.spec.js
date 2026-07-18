@@ -968,6 +968,50 @@ test.describe('Fairli', () => {
     await expect(page.locator('#retiredOverlay')).toBeVisible();
   });
 
+  test('Aufgabe umbenennen: Namenszeile direkt tappbar, neuer Name + neue Kunst überleben den Pull (v4.47.1 — Live-Bugs)', async ({ context, page }) => {
+    await mockBackend(context);
+    // Ehrliches Race-Modell wie beim Personen-Bug: Commit dauert 2 s,
+    // der Pull passiert währenddessen und sieht die Schreibung nicht
+    const posts = [];
+    await context.route(`${SB}/rest/v1/chores*`, async route => {
+      const req = route.request();
+      if (req.method() === 'POST') {
+        posts.push(req.postDataJSON());
+        await new Promise(r => setTimeout(r, 2000));
+        return route.fulfill({ status: 201, body: '' });
+      }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    const tile = page.locator('.chore[data-cid]').first();
+    await expect(tile).toBeVisible();
+    const cid = await tile.getAttribute('data-cid');
+    // 1) Bearbeiten öffnen: Name steht als STATISCHER Text (keine Auto-Tastatur) …
+    await tile.locator('.edit').click();
+    await expect(page.locator('#nameStatic')).toBeVisible();
+    await expect(page.locator('#cName')).toBeHidden();
+    // … und die GANZE Zeile (der Text selbst, nicht nur der Stift) macht editierbar
+    await page.locator('#nameText').click();
+    await expect(page.locator('#cName')).toBeVisible();
+    await expect(page.locator('#cName')).toBeFocused();
+    // 2) Umbenennen, speichern
+    await page.locator('#cName').fill('Frisch umbenannt');
+    await page.locator('#saveChore').click();
+    // Kachel zeigt SOFORT den neuen Namen, Kunst-Prompt hängt am neuen Namen
+    const tileNow = page.locator(`.chore[data-cid="${cid}"]`);
+    await expect(tileNow).toContainText('Frisch umbenannt');
+    const artSrc = await tileNow.locator('img.art').evaluate(el => decodeURIComponent(el.src));
+    expect(artSrc).toContain('Frisch umbenannt');
+    // 3) Pull WÄHREND des offenen Commits darf nichts zurückdrehen
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await page.waitForTimeout(600);
+    await expect(tileNow).toContainText('Frisch umbenannt');
+    await expect.poll(() => posts.length).toBeGreaterThan(0);
+    const row = [].concat(posts[0])[0];
+    expect(row.name).toBe('Frisch umbenannt');
+    expect(row.id).toBe(cid);
+  });
+
   test('Boot-Splash: Overlay räumt sich weg, Kopf-Logo erscheint, nichts blockiert (v4.39.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);

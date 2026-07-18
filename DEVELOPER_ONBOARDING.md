@@ -369,7 +369,10 @@ Punkte-Tab leer).
 Einstellungen → 👤 «Mein Name», NUR am persönlichen Link (Admin nutzt
 die Personen-Verwaltung). openMyNameSheet: lokal sofort, Server
 `sb('members?id=eq.me','PATCH',{name})`. Verlauf bleibt historisch.
-MERKE: Personen-Schreibpfade IMMER über upsertRemote() (v4.46.1:
+MERKE: ALLE Edit-Schreibpfade IMMER über upsertRemote()
+(Personen v4.46.1, Aufgaben-Edit v4.47.1 — der ungeschützte
+push(PATCH) verliert das Race gegen pull; Neu-Anlage/Löschung über
+createRemote/deleteRemote). Historisch zu Personen (v4.46.1:
 Pull-Schutz via pendingCreates-OVERLAY — reconcile ersetzt damit auch
 veraltete Serverfassungen editierter Zeilen; bare upsert()/sb()-PATCH
 verliert das Race gegen pull). Historie: der Roh-Fetch — in finishMembers umging encRow und x-fairli-key (v4.46.0

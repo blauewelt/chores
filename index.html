@@ -449,9 +449,10 @@
     </div>
     <div class="field">
       <label for="cName" data-i18n>Aufgabe</label>
-      <div class="namerow" id="nameStatic" style="display:none">
+      <div class="namerow" id="nameStatic" style="display:none; cursor:pointer" role="button" tabindex="0"
+           title="Tippen zum Ändern">
         <span id="nameText"></span>
-        <button type="button" class="barbtn" id="editName" data-i18n>✎ Ändern</button>
+        <button type="button" class="barbtn" id="editName" data-i18n tabindex="-1">✎ Ändern</button>
       </div>
       <div id="dupHint" style="display:none;background:color-mix(in srgb, var(--accent) 12%, transparent);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--ink);margin-bottom:2px">
         <span id="dupHintText"></span>
@@ -493,7 +494,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.47.0';
+  const APP_VERSION = '4.47.1';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2052,7 +2053,10 @@
     choreDirty = false;
     choreSheet.showModal();
   }
-  document.getElementById('editName').addEventListener('click', () => {
+  // Die GANZE Namenszeile ist der Tap-Bereich (v4.47.1, Maintainer: kein
+  // Stift-Suchen) — der Klick des Stifts bubbelt hierher. Absichtliches
+  // Tippen bleibt Bedingung: so springt beim Öffnen keine Tastatur auf.
+  document.getElementById('nameStatic').addEventListener('click', () => {
     document.getElementById('nameStatic').style.display = 'none';
     const inp = document.getElementById('cName');
     inp.style.display = ''; inp.focus(); inp.select();
@@ -2105,7 +2109,11 @@
     if (editingChore) {
       const c = state.chores.find(x => x.id === editingChore);
       c.name = name; c.points = points; c.note = note;
-      push(() => sb('chores?id=eq.' + c.id, 'PATCH', { name, points, note }));
+      // upsertRemote statt push(PATCH) (v4.47.1): der ungeschützte PATCH
+      // verlor das Race gegen pull() — alter Name/Notiz kamen zurück und
+      // damit auch die alte Kachel-Kunst (URL hängt an name+note). Gleiche
+      // Wurzel wie der Personen-Bug v4.46.1, gleiche Medizin.
+      upsertRemote('chores', [c]);
     } else {
       const c = { id: uid(), name, points, note };
       state.chores.push(c);
