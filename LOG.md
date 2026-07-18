@@ -1,3 +1,28 @@
+## 2026-07-18 — v4.48.0: Recap universell formuliert, Banner zündet wirklich — und neue Deploy-Regel: Emulator-Funktionscheck
+
+- ZWEI LIVE-FUNDE (Maintainer, mit Screenshot):
+  1. Das Recap beschrieb die Link-Rotation als hätte JEDER Haushalt
+     einen neuen Link bekommen — sie war familienspezifisch.
+     updates.html ist aber die Seite ALLER Nutzer. Abschnitt jetzt
+     universell: «Ersetzte Links sagen Bescheid» beschreibt die
+     Funktion (Ersetzt-Hinweis), nicht das Ereignis. Ära → v4.38–v4.48
+  2. KEIN Banner auf den Familien-Geräten: die seenver-Marke rückt bei
+     jedem Besuch still auf APP_VERSION vor — die Marken der Familie
+     standen auf 4.47.x, NEWS_VERSION (4.47.0) lag DARUNTER und konnte
+     mathematisch nie zünden. REGEL (im Code dokumentiert):
+     NEWS_VERSION = Version des Recap-Releases SELBST. Jetzt
+     NEWS = APP = 4.48.0
+- NEUE STANDING RULE (Maintainer): pro Deploy wird das gebaute Feature
+  im Emulator IM REALISTISCHEN NUTZERZUSTAND funktional geprüft — nicht
+  nur synthetische Testbedingungen. Für diesen Deploy ausgeführt:
+  Familien-Zustand (Marke 4.47.6) trifft 4.48.0 → Banner erscheint,
+  Klick öffnet das Recap (Ära v4.38–v4.48), Marke rückt vor, Banner
+  weg. Der Check fing dabei prompt einen Fehler im eigenen
+  Prüf-Skript (retired_families-Mock: 'families' ist Teilstring —
+  Reihenfolge zählt), Klasse dokumentiert
+- 71/71 Chromium, 70+1 WebKit
+- APP_VERSION 4.48.0, SW-Cache haushalt-v139, NEWS_VERSION 4.48.0
+
 ## 2026-07-18 — v4.47.6: Recap v4.38–v4.47 (Banner zündet einmal), famName-Wache — letzte Ausnahme getilgt
 
 - UPDATES.HTML NEU (de+en): die Ära v4.38–v4.47 in Familiensprache —

@@ -484,7 +484,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.47.6';
+  const APP_VERSION = '4.48.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2170,7 +2170,10 @@
     // egal wie viele Releases folgen. Erst ein Bump von NEWS_VERSION
     // (ZUSAMMEN mit neuem updates.html-Inhalt!) zündet erneut. Marke wird
     // bei stillen Durchläufen aktuell gehalten.
-    const NEWS_VERSION = '4.47.0';   // updates.html berichtet bis v4.47 — nur mit neuem Inhalt bumpen!
+    const NEWS_VERSION = '4.48.0';   // = Version des Recap-RELEASES selbst! Die seenver-Marke
+    // rueckt bei jedem Besuch still auf APP_VERSION vor — ein NEWS_VERSION
+    // UNTER bereits gesehenen Versionen kann darum nie zuenden (Live-Fund
+    // 18.07.: Familie sah keinen Banner, Marken standen auf 4.47.x).
     const vcmp = (a, b) => {
       a = String(a).split('.').map(Number); b = String(b).split('.').map(Number);
       for (let i = 0; i < 3; i++) { const d = (a[i] || 0) - (b[i] || 0); if (d) return d; }

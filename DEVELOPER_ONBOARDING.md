@@ -529,6 +529,16 @@ Stale-Icon-Falle, Android Chrome/WebAPK — Details in `TESTING_TIER2.md`.
 **Tier 2b** (vor Produktion): BrowserStack-Echtgeräte. **Tier 3:**
 Kamera-Scan bleibt untestbar; QR-Byte-Exaktheit ist bewiesen.
 
+### Emulator-Funktionscheck pro Deploy (Pflicht, 18.07.2026)
+Vor dem Abschluss jedes Deploys: das gebaute Feature im Emulator IM
+REALISTISCHEN NUTZERZUSTAND durchspielen (z. B. seenver-Marke wie auf
+den Familien-Geräten, Onboarding gesehen, echte Klickpfade) — nicht
+nur die synthetischen Testbedingungen der Suite. Der erste Einsatz
+fand sofort zwei Fehlerklassen: NEWS_VERSION unter bereits gesehenen
+Marken (zündet nie) und einen Mock-Teilstring-Fehler
+(retired_families enthält 'families' — Reihenfolge der URL-Prüfung!).
+NEWS_VERSION-Regel: IMMER = Version des Recap-Releases selbst.
+
 ### Suite-Ausgabe & Selbst-Router (Pflicht)
 Suite-Ergebnisse NIE mit tail-N kuerzen — «X failed» steht OBERHALB der
 «passed»-Zeile und faellt sonst weg (so blieben zwei echte Bruecke
