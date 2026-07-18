@@ -1,0 +1,175 @@
+name: tier2-ios-firefox
+# EXPERIMENT (14.07.2026): Drittbrowser-Install-Beweis per Firefox-Proxy.
+# Chrome liefert keine Simulator-Builds; Firefox iOS ist Open Source und
+# nutzt seit iOS 16.4 DASSELBE System-Share-Sheet («Add to Home Screen»)
+# wie Chrome. Ablauf: Firefox aus Source fuer den Simulator bauen →
+# Familien-Deep-Link in Firefox oeffnen → Share-Sheet → Add to Home
+# Screen → Add → Ground Truth: WebClips/<X>.webclip/Info.plist lesen.
+# GRUEN = Deep-URL eingebacken → Drittbrowser-Mechanik bewiesen.
+# BEKANNTE UNBEKANNTE: die Aktion haengt am web-browser-Entitlement;
+# ob sie im unsignierten Simulator-Build erscheint, klaert dieser Lauf.
+# Nur manuell (dispatch) — Build dauert ~30-45 min, nichts fuer nightly.
+on:
+  workflow_dispatch:
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+
+jobs:
+  firefox-install:
+    runs-on: macos-15   # Xcode 16+ noetig (firefox-ios Projektformat 70)
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clone firefox-ios (shallow)
+        run: |
+          git clone --depth 1 https://github.com/mozilla-mobile/firefox-ios.git ffios
+          cd ffios && git log --oneline -1
+          ls
+
+      - name: Bootstrap firefox-ios
+        run: |
+          cd ffios
+          # Historisch ./bootstrap.sh im Root; neuere Struktur evtl. anders.
+          if [ -x ./bootstrap.sh ]; then ./bootstrap.sh || true
+          elif [ -x ./firefox-ios/bootstrap.sh ]; then (cd firefox-ios && ./bootstrap.sh) || true
+          else echo "kein bootstrap.sh gefunden — weiter mit nacktem xcodebuild"; fi
+
+      - name: Select newest Xcode
+        run: |
+          ls -d /Applications/Xcode*.app
+          LATEST=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$LATEST"
+          xcodebuild -version
+          swift --version | head -1
+
+      - name: Build Fennec for simulator
+        run: |
+          cd ffios
+          PROJ=$(ls -d firefox-ios/Client.xcodeproj 2>/dev/null || ls -d Client.xcodeproj 2>/dev/null)
+          echo "Projekt: $PROJ"
+          xcodebuild -project "$PROJ" -list | head -40
+          xcodebuild -project "$PROJ" -scheme Fennec \
+            -configuration Fennec -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath ../dd \
+            -skipMacroValidation -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            SWIFT_ENABLE_EXPLICIT_MODULES=NO CLANG_ENABLE_EXPLICIT_MODULES=NO \
+            build > ../build.log 2>&1 || {
+              echo "=== BUILD FAILED — Fehlerzeilen ==="
+              grep -nE "error:|error " ../build.log | head -30
+              echo "=== letzte 120 Zeilen ==="
+              tail -120 ../build.log
+              exit 65
+            }
+          tail -20 ../build.log
+          APP=$(find ../dd/Build/Products -maxdepth 2 -name "*.app" -print | grep -i -E "Client|Fennec|Firefox" | head -1)
+          echo "APP=$APP" >> $GITHUB_ENV
+          echo "Gebaut: $APP"
+          plutil -p "$APP/Info.plist" | grep -E "BundleIdentifier|BundleName|URLSchemes" -A2 || true
+
+      - name: Boot simulator
+        run: |
+          xcrun xcodebuild -version
+          DEVICE=$(xcrun simctl list devices available | grep -E "iPhone (16 Pro|16|15 Pro) \(" | head -1 | grep -oE '[0-9A-F-]{36}')
+          [ -n "$DEVICE" ] || DEVICE=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -oE '[0-9A-F-]{36}')
+          echo "DEVICE=$DEVICE" >> $GITHUB_ENV
+          xcrun simctl erase "$DEVICE"
+          xcrun simctl boot "$DEVICE"; xcrun simctl bootstatus "$DEVICE" -b
+          sleep 5
+
+      - name: Install idb + OCR
+        run: |
+          brew tap facebook/fb
+          brew trust facebook/fb || true
+          brew install idb-companion tesseract
+          /usr/bin/python3 -m pip install --user --quiet pytesseract pillow fb-idb
+          USERBIN=$(/usr/bin/python3 -m site --user-base)/bin
+          echo "$USERBIN" >> $GITHUB_PATH
+          "$USERBIN/idb" list-targets | head -3
+          "$USERBIN/idb" connect "$DEVICE" || true
+          sleep 3
+
+      - name: Install Firefox in simulator, first launch
+        run: |
+          xcrun simctl install "$DEVICE" "$APP"
+          BUNDLE=$(plutil -extract CFBundleIdentifier raw "$APP/Info.plist")
+          echo "BUNDLE=$BUNDLE" >> $GITHUB_ENV
+          xcrun simctl launch "$DEVICE" "$BUNDLE"
+          sleep 15
+          xcrun simctl io "$DEVICE" screenshot f1-firstlaunch.png
+          # Onboarding wegtippen: mehrere Versuche auf typische Labels
+          for label in "Skip" "Not Now" "Not now" "Close" "Continue" "Next" "Get Started" "Start Browsing"; do
+            /usr/bin/python3 scripts/ocr-tap.py "$DEVICE" f1-firstlaunch.png "$label" && { sleep 3; xcrun simctl io "$DEVICE" screenshot f1-firstlaunch.png; } || true
+          done
+          xcrun simctl io "$DEVICE" screenshot f2-ready.png
+
+      - name: Open family deep link in Firefox
+        run: |
+          BUNDLE_SCHEME=$(plutil -p "$APP/Info.plist" | grep -oE '"(fennec[^"]*|firefox[^"]*)"' | head -1 | tr -d '"')
+          echo "Scheme: ${BUNDLE_SCHEME:-fennec}"
+          URL="https://blauewelt.github.io/chores/f/fam-e2e-fairli01"
+          ENC=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$URL")
+          xcrun simctl openurl "$DEVICE" "${BUNDLE_SCHEME:-fennec}://open-url?url=$ENC" || \
+            xcrun simctl launch "$DEVICE" "$BUNDLE" "$URL" || true
+          sleep 15
+          xcrun simctl io "$DEVICE" screenshot f3-loaded.png
+
+      - name: "Share sheet -> Add to Home Screen -> Add"
+        run: |
+          # Firefox: Share sitzt im Menue (Hamburger/…) oder als Toolbar-Icon.
+          # Erst OCR auf "Share"; sonst Menue unten rechts oeffnen und erneut.
+          xcrun simctl io "$DEVICE" screenshot s0.png
+          /usr/bin/python3 scripts/ocr-tap.py "$DEVICE" s0.png "Share" || {
+            echo "kein Share sichtbar — Toolbar-Menue oeffnen (unten rechts)"
+            idb ui tap --udid "$DEVICE" 360 800
+            sleep 2
+            xcrun simctl io "$DEVICE" screenshot s1-menu.png
+            /usr/bin/python3 scripts/ocr-tap.py "$DEVICE" s1-menu.png "Share" || {
+              idb ui swipe --udid "$DEVICE" 200 700 200 400
+              sleep 2
+              xcrun simctl io "$DEVICE" screenshot s1b-menu.png
+              /usr/bin/python3 scripts/ocr-tap.py "$DEVICE" s1b-menu.png "Share"
+            }
+          }
+          sleep 3
+          xcrun simctl io "$DEVICE" screenshot s2-sheet.png
+          /usr/bin/python3 scripts/ocr-tap.py "$DEVICE" s2-sheet.png "Add to Home Screen" || {
+            idb ui swipe --udid "$DEVICE" 200 750 200 350
+            sleep 2
+            xcrun simctl io "$DEVICE" screenshot s2b-sheet.png
+            /usr/bin/python3 scripts/ocr-tap.py "$DEVICE" s2b-sheet.png "Add to Home Screen"
+          }
+          sleep 3
+          xcrun simctl io "$DEVICE" screenshot s3-edit.png
+          /usr/bin/python3 scripts/ocr-tap.py "$DEVICE" s3-edit.png "Add" --exact
+          sleep 4
+          xcrun simctl io "$DEVICE" screenshot s4-after.png
+
+      - name: "GROUND TRUTH: read the freshly baked Web Clip plist"
+        run: |
+          CLIPS=~/Library/Developer/CoreSimulator/Devices/$DEVICE/data/Library/WebClips
+          ls -la "$CLIPS" || { echo "FEHLER: kein WebClip erzeugt — vermutlich fehlt die Share-Aktion (Entitlement?)"; exit 1; }
+          PLIST=$(ls -d "$CLIPS"/*.webclip | head -1)/Info.plist
+          plutil -p "$PLIST" | tee plist.txt
+          URL=$(plutil -extract URL raw "$PLIST")
+          echo "Eingebackene URL: $URL"
+          if echo "$URL" | grep -q "/f/fam-e2e-fairli01"; then
+            echo "DRITTBROWSER-BEWEIS: Deep-URL korrekt eingebacken (Firefox, System-Share-Sheet)"
+          else
+            echo "Basis-URL eingebacken — Drittbrowser-Pfad waere betroffen!"
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: firefox-artifacts
+          path: |
+            f*.png
+            s*.png
+            plist.txt
+            build.log

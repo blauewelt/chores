@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fairli</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script>
+// iOS: kein Manifest (Web Clip soll die aktuelle URL nutzen); Android bekommt es.
+if (!(/iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))) {
+  var l = document.createElement('link'); l.rel = 'manifest'; l.href = '/chores/manifest.json';
+  document.head.appendChild(l);
+}
+</script>
+<link rel="apple-touch-icon" href="/chores/icon-192.png?v=47">
+<link rel="icon" href="/chores/icon-192.png?v=47">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="apple-mobile-web-app-title" content="Fairli">
+<style>html,body{margin:0;height:100%;background:#fff}</style>
+<script>
+// GitHub Pages 404 fallback for path-based routing.
+// Forward the deep path (e.g. /chores/f/fam-xxx[/u/slug]) into the app at
+// /chores/index.html?r=..., which index.html turns into the active route.
+(function () {
+  var BASE = '/chores/';
+  var path = location.pathname;
+  var rest = path.indexOf(BASE) === 0 ? path.slice(BASE.length) : path.replace(/^\//, '');
+  var target = BASE + 'index.html';
+  if (rest) {
+    try { sessionStorage.setItem('fairli.handoff', rest); } catch (e) {}
+    // Drei Kanaele: ?r= (Query), sessionStorage, UND Hash. Fragmente werden
+    // von iOS Link Tracking Protection nie angefasst (nur Query-Parameter),
+    // nie an Server gesendet und ueberleben jede Navigation. Mikas Retest
+    // kam mit leerer Query UND leerem sessionStorage an — der Hash haette
+    // ueberlebt.
+    target += '?r=' + encodeURIComponent(rest) + '#' + rest;
+  }
+  location.replace(target);
+})();
+</script>
+</head><body></body></html>

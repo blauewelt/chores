@@ -1,0 +1,2683 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Fairli</title>
+<meta name="description" content="Fairli – wer macht was im Haushalt, und wer sammelt die Punkte.">
+<script>
+  // Synchron VOR dem Rendern: persönlicher Link? Dann Admin-Buttons sofort
+  // ausblenden (kein Aufblitzen von Teilen/Personen/Sync).
+  (function(){
+    document.documentElement.classList.add('booting');
+    document.documentElement.classList.add('splash');
+    var s = location.pathname + location.search + location.hash;
+    var isUser = /\/u\/[a-z0-9]{4,}/i.test(s);
+    if (!isUser) {
+      try {
+        // Spiegel der Restore-Logik: Familien-Route hat Vorrang
+        var fam = JSON.parse(localStorage.getItem('haushalt.route.family'));
+        if (!fam) {
+          var r = JSON.parse(localStorage.getItem('haushalt.route.user')) ||
+                  JSON.parse(localStorage.getItem('haushalt.route'));
+          if (r && r.userSlug) isUser = true;
+        }
+      } catch (e) {}
+    }
+    if (isUser) document.documentElement.classList.add('userlink');
+  })();
+</script>
+<style>
+  html.userlink #openMembers { display:none !important; }
+</style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fairli">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#141A17">
+<link rel="apple-touch-icon" href="/chores/icon-192.png?v=47">
+<link rel="icon" href="/chores/icon-192.png?v=47" sizes="192x192" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12161F; --card:#1A2230; --ink:#EAF1EB; --muted:#91A1B8;
+    --line:#2A3447; --accent:#84B2FF; --accent-press:#6B99E6;
+    --gold:#E8B931; --red:#E8746A;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+    --display:'Bricolage Grotesque', system-ui, sans-serif;
+    --body:system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--body);
+    font-size:17px; line-height:1.45; min-height:100dvh;
+    padding-bottom:calc(100px + env(safe-area-inset-bottom));
+  }
+  header{padding:calc(16px + env(safe-area-inset-top)) 18px 4px;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .hrow{display:flex; align-items:center; gap:10px; flex:1; min-width:0}
+  #apphead.wide .hrow{flex:1 0 100%}
+  #apphead.wide .headbtns{margin-left:auto}
+  :root{--titlefs:clamp(30px, 9.2vw, 38px)}
+  header h1{font-family:var(--display); font-weight:800; letter-spacing:-.02em; margin:0;
+    font-size:var(--titlefs);
+    background:linear-gradient(100deg, #EAF1EB, var(--accent)); -webkit-background-clip:text; background-clip:text; color:transparent;
+    flex:1 1 auto; min-width:0; overflow-wrap:anywhere; line-height:1.1;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+  .headbtns{display:flex; gap:6px; flex:0 0 auto; justify-content:flex-end; align-items:center; padding-top:2px}
+  .iconbtn{border:1px solid var(--line); background:var(--card); border-radius:999px;
+    padding:7px 13px; font-size:14px; font-weight:600; color:var(--ink); cursor:pointer}
+  .syncdot{display:inline-block; width:8px; height:8px; border-radius:50%; background:#445248; margin-right:5px; vertical-align:1px}
+  .syncdot.on{background:var(--accent)} .syncdot.err{background:var(--red)}
+
+  .iam{display:flex; flex-wrap:wrap; gap:8px; row-gap:6px; align-items:center; padding:10px 18px 2px; scrollbar-width:none;
+    min-height:46px}
+  .iam.multi{justify-content:center}
+  html.booting .iam{visibility:hidden}
+  .iam::-webkit-scrollbar{display:none}
+  .iam .lbl{font-size:13px; font-weight:700; color:var(--muted); flex:0 0 auto; text-transform:uppercase; letter-spacing:.05em}
+  .chip{display:flex; align-items:center; gap:7px; flex:0 0 auto;
+    border:1px solid var(--line); background:var(--card); border-radius:999px;
+    padding:6px 13px 6px 8px; font-size:15px; font-weight:600; color:var(--ink); cursor:pointer}
+  .chip .dot{width:18px; height:18px; border-radius:50%; display:grid; place-items:center; color:#10140F; font-size:11px; font-weight:800}
+  .chip[aria-pressed="true"]{border-color:var(--accent); box-shadow:inset 0 0 0 1.5px var(--accent)}
+
+  .tabs{display:flex; gap:6px; padding:12px 18px 10px; position:sticky; top:0;
+    background:var(--bg); z-index:5}
+  /* Weicher Auslauf UNTER der Leiste: Kacheln blenden aus, statt in die
+     Pills zu laufen (Live-Feedback 17.07.) */
+  .tabs::after{content:''; position:absolute; left:0; right:0; top:100%; height:14px;
+    background:linear-gradient(var(--bg), transparent); pointer-events:none}
+  .tab{border:1px solid var(--line); background:var(--card); color:var(--muted);
+    border-radius:999px; padding:9px 18px; font-size:16px; font-weight:600; cursor:pointer; font-family:var(--body)}
+  .tab[aria-selected="true"]{background:var(--accent); border-color:var(--accent); color:#10140F}
+  .tab:focus-visible, button:focus-visible, input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+  main{padding:10px 14px 0}
+
+  /* Chore-Tasten: Masonry, Grösse nach Punktwert, Reihenfolge nach Nutzung */
+  .grid{columns:2; column-gap:12px}
+  .chore{
+    position:relative; overflow:hidden; text-align:left; cursor:pointer;
+    width:100%; margin-bottom:12px; break-inside:avoid;
+    font-family:var(--body); color:var(--ink); min-height:104px;
+    background:linear-gradient(168deg,
+      color-mix(in srgb, var(--c) 30%, var(--card)),
+      color-mix(in srgb, var(--c) 10%, var(--card)));
+    border:1px solid color-mix(in srgb, var(--c) 45%, var(--card));
+    border-radius:18px;
+    box-shadow:0 12px 20px rgba(0,0,0,.35);
+    padding:18px 16px 15px;
+    display:flex; flex-direction:column; justify-content:space-between; gap:10px;
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .chore:active{transform:translateY(2px);
+    box-shadow:0 4px 8px rgba(0,0,0,.3)}
+  .chore .art{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    opacity:.55; z-index:0; pointer-events:none}
+  .chore::after{content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
+    background:linear-gradient(180deg, rgba(10,14,12,.6), rgba(10,14,12,.12) 55%, rgba(10,14,12,.55))}
+  .chore .cname{font-weight:700; font-size:18px; line-height:1.25; overflow-wrap:break-word; padding-right:24px; position:relative; color:#fff; z-index:2; text-shadow:0 1px 4px rgba(0,0,0,.6)}
+  .chore .cnote{font-weight:500; font-size:12px; line-height:1.2; margin-top:2px; padding-right:24px;
+    position:relative; z-index:2; color:rgba(255,255,255,.82); text-shadow:0 1px 3px rgba(0,0,0,.7);
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+  .chore .pts{align-self:flex-start; position:relative; z-index:2;
+    font-family:var(--display); font-weight:800; font-size:20px;
+    color:color-mix(in srgb, var(--c) 65%, #fff);
+    background:color-mix(in srgb, var(--c) 28%, transparent);
+    border-radius:999px; padding:4px 15px}
+  .chore .edit{position:absolute; top:0; right:0; width:52px; height:52px;
+    display:flex; align-items:center; justify-content:center; border:none;
+    background:none; color:rgba(255,255,255,.75); font-size:17px; cursor:pointer;
+    border-radius:0 14px 0 14px; z-index:2}
+  .chore .edit:active{background:rgba(255,255,255,.12)}
+  .chore.flash{animation:flash .5s ease}
+  @keyframes flash{0%{filter:brightness(1.4) saturate(1.4)} 100%{filter:none}}
+
+  .score{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:14px; margin-bottom:8px}
+  .score .top{display:flex; align-items:center; gap:11px}
+  .score .dot{width:32px; height:32px; border-radius:50%; display:grid; place-items:center; color:#10140F; font-weight:800; font-size:15px; flex:0 0 32px}
+  .score .name{font-weight:700; font-size:18px; flex:1}
+  .score .num{font-family:var(--display); font-weight:800; font-size:34px}
+  .score .bar{height:10px; border-radius:999px; background:#252F29; margin-top:10px; overflow:hidden}
+  .score .bar i{display:block; height:100%; border-radius:999px}
+  .score .sub{font-size:14px; color:var(--muted); margin-top:6px}
+  .period{display:flex; gap:6px; margin:4px 4px 12px}
+  .period button{border:1px solid var(--line); background:var(--card); border-radius:999px;
+    padding:6px 14px; font-size:14px; font-weight:600; color:var(--muted); cursor:pointer}
+  .period button[aria-pressed="true"]{background:var(--accent); color:#10140F; border-color:var(--accent)}
+
+  .entry{display:flex; align-items:center; gap:10px; background:var(--card);
+    border:1px solid var(--line); border-radius:var(--radius); padding:11px 13px; margin-bottom:8px}
+  .entry .dot{width:14px; height:14px; border-radius:50%; flex:0 0 14px}
+  .entry .what{flex:1; min-width:0}
+  .entry .what b{font-weight:700}
+  .entry .when{font-size:12.5px; color:var(--muted)}
+  .entry .pts{font-family:var(--display); font-weight:800; font-size:19px; color:var(--accent)}
+  .entry .undo{border:none; background:none; color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; padding:6px}
+  .entry .enote{font-size:12.5px; color:var(--muted); margin:1px 0}
+  .entmenu{position:relative}
+  .kebab{border:none; background:none; color:var(--muted); font-size:20px; line-height:1; cursor:pointer; padding:6px 8px; border-radius:8px}
+  .kebab:active{background:rgba(255,255,255,.08)}
+  .menupop{position:absolute; right:0; top:100%; margin-top:6px; background:var(--card); border:1px solid var(--line);
+    border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.4); z-index:5; overflow:hidden; min-width:216px; padding:6px}
+  .menuitem{display:block; width:100%; text-align:left; border:none; background:none; color:var(--ink);
+    font-size:16px; font-weight:600; padding:15px 16px; min-height:52px; border-radius:9px; cursor:pointer}
+  .setrow{display:flex;align-items:center;gap:12px;min-height:54px}
+  .setrow .seticon{font-size:19px;width:26px;text-align:center;flex:none}
+  .setrow .setlabel{flex:1;text-align:left}
+  .setrow .setval{color:var(--muted);font-size:14px;max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
+  .setrow .chev{color:var(--muted);font-size:19px;flex:none;margin-left:-2px}
+  .setrow:disabled{opacity:.55}
+  /* Boot-Splash (v4.39.0): Icon startet vollflaechig und morpht in die
+     Kopf-Ecke. pointer-events:none — rein visuell, blockiert NIE Bedienung. */
+  #splash{position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center;
+    background:var(--bg); pointer-events:none; transition:background .45s ease}
+  #splash img{width:104px; height:104px; border-radius:24px; transform-origin:top left;
+    transition:transform .45s cubic-bezier(.2,.7,.2,1)}
+  /* Logo folgt der Titelgroesse (Wunsch 17.07.: «so gross wie das R») —
+     die Kunst hat inneren Rand, darum Box = volle Schriftgroesse. */
+  #headLogo{width:var(--titlefs); height:var(--titlefs);
+    border-radius:23%; margin-right:10px; flex:none; align-self:center}
+  html.splash #headLogo{opacity:0}
+  /* KEIN Kopf-Schrumpfen mehr (v4.42.0): der Kopf scrollt normal aus dem
+     Bild, nur die Tabs kleben. Das Scroll-Schrumpfen (binaer, dann
+     interpoliert) brachte wenige Pixel und viele Probleme — mehrzeilige
+     Titel klappten beim Kleinerwerden einzeilig um (Live-Feedback 17.07.). */
+  .dayhead{font-weight:800;font-size:13.5px;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin:18px 4px 8px}
+  img.art{opacity:0;transition:opacity .35s ease}
+  @media (prefers-reduced-motion: reduce){ img.art{transition:none} .chore::after{animation:none !important} }
+  img.art.ok{opacity:1}
+  @keyframes shim{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  .chore:has(img.art:not(.ok))::after{content:'';position:absolute;inset:0;border-radius:inherit;
+    background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.055) 50%,transparent 70%);
+    background-size:200% 100%;animation:shim 1.3s linear infinite;pointer-events:none}
+  dialog input[type="datetime-local"]{width:100%;box-sizing:border-box;padding:12px;font-size:16px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);color-scheme:dark;font-family:inherit}
+
+  .menuitem:active{background:rgba(255,255,255,.10)}
+  /* Destruktives sitzt separat: eigene Zeile, Abstand, damit es nicht
+     versehentlich getroffen wird (Verlauf-Fehltipp, Maintainer 14.07.) */
+  .menuitem.danger{color:var(--red); margin-top:6px; box-shadow:inset 0 1px 0 var(--line)}
+  .dellink{display:block; margin:16px auto 0; border:none; background:none; color:var(--muted);
+    font-size:14px; cursor:pointer; padding:8px; text-decoration:underline}
+
+  .empty{text-align:center; color:var(--muted); padding:48px 24px}
+  .empty b{display:block; font-family:var(--display); font-weight:700; font-size:18px; color:var(--ink); margin-bottom:4px}
+
+  .fab{position:fixed; right:18px; bottom:calc(20px + env(safe-area-inset-bottom));
+    width:64px; height:64px; border-radius:50%; border:none; cursor:pointer;
+    background:var(--accent); color:#10140F; font-size:30px; line-height:1;
+    box-shadow:0 6px 18px rgba(82,192,138,.35); z-index:20; transition:transform .1s ease}
+  .fab:active{transform:scale(.92); background:var(--accent-press)}
+
+  dialog{border:none; border-radius:20px 20px 0 0; padding:0; width:100%; max-width:560px;
+    margin:auto auto 0; background:var(--card); color:var(--ink)}
+  dialog::backdrop{background:rgba(0,0,0,.55)}
+  /* Sheets GLEITEN von unten herein statt aufzupoppen (v4.42.1); die globale
+     reduced-motion-Regel (unten) schaltet das automatisch ab */
+  dialog[open]{animation:sheetIn .28s cubic-bezier(.2,.75,.25,1)}
+  dialog[open]::backdrop{animation:backdropIn .28s ease}
+  @keyframes sheetIn{from{transform:translateY(100%)}}
+  @keyframes backdropIn{from{background:rgba(0,0,0,0)}}
+  .sheet{padding:20px 20px calc(20px + env(safe-area-inset-bottom));max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}
+  .sheet h2{font-family:var(--display); font-weight:700; font-size:20px; margin:0 0 14px}
+  .field{margin-bottom:14px}
+  .field label{display:block; font-size:13px; font-weight:600; color:var(--muted); margin-bottom:5px}
+  .field input[type=text], .field input[type=number], .field input[type=url], .field input[type=password]{
+    width:100%; padding:11px 12px; font-size:16px; font-family:var(--body);
+    border:1px solid var(--line); border-radius:10px; background:#161D19; color:var(--ink)}
+  .actions{display:flex; gap:10px; margin-top:18px}
+  .btn{flex:1; padding:13px; border-radius:12px; font-size:16px; font-weight:700; font-family:var(--body);
+    cursor:pointer; border:1px solid var(--line); background:#161D19; color:var(--ink)}
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:#10140F}
+  .btn.primary:active{background:var(--accent-press)}
+  .btn.ghost{background:var(--card); border:1px solid var(--line); color:var(--ink)}
+  .btn.wide + .btn.wide{margin-top:8px}
+  .chore.oneoff{border:1.5px dashed var(--line); background:var(--card)}
+  .chore.oneoff .cname{color:var(--muted)}
+  .chore.oneoff .pts{color:var(--muted); font-size:24px}
+  .entry .xn{font-weight:800; color:var(--accent); margin-left:4px}
+  button.entry{width:100%; text-align:left; border:none; font:inherit; color:inherit;
+    background:var(--card); cursor:pointer}
+  button.entry:active{background:rgba(255,255,255,.05)}
+  /* Gesperrte Zeilen (fremde Eintraege am persoenlichen Link): gleiche Optik, nicht tippbar */
+  div.entry{border:none}
+  .entry .editicon{color:rgba(255,255,255,.65); font-size:16px; margin-left:2px; flex:none}
+  #toast.show{pointer-events:auto}   /* Aktions-Toast (Rückgängig) muss klickbar sein */
+  #toast .tact{margin-left:12px; border:none; background:none; color:var(--accent);
+    font-family:var(--body); font-size:14px; font-weight:800; cursor:pointer; padding:4px 2px}
+  .btn.danger{color:var(--red); border-color:var(--red); background:none}
+  .hint{font-size:13px; color:var(--muted); margin-top:10px}
+
+  /* Einheitliche Sheet-Anatomie: Grabber · Kopf (Slot · Titel · Slot) · Body · Primäraktion unten */
+  .grabber{width:40px; height:4px; border-radius:999px; background:var(--line); margin:0 auto 14px}
+  .sheetbar{display:flex; align-items:center; gap:8px; margin-bottom:16px}
+  .sheetbar h2{margin:0; font-size:18px; flex:1; text-align:center}
+  .slot{flex:0 0 84px; display:flex; align-items:center}   /* feste Breite → Titel bleibt zentriert */
+  .slot.end{justify-content:flex-end}
+  .barbtn{border:none; background:none; font-size:16px; font-weight:600; color:var(--muted);
+    cursor:pointer; padding:8px 4px; font-family:var(--body); text-align:left}
+  .barbtn.del{color:var(--red); font-weight:700}
+  .x{border:none; background:none; color:var(--muted); font-size:26px; line-height:1;
+    cursor:pointer; padding:2px 4px; font-family:var(--body)}
+  .btn.wide{width:100%; margin-top:6px}
+
+  .namerow{display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:11px 0 11px 12px; border:1px solid var(--line); border-radius:10px; background:#161D19}
+  .namerow span{font-weight:700; font-size:17px; overflow-wrap:anywhere}
+  .namerow .barbtn{min-width:auto; flex:0 0 auto; color:var(--accent); padding:8px 12px}
+  .ptsrow{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:2px}
+  .ptsrow output{font-family:var(--display); font-weight:800; font-size:30px; color:var(--accent)}
+  input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:40px; background:none; margin:0}
+  input[type=range]::-webkit-slider-runnable-track{height:12px; border-radius:999px;
+    background:linear-gradient(to right, var(--accent) var(--fill,20%), #252F29 var(--fill,20%))}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:30px; height:30px; border-radius:50%;
+    background:#fff; border:4px solid var(--accent); margin-top:-9px; box-shadow:0 2px 8px rgba(0,0,0,.45)}
+  input[type=range]::-moz-range-track{height:12px; border-radius:999px; background:#252F29}
+  input[type=range]::-moz-range-progress{height:12px; border-radius:999px; background:var(--accent)}
+  input[type=range]::-moz-range-thumb{width:26px; height:26px; border-radius:50%; background:#fff; border:4px solid var(--accent)}
+
+  .mrow{display:flex; gap:8px; align-items:center; margin-bottom:8px}
+  .mrow input[type=text]{flex:1; padding:10px 12px; font-size:16px; border:1px solid var(--line); border-radius:10px; background:#161D19; color:var(--ink)}
+  .mrow input[type=color]{width:42px; height:42px; border:none; background:none; padding:0; cursor:pointer}
+  .mrow .menupop{top:auto; bottom:100%; margin:0 0 4px}   /* im Sheet nach OBEN aufklappen (kein Clipping) */
+  .shrow{padding:14px 0; border-top:1px solid var(--line); display:flex; flex-direction:column; align-items:center; gap:10px}
+  .shrow:first-of-type{border-top:none}
+  .shhead{display:flex; align-items:center; gap:10px; width:100%}
+  .shname{flex:1; font-weight:600; font-size:16px}
+  .shbtn{border:none; border-radius:999px; padding:9px 18px; font-size:15px; font-weight:700; background:var(--accent); color:#0C1220; cursor:pointer}
+  .shqr{border-radius:12px; background:#fff; padding:8px; margin:10px auto 0; display:block}
+  .qrwrap{margin:10px auto 0; text-align:center}
+  .qrwrap[hidden]{display:none}
+  .qrcap{font-size:12px; color:var(--muted); margin-top:6px; font-weight:600}
+  .shrow .subnote{color:var(--muted); font-size:12px; display:block; margin-top:2px}
+  .savenote{margin-top:10px; padding:10px 12px; border-radius:12px; font-size:13px; line-height:1.5;
+    background:rgba(240,190,80,.10); border:1px solid rgba(240,190,80,.35); color:var(--ink)}
+  .shapp{border-top:1px solid var(--line); background:rgba(232,163,61,.06); border-radius:12px; padding:12px 10px; margin-top:6px}
+  .shbtn.ghost{background:var(--card); border:1px solid var(--line); color:var(--ink)}
+  .qrtog{border:1px solid var(--line); background:var(--card); color:var(--muted); border-radius:999px;
+    padding:8px 13px; font-size:13px; font-weight:700; cursor:pointer; margin-right:8px}
+  .qrtog.on{background:color-mix(in srgb, var(--accent) 22%, transparent); color:var(--ink); border-color:transparent}
+  .shfam .shname{color:var(--muted); font-size:14px}
+  .install{border:1px solid var(--line); border-radius:14px; background:var(--card); margin:14px 0 2px; overflow:hidden}
+  .install summary{list-style:none; cursor:pointer; padding:12px 14px; font-weight:700; font-size:14px;
+    display:flex; align-items:center; justify-content:space-between; gap:8px}
+  .install summary::-webkit-details-marker{display:none}
+  .install .chev{color:var(--muted); transition:transform .15s ease}
+  .install[open] .chev{transform:rotate(180deg)}
+  .instbody{padding:0 14px 6px}
+  .plat{padding:10px 0; border-top:1px solid var(--line)}
+  .plat h4{margin:0 0 6px; font-size:13.5px; display:flex; align-items:center; gap:6px}
+  .plat ol{margin:0; padding-left:20px; color:var(--muted); font-size:13px; line-height:1.6}
+  .plat li b{color:var(--ink); font-weight:700}
+  .plat .sub{font-size:12px; opacity:.75}
+  .ic{display:inline-block; vertical-align:-3px; margin:0 1px}
+  .pbadge{font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;
+    background:color-mix(in srgb, var(--accent) 24%, transparent); color:var(--ink)}
+  .addmember{border:1px dashed var(--line); background:none; width:100%; padding:11px; border-radius:10px; color:var(--muted); font-weight:600; cursor:pointer; font-size:15px}
+
+  #newsBar{display:flex;align-items:center;gap:8px;margin:0 14px 8px;padding:8px 12px;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;font-size:14px}
+  #newsBar[hidden]{display:none}
+  #newsBar a{color:var(--accent);text-decoration:none;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #newsBar button{border:none;background:none;color:var(--muted);font-size:19px;padding:2px 6px;cursor:pointer;flex:none}
+  #installBar{display:flex; align-items:center; gap:4px; margin:2px 0 10px;
+    background:rgba(132,178,255,.10); border:1px solid rgba(132,178,255,.35);
+    border-radius:12px; padding:2px 4px 2px 12px}
+  #installBar[hidden]{display:none}
+  #installBar .ibmain{flex:1; text-align:left; border:none; background:none;
+    color:var(--ink); font-family:var(--body); font-size:14px; font-weight:600;
+    padding:9px 0; cursor:pointer}
+  #installBar .ibx{font-size:20px; padding:6px 8px}
+  #installSheet .instbody{margin-top:2px}
+  #toast{position:fixed; left:50%; transform:translateX(-50%) translateY(20px);
+    bottom:calc(100px + env(safe-area-inset-bottom)); background:var(--ink); color:#141A17;
+    padding:10px 20px; border-radius:999px; font-weight:700; opacity:0; pointer-events:none;
+    transition:opacity .2s, transform .2s; z-index:50; max-width:85vw; text-align:center}
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important} }
+</style>
+</head>
+<body>
+<div id="splash" aria-hidden="true"><img src="/chores/icon-192.png?v=47" alt="" width="104" height="104"></div>
+<header id="apphead">
+  <div class="hrow">
+    <img id="headLogo" src="/chores/icon-192.png?v=47" alt="" width="38" height="38" aria-hidden="true">
+    <h1 id="famTitle">&nbsp;</h1>
+  </div>
+  <div class="headbtns">
+    <button class="iconbtn" id="openSettings" aria-label="Einstellungen" style="padding:8px 10px">⚙︎</button>
+    <button class="iconbtn" id="openShareTop" data-i18n>Einladen</button>
+    <button class="iconbtn" id="openMembers" data-i18n>Personen</button>
+  </div>
+</header>
+<div id="newsBar" hidden>
+  <a id="newsBarLink" href="/chores/updates.html" target="_blank" rel="noopener">✨ <span data-i18n>Fairli hat Neues — ansehen</span></a>
+  <button id="newsBarClose" aria-label="Schließen">×</button>
+</div>
+<div id="installBar" hidden>
+  <button class="ibmain" id="installBarOpen" data-i18n>📲 Als App auf den Home-Bildschirm</button>
+  <button class="x ibx" id="installBarClose" aria-label="Ausblenden">×</button>
+</div>
+<script>
+  // Haushaltsnamen SYNCHRON vor dem ersten Paint setzen (kein «Fairli»-Flackern).
+  // Läuft während des Parsens, direkt nachdem der <h1> existiert.
+  (function () {
+    function famFromUrl() {
+      var s = location.pathname + location.search + location.hash;
+      var m = s.match(/f\/([a-z0-9-]{4,64})/i);
+      return m ? m[1].toLowerCase() : null;
+    }
+    function famStored() {
+      var keys = ['haushalt.route.family', 'haushalt.route.user', 'haushalt.route'];
+      for (var i = 0; i < keys.length; i++) {
+        try {
+          var r = JSON.parse(localStorage.getItem(keys[i]));
+          if (r && r.family) return r.family;
+        } catch (e) {}
+      }
+      return null;
+    }
+    // Braucht der Titel im GETEILTEN Layout (Buttons daneben) mehr als seine
+    // 2 Clamp-Zeilen, rutschen die Buttons in eine eigene Zeile (.wide).
+    // Messung IMMER im geteilten Layout (Klasse vorher runter) → deterministisch,
+    // kein Oszillieren; synchron im selben Frame → kein Flackern.
+    window.__updateWide = function () {
+      var head = document.getElementById('apphead');
+      var h1 = document.getElementById('famTitle');
+      if (!head || !h1) return;
+      head.classList.remove('wide');
+      void h1.offsetHeight;
+      // Epsilon = halbe Zeilenhoehe: bei EXAKT 2 Zeilen rundet scrollHeight
+      // je nach Font 1–3 px ueber clientHeight (Zeilenhoehen-Bruchteile) —
+      // eine ECHTE dritte Zeile liegt eine ganze Zeilenhoehe drueber
+      var fs = parseFloat(getComputedStyle(h1).fontSize) || 30;
+      if (h1.scrollHeight > h1.clientHeight + fs / 2) head.classList.add('wide');
+    };
+    // Einzige Quelle der Wahrheit für Titel + Größenlogik; render() ruft dasselbe auf.
+    window.__setFamTitle = function (name) {
+      var h1 = document.getElementById('famTitle');
+      var head = document.getElementById('apphead');
+      if (!h1) return;
+      if (!name) { h1.innerHTML = '&nbsp;'; return; }   // Platzhalter hält die Höhe
+      h1.textContent = name;
+      document.title = name;
+      var n = name.length;
+      // Größenstufe als --titlefs am HEADER: Titel UND Logo folgen ihr
+      // gemeinsam («Logo so gross wie das R» gilt für jede Stufe)
+      head.style.setProperty('--titlefs', n > 22 ? 'clamp(21px, 5.9vw, 26px)'
+                                        : n > 14 ? 'clamp(25px, 7.4vw, 31px)'
+                                        : 'clamp(30px, 9.2vw, 38px)');
+      h1.style.fontSize = '';
+      if (window.__afterTitle) window.__afterTitle(); else window.__updateWide();
+    };
+    var fam = famFromUrl() || famStored();
+    var name = '';
+    if (fam) {
+      try {
+        var st = JSON.parse(localStorage.getItem('haushalt.v2:' + fam));
+        name = (st && st.famName) || '';
+      } catch (e) {}
+    }
+    window.__setFamTitle(name);
+  })();
+</script>
+
+<div class="iam" id="iamRow"></div>
+
+<div class="tabs" role="tablist">
+  <button class="tab" role="tab" data-view="chores" aria-selected="true" data-i18n>Aufgaben</button>
+  <button class="tab" role="tab" data-view="scores" aria-selected="false" data-i18n>Punkte</button>
+  <button class="tab" role="tab" data-view="log" aria-selected="false" data-i18n>Verlauf</button>
+</div>
+
+<main id="list"></main>
+
+<button class="fab" id="openAdd" aria-label="Aufgabe hinzufügen">+</button>
+
+<dialog id="choreSheet">
+  <form class="sheet" method="dialog" id="choreForm">
+    <div class="grabber"></div>
+    <div class="sheetbar">
+      <div class="slot"><button type="button" class="barbtn del" id="deleteChore" style="visibility:hidden" data-i18n>Löschen</button></div>
+      <h2 id="choreSheetTitle">Neue Aufgabe</h2>
+      <div class="slot end"><button type="button" class="x" id="cancelChore" aria-label="Schließen">×</button></div>
+    </div>
+    <div class="field">
+      <label for="cName" data-i18n>Aufgabe</label>
+      <div class="namerow" id="nameStatic" style="display:none">
+        <span id="nameText"></span>
+        <button type="button" class="barbtn" id="editName" data-i18n>✎ Ändern</button>
+      </div>
+      <div id="dupHint" style="display:none;background:color-mix(in srgb, var(--accent) 12%, transparent);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--ink);margin-bottom:2px">
+        <span id="dupHintText"></span>
+        <button type="button" id="dupRecord" class="barbtn" style="margin-left:8px">…</button>
+      </div>
+      <input type="text" id="cName" placeholder="z. B. Geschirrspüler ausräumen" required maxlength="80" autocomplete="off">
+    </div>
+    <div class="field">
+      <div class="ptsrow"><label for="cPts" data-i18n>Punkte</label><output id="cPtsVal" for="cPts">3</output></div>
+      <input type="range" id="cPts" min="0" max="15" step="1" value="3">
+    </div>
+    <div class="field">
+      <label for="cNote"><span data-i18n>Notiz</span> <span style="font-weight:400;color:var(--muted)" data-i18n>(optional)</span></label>
+      <input type="text" id="cNote" placeholder="kurze Erklärung, z. B. «nur Restmüll»" maxlength="60" autocomplete="off">
+    </div>
+    <button type="submit" class="btn primary wide" id="saveChore">Speichern</button>
+    <button type="button" class="btn ghost wide" id="saveAndRecord" hidden>Nur speichern</button>
+  </form>
+</dialog>
+
+<dialog id="memberSheet">
+  <div class="sheet">
+    <div class="grabber"></div>
+    <div class="sheetbar">
+      <div class="slot"></div>
+      <h2 data-i18n>Personen</h2>
+      <div class="slot end"><button type="button" class="x" id="closeMembers" aria-label="Schließen">×</button></div>
+    </div>
+    <div id="memberRows"></div>
+    <button class="addmember" id="addMember" data-i18n>+ Person hinzufügen</button>
+    <button type="button" class="btn primary wide" id="doneMembers" data-i18n>Speichern</button>
+  </div>
+</dialog>
+
+
+
+<div id="toast" role="status"></div>
+
+<script src="qrcode.min.js" defer></script>
+<script>
+(() => {
+  const APP_VERSION = '4.47.0';
+  const uid = () => Math.random().toString(36).slice(2, 10);
+
+  // ---------- Familien-Routing ----------
+  // #f/<familie>           → Familien-Link (voller Zugriff)
+  // #f/<familie>/u/<slug>  → persönlicher Link (Punkte nur für sich selbst)
+  const LS_ROUTE = 'haushalt.route';
+  // BASE robust bestimmen: auf tiefen Pfaden (/chores/f/...) liegt die App-
+  // Wurzel VOR dem «f/»-Segment. Sonst: Verzeichnis der aktuellen Datei.
+  const BASE = (() => {
+    const m = location.pathname.match(/^(.*?\/)f\/[a-z0-9-]{4,}/i);
+    if (m) return m[1];
+    return location.pathname.replace(/index\.html$/, '').replace(/[^/]*$/, '');
+  })();
+  function parseRouteString(s) {
+    if (!s) return null;
+    const m = s.match(/f\/([a-z0-9-]{4,64})(?:\/u\/([a-z0-9]{4,64}))?/i);
+    return m ? { family: m[1].toLowerCase(), userSlug: m[2] ? m[2].toLowerCase() : null } : null;
+  }
+  // Getrennte Speicherung: Admin-Geräte behalten ihre Familien-Route, auch
+  // wenn zwischendurch ein persönlicher Link geöffnet wird. Bare-Launch
+  // (installierte Familien-App, getippte URL) stellt bevorzugt die
+  // FAMILIEN-Route wieder her; reine Mitglieder-Geräte fallen auf ihre
+  // persönliche Route zurück. Persönliche Shortcuts tragen ihre URL selbst.
+  function saveRoute(r) {
+    try {
+      const key = r.userSlug ? LS_ROUTE + '.user' : LS_ROUTE + '.family';
+      localStorage.setItem(key, JSON.stringify(r));
+      localStorage.setItem(LS_ROUTE, JSON.stringify(r)); // legacy/Resume-Anzeige
+    } catch {}
+  }
+  function loadRoute() {
+    try {
+      return JSON.parse(localStorage.getItem(LS_ROUTE + '.family'))
+          || JSON.parse(localStorage.getItem(LS_ROUTE + '.user'))
+          || JSON.parse(localStorage.getItem(LS_ROUTE));
+    } catch { return null; }
+  }
+  // kanonische Pfad-URL einer Familie/Person (für Teilen & Homescreen-Install)
+  function routeUrl(family, slug) {
+    return location.origin + BASE + 'f/' + family + (slug ? '/u/' + slug : '');
+  }
+  // Huebsche Basis NUR fuer geteilte/angezeigte Links (Einladen, Empfehlen,
+  // QR-Code). '/chores/' bleibt der kanonische App-Standort.
+  const SHARE_BASE = '/fairli/';
+  function shareRouteUrl(family, slug) {
+    return location.origin + SHARE_BASE + 'f/' + family + (slug ? '/u/' + slug : '');
+  }
+
+  // Reihenfolge der Quellen: ?r= (vom 404-Handoff), echter Pfad, Hash (legacy).
+  let route = null;
+  const qr = new URLSearchParams(location.search).get('r');
+  if (qr) route = parseRouteString(qr);
+  if (!route) route = parseRouteString(location.pathname); // Regex ist nicht verankert
+  if (!route) {
+    // Kanal 2 des 404-Handoffs: sessionStorage (immun gegen Query-Stripping,
+    // z. B. iOS Link Tracking Protection — ?r ist ein nutzeridentifizierender
+    // Query-Parameter, exakt die Kategorie, die Apple filtert)
+    try { route = parseRouteString(sessionStorage.getItem('fairli.handoff')); } catch {}
+  }
+  try { sessionStorage.removeItem('fairli.handoff'); } catch {}
+  if (!route) route = parseRouteString(location.hash.replace(/^#\/?/, ''));
+
+  if (route) {
+    saveRoute(route);
+    // URL auf saubere Pfadform bringen, ohne Reload (auch für Standalone-Reloads)
+    try { history.replaceState(null, '', routeUrl(route.family, route.userSlug)); } catch {}
+  } else {
+    route = loadRoute();
+    if (route && route.family) {
+      try { history.replaceState(null, '', routeUrl(route.family, route.userSlug)); } catch {}
+    }
+  }
+  const FAMILY = (route && route.family) || null;
+  const USER_SLUG = (route && route.userSlug) || null;
+
+  // --- Manifest per INJEKTION, nie statisch (v4.20.0) ---
+  // GELERNT (Tier-2-Capture, plist-Beweis 13.07.): WebKit registriert ein
+  // statisches Manifest beim PARSEN. Das fruehere JS-ENTFERNEN des Links
+  // war kosmetisch — «Zum Home-Bildschirm» backte weiterhin start_url
+  // (= index.html) ein. Maintainer-Hypothese, per Ground Truth bestaetigt.
+  // Deshalb: der Link existiert im HTML gar nicht; nur Android/Desktop im
+  // FAMILIEN-Kontext bekommt ihn per JS (Chrome liest spaet injizierte
+  // Manifeste fuer Install/WebAPK). iOS nutzt so garantiert die aktuelle
+  // URL; persoenliche Links bleiben ueberall manifest-frei (mehrere
+  // Personen-Shortcuts pro Geraet).
+  const IS_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (!IS_IOS && !USER_SLUG) {
+    const l = document.createElement('link');
+    l.rel = 'manifest'; l.href = '/chores/manifest.json';
+    document.head.appendChild(l);
+  }
+
+  window.addEventListener('popstate', () => {
+    const r = parseRouteString(location.pathname.slice(BASE.length)) ||
+              parseRouteString(location.hash.replace(/^#\/?/, ''));
+    if (r && (!route || r.family !== route.family || r.userSlug !== route.userSlug)) {
+      saveRoute(r); location.reload();
+    }
+  });
+
+  const LS_STATE = 'haushalt.v2:' + FAMILY;
+  const LS_CFG   = 'haushalt.sync';
+  // Frueher: EIN Schluessel pro Familie — den sich Admin-Ansicht und persoenliche
+  // Links TEILTEN. Ein Besuch auf einem fremden persoenlichen Link stempelte damit dessen «Ich bin»
+  // auch in die Admin-Ansicht. Jetzt: nur der Admin-Kontext merkt sich eine Wahl.
+  const LS_ME_OLD = 'haushalt.me:' + FAMILY;
+  const LS_ME     = 'haushalt.me:' + FAMILY + ':admin';
+  const CHORE_COLORS = ['#52C08A','#E8B931','#5FA8E8','#E8746A','#B585E8',
+                        '#E89C4B','#4BC4C4','#E86AA8','#A8C45B','#8A93E8'];
+  // ============ i18n (v4.27.0) ============
+  // Deutsch ist die Quellsprache: der deutsche String IST der Schluessel.
+  // Fehlt eine Uebersetzung, erscheint Deutsch — nie ein leerer Text.
+  const LANGS = { de: 'Deutsch', en: 'English', fr: 'Français', it: 'Italiano',
+                  es: 'Español', pt: 'Português', ro: 'Română', nl: 'Nederlands',
+                  pl: 'Polski', tr: 'Türkçe', sv: 'Svenska', da: 'Dansk',
+                  ru: 'Русский', uk: 'Українська', hi: 'हिन्दी', zh: '中文',
+                  ja: '日本語', ko: '한국어', vi: 'Tiếng Việt', id: 'Bahasa Indonesia' };
+  const LS_LANG = 'haushalt.lang';
+  let LANG = (() => {
+    try { const s = localStorage.getItem(LS_LANG); if (s && LANGS[s]) return s; } catch {}
+    const b = (navigator.language || 'de').slice(0, 2).toLowerCase();
+    return LANGS[b] ? b : 'en' in LANGS && b !== 'de' ? 'en' : 'de';
+  })();
+  let DICT = {};
+  const LOCALES = { de: 'de-CH', en: 'en-GB', fr: 'fr-CH', it: 'it-CH',
+                    es: 'es-ES', pt: 'pt-PT', ro: 'ro-RO', nl: 'nl-NL',
+                    pl: 'pl-PL', tr: 'tr-TR', sv: 'sv-SE', da: 'da-DK',
+                    ru: 'ru-RU', uk: 'uk-UA', hi: 'hi-IN', zh: 'zh-CN',
+                    ja: 'ja-JP', ko: 'ko-KR', vi: 'vi-VN', id: 'id-ID' };
+  let LOCALE = LOCALES[LANG] || 'de-CH';
+  function t(s, vars) {
+    let out = (LANG !== 'de' && DICT[s]) || s;
+    if (vars) for (const k in vars) out = out.replaceAll('{' + k + '}', vars[k]);
+    return out;
+  }
+  async function loadDict(lang) {
+    if (lang === 'de') { DICT = {}; return; }
+    const ck = 'haushalt.dict:' + lang;
+    try { const c = localStorage.getItem(ck); if (c) DICT = JSON.parse(c); } catch {}
+    try {
+      const r = await fetch('/chores/i18n/' + lang + '.json', { cache: 'no-cache' });
+      if (r.ok) { DICT = await r.json(); try { localStorage.setItem(ck, JSON.stringify(DICT)); } catch {} }
+    } catch {}   // offline: localStorage-Kopie oder Deutsch-Fallback
+  }
+  // Statisches HTML uebersetzen: [data-i18n] merkt sich das deutsche Original
+  const ATTR_I18N = [
+    ['cName', 'placeholder'], ['cNote', 'placeholder'],
+    ['cancelChore', 'aria-label'], ['closeMembers', 'aria-label'],
+    ['installBarClose', 'aria-label'], ['openAdd', 'aria-label'],
+    ['newsBarClose', 'aria-label']
+  ];
+  function translatePage() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      if (!el.dataset.src) el.dataset.src = el.textContent.trim();
+      el.textContent = t(el.dataset.src);
+    });
+    for (const [id, attr] of ATTR_I18N) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      const key = 'src' + attr.replace('-', '');
+      if (!el.dataset[key]) el.dataset[key] = el.getAttribute(attr);
+      el.setAttribute(attr, t(el.dataset[key]));
+    }
+    document.documentElement.lang = LANG;
+  }
+  async function setLang(lang) {
+    if (!LANGS[lang]) return;
+    LANG = lang; LOCALE = LOCALES[lang] || 'de-CH';
+    try { localStorage.setItem(LS_LANG, lang); } catch {}
+    await loadDict(lang);
+    translatePage();
+    if (typeof render === 'function') render();
+  }
+  function openMaxPtsSheet() {
+    let sh = document.getElementById('maxPtsSheet');
+    if (!sh) { sh = document.createElement('dialog'); sh.id = 'maxPtsSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"></div>
+        <h2>${t('Max. Punkte')}</h2>
+        <div class="slot end"><button type="button" class="x" id="closeMaxPts" aria-label="${t('Schließen')}">×</button></div>
+      </div>
+      ${[3, 5, 10].map(v =>
+        `<button class="menuitem" data-maxpts="${v}" style="border-radius:12px${v === MAXPTS ? ';color:var(--accent)' : ''}">${v}${v === MAXPTS ? ' ✓' : ''}</button>`).join('')}
+      <p style="color:var(--muted);font-size:13px;margin:10px 4px 2px">${t('Mehrfach tippen addiert — die Skala ist keine harte Grenze.')}</p>
+    </div>`;
+    sh.querySelector('#closeMaxPts').onclick = () => sh.close();
+    sh.querySelectorAll('[data-maxpts]').forEach(b => b.onclick = () => { setMaxPts(+b.dataset.maxpts); sh.close(); });
+    sh.showModal();
+  }
+  function openSortSheet() {
+    let sh = document.getElementById('sortSheet');
+    if (!sh) { sh = document.createElement('dialog'); sh.id = 'sortSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
+    const OPTS = [['created', t('Nach Erstellung')], ['alpha', t('Alphabetisch')], ['usage', t('Nach Nutzung')]];
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"></div>
+        <h2>${t('Sortierung')}</h2>
+        <div class="slot end"><button type="button" class="x" id="closeSort" aria-label="${t('Schließen')}">×</button></div>
+      </div>
+      ${OPTS.map(([mode, label]) =>
+        `<button class="menuitem" data-sort="${mode}" style="border-radius:12px${mode === SORT ? ';color:var(--accent)' : ''}">${label}${mode === SORT ? ' ✓' : ''}</button>`).join('')}
+    </div>`;
+    sh.querySelector('#closeSort').onclick = () => sh.close();
+    sh.querySelectorAll('[data-sort]').forEach(b => b.onclick = () => { setSort(b.dataset.sort); sh.close(); });
+    sh.showModal();
+  }
+  function openLangSheet() {
+    let sh = document.getElementById('langSheet');
+    if (!sh) { sh = document.createElement('dialog'); sh.id = 'langSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"></div>
+        <h2>${t('Sprache')}</h2>
+        <div class="slot end"><button type="button" class="x" id="closeLang" aria-label="${t('Schließen')}">×</button></div>
+      </div>
+      ${Object.entries(LANGS).map(([code, name]) =>
+        `<button class="menuitem" data-lang="${code}" style="border-radius:12px${code === LANG ? ';color:var(--accent)' : ''}">${name}${code === LANG ? ' ✓' : ''}</button>`).join('')}
+      <p style="color:var(--muted);font-size:13px;margin:10px 4px 2px">${t('Weitere Sprachen folgen.')}</p>
+    </div>`;
+    sh.querySelector('#closeLang').onclick = () => sh.close();
+    sh.querySelectorAll('[data-lang]').forEach(b => b.onclick = async () => { await setLang(b.dataset.lang); sh.close(); });
+    sh.showModal();
+  }
+
+  // ---------- Einstellungen (v4.31.0) ----------
+  function openSettingsSheet() {
+    let sh = document.getElementById('settingsSheet');
+    if (!sh) { sh = document.createElement('dialog'); sh.id = 'settingsSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
+    const encState = IS_ENC ? t('Aktiv ✓') : t('Aus');
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"></div>
+        <h2>${t('Einstellungen')}</h2>
+        <div class="slot end"><button class="x" id="closeSettings" aria-label="${t('Schließen')}">×</button></div>
+      </div>
+      ${USER_SLUG ? `<button class="menuitem setrow" id="setMyName" style="border-radius:12px">
+        <span class="seticon">👤</span><span class="setlabel">${t('Mein Name')}</span><span class="setval">${esc((state.members.find(m => m.id === me) || {}).name || '')}</span><span class="chev">›</span></button>` : ''}
+      ${USER_SLUG ? '' : `<button class="menuitem setrow" id="setName" style="border-radius:12px">
+        <span class="seticon">🏠</span><span class="setlabel">${t('Haushaltsname')}</span><span class="setval">${esc(state.famName || '')}</span><span class="chev">›</span></button>`}
+      <button class="menuitem setrow" id="setLang" style="border-radius:12px">
+        <span class="seticon">🌐</span><span class="setlabel">${t('Sprache')}</span><span class="setval">${LANGS[LANG]}</span><span class="chev">›</span></button>
+      <button class="menuitem setrow" id="setSort" style="border-radius:12px">
+        <span class="seticon">↕️</span><span class="setlabel">${t('Sortierung')}</span><span class="setval">${t(SORT === 'alpha' ? 'Alphabetisch' : SORT === 'usage' ? 'Nach Nutzung' : 'Nach Erstellung')}</span><span class="chev">›</span></button>
+      <button class="menuitem setrow" id="setMaxPts" style="border-radius:12px">
+        <span class="seticon">🎯</span><span class="setlabel">${t('Max. Punkte')}</span><span class="setval">${MAXPTS}</span><span class="chev">›</span></button>
+      ${IS_ENC || USER_SLUG ? '' : `<button class="menuitem setrow" id="setEnc" style="border-radius:12px">
+        <span class="seticon">🔒</span><span class="setlabel">${t('Verschlüsselung')}</span><span class="setval">${encState}</span><span class="chev">›</span></button>`}
+      <a class="menuitem setrow" href="/chores/updates.html" target="_blank" rel="noopener" style="border-radius:12px;text-decoration:none">
+        <span class="seticon">✨</span><span class="setlabel">${t('Was ist neu')}</span><span class="setval">↗</span></a>
+      <p style="color:var(--muted);font-size:12.5px;margin:14px 4px 2px;text-align:center">Fairli ${APP_VERSION}</p>
+    </div>`;
+    sh.querySelector('#closeSettings').onclick = () => sh.close();
+    const sn = sh.querySelector('#setName');
+    if (sn) sn.onclick = () => { sh.close(); openRenameSheet(); };
+    const smn = sh.querySelector('#setMyName');
+    if (smn) smn.onclick = () => { sh.close(); openMyNameSheet(); };
+    sh.querySelector('#setLang').onclick = () => { sh.close(); openLangSheet(); };
+    sh.querySelector('#setSort').onclick = () => { sh.close(); openSortSheet(); };
+    sh.querySelector('#setMaxPts').onclick = () => { sh.close(); openMaxPtsSheet(); };
+    const se = sh.querySelector('#setEnc');
+    if (se) se.onclick = () => { sh.close(); openMigrateSheet(); };
+    sh.showModal();
+  }
+
+  // ---------- Haushalt umbenennen (v4.41.0, nur Familien-Link) ----------
+  function openRenameSheet() {
+    let sh = document.getElementById('renameSheet');
+    if (!sh) { sh = document.createElement('dialog'); sh.id = 'renameSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"></div>
+        <h2>${t('Haushaltsname')}</h2>
+        <div class="slot end"><button class="x" id="closeRename" aria-label="${t('Schließen')}">×</button></div>
+      </div>
+      <div class="field">
+        <input id="renName" type="text" maxlength="40" value="${esc(state.famName || '')}" autocomplete="off">
+      </div>
+      <button class="btn primary wide" id="saveRename">${t('Speichern')}</button>
+    </div>`;
+    sh.querySelector('#closeRename').onclick = () => sh.close();
+    sh.querySelector('#saveRename').onclick = async () => {
+      const name = sh.querySelector('#renName').value.trim();
+      if (!name || name === state.famName) { sh.close(); return; }
+      state.famName = name;
+      save();
+      window.__setFamTitle(name);   // Titel + Groessenstufe + wide sofort
+      sh.close();
+      toast(t('Gespeichert'));
+      try {
+        await sb('families', 'PATCH', { name });   // famScope zielt auf die Zeile; encRow verschluesselt bei Bedarf
+      } catch {
+        toast(t('Konnte nicht speichern — bitte erneut versuchen'));
+      }
+    };
+    sh.showModal();
+    const inp = sh.querySelector('#renName');
+    inp.focus(); inp.select();
+  }
+
+  // ---------- Mein Name (v4.46.0, nur persoenlicher Link) ----------
+  function openMyNameSheet() {
+    const self = state.members.find(m => m.id === me);
+    if (!self) return;
+    let sh = document.getElementById('myNameSheet');
+    if (!sh) { sh = document.createElement('dialog'); sh.id = 'myNameSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"></div>
+        <h2>${t('Mein Name')}</h2>
+        <div class="slot end"><button class="x" id="closeMyName" aria-label="${t('Schließen')}">×</button></div>
+      </div>
+      <div class="field">
+        <input id="myName" type="text" maxlength="30" value="${esc(self.name || '')}" autocomplete="off">
+      </div>
+      <button class="btn primary wide" id="saveMyName">${t('Speichern')}</button>
+    </div>`;
+    sh.querySelector('#closeMyName').onclick = () => sh.close();
+    sh.querySelector('#saveMyName').onclick = async () => {
+      const name = sh.querySelector('#myName').value.trim();
+      if (!name || name === self.name) { sh.close(); return; }
+      self.name = name;
+      save(); render();                      // Chips, Punkte, Kacheln folgen sofort
+      sh.close();
+      toast(t('Gespeichert'));
+      // Verlauf bleibt historisch (member_name der alten Zeilen unveraendert —
+      // gleiche Semantik wie beim Admin-Umbenennen); neue Eintraege nutzen den
+      // neuen Namen. upsertRemote: verschluesselt, Write-Key, Pull-Schutz.
+      upsertRemote('members', [self]);
+    };
+    sh.showModal();
+    const inp = sh.querySelector('#myName');
+    inp.focus(); inp.select();
+  }
+
+  // ---------- Migration: fam- → verschluesselt (famc-, GLEICHE URL) ----------
+  function openMigrateSheet() {
+    let sh = document.getElementById('migrateSheet');
+    if (!sh) { sh = document.createElement('dialog'); sh.id = 'migrateSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"></div>
+        <h2>${t('Verschlüsselung aktivieren')}</h2>
+        <div class="slot end"><button class="x" id="closeMig" aria-label="${t('Schließen')}">×</button></div>
+      </div>
+      <p style="color:var(--muted);font-size:14px;line-height:1.55;margin:4px 0 10px">${t('Eure Daten werden mit dem Familien-Link verschlüsselt — ohne Link ist die Datenbank unlesbar. Links und Icons bleiben unverändert gültig.')}</p>
+      <p style="color:var(--muted);font-size:14px;line-height:1.55;margin:0 0 12px">${t('Geräte mit älterem App-Stand können nichts beschädigen: der Server weist ihre Schreibversuche ab, beim nächsten App-Start sind sie automatisch wieder dabei. Nur nicht gesendete Einträge aus genau dieser einen Sitzung gingen verloren — ein ruhiger Moment ist darum der beste.')}</p>
+      <div id="migStatus" style="color:var(--muted);font-size:13px;min-height:18px;margin-bottom:8px"></div>
+      <button class="btn primary wide" id="migGo">${t('Backup laden & verschlüsseln')}</button>
+    </div>`;
+    sh.querySelector('#closeMig').onclick = () => sh.close();
+    sh.querySelector('#migGo').onclick = () => runMigration(sh);
+    sh.showModal();
+  }
+  async function runMigration(sh) {
+    const st = sh.querySelector('#migStatus');
+    const say = m => { st.textContent = m; };
+    sh.querySelector('#migGo').disabled = true;
+    try {
+      await CRYPTO_READY;
+      say(t('Backup wird erstellt…'));
+      // 1. Frischen Stand ziehen und als JSON-Backup aufs Geraet laden
+      const [members, chores, logRows, fams] = await Promise.all([
+        sb('members?select=*'), sb('chores?select=*'), sb('log?select=*'), sb('families?select=*')]);
+      const backup = { exportedAt: new Date().toISOString(), family: FAMILY,
+        famName: (fams[0] || {}).name || '', members, chores, log: logRows };
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }));
+      a.download = 'fairli-backup-' + FAMILY + '-' + Date.now() + '.json';
+      a.click();
+      // 2. Kryptokontext auf famc umstellen und verschluesselte KOPIE schreiben
+      say(t('Verschlüsselte Kopie wird geschrieben…'));
+      IS_ENC = true; AESKEY = await deriveKey(); ROWFAM = await famHash('famc-');
+      await sb('families', 'POST', WRITEKEY_HASH ? { name: backup.famName, write_key_hash: WRITEKEY_HASH } : { name: backup.famName });
+      if (members.length) await upsert('members', members);
+      if (chores.length) await upsert('chores', chores);
+      if (logRows.length) await upsert('log', logRows);
+      // 3. VERIFIZIEREN: Zeilenzahlen unter dem neuen Schluessel
+      say(t('Kopie wird verifiziert…'));
+      const [vm, vc, vl] = await Promise.all([
+        sb('members?select=id'), sb('chores?select=id'), sb('log?select=id')]);
+      if (vm.length !== members.length || vc.length !== chores.length || vl.length < logRows.length)
+        throw new Error('Verifikation: Zeilenzahlen stimmen nicht');
+      // 4. Erst NACH verifizierter Kopie: Klartext-Originale entfernen
+      //    (GDPR-Zweck der Migration; Backup liegt auf dem Geraet)
+      say(t('Klartext-Originale werden entfernt…'));
+      const OLD = encodeURIComponent(FAMILY);
+      const del = tbl => fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/' + tbl + '?family_id=eq.' + OLD, {
+        method: 'DELETE', headers: { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key } });
+      await del('log'); await del('chores'); await del('members');
+      // families-Zeile wird zum Wegweiser fuer veraltete Clients
+      await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/families?family_id=eq.' + OLD, {
+        method: 'PATCH', headers: { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: '→ App aktualisieren / update app' }) });
+      // Grabstein: Server lehnt kuenftig JEDE Klartext-Einfuegung unter der
+      // alten ID ab (RLS) — schuetzt vor veralteten Cache-Staenden, die die
+      // Client-Guards nicht haben. Fehler hier ist NICHT fatal (Migration
+      // selbst ist fertig; Grabstein ist Zusatzschutz).
+      // Roh-Fetch: sb()/famRows wuerde family_id mit ROWFAM (famc-Hash!)
+      // ueberschreiben — der Grabstein gilt aber der ALTEN Klartext-ID.
+      try {
+        await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/retired_families', {
+          method: 'POST',
+          headers: { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key,
+            'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify({ family_id: FAMILY })
+        });
+      } catch {}
+      try { localStorage.setItem(LS_ENCV, '1'); } catch {}
+      say(t('Fertig — App lädt neu.'));
+      setTimeout(() => location.reload(), 900);
+    } catch (e) {
+      say(t('Fehlgeschlagen: {msg} — nichts wurde gelöscht, Backup liegt auf dem Gerät.', { msg: e.message }));
+      sh.querySelector('#migGo').disabled = false;
+      IS_ENC = FAMILY.startsWith('famx-'); ROWFAM = FAMILY; AESKEY = null;
+      await CRYPTO_READY;
+    }
+  }
+
+  const choreColor = id => {
+    let x = 0; for (const ch of String(id)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
+    return CHORE_COLORS[x % CHORE_COLORS.length];
+  };
+  const choreSeed = id => {
+    let x = 0; for (const ch of String(id)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
+    return x % 100000;
+  };
+  // Bild-Fehler: NICHT sofort entfernen. Beim Voll-Repaint (Cache-Miss auf
+  // allen Kacheln zugleich, 15.07.) drosselt Pollinations — ein spaeterer
+  // Versuch gelingt fast immer. 3 Retries mit Backoff, dann aufgeben.
+  const ARTOK = new Set();
+  window.artOk = img => { ARTOK.add(img.src); img.classList.add('ok'); };
+  window.artRetry = img => {
+    const n = (+img.dataset.retry || 0) + 1;
+    if (n > 3) { img.remove(); return; }
+    img.dataset.retry = n;
+    const src = img.src;
+    setTimeout(() => { img.src = ''; img.src = src; }, n * 5000);
+  };
+  const choreArt = c => 'https://gen.pollinations.ai/image/' +
+    // Notiz fliesst in den Prompt ein (v4.46.2, Maintainer): «Kochen, für zwei
+    // Personen» erzaehlt dem Modell mehr als «Kochen». Ein explizites
+    // c.art (eigener Prompt) bleibt allein massgeblich.
+    encodeURIComponent((c.art || [c.name, c.note].filter(Boolean).join(', ')) +
+      ', minimalist flat vector illustration, single subject, centered, ' +
+      'dark moody background, vibrant accent color, no text, no words') +
+    '?model=flux&width=440&height=300&key=pk_s3BNDnxTvRHULT3z&seed=' + choreSeed(c.id);
+  const palette = ['#2F6B4F','#B8860B','#3A6EA5','#B23A2E','#7A4FA0','#3E8E7E'];
+
+  // ---------- Einstieg (kein Familien-Link aktiv) ----------
+  // Wichtig: iOS startet die Homescreen-App immer am start_url OHNE Hash
+  // (Apple ignoriert dynamische Manifeste und Hash im start_url). Darum darf
+  // dieser Screen KEINE Sackgasse sein: «Wieder beitreten» steht zuvorderst.
+  const IS_STANDALONE = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || !!navigator.standalone;
+
+  // Android: natives Install-Prompt frueh einfangen (feuert nur im
+  // Familien-Kontext, wo das Manifest injiziert wird — v4.20.0)
+  let deferredInstall = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredInstall = e;
+    // RACE (v4.44.1, Live-Bug auf Maintainer-Pixel): Chrome feuert das Prompt
+    // oft erst Sekunden nach dem Laden — Sheets, die da schon offen sind,
+    // muessen NACHRUESTEN, sonst fehlt der native Weg genau dann, wenn der
+    // Nutzer ihn sucht. (Funktions-Deklarationen unten sind gehoisted.)
+    const is = document.getElementById('installSheet');
+    if (is && is.open) openInstallSheet();               // neu rendern: «Jetzt installieren»
+    const ss = document.getElementById('shareSheet');
+    if (ss && ss.open) injectShareInstall(ss);           // Button in die Sichern-Warnung
+    const ob = document.getElementById('onboardSheet');
+    if (ob && ob.open && !ob.querySelector('#obInstall')) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'btn primary wide'; b.id = 'obInstall';
+      b.style.marginTop = '12px'; b.textContent = t('Zum Home-Bildschirm hinzufügen');
+      wireShInstall(b);
+      const nx = ob.querySelector('#obNext');
+      if (nx) nx.before(b);
+    }
+  });
+
+  if (!FAMILY) {
+    const last = loadRoute();
+    const goto = (fam, slug) => {
+      saveRoute({ family: fam, userSlug: slug || null });
+      location.href = routeUrl(fam, slug);
+    };
+    function parseAny(input) {
+      // akzeptiert vollen Pfad-Link, Hash-Link, oder nur den Familien-Slug
+      input = (input || '').trim();
+      const m = input.match(/f\/([a-z0-9-]{4,64})(?:\/u\/([a-z0-9]{4,64}))?/i);
+      if (m) return { family: m[1].toLowerCase(), slug: m[2] ? m[2].toLowerCase() : null };
+      if (/^[a-z0-9-]{4,64}$/i.test(input)) return { family: input.toLowerCase(), slug: null };
+      return null;
+    }
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;inset:0;z-index:99;background:var(--bg);overflow:auto;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:32px;gap:16px';
+    const btn = 'border:none;border-radius:999px;padding:15px 28px;font-size:16px;font-weight:700;cursor:pointer;width:100%;max-width:300px';
+    d.innerHTML = `
+      <h1 style="font-family:var(--display);font-weight:800;font-size:34px;margin:0 0 4px;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Fairli</h1>
+      <p style="color:var(--muted);max-width:300px;margin:0 0 8px">Aufgaben im Haushalt – fair verteilt.</p>
+      ${last && last.family ? `<button id="resume" style="${btn};background:var(--accent);color:#0C1220">Zu meinem Haushalt</button>` : ''}
+      ${IS_STANDALONE ? `<div style="max-width:320px;background:rgba(232,163,61,.08);border:1px solid rgba(232,163,61,.35);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.45;color:var(--ink);text-align:left">
+        <b style="color:#E8A33D">⚠︎ Veraltetes Fairli-Icon</b><br>
+        Dieses Homescreen-Icon öffnet nur die Startseite.
+        <b>Füge unten deinen Einladungs-Link aus dem Chat ein — danach
+        funktioniert genau dieses Icon dauerhaft.</b><br>
+        <span style="color:var(--muted);font-size:13px">Zum Aufräumen: ältere
+        Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per
+        Spotlight-Suche nach allen dreien suchen.</span>
+      </div>` : ''}
+      <button id="newFam" style="${IS_STANDALONE ? 'border:none;background:none;color:var(--muted);font-size:14px;cursor:pointer;margin-top:4px' : btn + ';background:' + (last && last.family ? 'var(--card);border:1px solid var(--line);color:var(--ink)' : 'var(--accent);color:#0C1220')}">${t('Neuen Haushalt erstellen')}</button>
+      <button id="showJoin" style="${IS_STANDALONE ? btn + ';background:var(--accent);color:#0C1220' : 'border:none;background:none;color:var(--muted);font-size:14px;cursor:pointer;margin-top:4px'}">${t('Ich habe einen Einladungs-Link')}</button>
+      <div style="color:var(--line);font-size:10.5px;max-width:320px;word-break:break-all;margin-top:14px;opacity:.7">Geöffnet: ${String(location.href).replace(/&/g,'&amp;').replace(/</g,'&lt;')}${document.referrer ? '<br>Von: ' + String(document.referrer).replace(/&/g,'&amp;').replace(/</g,'&lt;') : '<br>Von: (kein Referrer)'}<br>Modus: ${IS_STANDALONE ? 'standalone (Homescreen-Icon!)' : 'browser'}</div>
+      <div id="joinWrap" style="display:none;flex-direction:column;gap:10px;width:100%;max-width:300px;margin-top:4px">
+        <input id="joinLink" type="text" inputmode="url" autocomplete="off" autocapitalize="off"
+          placeholder="${t('Link einfügen')}" style="width:100%;padding:12px;font-size:15px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);box-sizing:border-box">
+        <button id="joinBtn" style="${btn};background:var(--card);border:1px solid var(--line);color:var(--ink)">Beitreten</button>
+      </div>`;
+    document.body.appendChild(d);
+    const resume = document.getElementById('resume');
+    if (resume) resume.onclick = () => goto(last.family, last.userSlug);
+    document.getElementById('newFam').onclick = () => goto('famx-' + uid() + uid(), null);
+    document.getElementById('showJoin').onclick = () => {
+      const w = document.getElementById('joinWrap');
+      w.style.display = 'flex';
+      document.getElementById('showJoin').style.display = 'none';
+      document.getElementById('joinLink').focus();
+    };
+    document.getElementById('joinBtn').onclick = () => {
+      const p = parseAny(document.getElementById('joinLink').value);
+      if (!p) { toast(t('Link nicht erkannt')); return; }
+      goto(p.family, p.slug);
+    };
+    return;
+  }
+
+  // ---------- State ----------
+  let state = { members: [], chores: [], log: [], famName: '' };
+  try { state = JSON.parse(localStorage.getItem(LS_STATE)) || state; } catch {}
+  // einmalige Übernahme der Personen aus v1
+  if (!state.members.length) {
+    try {
+      const v1 = JSON.parse(localStorage.getItem('haushalt.v1'));
+      if (v1 && v1.members) state.members = v1.members;
+    } catch {}
+  }
+  if (!state.members.length) state.members = [{ id: uid(), name: 'Ich', color: palette[0] }];
+
+  // Fest eingebaute Sync-Konfiguration (gilt für alle Geräte; im Sync-Sheet übersteuerbar)
+  const DEFAULT_SYNC = {
+    url: 'https://uggipomhmnnmiqpbpxcc.supabase.co',
+    key: 'sb_publishable_dUNwr1xg5TJxkAoYjmR1Ug_y1U3SNt8'
+  };
+
+  // Sync ist fest eingebaut (Multi-Tenant-Projekt). Alte Custom-/Off-Zustände
+  // aus der Prä-Fairli-Zeit werden ignoriert und damit geheilt.
+  const cfg = DEFAULT_SYNC;
+  // Heilung des Alt-Schluessels: nur uebernehmen, wenn dieses Geraet NIE einen
+  // persoenlichen Link geoeffnet hat (dann kann der Wert nicht verunreinigt sein).
+  try {
+    const old = localStorage.getItem(LS_ME_OLD);
+    if (old && !localStorage.getItem(LS_ME) && !localStorage.getItem('haushalt.route.user')) {
+      localStorage.setItem(LS_ME, old);
+    }
+    localStorage.removeItem(LS_ME_OLD);
+  } catch {}
+
+  // Persoenlicher Link: Person wird SYNCHRON aus dem Slug abgeleitet (kein
+  // Flackern, keine Persistenz). Admin: gespeicherte Wahl.
+  let me = USER_SLUG
+    ? ((state.members.find(m => (m.url_slug || '').toLowerCase() === USER_SLUG) || {}).id || null)
+    : (localStorage.getItem(LS_ME) || null);
+  let view = 'chores';
+  let period = 'week';
+  let syncOk = null;
+
+  const save = () => localStorage.setItem(LS_STATE, JSON.stringify(state));
+  const memberById = id => state.members.find(m => m.id === id);
+  const initial = n => (n || '?').trim().charAt(0).toUpperCase();
+
+  // ---------- Supabase REST ----------
+  // ============ Verschluesselung (v4.30.0, GDPR) ============
+  // VERSIONS-SCHNITT statt Migration: Familien-IDs mit Praefix 'famx-' sind
+  // Ende-zu-Ende-verschluesselt; alte 'fam-'-Familien bleiben fuer immer
+  // Klartext (alte Clients koennen nicht koordiniert aktualisiert werden —
+  // ein Umzug bestehender Daten wuerde Split-Brain riskieren). Der Link
+  // selbst traegt das Schema.
+  // Bei famx: DB-Zeilenschluessel = 'famx-' + SHA-256(Geheimnis) — die DB
+  // kennt das Geheimnis NIE. Werte: AES-GCM-256, Schluessel per HKDF aus
+  // dem Link-Geheimnis, Zufalls-IV pro Wert, Format 'enc1:' + base64(iv|ct).
+  // Punkte/Zeitstempel bleiben Klartext (ohne Namen bedeutungslos —
+  // akzeptierte Metadaten, im LOG dokumentiert).
+  // famx- = verschluesselt ab Geburt. Alt-Familien ('fam-') koennen per
+  // Einstellungen MIGRIEREN: gleiche URL, Zeilen ziehen unter
+  // 'famc-'+SHA-256(id) um (Links & Icons bleiben gueltig!). Ob eine
+  // fam-Familie migriert ist, klaert eine einmalige Probe (existiert die
+  // families-Zeile unter dem Hash?), Ergebnis im localStorage-Cache.
+  const LS_ENCV = 'haushalt.encv:' + (FAMILY || '');
+  const LS_RET = 'haushalt.retired:' + (FAMILY || '');
+  let IS_ENC = !!FAMILY && FAMILY.startsWith('famx-');
+  let ROWFAM = FAMILY;          // DB-Schluessel (verschluesselt: Hash)
+  let AESKEY = null;
+  let WRITEKEY = null;          // hex; der Server kennt nur SHA-256 davon
+  let WRITEKEY_HASH = null;
+  const ENC_FIELDS = {
+    families: ['name'], members: ['name'],
+    chores: ['name', 'note', 'art'],
+    log: ['chore_name', 'chore_note', 'member_name']
+  };
+  const b64e = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const b64d = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  async function famHash(prefix) {
+    const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(FAMILY));
+    return prefix + [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 48);
+  }
+  async function deriveKey() {
+    const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(FAMILY), 'HKDF', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'HKDF', hash: 'SHA-256', salt: new TextEncoder().encode('fairli-v1'), info: new TextEncoder().encode('data-key') },
+      km, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  }
+  const CRYPTO_READY = (async () => {
+    if (!FAMILY || !crypto.subtle) return;
+    if (!IS_ENC) {
+      // Migrations-Probe (einmalig, dann Cache)
+      let flag = null; try { flag = localStorage.getItem(LS_ENCV); } catch {}
+      if (flag === '1') IS_ENC = true;
+      else if (flag !== '0') {
+        try {
+          const cand = await famHash('famc-');
+          const r = await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/families?select=family_id&family_id=eq.' + cand,
+            { headers: { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key } });
+          const rows = r.ok ? await r.json() : null;
+          IS_ENC = !!rows && rows.length > 0;
+          try { localStorage.setItem(LS_ENCV, IS_ENC ? '1' : '0'); } catch {}
+        } catch {}
+      }
+    }
+    if (!IS_ENC) return;
+    ROWFAM = await famHash(FAMILY.startsWith('famx-') ? 'famx-' : 'famc-');
+    AESKEY = await deriveKey();
+    // Write-Key: eigener HKDF-Ast (info 'write-key-v1'). Er geht als Header
+    // an den Server — das Link-Geheimnis laesst sich daraus NICHT gewinnen.
+    const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(FAMILY), 'HKDF', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'HKDF', hash: 'SHA-256', salt: new TextEncoder().encode('fairli-v1'), info: new TextEncoder().encode('write-key-v1') }, km, 256);
+    WRITEKEY = [...new Uint8Array(bits)].map(b => b.toString(16).padStart(2, '0')).join('');
+    const wh = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(WRITEKEY));
+    WRITEKEY_HASH = [...new Uint8Array(wh)].map(b => b.toString(16).padStart(2, '0')).join('');
+  })();
+  async function encV(s) {
+    if (s == null || s === '' || !AESKEY) return s;
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, AESKEY, new TextEncoder().encode(String(s)));
+    const buf = new Uint8Array(12 + ct.byteLength); buf.set(iv); buf.set(new Uint8Array(ct), 12);
+    return 'enc1:' + b64e(buf);
+  }
+  async function decV(v) {
+    if (typeof v !== 'string' || !v.startsWith('enc1:') || !AESKEY) return v;
+    try {
+      const buf = b64d(v.slice(5));
+      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(0, 12) }, AESKEY, buf.slice(12));
+      return new TextDecoder().decode(pt);
+    } catch { return '···'; }   // korrupte Zeile: Platzhalter statt Absturz
+  }
+  const tableOf = path => path.split(/[?/]/)[0];
+  async function encRow(table, row) {
+    const fields = ENC_FIELDS[table]; if (!fields || !IS_ENC) return row;
+    const out = Object.assign({}, row);
+    for (const f of fields) if (f in out) out[f] = await encV(out[f]);
+    return out;
+  }
+  async function decRows(table, rows) {
+    const fields = ENC_FIELDS[table]; if (!fields || !IS_ENC || !Array.isArray(rows)) return rows;
+    for (const r of rows) for (const f of fields) if (r && f in r) r[f] = await decV(r[f]);
+    return rows;
+  }
+
+  const famScope = path => path + (path.includes('?') ? '&' : '?') + 'family_id=eq.' + encodeURIComponent(ROWFAM);
+  const famRows = b => Array.isArray(b)
+    ? b.map(r => Object.assign({}, r, { family_id: ROWFAM }))
+    : Object.assign({}, b, { family_id: ROWFAM });
+  async function sb(path, method = 'GET', body) {
+    await CRYPTO_READY;
+    if (body && (method === 'POST' || method === 'PATCH')) {
+      const tbl = tableOf(path);
+      body = Array.isArray(body)
+        ? await Promise.all(body.map(r => encRow(tbl, r)))
+        : await encRow(tbl, body);
+      body = famRows(body);
+    }
+    const r = await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/' + famScope(path), {
+      method,
+      headers: Object.assign({
+        apikey: cfg.key, Authorization: 'Bearer ' + cfg.key,
+        'Content-Type': 'application/json', Prefer: 'return=minimal'
+      }, method !== 'GET' && WRITEKEY ? { 'x-fairli-key': WRITEKEY } : {}),
+      body: body ? JSON.stringify(body) : undefined
+    });
+    if (!r.ok) throw new Error(method + ' ' + path + ' → ' + r.status);
+    return method === 'GET' ? decRows(tableOf(path), await r.json()) : null;
+  }
+
+  async function upsert(table, rows) {
+    if (!rows.length) return;
+    await CRYPTO_READY;
+    rows = famRows(await Promise.all(rows.map(r => encRow(table, r))));
+    const r = await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/' + famScope(table), {
+      method: 'POST',
+      headers: Object.assign({ apikey: cfg.key, Authorization: 'Bearer ' + cfg.key,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates,return=minimal' },
+        WRITEKEY ? { 'x-fairli-key': WRITEKEY } : {}),
+      body: JSON.stringify(rows)
+    });
+    if (!r.ok) throw new Error('upsert ' + table + ' → ' + r.status);
+  }
+
+  // Alle Zustaende der Abgleich-Schicht VOR pull() deklarieren (pull liest sie).
+  let mutationSeq = 0;
+  const pendingDeletes = new Map();   // "table:id" -> { resolvedAt }
+  const pendingCreates = new Map();   // "table:id" -> { row, resolvedAt }
+  async function pull() {
+    if (!cfg) return;
+    const pullStartedAt = Date.now();
+    const seqAtStart = mutationSeq;
+    try {
+      // Egress-Diaet (v4.36.0): schlanke Spalten; Log per DELTA, wenn ein
+      // Wasserzeichen existiert und der letzte VOLL-Abgleich < 24 h her ist.
+      // Delta sieht neue UND (dank updated_at-Trigger) geaenderte Zeilen;
+      // fremde LOESCHUNGEN erscheinen erst beim naechsten Voll-Abgleich.
+      const LCOLS = 'id,chore_id,chore_name,chore_note,member_id,member_name,points,done_at,created_at,updated_at';
+      const wmKey = 'haushalt.delta:' + FAMILY, fullKey = 'haushalt.full:' + FAMILY;
+      let wm = null, lastFull = 0;
+      try { wm = localStorage.getItem(wmKey); lastFull = +localStorage.getItem(fullKey) || 0; } catch {}
+      const useDelta = !!wm && (Date.now() - lastFull) < 24 * 3600e3 && state.log.length > 0;
+      const logQ = useDelta
+        ? `log?select=${LCOLS}&or=(created_at.gt.${encodeURIComponent(wm)},updated_at.gt.${encodeURIComponent(wm)})&order=done_at.desc&limit=300`
+        : `log?select=${LCOLS}&order=done_at.desc&limit=300`;
+      const [members, chores, logRows, fam] = await Promise.all([
+        sb('members?select=id,name,color,url_slug&order=name'),
+        sb('chores?select=id,name,points,note,art,created_at&order=points.desc,name'),
+        sb(logQ),
+        sb('families?select=*')
+      ]);
+      // Wasserzeichen: nur SERVER-Zeit verwenden (Client-Uhren luegen)
+      let newWm = wm;
+      for (const r of logRows) for (const tcol of [r.created_at, r.updated_at])
+        if (tcol && (!newWm || tcol > newWm)) newWm = tcol;
+      const log = useDelta ? (() => {
+        const byId = new Map(state.log.map(x => [x.id, x]));
+        for (const r of logRows) {
+          if (pendingDeletes.has('log:' + r.id)) continue;   // frisch Geloeschtes nicht auferstehen lassen
+          byId.set(r.id, r);
+        }
+        return [...byId.values()].sort((a, b) => (a.done_at < b.done_at ? 1 : -1)).slice(0, 400);
+      })() : logRows;
+      try {
+        if (newWm) localStorage.setItem(wmKey, newWm);
+        if (!useDelta) localStorage.setItem(fullKey, String(Date.now()));
+      } catch {}
+      // Server sortiert nach dem SPALTENWERT — bei verschluesselten Familien
+      // ist das Chiffrat (Kauderwelsch-Reihenfolge). Nach dem Entschluesseln
+      // clientseitig alphabetisch sortieren, fuer alle Familien einheitlich.
+      members.sort((a, b) => String(a.name).localeCompare(String(b.name), LOCALE, { sensitivity: 'base' }));
+      state.famName = (fam[0] && fam[0].name) || '';
+      // Backfill: verschluesselte Familie, deren families-Zeile noch keinen
+      // Write-Key-Hash traegt (vor v4.36 migriert) → einmalig nachruesten.
+      // NICHT via push(): das erhoeht mutationSeq und entwertete DIESEN pull
+      // (Stale-Snapshot-Abbruch, bevor state gesetzt ist). Reiner Fetch.
+      const needBackfill = IS_ENC && WRITEKEY_HASH && fam[0] && !fam[0].write_key_hash;
+      // Während die Ersteinrichtung offen ist, NICHTS am DOM/State anfassen –
+      // sonst werden Eingaben überschrieben.
+      if (firstRunOpen) { syncOk = true; return; }
+      if (!members.length && !state.famName && !USER_SLUG) {
+        // Komplett neue Familie → Ersteinrichtung (nur einmal)
+        syncOk = true; firstRunSetup(); return;
+      }
+      if (!members.length && !(fam[0] && fam[0].name)) {
+        // WIRKLICH leeres Backend (auch keine families-Zeile) → dieses
+        // Geraet laedt seinen lokalen Stand hoch. Existiert die
+        // families-Zeile, ist die Familie bekannt (z. B. migriert,
+        // Wegweiser-Name) — Hochladen waere Klartext-AUFERSTEHUNG (v4.33.1)
+        await upsert('members', state.members);
+        await upsert('chores', state.chores);
+        await upsert('log', state.log);
+      } else if (!members.length && !IS_ENC && FAMILY && !FAMILY.startsWith('famx-')) {
+        // Alt-Familie, leere Mitglieder, aber families-Zeile existiert:
+        // vermutlich MIGRIERT waehrend unsere Probe '0' gecacht war.
+        // Cache verwerfen und EINMAL neu starten (Schleifen-Schutz).
+        try {
+          if (!sessionStorage.getItem('haushalt.reprobe')) {
+            sessionStorage.setItem('haushalt.reprobe', '1');
+            localStorage.removeItem(LS_ENCV);
+            location.reload();
+            return;
+          }
+        } catch {}
+        syncOk = true;
+      }
+      // Stale-Guard NUR fuer die Zustands-UEBERNAHME — die Heil-Zweige oben
+      // (Ersteinrichtung, Upload-Wache, Re-Probe) duerfen nie durch eine
+      // zufaellige Boot-Schreibung ausgehungert werden. (v4.36.2 —
+      // Der eingefrorene Mittwoch (Live-Incident): leerer Stale-Zweig ohne return
+      // fiel bis save()/render() durch und zementierte den Cache.)
+      if (mutationSeq !== seqAtStart) {
+        // Waehrend dieses pull wurde lokal geaendert → Snapshot ist veraltet.
+        // Lokalen (optimistischen) Stand behalten; der naechste pull gleicht ab.
+        syncOk = true; return;
+      }
+      {
+        state.members = reconcile('members', members, pullStartedAt);
+        state.chores  = reconcile('chores',  chores,  pullStartedAt);
+        state.log     = reconcile('log',     log,     pullStartedAt)
+                          .sort((a, b) => (a.done_at < b.done_at ? 1 : -1));
+      }
+      if (USER_SLUG) {
+        const lm = state.members.find(m => (m.url_slug || '').toLowerCase() === USER_SLUG);
+        if (lm) { me = lm.id; }   // bewusst NICHT persistieren (siehe LS_ME oben)
+        else if (state.members.length) { showBadLink(); return; }
+      }
+      syncOk = true; save(); render();
+      if (needBackfill) {
+        try {
+          await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/families?family_id=eq.' + encodeURIComponent(ROWFAM), {
+            method: 'PATCH',
+            headers: Object.assign({ apikey: cfg.key, Authorization: 'Bearer ' + cfg.key,
+              'Content-Type': 'application/json', Prefer: 'return=minimal' },
+              WRITEKEY ? { 'x-fairli-key': WRITEKEY } : {}),
+            body: JSON.stringify({ write_key_hash: WRITEKEY_HASH })
+          });
+        } catch {}
+      }
+    } catch (e) { syncOk = false; render(); }
+  }
+
+  let firstRunOpen = false;
+  function firstRunSetup() {
+    if (firstRunOpen || document.getElementById('firstRun')) return; // nie doppelt
+    firstRunOpen = true;
+    const SEED = [
+      ['Küche aufräumen', 1], ['Geschirr ausräumen', 1], ['Einkaufen', 2],
+      ['Kochen', 2], ['Wäsche waschen', 1], ['Bad putzen', 3], ['Müll rausbringen', 1]
+    ];
+    const d = document.createElement('div');
+    d.id = 'firstRun';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99;background:var(--bg);overflow:auto;padding:32px 22px calc(32px + env(safe-area-inset-bottom))';
+    d.innerHTML = `
+      <div style="max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:18px">
+        <h1 style="font-family:var(--display);font-weight:800;font-size:30px;margin:0;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Neuer Haushalt</h1>
+        <label style="display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:14px">Name des Haushalts
+          <input id="frName" type="text" maxlength="40" placeholder="z. B. WG Sonnenstrasse" style="padding:12px;font-size:16px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink)"></label>
+        <div style="color:var(--muted);font-size:14px">Personen (eine pro Zeile)</div>
+        <textarea id="frMembers" rows="4" placeholder="Anna&#10;Ben&#10;Carla" style="padding:12px;font-size:16px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);resize:vertical"></textarea>
+        <label style="display:flex;gap:9px;align-items:center;color:var(--ink);font-size:15px"><input id="frSeed" type="checkbox" checked style="width:18px;height:18px"> Typische Aufgaben vorausfüllen</label>
+        <button id="frGo" style="border:none;border-radius:999px;padding:14px;font-size:16px;font-weight:700;background:var(--accent);color:#0C1220;cursor:pointer">Los geht's</button>
+      </div>`;
+    document.body.appendChild(d);
+    document.getElementById('frGo').onclick = async () => {
+      const name = document.getElementById('frName').value.trim() || 'Haushalt';
+      const names = document.getElementById('frMembers').value.split('\n').map(s => s.trim()).filter(Boolean);
+      const seed = document.getElementById('frSeed').checked;
+      state.famName = name;
+      state.members = (names.length ? names : ['Ich']).map((n, i) => ({ id: uid(), name: n, color: palette[i % palette.length] }));
+      state.chores = seed ? SEED.map(([n, p]) => ({ id: uid(), name: n, points: p })) : [];
+      state.log = [];
+      save();
+      try {
+        await sb('families', 'POST', WRITEKEY_HASH ? { name, write_key_hash: WRITEKEY_HASH } : { name });   // family_id setzt famRows (bei famx: Hash!)
+        await upsert('members', state.members);
+        if (state.chores.length) await upsert('chores', state.chores);
+      } catch {}
+      firstRunOpen = false;
+      try { localStorage.setItem(OB_KEY, '1'); } catch {}   // Schritt 1 kommt jetzt explizit
+      d.remove(); render();
+      openOnboardSheet(true);   // Schritt 1: Link sichern → «Weiter» → Einladen-Sheet
+    };
+  }
+
+  let badLinkShown = false;
+  function showBadLink() {
+    if (badLinkShown) return; badLinkShown = true;
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;inset:0;z-index:99;background:var(--bg);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:32px;gap:12px';
+    d.innerHTML = `<h2 style="font-family:var(--display);margin:0">Link ungültig</h2>
+      <p style="color:var(--muted);max-width:300px;margin:0">Dieser persönliche Link wurde nicht gefunden oder zurückgezogen. Bitte einen neuen Link anfordern.</p>`;
+    document.body.appendChild(d);
+  }
+
+  function push(fn) {           // optimistisches Schreiben
+    if (!cfg) return;
+    mutationSeq++;              // jede lokale Schreibung entwertet laufende pulls
+    fn().then(() => { syncOk = true; renderSyncDot(); })
+        .catch(err => { syncOk = false; renderSyncDot(); if (!err || !err.silent) toast(t('Sync fehlgeschlagen')); });
+  }
+
+  // ---------- Abgleich lokaler Schreibvorgaenge mit pull() ----------
+  // Problem: pull() ueberschreibt state.* komplett mit dem Serverstand. Ein
+  // pull, der VOR einer lokalen Aenderung startete (oder bevor der Server sie
+  // committet hat), bringt geloeschte Zeilen zurueck bzw. schluckt neue —
+  // sichtbar als Flackern. Zwei Schutzmechanismen:
+  //   1. mutationSeq: aendert sich waehrend eines pull etwas lokal, ist dessen
+  //      Snapshot veraltet und wird verworfen.
+  //   2. pendingDeletes/pendingCreates: bis der Server die Schreibung
+  //      nachweislich verarbeitet hat (resolvedAt < pullStart), werden
+  //      Serverzeilen entsprechend gefiltert bzw. ergaenzt.
+
+  // Loeschen ist VERIFIZIERT (v4.33.0): 1 Wiederholung, danach ehrlicher
+  // Fehlerzustand via onFail (Zeile wiederherstellen) statt stillem Verlust.
+  // Hintergrund: fire-and-forget-DELETE konnte scheitern, waehrend die Kachel
+  // optimistisch verschwand — die Zeile kam nach dem reconcile-Fenster
+  // kommentarlos zurueck (so entstand mutmasslich das Haus-kühlen-Duplikat).
+  function deleteRemote(table, id, onFail) {
+    const key = table + ':' + id;
+    pendingDeletes.set(key, { resolvedAt: null });
+    pendingCreates.delete(key);       // lokal angelegt und gleich wieder geloescht
+    const attempt = () => sb(table + '?id=eq.' + id, 'DELETE');
+    push(() => attempt()
+      .catch(() => new Promise(res => setTimeout(res, 900)).then(attempt))
+      .catch(err => {
+        pendingDeletes.delete(key);   // Loeschung fand NICHT statt
+        if (onFail) onFail();
+        toast(t('Löschen fehlgeschlagen — wiederhergestellt'));
+        const marked = new Error('delete failed (handled)');
+        marked.silent = true;         // push() zeigt den Punkt rot, toastet aber nicht doppelt
+        throw marked;
+      })
+      .then(r => {
+      const e = pendingDeletes.get(key);
+      if (e) e.resolvedAt = Date.now();
+      return r;
+    }));
+  }
+  function createRemote(table, row) {
+    const key = table + ':' + row.id;
+    pendingCreates.set(key, { row, resolvedAt: null });
+    push(() => sb(table, 'POST', row).then(r => {
+      const e = pendingCreates.get(key);
+      if (e) e.resolvedAt = Date.now();
+      return r;
+    }));
+  }
+  // Upsert MIT Pull-Schutz (v4.46.1): registriert jede Zeile als pendente
+  // Schreibung (Overlay in reconcile), bis der Server sie nachweislich hat.
+  // row wird als LEBENDE Referenz gehalten — spaetere lokale Edits derselben
+  // Zeile bleiben dadurch automatisch die massgebliche Fassung.
+  function upsertRemote(table, rows) {
+    if (!rows.length) return;
+    const keys = rows.map(r => {
+      const k = table + ':' + r.id;
+      pendingCreates.set(k, { row: r, resolvedAt: null });
+      return k;
+    });
+    push(() => upsert(table, rows).then(res => {
+      const now = Date.now();
+      for (const k of keys) { const e = pendingCreates.get(k); if (e) e.resolvedAt = now; }
+      return res;
+    }));
+  }
+  function reconcile(table, rows, pullStartedAt) {
+    // Bestaetigte Schreibungen (vom Server vor Pull-Start verarbeitet) vergessen
+    for (const [k, v] of pendingDeletes) {
+      if (k.startsWith(table + ':') && v.resolvedAt && v.resolvedAt < pullStartedAt) pendingDeletes.delete(k);
+    }
+    for (const [k, v] of pendingCreates) {
+      if (k.startsWith(table + ':') && v.resolvedAt && v.resolvedAt < pullStartedAt) pendingCreates.delete(k);
+    }
+    // Overlay-Semantik (v4.46.1): eine pendente Schreibung ERSETZT auch die
+    // (moeglicherweise veraltete) Serverfassung derselben Zeile — vorher
+    // schuetzte pendingCreates nur NEUE Zeilen, Umbenennungen fielen jedem
+    // Pull mit Vor-Commit-Snapshot zum Opfer (Live-Bug Personen-Sheet).
+    let out = rows
+      .filter(r => !pendingDeletes.has(table + ':' + r.id))
+      .map(r => { const p = pendingCreates.get(table + ':' + r.id); return p ? p.row : r; });
+    const have = new Set(out.map(r => r.id));
+    for (const [k, v] of pendingCreates) {
+      if (k.startsWith(table + ':') && !have.has(v.row.id)) out.push(v.row);
+    }
+    return out;
+  }
+
+  // ---------- Punkte ----------
+  function weekStart() {
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // Montag
+    return d.toISOString();
+  }
+  function totals() {
+    const since = period === 'week' ? weekStart() : '';
+    const t = {};
+    state.members.forEach(m => t[m.id] = { pts: 0, n: 0 });
+    state.log.forEach(e => {
+      if (e.done_at >= since && t[e.member_id]) { t[e.member_id].pts += e.points; t[e.member_id].n++; }
+    });
+    return t;
+  }
+
+  // ---------- Rendering ----------
+  const listEl = document.getElementById('list');
+  const esc = s => { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; };
+
+  function renderSyncDot() {
+    if (!document.getElementById('syncDot')) return;
+    const dot = document.getElementById('syncDot');
+    dot.className = 'syncdot' + (cfg ? (syncOk === false ? ' err' : ' on') : '');
+  }
+
+  // ---------- Eingefrorene Kachel-Reihenfolge ----------
+  // Wird einmal berechnet und erst neu gebildet, wenn der Nutzer es erwartet
+  // (App-Start, Tab-Wechsel, Aufgabe angelegt/geändert/gelöscht) – nie durch
+  // einen Hintergrund-Sync, damit nichts unter dem Finger wegspringt.
+  let _orderCache = null;
+  let _pinned = [];                       // frisch hinzugefügte Aufgaben: vorne, neueste zuerst
+  function invalidateOrder() { _orderCache = null; }
+  // Sortier-Modus (v4.33.0): 'created' (Standard — Positionen stabil, Neues
+  // hinten) | 'alpha' | 'usage' (bisheriges eingefrorenes Nutzungs-Ranking)
+  const LS_SORT = 'haushalt.sort';
+  const LS_MAXPTS = 'haushalt.maxpts';
+  let MAXPTS = (() => { try { return +localStorage.getItem(LS_MAXPTS) || 5; } catch { return 5; } })();
+  function setMaxPts(v) { MAXPTS = v; try { localStorage.setItem(LS_MAXPTS, String(v)); } catch {} }
+  let SORT = (() => { try { return localStorage.getItem(LS_SORT) || 'created'; } catch { return 'created'; } })();
+  function setSort(mode) {
+    SORT = mode;
+    try { localStorage.setItem(LS_SORT, mode); } catch {}
+    invalidateOrder(); render();
+  }
+  function sortedChores() {
+    if (SORT === 'alpha')
+      return state.chores.slice().sort((a, b) => a.name.localeCompare(b.name, LOCALE, { sensitivity: 'base' }));
+    if (SORT === 'created')
+      // created_at kommt per DB-Migration; Zeilen ohne Wert (Altbestand)
+      // teilen sich den Migrations-Zeitpunkt → Name als stabiler Tiebreak.
+      return state.chores.slice().sort((a, b) =>
+        String(a.created_at || '') < String(b.created_at || '') ? -1 :
+        String(a.created_at || '') > String(b.created_at || '') ? 1 :
+        a.name.localeCompare(b.name, LOCALE, { sensitivity: 'base' }));
+    return choreOrder();   // 'usage'
+  }
+  function pinChore(id) { _pinned = _pinned.filter(x => x !== id); _pinned.unshift(id); invalidateOrder(); }
+  function choreOrder() {
+    const ids = state.chores.map(c => c.id).sort().join('|');
+    if (_orderCache && _orderCache.ids === ids) {
+      // Gleiche Aufgaben-Menge → gemerkte Reihenfolge halten, nur fehlende
+      // (theoretisch) ans Ende, gelöschte raus.
+      const byId = new Map(state.chores.map(c => [c.id, c]));
+      const kept = _orderCache.order.filter(id => byId.has(id)).map(id => byId.get(id));
+      return applyPins(kept);
+    }
+    const counts = {};
+    state.log.forEach(e => counts[e.chore_id] = (counts[e.chore_id] || 0) + 1);
+    const groupKey = n => (n || '').trim().split(/\s+/)[0].toLowerCase();
+    const groupUse = {}, groupName = {};
+    state.chores.forEach(c => {
+      const g = groupKey(c.name);
+      groupUse[g] = (groupUse[g] || 0) + (counts[c.id] || 0);
+      if (!groupName[g] || c.name.localeCompare(groupName[g], 'de', { sensitivity: 'base' }) < 0)
+        groupName[g] = c.name;
+    });
+    const ordered = state.chores.slice().sort((a, b) => {
+      const ga = groupKey(a.name), gb = groupKey(b.name);
+      if (ga !== gb)
+        return (groupUse[gb] - groupUse[ga])
+            || groupName[ga].localeCompare(groupName[gb], 'de', { sensitivity: 'base' });
+      return a.name.localeCompare(b.name, 'de', { sensitivity: 'base' });
+    });
+    const pinnedFirst = applyPins(ordered);
+    _orderCache = { ids, order: pinnedFirst.map(c => c.id) };
+    return pinnedFirst;
+  }
+  function applyPins(list) {
+    if (!_pinned.length) return list;
+    const byId = new Map(list.map(c => [c.id, c]));
+    const front = _pinned.map(id => byId.get(id)).filter(Boolean);
+    const frontIds = new Set(_pinned);
+    return front.concat(list.filter(c => !frontIds.has(c.id)));
+  }
+
+  function render() {
+    renderSyncDot();
+    document.documentElement.classList.remove('booting');
+    if (state.famName && window.__setFamTitle) window.__setFamTitle(state.famName);
+    maybeOnboard();   // Erstbesuch (v4.45.0): «Zugriff sichern», sobald die Familie steht
+    document.querySelectorAll('.tab').forEach(b =>
+      b.setAttribute('aria-selected', String(b.dataset.view === view)));
+    const fab = document.getElementById('openAdd');
+    if (fab) fab.setAttribute('aria-label', t(view === 'log' ? 'Einmalig eintragen' : 'Aufgabe hinzufügen'));
+
+    // Ich bin — im persönlichen Link fest auf eine Person verriegelt
+    const iam = document.getElementById('iamRow');
+    const shown = USER_SLUG ? state.members.filter(m => m.id === me) : state.members;
+    iam.innerHTML = '<span class="lbl">Ich bin</span>' + shown.map(m =>
+      `<button class="chip" data-mid="${m.id}" aria-pressed="${me === m.id}" ${USER_SLUG ? 'style="cursor:default"' : ''}>
+        <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>${esc(m.name)}
+      </button>`).join('') + (USER_SLUG && !shown.length ? '<span class="lbl">…</span>' : '');
+    // Mehrzeilig? Dann jede Zeile zentrieren — der Umbruch wirkt gewollt,
+    // nicht uebergelaufen. Einzeilig bleibt linksbuendig wie immer.
+    requestAnimationFrame(() => {
+      iam.classList.toggle('multi', iam.scrollHeight > 60);
+      // Kein Chip allein auf der letzten Zeile: bricht die Reihe so um,
+      // dass unten mindestens ZWEI stehen (Maintainer: «two people, or 0»).
+      iam.querySelectorAll('.iambrk').forEach(b => b.remove());
+      const chips = [...iam.querySelectorAll('.chip')];
+      if (chips.length >= 3) {
+        const lines = [];
+        for (const c of chips) {
+          const t = c.offsetTop;
+          if (!lines.length || lines[lines.length - 1].top !== t) lines.push({ top: t, els: [] });
+          lines[lines.length - 1].els.push(c);
+        }
+        if (lines.length > 1 && lines[lines.length - 1].els.length === 1
+            && lines[lines.length - 2].els.length >= 3) {
+          const donor = lines[lines.length - 2].els;
+          const brk = document.createElement('i');
+          brk.className = 'iambrk';
+          brk.style.cssText = 'flex-basis:100%;height:0;margin:0;padding:0';
+          iam.insertBefore(brk, donor[donor.length - 1]);
+        }
+      }
+    });
+
+    if (view === 'chores') {
+      // Reihenfolge ist eingefroren (siehe choreOrder()); Hintergrund-Syncs
+      // aktualisieren Daten/Punkte, ordnen die Kacheln aber nicht um.
+      const ordered = sortedChores();
+      // «Einmalig» ist IMMER die erste Kachel (oben links verankert):
+      // eintragen ohne neue Kachel — gegen die Kachel-Inflation.
+      const oneOffTile = `<button class="chore oneoff" id="oneOffTile" style="min-height:104px">
+          <img class="art${ARTOK.has(choreArt({ id: 'oneoff-star-v2', name: 'Sternschnuppe', art: 'a single glowing shooting star with a bright trail across a night sky' })) ? ' ok' : ''}" src="${choreArt({ id: 'oneoff-star-v2', name: 'Sternschnuppe', art: 'a single glowing shooting star with a bright trail across a night sky' })}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)">
+          <span class="cname">${t('Einmalig')}</span>
+          <span class="cnote">${t('eintragen ohne Kachel')}</span>
+          <span class="pts">＋</span>
+        </button>`;
+      listEl.innerHTML = `<div class="grid">` + oneOffTile + ordered.map(c =>
+            `<button class="chore" data-cid="${c.id}" style="--c:${choreColor(c.id)}; min-height:${Math.round(104 + 34 * Math.log2(c.points + 1))}px">
+              <img class="art${ARTOK.has(choreArt(c)) ? ' ok' : ''}" src="${choreArt(c)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)">
+              <span class="cname">${esc(c.name)}</span>
+              ${c.note ? `<span class="cnote">${esc(c.note)}</span>` : ''}
+              <span class="pts">${c.points >= 10 ? '★ ' : ''}+${c.points}</span>
+              <span class="edit" data-edit="${c.id}" role="button" aria-label="Bearbeiten">✎</span>
+            </button>`).join('') + `</div>` +
+        (ordered.length ? '' : `<div class="empty"><b>${t('Noch keine Aufgaben')}</b>${t('Lege mit + die erste an – z. B. «Geschirrspüler ausräumen, 3 Punkte».')}</div>`);
+      listEl.querySelectorAll('img.art:not(.ok)').forEach(i => { if (i.complete && i.naturalWidth) artOk(i); });
+    } else if (view === 'scores') {
+      // WICHTIG: nie `t` nennen — das schattet die i18n-Funktion t()!
+      // (Live-Bug v4.27–v4.31: «t is not a function», Punkte-Tab leer)
+      const tot = totals();
+      const max = Math.max(1, ...Object.values(tot).map(x => x.pts));
+      const ranked = state.members.slice().sort((a, b) => tot[b.id].pts - tot[a.id].pts);
+      listEl.innerHTML =
+        `<div class="period">
+          <button data-p="week" aria-pressed="${period === 'week'}">${t('Diese Woche')}</button>
+          <button data-p="all" aria-pressed="${period === 'all'}">${t('Gesamt')}</button>
+        </div>` +
+        ranked.map((m, i) => `
+          <div class="score">
+            <div class="top">
+              <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>
+              <span class="name">${esc(m.name)}${i === 0 && tot[m.id].pts > 0 ? ' 👑' : ''}</span>
+              <span class="num">${tot[m.id].pts}</span>
+            </div>
+            <div class="bar"><i style="width:${Math.round(tot[m.id].pts / max * 100)}%; background:${esc(m.color)}"></i></div>
+            <div class="sub">${t(tot[m.id].n === 1 ? '{n} Aufgabe erledigt' : '{n} Aufgaben erledigt', { n: tot[m.id].n })}</div>
+          </div>`).join('');
+    } else {
+      // Serien buendeln: dieselbe Person tippt dieselbe Aufgabe mehrmals in
+      // Folge («Einkaufen ×3») → EINE Zeile mit Summenpunkten. So braucht es
+      // keine Gross/Klein-Kachel-Varianten — dreimal tippen genuegt.
+      const groups = [];
+      for (const e of state.log) {
+        // Serien enden an der Tagesgrenze (sonst zaehlt «×N» unter «Heute»
+        // stillschweigend gestrige Eintraege mit)
+        const key = e.member_id + '|' + (e.chore_id || 'n:' + e.chore_name) + '|' + new Date(e.done_at).toDateString();
+        const g = groups[groups.length - 1];
+        if (g && g.key === key) { g.entries.push(e); }
+        else groups.push({ key, entries: [e] });
+      }
+      const dayKey = iso => new Date(iso).toDateString();
+      const dayLabel = iso => {
+        const d = new Date(iso), now = new Date();
+        const y = new Date(now); y.setDate(now.getDate() - 1);
+        if (d.toDateString() === now.toDateString()) return t('Heute');
+        if (d.toDateString() === y.toDateString()) return t('Gestern');
+        return d.toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' });
+      };
+      let lastDay = null;
+      listEl.innerHTML = groups.length
+        ? groups.map(g => {
+            const e = g.entries[0];                    // neuester der Serie
+            const n = g.entries.length;
+            const sum = g.entries.reduce((s, x) => s + (x.points || 0), 0);
+            const ids = g.entries.map(x => x.id).join(',');
+            const m = memberById(e.member_id);
+            const d = new Date(e.done_at);
+            const note = e.chore_note || '';
+            const editable = g.entries.every(canEditLog);
+            const inner = `
+              <span class="dot" style="background:${esc(m ? m.color : '#C2CCC5')}"></span>
+              <span class="what"><b>${esc(e.member_name)}</b> · ${esc(e.chore_name)}${n > 1 ? `<span class="xn">×${n}</span>` : ''}
+                ${note ? `<div class="enote">${esc(note)}</div>` : ''}
+                <div class="when">${d.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' })}</div>
+              </span>
+              <span class="pts">+${sum}</span>`;
+            return editable
+              ? `<button class="entry" data-editlog="${ids}">${inner}<span class="editicon" aria-hidden="true">✎</span></button>`
+              : `<div class="entry">${inner}</div>`;
+          }).map((html, i) => {
+            const day = dayKey(groups[i].entries[0].done_at);
+            const head = day !== lastDay ? `<div class="dayhead">${dayLabel(groups[i].entries[0].done_at)}</div>` : '';
+            lastDay = day;
+            return head + html;
+          }).join('')
+        : `<div class="empty"><b>${t('Noch nichts erledigt')}</b>${t('Jede gedrückte Aufgabe landet hier.')}</div>`;
+    }
+  }
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.entmenu')) {
+      document.querySelectorAll('.menupop').forEach(p => p.hidden = true);
+    }
+  });
+
+  let toastTimer;
+  (function () {
+    const tEl = document.getElementById('toast');
+    if (!tEl) return;
+    let y0 = 0;
+    tEl.addEventListener('touchstart', e => { y0 = e.touches[0].clientY; }, { passive: true });
+    tEl.addEventListener('touchmove', e => {
+      if (e.touches[0].clientY - y0 > 24) { tEl.classList.remove('show'); clearTimeout(toastTimer); }
+    }, { passive: true });
+  })();
+  function toast(msg, action) {
+    const t = document.getElementById('toast');
+    t.textContent = '';
+    t.append(msg);
+    if (action) {
+      const b = document.createElement('button');
+      b.className = 'tact'; b.textContent = action.label;
+      b.onclick = () => { t.classList.remove('show'); action.fn(); };
+      t.append(b);
+    }
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), action ? 5000 : 1800);
+  }
+
+  // ---------- Events ----------
+  document.querySelector('.tabs').addEventListener('click', e => {
+    const b = e.target.closest('.tab'); if (!b) return;
+    view = b.dataset.view; invalidateOrder(); render();
+  });
+
+  document.getElementById('iamRow').addEventListener('click', e => {
+    if (USER_SLUG) return; // persönlicher Link: Person ist fixiert
+    const c = e.target.closest('.chip'); if (!c) return;
+    me = c.dataset.mid; localStorage.setItem(LS_ME, me); render();
+  });
+  if (USER_SLUG) {
+    document.documentElement.classList.add('userlink');
+  } else {
+    document.documentElement.classList.remove('userlink');
+  }
+
+  let pressLock = false;
+  listEl.addEventListener('click', e => {
+    // Punkte-Periode
+    const p = e.target.closest('[data-p]');
+    if (p) { period = p.dataset.p; render(); return; }
+    // Einmalig: eintragen ohne Kachel
+    if (e.target.closest('#oneOffTile')) { openChoreSheet(null, 'oneoff'); return; }
+    // Aufgabe bearbeiten
+    const ed = e.target.closest('[data-edit]');
+    if (ed) { e.stopPropagation(); openChoreSheet(ed.dataset.edit); return; }
+    // Verlauf: Kebab-Menü öffnen/schließen
+    const kb = e.target.closest('[data-menu]');
+    if (kb) {
+      e.stopPropagation();
+      const pop = document.getElementById('menu-' + kb.dataset.menu);
+      document.querySelectorAll('.menupop').forEach(p => { if (p !== pop) p.hidden = true; });
+      if (pop) pop.hidden = !pop.hidden;
+      return;
+    }
+    // Bearbeiten (aus dem Menü) — Titel + Notiz der ganzen Serie
+    const el2 = e.target.closest('[data-editlog]');
+    if (el2) { openLogSheet(el2.dataset.editlog.split(',')); return; }
+    // Rückgängig (aus dem Menü) — loescht die ganze Serie
+    const u = e.target.closest('[data-undo]');
+    if (u) { deleteLogEntries(u.dataset.undo.split(',')); return; }
+    // Aufgabe gedrückt → Punkte!
+    const card = e.target.closest('.chore');
+    if (card && !pressLock) {
+      const c = state.chores.find(x => x.id === card.dataset.cid); if (!c) return;
+      // v4.35.0: Folge-Tipps sind jetzt GEWOLLT (Akkumulation) — der Lock
+      // filtert nur noch Geister-Doppelklicks der Hardware (<250 ms).
+      pressLock = true; setTimeout(() => pressLock = false, 250);
+      if (!recordEntry(c)) return;
+      save(); render();
+      const fresh = listEl.querySelector('.chore[data-cid="' + c.id + '"]');
+      if (fresh) { fresh.classList.add('flash'); setTimeout(() => fresh.classList.remove('flash'), 500); }
+    }
+  });
+
+  // ---------- Boot-Splash → Kopf-Logo (v4.39.0) ----------
+  // FLIP: Icon-Rechteck → #headLogo-Rechteck. KEIN transitionend (die
+  // globale reduced-motion-Regel toetet Transitions → Event kaeme nie),
+  // stattdessen feste Timeouts. Overlay ist pointer-events:none.
+  (function () {
+    const sp = document.getElementById('splash');
+    if (!sp) return;
+    const icon = sp.querySelector('img');
+    const MIN = 550;                                  // ms ab navigationStart
+    const finish = () => { document.documentElement.classList.remove('splash'); sp.remove(); };
+    function morph() {
+      const target = document.getElementById('headLogo');
+      if (!target || matchMedia('(prefers-reduced-motion: reduce)').matches) return finish();
+      const a = icon.getBoundingClientRect(), b = target.getBoundingClientRect();
+      if (!a.width || !b.width) return finish();
+      // border-radius NICHT animieren: scale() verkleinert die 24px optisch
+      // auf ~6px — genau der Ziel-Radius des Kopf-Logos.
+      icon.style.transform = `translate(${b.left - a.left}px, ${b.top - a.top}px) scale(${b.width / a.width})`;
+      sp.style.background = 'transparent';
+      setTimeout(finish, 480);
+    }
+    const arm = () => setTimeout(morph, Math.max(0, MIN - performance.now()));
+    if (document.readyState !== 'loading') arm();
+    else addEventListener('DOMContentLoaded', arm);
+  })();
+
+  // ---------- Verlauf: Löschen mit Undo-Fenster ----------
+  // Lokal sofort weg; der Server-DELETE wird erst NACH dem Fenster gesendet.
+  // Undo ist damit rein lokal — kein DELETE/INSERT-Wettrennen (push() ist
+  // fire-and-forget, keine serielle Queue!). pendingDeletes schirmt die
+  // Zeilen waehrenddessen gegen Pulls ab. Schliesst jemand die App im
+  // Fenster, wird nichts geloescht — Wiederauferstehung schlaegt Verlust.
+  const UNDO_MS = 5000;
+  let pendingUndo = null;   // { entries, timer }
+  function commitPendingUndo() {
+    if (!pendingUndo) return;
+    clearTimeout(pendingUndo.timer);
+    for (const e of pendingUndo.entries) deleteRemote('log', e.id, () => {
+      if (!state.log.some(x => x.id === e.id)) {
+        state.log.push(e); state.log.sort((a, b) => (a.done_at < b.done_at ? 1 : -1)); save(); render();
+      }
+    });
+    pendingUndo = null;
+  }
+  function deleteLogEntries(ids) {
+    commitPendingUndo();                       // nur EIN offenes Fenster
+    const entries = state.log.filter(x => ids.includes(x.id));
+    if (!entries.length) return;
+    state.log = state.log.filter(x => !ids.includes(x.id));
+    for (const e of entries) pendingDeletes.set('log:' + e.id, { resolvedAt: null });
+    save(); render();
+    pendingUndo = { entries, timer: setTimeout(commitPendingUndo, UNDO_MS) };
+    toast(t('Gelöscht') + (entries.length > 1 ? ` (${entries.length})` : ''), {
+      label: t('Rückgängig'),
+      fn: () => {
+        if (!pendingUndo) return;
+        clearTimeout(pendingUndo.timer);
+        for (const e of pendingUndo.entries) pendingDeletes.delete('log:' + e.id);
+        state.log = state.log.concat(pendingUndo.entries)
+          .sort((a, b) => new Date(b.done_at) - new Date(a.done_at));
+        pendingUndo = null;
+        save(); render();
+      }
+    });
+  }
+
+  // ---------- Verlauf: Eintrag/Serie bearbeiten (Titel + Notiz) ----------
+  let logSheetDirty = false;
+  // Rechte-Modell (v4.38.0): Familien-Link = Admin (alles), persoenlicher
+  // Link = nur eigene Verlaufs-Eintraege. Client-seitige Durchsetzung —
+  // serverseitig teilen alle den Familien-Write-Key (siehe Onboarding-Doku).
+  const canEditLog = en => !USER_SLUG || (!!me && en.member_id === me);
+  function localDT(iso) {
+    const d = new Date(iso), p = x => String(x).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+  function openLogSheet(ids) {
+    const first = state.log.find(x => x.id === ids[0]);
+    if (!first) return;
+    if (!ids.every(id => { const x = state.log.find(y => y.id === id); return !x || canEditLog(x); })) {
+      toast(t('Nur eigene Einträge lassen sich bearbeiten')); return;
+    }
+    let sh = document.getElementById('logSheet');
+    if (!sh) {
+      sh = document.createElement('dialog');
+      sh.id = 'logSheet';
+      document.body.appendChild(sh);
+      enableBackdropClose(sh, null, () => logSheetDirty);   // Formular-Regel: dirty schuetzt
+    }
+    const n = ids.length;
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"><button type="button" class="barbtn del" id="delLog">${t('Löschen')}${n > 1 ? ` (${n})` : ''}</button></div>
+        <h2>${t('Eintrag bearbeiten')}</h2>
+        <div class="slot end"><button type="button" class="x" id="closeLog" aria-label="${t('Schließen')}">×</button></div>
+      </div>
+      <div class="field">
+        <label for="lName">${t('Titel')}</label>
+        <input id="lName" type="text" maxlength="60" value="${esc(first.chore_name)}" autocomplete="off">
+      </div>
+      ${n === 1 ? `<div class="field">
+        <div class="ptsrow"><label for="lPts">${t('Punkte')}</label><output id="lPtsVal" for="lPts">${first.points}</output></div>
+        <input type="range" id="lPts" min="0" max="${Math.max(MAXPTS, +first.points || 0)}" step="1" value="${first.points}">
+      </div>` : ''}
+      <div class="field">
+        <label for="lNote">${t('Notiz')} <span style="font-weight:400;color:var(--muted)">${t('(optional)')}</span></label>
+        <input id="lNote" type="text" maxlength="120" value="${esc(first.chore_note || '')}" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="lTime">${t('Zeit')}${n > 1 ? ` <span style="font-weight:400;color:var(--muted)">${t('(verschiebt alle {n} gemeinsam)', { n })}</span>` : ''}</label>
+        <input id="lTime" type="datetime-local" value="${localDT(first.done_at)}">
+      </div>
+      <button type="button" class="btn primary wide" id="saveLog">${t('Speichern')}</button>
+    </div>`;
+    logSheetDirty = false;
+    sh.querySelector('.sheet').addEventListener('input', () => { logSheetDirty = true; });
+    const lpSl = sh.querySelector('#lPts');
+    if (lpSl) {
+      syncPtsRange(lpSl, sh.querySelector('#lPtsVal'));
+      lpSl.addEventListener('input', () => syncPtsRange(lpSl, sh.querySelector('#lPtsVal'), lpSl.value));
+    }
+    sh.querySelector('#closeLog').onclick = () => sh.close();
+    sh.querySelector('#delLog').onclick = () => {
+      sh.close();
+      deleteLogEntries(ids);   // Undo-Toast ersetzt das confirm() — weniger Reibung, volle Reue-Option
+    };
+    sh.querySelector('#saveLog').onclick = () => {
+      const name = sh.querySelector('#lName').value.trim();
+      const note = sh.querySelector('#lNote').value.trim() || null;
+      if (!name) return;
+      // Zeit: Serie wird um dasselbe Delta VERSCHOBEN (Abstaende und
+      // Reihenfolge bleiben), Einzeleintrag direkt gesetzt.
+      const tv = sh.querySelector('#lTime').value;
+      const delta = tv ? (new Date(tv) - new Date(first.done_at)) : 0;
+      for (const id of ids) {
+        const x = state.log.find(y => y.id === id);
+        if (!x) continue;
+        x.chore_name = name; x.chore_note = note;
+        if (delta) x.done_at = new Date(new Date(x.done_at).getTime() + delta).toISOString();
+        const body = { chore_name: name, chore_note: note, done_at: x.done_at };
+        const lp = sh.querySelector('#lPts');
+        if (lp && ids.length === 1) { x.points = Math.max(0, Math.min(99, +lp.value || 0)); body.points = x.points; }
+        push(() => sb('log?id=eq.' + id, 'PATCH', body));
+      }
+      if (delta) state.log.sort((a, b) => new Date(b.done_at) - new Date(a.done_at));
+      save(); render(); sh.close();   // save() entwertet laufende Pulls (mutationSeq)
+    };
+    sh.showModal();
+  }
+
+  // Verbucht eine Aufgabe (Kachel ODER einmalig, chore.id darf null sein)
+  // fuer die aktuell gewaehlte Person. true = verbucht.
+  function recordEntry(choreLike) {
+    if (!me || !memberById(me)) { toast(t('Wähle zuerst oben, wer du bist')); return false; }
+    const m = memberById(me);
+    // Folge-Tipp innerhalb 1 h auf dieselbe Sache: Punkte AUFADDIEREN statt
+    // neuer Zeile (v4.35.0). done_at bleibt der ERSTE Tipp — so schliesst
+    // sich das Fenster von selbst. Alt-Serien (mehrzeilig) bleiben, wie sie
+    // sind, und rendern weiter gebuendelt.
+    const key = choreLike.id || 'n:' + choreLike.name;
+    const recent = state.log.find(e => e.member_id === m.id
+      && (e.chore_id || 'n:' + e.chore_name) === key
+      && Date.now() - new Date(e.done_at).getTime() < 3600e3);
+    if (recent) {
+      recent.points += choreLike.points;
+      push(() => sb('log?id=eq.' + recent.id, 'PATCH', { points: recent.points }));
+      try { if (navigator.vibrate) navigator.vibrate(12); } catch {}
+      toast(t('+{p} für {name}', { p: choreLike.points, name: m.name }));
+      return true;
+    }
+    const entry = {
+      id: uid(), chore_id: choreLike.id || null,
+      chore_name: choreLike.name, chore_note: choreLike.note || null,
+      member_id: m.id, member_name: m.name,
+      points: choreLike.points, done_at: new Date().toISOString()
+    };
+    state.log.unshift(entry);
+    try { if (navigator.vibrate) navigator.vibrate(12); } catch {}
+    toast(t('+{p} für {name}', { p: choreLike.points, name: m.name }));
+    createRemote('log', entry);
+    return true;
+  }
+
+  // ---------- Aufgaben-Sheet ----------
+  const choreSheet = document.getElementById('choreSheet');
+  let choreDirty = false;
+  document.getElementById('choreForm').addEventListener('input', () => { choreDirty = true; });
+  // Duplikat-Hinweis: nur beim ANLEGEN, live waehrend des Tippens
+  let dupMatch = null;
+  document.getElementById('cName').addEventListener('input', () => {
+    const hint = document.getElementById('dupHint');
+    if (editingChore || oneOffMode) { hint.style.display = 'none'; dupMatch = null; return; }
+    const v = document.getElementById('cName').value.trim().toLowerCase();
+    dupMatch = v ? state.chores.find(c => c.name.trim().toLowerCase() === v) : null;
+    if (dupMatch) {
+      document.getElementById('dupHintText').textContent = t('«{name}» gibt es schon', { name: dupMatch.name });
+      document.getElementById('dupRecord').textContent = t('Stattdessen verbuchen');
+      hint.style.display = '';
+    } else hint.style.display = 'none';
+  });
+  document.getElementById('dupRecord').addEventListener('click', () => {
+    if (dupMatch && recordEntry(dupMatch)) { save(); render(); choreSheet.close(); }
+  });
+  let editingChore = null;
+  let justAdded = null;
+
+  const _resetDupHint = () => { const h = document.getElementById('dupHint'); if (h) h.style.display = 'none'; };
+  choreSheet.addEventListener('close', _resetDupHint);
+  // EINE Slider-Mechanik fuer choreSheet (cPts) UND logSheet (lPts):
+  // Skala folgt der Einstellung; beim Bearbeiten nie unter den Bestandswert.
+  function syncPtsRange(sl, out, v) {
+    if (v !== undefined) { sl.max = Math.max(MAXPTS, +v || 0); sl.value = v; }
+    out.textContent = sl.value;
+    sl.style.setProperty('--fill', (sl.value / sl.max * 100) + '%');
+  }
+  function setPtsSlider(v) {
+    syncPtsRange(document.getElementById('cPts'), document.getElementById('cPtsVal'), v);
+  }
+  document.getElementById('cPts').addEventListener('input', e => setPtsSlider(e.target.value));
+
+  let oneOffMode = false;
+  function openChoreSheet(id, mode) {
+    editingChore = id || null;
+    oneOffMode = mode === 'oneoff';
+    const c = id ? state.chores.find(x => x.id === id) : null;
+    document.getElementById('choreSheetTitle').textContent =
+      t(oneOffMode ? 'Einmalig eintragen' : (c ? 'Bearbeiten' : 'Neue Aufgabe'));
+    // Knopf-Logik: Einmalig → «Eintragen» (verbucht, keine Kachel);
+    // Neue Aufgabe → «Speichern» + Ghost «Speichern + eintragen»;
+    // Bearbeiten → nur «Speichern».
+    // Primaer (und Enter) ist die HAEUFIGE Absicht: beim Anlegen wird die
+    // Aufgabe fast immer auch gleich verbucht (Maintainer, 14.07.).
+    document.getElementById('saveChore').textContent =
+      t(oneOffMode ? 'Eintragen' : (c ? 'Speichern' : 'Speichern + eintragen'));
+    document.getElementById('saveAndRecord').textContent = t('Nur speichern');
+    document.getElementById('saveAndRecord').hidden = !!(oneOffMode || c);
+    document.getElementById('cName').value = c ? c.name : '';
+    document.getElementById('cNote').value = c && c.note ? c.note : '';
+    // Beim Bearbeiten: Name als Text – Tastatur bleibt unten, alles sichtbar
+    document.getElementById('nameText').textContent = c ? c.name : '';
+    document.getElementById('nameStatic').style.display = c ? '' : 'none';
+    document.getElementById('cName').style.display = c ? 'none' : '';
+    setPtsSlider(c ? c.points : 1);
+    document.getElementById('deleteChore').style.visibility = c ? 'visible' : 'hidden';
+    choreDirty = false;
+    choreSheet.showModal();
+  }
+  document.getElementById('editName').addEventListener('click', () => {
+    document.getElementById('nameStatic').style.display = 'none';
+    const inp = document.getElementById('cName');
+    inp.style.display = ''; inp.focus(); inp.select();
+  });
+  // + folgt der Regel «keine unsichtbaren Aktionen»: im Verlauf erzeugt es
+  // einen Eintrag (sofort sichtbar), keine Kachel zwei Ansichten weiter.
+  document.getElementById('openSettings').addEventListener('click', openSettingsSheet);
+  // Kopf schrumpft beim Scrollen (Hysterese gegen Flattern an der Kante)
+  (() => {
+    const head = document.getElementById('apphead');
+    if (!head) return;
+    // Kein Schrumpfen, kein --tabstop mehr (v4.42.0) — es bleibt nur die
+    // Breit-Layout-Pruefung bei Resize/Titelwechsel.
+    const remeasure = () => window.__updateWide();
+    window.__afterTitle = remeasure;
+    addEventListener('resize', remeasure);
+    remeasure();
+  })();
+  // Textfelder in Dialogen: beim Fokussieren alles markieren — Tippen
+  // ERSETZT den bestehenden Text statt anzuhaengen (Maintainer, 16.07.)
+  document.addEventListener('focusin', e => {
+    const el = e.target;
+    if (el.closest && el.closest('dialog') && el.matches('input[type="text"], input[type="number"]'))
+      requestAnimationFrame(() => { if (el.value && document.activeElement === el) el.select(); });
+  });
+  document.getElementById('openAdd').addEventListener('click', () =>
+    openChoreSheet(null, view === 'log' ? 'oneoff' : undefined));
+  document.getElementById('cancelChore').addEventListener('click', () => choreSheet.close());
+  document.getElementById('deleteChore').addEventListener('click', () => {
+    const c = state.chores.find(x => x.id === editingChore);
+    if (c && confirm(`«${c.name}» löschen? Bisherige Punkte bleiben erhalten.`)) {
+      state.chores = state.chores.filter(x => x.id !== c.id);
+      invalidateOrder(); save(); choreSheet.close(); render();
+      deleteRemote('chores', c.id, () => {
+        if (!state.chores.some(x => x.id === c.id)) { state.chores.push(c); invalidateOrder(); save(); render(); }
+      });
+    }
+  });
+  function submitChoreForm(alsoRecord) {
+    const name = document.getElementById('cName').value.trim();
+    const points = Math.max(0, Math.min(15, parseInt(document.getElementById('cPts').value) || 0));
+    const note = document.getElementById('cNote').value.trim() || null;
+    if (!name) return false;
+    if (oneOffMode) {
+      // Einmalig: NUR verbuchen, keine Kachel (gegen Kachel-Inflation)
+      if (!recordEntry({ id: null, name, points, note })) return false;
+      save(); render();
+      return true;
+    }
+    if (editingChore) {
+      const c = state.chores.find(x => x.id === editingChore);
+      c.name = name; c.points = points; c.note = note;
+      push(() => sb('chores?id=eq.' + c.id, 'PATCH', { name, points, note }));
+    } else {
+      const c = { id: uid(), name, points, note };
+      state.chores.push(c);
+      c.created_at = new Date().toISOString();   // lokal sofort korrekt einsortieren
+      createRemote('chores', c);
+      justAdded = c.id;   // Platz bestimmt die Sortierung; Scroll+Flash fuehren hin (v4.34.0)
+      if (alsoRecord) recordEntry(c);   // Kachel anlegen UND sofort verbuchen
+    }
+    invalidateOrder();
+    save(); render();
+    if (justAdded) {
+      const el = document.querySelector('.chore[data-cid="' + justAdded + '"]');
+      if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 500); }
+      justAdded = null;
+    }
+    return true;
+  }
+  document.getElementById('choreForm').addEventListener('submit', e => {
+    // Anlegen: Primaer verbucht MIT; Bearbeiten/Einmalig wie gehabt
+    const record = !oneOffMode && !editingChore;
+    if (!submitChoreForm(record)) e.preventDefault();  // leer/keine Person: offen lassen
+  });
+  document.getElementById('saveAndRecord').addEventListener('click', () => {
+    if (submitChoreForm(false)) choreSheet.close();    // «Nur speichern»: Kachel ohne Buchung
+  });
+
+  // ---------- Personen-Sheet ----------
+  const memberSheet = document.getElementById('memberSheet');
+  const changedMembers = new Set();
+  function renderMemberRows() {
+    const wrap = document.getElementById('memberRows');
+    wrap.innerHTML = state.members.map(m =>
+      `<div class="mrow" data-mid="${m.id}">
+        <input type="color" value="${esc(m.color)}" aria-label="Farbe">
+        <input type="text" maxlength="30" aria-label="Name">
+        <div class="entmenu">
+          <button class="kebab" data-mmenu="${m.id}" aria-label="Optionen">⋯</button>
+          <div class="menupop" id="mmenu-${m.id}" hidden>
+            <button class="menuitem" data-mshare="${m.id}">${t('Link teilen')}</button>
+            <button class="menuitem danger" data-mdel="${m.id}">${t('Löschen')}</button>
+          </div>
+        </div>
+      </div>`).join('');
+    wrap.querySelectorAll('.mrow').forEach((r, i) => r.querySelector('input[type=text]').value = state.members[i].name);
+  }
+  // «Was ist neu»-Hinweis: einmal pro Version, nur fuer Wiederkehrer
+  (() => {
+    const K = 'haushalt.seenver';
+    let seen = null; try { seen = localStorage.getItem(K); } catch {}
+    const mark = () => { try { localStorage.setItem(K, APP_VERSION); } catch {} };
+    if (!seen) { mark(); return; }               // Erstkontakt: still merken
+    // INHALTS-verankert (v4.43.1, Maintainer: «soll nicht mit jeder Versionsnummer
+    // wiederkommen»): NEWS_VERSION = bis wohin updates.html berichtet. Wer
+    // diesen Stand (oder neuer) schon gesehen hat, wird NIE wieder gepingt —
+    // egal wie viele Releases folgen. Erst ein Bump von NEWS_VERSION
+    // (ZUSAMMEN mit neuem updates.html-Inhalt!) zündet erneut. Marke wird
+    // bei stillen Durchläufen aktuell gehalten.
+    const NEWS_VERSION = '4.37.0';   // updates.html berichtet bis v4.37 — nur mit neuem Inhalt bumpen!
+    const vcmp = (a, b) => {
+      a = String(a).split('.').map(Number); b = String(b).split('.').map(Number);
+      for (let i = 0; i < 3; i++) { const d = (a[i] || 0) - (b[i] || 0); if (d) return d; }
+      return 0;
+    };
+    if (vcmp(seen, NEWS_VERSION) >= 0) { if (seen !== APP_VERSION) mark(); return; }
+    const bar = document.getElementById('newsBar');
+    bar.hidden = false;
+    document.getElementById('newsBarLink').addEventListener('click', () => { mark(); bar.hidden = true; });
+    document.getElementById('newsBarClose').addEventListener('click', () => { mark(); bar.hidden = true; });
+  })();
+  const _shareTop = document.getElementById('openShareTop');
+  if (_shareTop) _shareTop.addEventListener('click', () => openShareSheet(''));
+  document.getElementById('openMembers').addEventListener('click', () => {
+    changedMembers.clear(); renderMemberRows();
+    let fl = document.getElementById('famLink');
+    if (!fl) {
+      fl = document.createElement('button');
+      fl.id = 'famLink';
+      fl.style.cssText = 'margin-top:12px;width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:12px;font-size:15px;font-weight:600;cursor:pointer';
+      fl.textContent = t('Links teilen …');
+      fl.onclick = () => { memberSheet.close(); openShareSheet(''); };
+      document.getElementById('memberRows').after(fl);
+    }
+    memberSheet.showModal();
+  });
+  document.getElementById('memberRows').addEventListener('input', e => {
+    const row = e.target.closest('.mrow'); if (!row) return;
+    const m = memberById(row.dataset.mid); if (!m) return;
+    if (e.target.type === 'text') m.name = e.target.value;
+    if (e.target.type === 'color') m.color = e.target.value;
+    changedMembers.add(m.id); save();
+  });
+  const appBase = () => location.origin + location.pathname;
+  const familyLink = () => shareRouteUrl(FAMILY, null);
+  const appLink = () => location.origin + SHARE_BASE;
+  function ensureSlug(m) {
+    if (!m.url_slug) { m.url_slug = uid() + uid(); save(); upsertRemote('members', [m]); }   // Pull-Schutz: ein geschluckter Slug hiesse geteilte Links, die der Server nicht kennt
+    return m.url_slug;
+  }
+  const userLink = m => shareRouteUrl(FAMILY, ensureSlug(m));
+
+  // Teilen: native Share-Sheet bevorzugt, sonst Clipboard, sonst Anzeige
+  async function shareLink(url, title, text) {
+    if (navigator.share) {
+      try { await navigator.share({ title, text, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    try { await navigator.clipboard.writeText(url); toast(t('{title} kopiert', { title })); }
+    catch { toast(url); }
+  }
+  function qrDataUrl(text) {
+    try {
+      const q = qrcode(0, 'M'); q.addData(text); q.make();
+      return q.createDataURL(6, 16); // cellSize, margin
+    } catch { return null; }
+  }
+
+  // Wiederverwendbares Sheet: alle persönlichen Links + Familien-Link, je mit
+  // Teilen-Button und QR-Code.
+  // ---------- Install-Banner + Install-Sheet (v4.22.0) ----------
+  const LS_IBAR = 'haushalt.installbar.done:' + FAMILY + (USER_SLUG ? ':u' : ':a');
+
+  function openInstallSheet() {
+    let sh = document.getElementById('installSheet');
+    if (!sh) {
+      sh = document.createElement('dialog');
+      sh.id = 'installSheet';
+      document.body.appendChild(sh);
+      enableBackdropClose(sh);
+    }
+    const androidPrompt = !!deferredInstall;
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"></div>
+        <h2>${t('Als App installieren')}</h2>
+        <div class="slot end"><button class="x" id="closeInstall" aria-label="${t('Schließen')}">×</button></div>
+      </div>
+      ${androidPrompt
+        ? `<p style="margin:4px 0 14px;color:var(--muted);font-size:14px;line-height:1.5">${t('Ein Tipp genügt — Android fragt kurz nach, danach liegt Fairli auf deinem Home-Bildschirm.')}</p>`
+        : installInstructionsHTML(true)}
+      <button type="button" class="btn primary wide" id="installGo">${t(androidPrompt ? 'Jetzt installieren' : 'Fertig')}</button>
+    </div>`;
+    sh.querySelector('#closeInstall').onclick = () => sh.close();
+    sh.querySelector('#installGo').onclick = async () => {
+      if (deferredInstall) {
+        const p = deferredInstall; deferredInstall = null;
+        p.prompt();
+        try {
+          const { outcome } = await p.userChoice;
+          if (outcome !== 'accepted') { deferredInstall = p; return; } // Sheet offen lassen
+        } catch {}
+      }
+      sh.close();   // «Installiert ✓» + Banner-Aus kommt via appinstalled-Event
+    };
+    if (!sh.open) sh.showModal();
+  }
+
+  function initInstallBar() {
+    const bar = document.getElementById('installBar');
+    if (!bar) return;
+    if (IS_STANDALONE) return;                       // laeuft bereits als App
+    try { if (localStorage.getItem(LS_IBAR)) return; } catch {}
+    bar.hidden = false;
+    // Nativ-zuerst (v4.45.0): mit verfuegbarem Prompt feuert der Banner-Tap
+    // DIREKT das OS-Prompt — der Knopf in der Haupt-Ansicht IST der Banner.
+    // Ohne Prompt (iOS/installiert/zu frueh) oeffnet er die Anleitungen.
+    document.getElementById('installBarOpen').onclick = async () => {
+      if (deferredInstall) {
+        const p = deferredInstall; deferredInstall = null;
+        p.prompt();
+        try {
+          const { outcome } = await p.userChoice;
+          if (outcome === 'accepted') return;   // appinstalled raeumt auf
+          deferredInstall = p;                   // abgelehnt: aufheben, Sheet zeigen
+        } catch {}
+      }
+      openInstallSheet();
+    };
+    document.getElementById('installBarClose').onclick = () => {
+      bar.hidden = true;
+      try { localStorage.setItem(LS_IBAR, '1'); } catch {}
+    };
+  }
+  window.addEventListener('appinstalled', () => {
+    deferredInstall = null;
+    try { localStorage.setItem(LS_IBAR, '1'); } catch {}
+    const b = document.getElementById('installBar'); if (b) b.hidden = true;
+    const s = document.getElementById('installSheet'); if (s && s.open) s.close();
+    toast(t('Installiert ✓'));
+  });
+  initInstallBar();
+  // i18n-Boot: Woerterbuch laden, Statik uebersetzen, dann neu zeichnen.
+  // localStorage-Kopie macht das quasi-sofort; frisches Fetch aktualisiert.
+  if (LANG !== 'de') loadDict(LANG).then(() => { translatePage(); render(); });
+  else translatePage();
+
+  // Install-Anleitung: EIN Erzeuger fuer Einladen-Sheet (details) und
+  // Install-Sheet (flach) — nie zwei Kopien pflegen.
+  const icShare = '<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
+  const icPlus  = '<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M12 8v8M8 12h8"/></svg>';
+  const icDots  = '<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>';
+  function installInstructionsHTML(onlyCurrent) {
+    // onlyCurrent: Install-Sheet vom Banner — der Nutzer steht VOR SEINEM
+    // Geraet, fremde Plattform-Anleitungen verwirren nur (Maintainer, 14.07.).
+    // Das Einladen-Sheet zeigt weiterhin BEIDE (man hilft dort oft anderen).
+    const badge = onlyCurrent ? '' : '<span class="pbadge">' + t('dein Gerät') + '</span>';
+    const ios = !onlyCurrent || IS_IOS;
+    const android = !onlyCurrent || !IS_IOS;
+    return `<div class="instbody">
+        ${ios ? `<div class="plat">
+          <h4>iPhone &amp; iPad${IS_IOS ? badge : ''}</h4>
+          <ol>
+            <li>${t('Den Link in <b>Safari</b> oder <b>Chrome</b> öffnen.')}</li>
+            <li>${t('Im Browser auf {ic} <b>«Teilen»</b> tippen.', { ic: icShare })} <span class="sub">${t('Safari: unten in der Mitte (iPad: oben rechts) · Chrome: oben neben der Adressleiste.')}</span></li>
+            <li>${t('In der Liste nach unten scrollen zu {ic} <b>«Zum Home-Bildschirm»</b>.', { ic: icPlus })}</li>
+            <li>${t('Oben rechts <b>Hinzufügen</b> — fertig.')}</li>
+          </ol>
+        </div>` : ''}
+        ${android ? `<div class="plat">
+          <h4>Android${IS_IOS ? '' : badge}</h4>
+          <ol>
+            <li>${t('Den Link in <b>Chrome</b> öffnen.')}</li>
+            <li>${t('Oben rechts auf {ic} <b>Menü</b> tippen.', { ic: icDots })}</li>
+            <li>${t('<b>«App installieren»</b> bzw. <b>«Zum Startbildschirm hinzufügen»</b> wählen.')}</li>
+            <li>${t('Mit <b>Installieren</b> bestätigen — fertig.')}</li>
+          </ol>
+        </div>` : ''}
+      </div>`;
+  }
+
+  // ---------- Onboarding «Zugriff sichern» (v4.45.0) ----------
+  // Schritt 1 fuer JEDEN Erstbesuch (Ersteller UND Link-Empfaenger): den
+  // eigenen Link sichern — nativer Android-Knopf oder Anleitungen. Der
+  // Ersteller geht danach mit «Weiter» in das Einladen-Sheet (Schritt 2).
+  const OB_KEY = 'haushalt.onboard:' + FAMILY + (USER_SLUG ? ':u' : ':a');
+  let onboardShown = false;
+  function openOnboardSheet(creator) {
+    let sh = document.getElementById('onboardSheet');
+    if (!sh) { sh = document.createElement('dialog'); sh.id = 'onboardSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
+    const txt = USER_SLUG
+      ? t('Dein Link ist dein Zugang — sichere ihn als Lesezeichen oder auf dem Home-Bildschirm, sonst geht er verloren.')
+      : t('Wichtig: diesen Link sichern — als Lesezeichen oder auf dem Home-Bildschirm. Ohne ihn verliert ihr den Zugriff auf euren Haushalt.');
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"></div>
+        <h2>${t('Zugriff sichern')}</h2>
+        <div class="slot end"><button class="x" id="closeOnboard" aria-label="${t('Schließen')}">×</button></div>
+      </div>
+      <div class="savenote" style="margin-top:2px">🔖 ${txt}</div>
+      ${deferredInstall
+        ? `<button type="button" class="btn primary wide" id="obInstall" style="margin-top:12px">${t('Zum Home-Bildschirm hinzufügen')}</button>`
+        : `<div class="instbody">${installInstructionsHTML(true)}</div>`}
+      <button type="button" class="btn wide" id="obNext">${creator ? t('Weiter: Mitglieder einladen') : t("Los geht's")}</button>
+    </div>`;
+    // Kein doppeltes «Zum Home-Bildschirm» (Maintainer, 17.07.): solange das
+    // Onboarding offen ist, schweigt der 📲-Banner — es ist DIESELBE
+    // Botschaft. Nach dem Schliessen ohne Installation kehrt er als
+    // dauerhafte Erinnerung zurueck (initInstallBar ist idempotent und
+    // respektiert appinstalled/Dismissal via LS_IBAR).
+    const ibar = document.getElementById('installBar');
+    if (ibar) ibar.hidden = true;
+    sh.addEventListener('close', () => {
+      try { localStorage.setItem(OB_KEY, '1'); } catch {}
+      initInstallBar();
+    }, { once: true });
+    sh.querySelector('#closeOnboard').onclick = () => sh.close();
+    const oi = sh.querySelector('#obInstall');
+    if (oi) wireShInstall(oi);
+    sh.querySelector('#obNext').onclick = () => { sh.close(); if (creator) openShareSheet(''); };
+    if (!sh.open) sh.showModal();
+  }
+  function maybeOnboard() {
+    if (onboardShown || !FAMILY || IS_STANDALONE || firstRunOpen) return;
+    // NUR famName zaehlt als «Familie steht»: der Boot-State saet auch fuer
+    // brandneue Familien ein lokales Standard-Mitglied — members waere ein
+    // Fehlsignal und legte das Onboarding UEBER die Ersteinrichtung.
+    if (!state.famName) return;
+    try { if (localStorage.getItem(OB_KEY)) return; } catch {}
+    if (document.querySelector('dialog[open]')) return;     // nie ueber andere Sheets legen
+    onboardShown = true;
+    openOnboardSheet(false);
+  }
+  function wireShInstall(btn) {
+    btn.onclick = async () => {
+      if (!deferredInstall) { btn.remove(); return; }
+      const p = deferredInstall; deferredInstall = null;
+      p.prompt();
+      try {
+        const { outcome } = await p.userChoice;
+        if (outcome === 'accepted') btn.remove();       // «Installiert ✓» kommt via appinstalled
+        else deferredInstall = p;                        // abgelehnt: Prompt aufheben
+      } catch {}
+    };
+  }
+  function injectShareInstall(sh) {
+    if (!deferredInstall || sh.querySelector('#shInstall')) return;
+    const sn = sh.querySelector('.savenote');
+    if (!sn) return;                                     // z. B. persoenlicher Link (kein Admin-Block)
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'btn primary wide'; b.id = 'shInstall';
+    b.style.marginTop = '10px';
+    b.textContent = t('Zum Home-Bildschirm hinzufügen');
+    wireShInstall(b);
+    sn.appendChild(b);
+  }
+  function openShareSheet(intro, expandInstall) {
+    let sh = document.getElementById('shareSheet');
+    if (!sh) {
+      sh = document.createElement('dialog');
+      sh.id = 'shareSheet';
+      document.body.appendChild(sh);
+      enableBackdropClose(sh);   // Backdrop-Tipp + Swipe wie ueberall (v4.42.2)
+    }
+    // Mitglieder duerfen die persoenlichen Links ALLER Personen teilen (sonst
+    // koennen sie niemanden einladen — genau daran scheiterte das Onboarding eines neuen Mitglieds).
+    // Der Familien-/Admin-Link bleibt fuer sie verborgen.
+    const own = USER_SLUG ? state.members.find(m => (m.url_slug || '').toLowerCase() === USER_SLUG) : null;
+    const rows = state.members.map(m => {
+      const url = userLink(m);
+      const qr = qrDataUrl(url);
+      return `<div class="shrow">
+        <div class="shhead">
+          <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>
+          <span class="shname">${esc(m.name || '—')}${own && m.id === own.id ? ' <span style="font-weight:400;color:var(--muted);font-size:12.5px">(du)</span>' : ''}</span>
+          ${qr ? `<button class="qrtog" aria-label="${t('QR-Code anzeigen')}">QR</button>` : ''}
+          <button class="shbtn" data-share="${esc(url)}" data-name="${esc(m.name || '')}">${t('Einladen')}</button>
+        </div>
+        ${qr ? `<div class="qrwrap" hidden>
+          <img class="shqr" src="${qr}" alt="${t('QR-Code für {name}', { name: esc(m.name || '—') })}" width="116" height="116">
+          <div class="qrcap">${t('Persönlicher Link für {name}', { name: esc(m.name || '—') })}</div>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+    const famQr = qrDataUrl(familyLink());
+    const appQr = qrDataUrl(appLink());
+    const installBlock = `<details class="install"${expandInstall ? ' open' : ''}>
+      <summary><span>📲 ${t('Als App zum Home-Bildschirm')}</span><span class="chev">▾</span></summary>
+      ${installInstructionsHTML()}
+    </details>`;
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"></div>
+        <h2>${t('Einladen')}</h2>
+        <div class="slot end"><button class="x" id="closeShare" aria-label="${t('Schließen')}">×</button></div>
+      </div>
+      ${USER_SLUG ? '' : `<div class="shrow shfam" style="border-top:none;padding-top:4px">
+        <div class="shhead">
+          <span class="shname">${t('Admin-Link')}<br><span class="subnote">${t('Gibt vollen Zugriff auf alle Mitglieder und ihre Aktivitäten')}</span></span>
+          ${famQr ? `<button class="qrtog" aria-label="${t('QR-Code anzeigen')}">QR</button>` : ''}
+          <button class="shbtn" data-share="${esc(familyLink())}">${t('Einladen')}</button>
+        </div>
+        ${famQr ? `<div class="qrwrap" hidden>
+          <img class="shqr" src="${famQr}" alt="${t('Familien-Link')}" width="116" height="116">
+          <div class="qrcap">${t('Admin-Link')} · ${t('Gibt vollen Zugriff auf alle Mitglieder und ihre Aktivitäten')}</div>
+        </div>` : ''}
+        <div class="savenote">🔖 ${t('Wichtig: diesen Link sichern — als Lesezeichen oder auf dem Home-Bildschirm. Ohne ihn verliert ihr den Zugriff auf euren Haushalt.')}
+          ${deferredInstall ? `<button type="button" class="btn primary wide" id="shInstall" style="margin-top:10px">${t('Zum Home-Bildschirm hinzufügen')}</button>` : ''}
+        </div>
+      </div>
+      ${installBlock}`}
+      <div style="font-weight:700;font-size:14px;color:var(--muted);margin:18px 0 0">${t('Persönliche Links')}
+        <span class="subnote" style="font-weight:400">${t('Verschick sie an deine Mitbewohner oder Familie — jede Person loggt damit ihre Aufgaben')}</span></div>
+      ${rows}
+      ${USER_SLUG ? installBlock : ''}
+      <div class="shrow shapp">
+        <div class="shhead">
+          <span class="shname">${t('Fairli weiterempfehlen')}<br><span class="subnote">${t('Für Freunde: startet einen neuen, leeren Haushalt — zum Beitreten euren Familien-Link nutzen')}</span></span>
+          ${appQr ? `<button class="qrtog" aria-label="${t('QR-Code anzeigen')}">QR</button>` : ''}
+          <button class="shbtn" data-share="${esc(appLink())}" data-app="1">${t('Empfehlen')}</button>
+        </div>
+        ${appQr ? `<div class="qrwrap" hidden>
+          <img class="shqr" src="${appQr}" alt="Fairli-QR" width="116" height="116">
+          <div class="qrcap">${t('Neuer, leerer Haushalt (zum Beitreten: Familien-Link)')}</div>
+        </div>` : ''}
+      </div>
+      <button type="button" class="btn primary wide" id="doneShare">${t('Fertig')}</button>
+      <div style="color:var(--muted);font-size:11.5px;text-align:center;margin-top:12px">Fairli ${esc(APP_VERSION)}</div>
+    </div>`;
+    sh.querySelector('#closeShare').onclick = () => sh.close();
+    const gi = sh.querySelector('#shInstall');
+    if (gi) wireShInstall(gi);
+    sh.querySelector('#doneShare').onclick = () => sh.close();
+    if (!sh.dataset.backdrop) { enableBackdropClose(sh); sh.dataset.backdrop = '1'; }
+    sh.querySelectorAll('.qrtog').forEach(t => t.onclick = () => {
+      const w = t.closest('.shrow').querySelector('.qrwrap');
+      if (!w) return;
+      const show = w.hasAttribute('hidden');
+      if (show) { w.removeAttribute('hidden'); t.classList.add('on'); }
+      else { w.setAttribute('hidden', ''); t.classList.remove('on'); }
+    });
+    sh.querySelectorAll('.shbtn').forEach(b => b.onclick = () => {
+      if (b.dataset.app) {
+        shareLink(b.dataset.share, 'Fairli', t('Fairli – Haushaltsaufgaben fair verteilt. Erstell hier euren Haushalt:'));
+        return;
+      }
+      const nm = b.dataset.name;
+      const fam = state.famName || t('unseren Aufgaben');
+      shareLink(b.dataset.share, nm ? t('Link für {name}', { name: nm }) : t('Familien-Link'),
+                nm ? t('{name}, mach mit bei {fam}:', { name: nm, fam }) : t('Mach mit bei {fam}:', { fam }));
+    });
+    sh.showModal();
+  }
+  document.getElementById('memberRows').addEventListener('click', async e => {
+    // Kebab öffnen/schließen (gleiche Mechanik wie im Verlauf)
+    const kb = e.target.closest('[data-mmenu]');
+    if (kb) {
+      e.stopPropagation();
+      const pop = document.getElementById('mmenu-' + kb.dataset.mmenu);
+      document.querySelectorAll('.menupop').forEach(p => { if (p !== pop) p.hidden = true; });
+      if (pop) pop.hidden = !pop.hidden;
+      return;
+    }
+    // Persönlichen Link dieser Person teilen
+    const sh = e.target.closest('[data-mshare]');
+    if (sh) {
+      const m = memberById(sh.dataset.mshare);
+      if (m) shareLink(userLink(m), t('Link für {name}', { name: m.name || '—' }),
+                       t('{name}, mach mit bei {fam}:', { name: m.name || '', fam: state.famName || t('unseren Aufgaben') }));
+      document.querySelectorAll('.menupop').forEach(p => p.hidden = true);
+      return;
+    }
+    const dl = e.target.closest('[data-mdel]');
+    if (!dl) return;
+    if (state.members.length <= 1) { toast(t('Mindestens eine Person wird benötigt.')); return; }
+    const id = dl.dataset.mdel;
+    if (!confirm('Person entfernen? Ihre Punkte im Verlauf bleiben erhalten.')) return;
+    state.members = state.members.filter(m => m.id !== id);
+    if (me === id) { me = null; localStorage.removeItem(LS_ME); }
+    changedMembers.delete(id);
+    save(); renderMemberRows();
+    const _delM = state.members.find(x => x.id === id) || null;
+    deleteRemote('members', id, () => {
+      if (_delM && !state.members.some(x => x.id === id)) { state.members.push(_delM); save(); render(); }
+    });
+    render();
+  });
+  document.getElementById('addMember').addEventListener('click', () => {
+    const m = { id: uid(), name: '', color: palette[state.members.length % palette.length] };
+    state.members.push(m); changedMembers.add(m.id);
+    save(); renderMemberRows();
+    const inputs = document.querySelectorAll('#memberRows input[type=text]');
+    inputs[inputs.length - 1].focus();
+  });
+  function finishMembers() {
+    state.members = state.members.filter(m => m.name.trim() !== '');
+    if (!state.members.length) state.members = [{ id: uid(), name: 'Ich', color: palette[0] }];
+    save(); memberSheet.close(); render();
+    // geänderte/neue Personen synchronisieren (upsert)
+    const ms = state.members.filter(m => changedMembers.has(m.id));
+    // upsertRemote (v4.46.1): verschluesselt + Write-Key (v4.46.0) UND
+    // Pull-Schutz — vorher schluckte ein Pull mit Vor-Commit-Snapshot die
+    // neue Person bzw. setzte Umbenennungen zurueck (Maintainer-Live-Bugs).
+    upsertRemote('members', ms);
+    if (ms.length) toast(t('Gespeichert'));   // «unklar, ob es speichert» (Maintainer) — jetzt sagt es das
+  }
+  document.getElementById('closeMembers').addEventListener('click', finishMembers);   // × oben
+  document.getElementById('doneMembers').addEventListener('click', finishMembers);    // Speichern unten
+
+  // ---------- Sheets einheitlich schliessen: Backdrop-Tipp (Esc ist nativ) ----------
+  // Klick auf den Dialog SELBST = Backdrop (der Inhalt liegt in .sheet).
+  function enableBackdropClose(dlg, onClose, guard) {
+    const doClose = onClose || (() => dlg.close());
+    dlg.addEventListener('click', e => {
+      if (e.target !== dlg) return;
+      if (guard && guard()) return;
+      doClose();
+    });
+    // Runterwischen schliesst (v4.42.2) — der Grabber verspricht es ja.
+    // Gleiche Semantik wie Backdrop-Tipp: dirty-Guards (Formular-Regel)
+    // blocken auch den Swipe, das Sheet federt dann zurueck.
+    let startY = 0, dy = 0, t0 = 0, dragging = false, canDrag = false;
+    dlg.addEventListener('touchstart', e => {
+      const sc = dlg.querySelector('.sheet');
+      startY = e.touches[0].clientY; dy = 0; t0 = performance.now();
+      dragging = false;
+      canDrag = !sc || sc.scrollTop <= 0;   // nur wenn der Inhalt oben steht
+    }, { passive: true });
+    dlg.addEventListener('touchmove', e => {
+      if (!canDrag) return;
+      dy = e.touches[0].clientY - startY;
+      if (!dragging) {
+        if (dy > 8) dragging = true;                       // Zug nach unten uebernimmt
+        else if (dy < -4) { canDrag = false; return; }     // Zug nach oben = Inhalt scrollen
+        else return;
+      }
+      if (e.cancelable) e.preventDefault();
+      dlg.style.transition = 'none';
+      dlg.style.transform = 'translateY(' + Math.max(0, dy) + 'px)';
+    }, { passive: false });
+    dlg.addEventListener('touchend', () => {
+      if (!dragging) return;
+      dragging = false;
+      const v = dy / Math.max(1, performance.now() - t0);            // px/ms
+      const wants = dy > 120 || (dy > 40 && v > 0.5);
+      if (wants && !(guard && guard())) {
+        dlg.style.transition = 'transform .18s ease-in';
+        dlg.style.transform = 'translateY(110%)';
+        setTimeout(doClose, 170);
+      } else {
+        dlg.style.transition = 'transform .18s ease';                 // zurueckfedern
+        dlg.style.transform = '';
+        setTimeout(() => { dlg.style.transition = ''; }, 200);
+      }
+    });
+    dlg.addEventListener('close', () => { dlg.style.transform = ''; dlg.style.transition = ''; });
+  }
+  // Formular-Sheet: Backdrop-Tipp verwirft NICHT, wenn ungespeicherte Eingaben da sind
+  // (bewusste Ausnahme — sonst ist getippter Text bei einem Fehltipp weg).
+  enableBackdropClose(choreSheet, null, () => choreDirty);
+  enableBackdropClose(memberSheet, finishMembers);
+
+  // ---------- Start ----------
+  if ('serviceWorker' in navigator) {
+    let hadController = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      // Neue Version hat übernommen → einmal neu laden (nicht bei Erstinstallation)
+      if (hadController && !reloaded) { reloaded = true; location.reload(); }
+      hadController = true;
+    });
+    // ABSOLUT registrieren (§5-Regel gilt auch hier): auf f/-Tiefpfaden zeigt
+    // baseURI nach replaceState in die Tiefe — das relative 'sw.js' lief seit
+    // der Hash→Pfad-Migration ins 404 und der catch schluckte es still.
+    // Folge: Geräte OHNE Alt-Registrierung hatten NIE einen Service Worker.
+    navigator.serviceWorker.register('/chores/sw.js')
+      .then(reg => {
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update(); });
+      })
+      .catch(() => {});
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && !firstRunOpen) { invalidateOrder(); pull(); } });
+  setInterval(() => { if (!document.hidden && cfg && !firstRunOpen) pull(); }, 20000); // Auto-Sync alle 20 s
+  render();
+  // Brandneue Familie ohne lokalen Stand: Einrichtung sofort zeigen, nicht
+  // erst nach dem ersten Netzwerk-Pull.
+  if (!USER_SLUG && !state.members.length && !state.famName) firstRunSetup();
+  // ---------- Ersetzter Link? (v4.47.0) ----------
+  // Der Server-Grabstein (retired_families) blockte bisher nur INSERTS —
+  // Nutzer eines rotierten Links sahen Cache-Daten und still scheiternde
+  // Schreibungen und erfuhren NICHTS. Jetzt: Vollbild-Hinweis, klebrig
+  // (Grabsteine sind endgültig — einmal erkannt, immer angezeigt, auch offline).
+  function showRetired() {
+    if (document.getElementById('retiredOverlay')) return;
+    const d = document.createElement('div');
+    d.id = 'retiredOverlay';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:28px;text-align:center';
+    d.innerHTML = `<div style="max-width:420px">
+      <div style="font-size:44px;margin-bottom:14px">🔒</div>
+      <h2 style="margin:0 0 10px">${t('Dieser Familien-Link wurde ersetzt')}</h2>
+      <p style="color:var(--muted);line-height:1.55;margin:0">${t('Holt euch den neuen Link von eurem Admin — eure Daten sind sicher und warten dort.')}</p>
+    </div>`;
+    document.body.appendChild(d);
+  }
+  (function initRetiredCheck() {
+    if (!FAMILY) return;
+    let flag = null; try { flag = localStorage.getItem(LS_RET); } catch {}
+    if (flag === '1') { showRetired(); return; }
+    (async () => {
+      try {
+        await CRYPTO_READY;
+        const ids = [FAMILY]; if (ROWFAM) ids.push(ROWFAM);
+        const q = 'family_id=in.(' + ids.map(x => '"' + x + '"').join(',') + ')';
+        const r = await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/retired_families?select=family_id&' + q,
+          { headers: { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key } });
+        const rows = r.ok ? await r.json() : [];
+        if (rows.length) { try { localStorage.setItem(LS_RET, '1'); } catch {} showRetired(); }
+      } catch {}
+    })();
+  })();
+  pull();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+name: tier2-ios
+# S1 aus TESTING_TIER2.md: Safari im iOS-Simulator oeffnet den persoenlichen
+# Deep-Link (Scan-Aequivalent). Assertion per Screenshot-OCR (tesseract) —
+# bewusst ohne Appium/WebDriverAgent fuer den Einstieg. Dispatch-only.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * *'   # nightly 03:17 UTC
+
+jobs:
+  s1-safari-openurl:
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Boot simulator
+        run: |
+          DEVICE=$(xcrun simctl list devices available | grep -E "iPhone 1[45]" | head -1 | grep -oE '[0-9A-F-]{36}')
+          echo "DEVICE=$DEVICE" >> $GITHUB_ENV
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+      - name: Open personal deep link in Safari
+        run: |
+          URL="https://blauewelt.github.io/chores/f/fam-e2e-fairli01/u/e2etest0001"
+          xcrun simctl openurl "$DEVICE" "$URL"
+          sleep 15
+          xcrun simctl io "$DEVICE" screenshot s1.png
+      - name: OCR assertion
+        run: |
+          brew install tesseract >/dev/null
+          tesseract s1.png out -l eng 2>/dev/null
+          echo "--- OCR-Auszug ---"; head -40 out.txt
+          echo "--- Assertion: Haushalts-Titel + App-UI sichtbar, keine Einstiegsseite ---"
+          # OCR-tauglich: grosser Titel «E2E Testhaushalt» statt des kleinen
+          # ICH-BIN-Chips («Testperson» war OCR zu klein — Lauf 1 zeigte die
+          # korrekte Mitglieder-Sicht, scheiterte nur an dieser Zeile)
+          grep -qi "Testhaushalt" out.txt
+          grep -qiE "Verlauf|Aufgabe|Punkte" out.txt
+          ! grep -qi "Haushalt erstellen" out.txt
+          echo "S1 GRUEN: verriegelte Sicht in echtem iOS-Safari erreicht"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s1-artifacts
+          path: |
+            s1.png
+            out.txt

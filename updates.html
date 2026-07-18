@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fairli — Was ist neu</title>
+<meta name="description" content="Fairli — Neuerungen v4.26 bis v4.37">
+<meta property="og:title" content="Fairli — Was ist neu">
+<meta property="og:description" content="Die grosse Woche: Verschlüsselung für euren Haushalt, 20 Sprachen, neue Einstellungen, schnelleres Laden und ein neues Icon.">
+<style>
+  :root{
+    --bg:#12161F; --card:#1A2230; --ink:#EAF1EB; --muted:#91A1B8;
+    --line:#2A3447; --accent:#84B2FF;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6; padding:0 20px 64px}
+  .wrap{max-width:680px; margin:0 auto}
+  header{padding:40px 0 8px; position:sticky; top:0; background:linear-gradient(var(--bg) 78%,transparent);
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+  h1{font-size:30px; letter-spacing:-.02em; margin:0}
+  h1 .dot{color:var(--accent)}
+  .sub{color:var(--muted); font-size:14px; margin:2px 0 0}
+  .lang{display:flex; gap:2px; background:var(--card); border:1px solid var(--line);
+    border-radius:999px; padding:3px}
+  .lang button{border:none; background:none; color:var(--muted); font:inherit; font-size:14px;
+    font-weight:700; padding:6px 14px; border-radius:999px; cursor:pointer}
+  .lang button.on{background:var(--accent); color:#0C1220}
+  section{background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:4px 22px 8px; margin:18px 0}
+  h2{font-size:20px; margin:20px 0 4px}
+  ul{padding-left:20px; margin:10px 0}
+  li{margin:9px 0}
+  .intro{color:var(--ink); font-size:16px}
+  .hood{background:none; border:1px dashed var(--line)}
+  .foot{color:var(--muted); font-size:14px; text-align:center; margin:30px 0 0; font-style:italic}
+  a{color:var(--accent)}
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Fairli<span class="dot">.</span></h1>
+      <p class="sub" data-de="Was ist neu · v4.26 – v4.37" data-en="What's New · v4.26 – v4.37">Was ist neu · v4.26 – v4.37</p>
+    </div>
+    <div class="lang" role="group" aria-label="Sprache / Language">
+      <button id="de" class="on" onclick="setLang('de')">Deutsch</button>
+      <button id="en" onclick="setLang('en')">English</button>
+    </div>
+  </header>
+
+  <!-- ============ DEUTSCH ============ -->
+  <div id="lang-de">
+    <p class="intro">Die bisher grösste Fairli-Woche. Euer Haushalt kann jetzt <b>verschlüsselt</b> werden, die App spricht <b>20 Sprachen</b>, vieles im Alltag wurde schneller, ruhiger und flexibler — und Fairli hat ein neues Gesicht.</p>
+
+    <section>
+      <h2>🔐 Verschlüsselung für euren Haushalt</h2>
+      <ul>
+        <li>Namen, Aufgaben, Notizen und der ganze Verlauf werden <b>verschlüsselt gespeichert</b> — auf dem Server steht nur noch unlesbarer Zeichensalat. Der Schlüssel steckt im Familien-Link und verlässt eure Geräte nie.</li>
+        <li>Bestehende Haushalte wechseln mit <b>einem Tipp</b> (⚙︎ → Verschlüsselung). Gleicher Link, gleiche Icons — niemand muss neu eingeladen werden. Vorher lädt die App automatisch ein Backup auf dein Gerät.</li>
+        <li>Neue Haushalte sind <b>von Geburt an verschlüsselt</b>.</li>
+        <li>Geräte mit veralteter App können nach dem Wechsel <b>nichts kaputt machen</b>: der Server weist ihre Schreibversuche ab, beim nächsten Öffnen sind sie automatisch wieder dabei.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>🌍 Fairli spricht 20 Sprachen</h2>
+      <ul>
+        <li>Von Deutsch über Italienisch und Rumänisch bis Japanisch — umschaltbar in den Einstellungen, wirkt sofort auf die ganze App.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>⚙️ Neue Einstellungen</h2>
+      <ul>
+        <li><b>Sortierung der Kacheln:</b> «Nach Erstellung» (Standard — Positionen bleiben stabil, Neues kommt hinten dazu), «Alphabetisch» oder «Nach Nutzung». Pro Gerät wählbar.</li>
+        <li><b>Max. Punkte:</b> Skala 3, 5 oder 10 (Standard 5). Mehrfach tippen addiert — die Skala ist keine harte Grenze.</li>
+        <li>Neue Kacheln erscheinen an ihrem Sortier-Platz; die App scrollt hin und lässt die Kachel kurz aufblinken.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>✅ Punkte — flexibler und ehrlicher</h2>
+      <ul>
+        <li><b>Nochmal tippen zählt hoch:</b> Ein weiterer Tipp auf dieselbe Aufgabe innerhalb einer Stunde addiert die Punkte in denselben Eintrag — kein Zeilen-Wirrwarr mehr.</li>
+        <li><b>Punkte nachträglich ändern:</b> Eintrag im Verlauf antippen → Punkte anpassen. Die Punkte-Ansicht folgt sofort.</li>
+        <li><b>Doppelte Kacheln verhindert:</b> Beim Anlegen warnt Fairli, wenn es die Aufgabe schon gibt — und bietet an, stattdessen dort zu verbuchen.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>📜 Verlauf mit Tages-Köpfen</h2>
+      <ul>
+        <li>Einträge gruppieren sich unter <b>«Heute», «Gestern»</b> oder dem Datum; die Zeilen zeigen nur noch die Uhrzeit. Übersichtlicher, wie ein Tagebuch.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>🖼️ Ruhigere, schönere Oberfläche</h2>
+      <ul>
+        <li><b>Neues App-Icon:</b> vier bunte Kacheln — wie euer Aufgaben-Board. (Auf Android ggf. Icon einmal neu zum Home-Bildschirm hinzufügen.)</li>
+        <li>Kachel-Bilder laden mit sanftem Schimmer statt aufzuploppen — und <b>flackern nie wieder</b>.</li>
+        <li>Die Personen-Reihe bricht bei grossen Familien sauber um — niemand wird seitlich abgeschnitten, niemand steht allein in der zweiten Zeile.</li>
+        <li>Der Kopfbereich schrumpft beim Scrollen; beim Verbuchen gibt es ein kurzes Vibrieren (Android).</li>
+        <li>Die Android-Tastatur verdeckt keine Knöpfe mehr.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>🔗 Schönere Links</h2>
+      <ul>
+        <li>Einladungen, persönliche Links und der QR-Code zeigen jetzt die hübsche Adresse mit <b>…/fairli/</b>. Alle alten Links funktionieren selbstverständlich weiter.</li>
+      </ul>
+    </section>
+
+    <section class="hood">
+      <h2>🛠 Unter der Haube</h2>
+      <ul>
+        <li>App-Starts laden bis zu <b>10× weniger Daten</b> (nur noch, was sich geändert hat).</li>
+        <li>Löschen ist jetzt <b>verifiziert</b>: schlägt es im Hintergrund fehl, kehrt die Kachel sichtbar zurück statt Wochen später als Zombie aufzutauchen. (Ja, das ist einmal passiert. Dem Haus-kühlen-Duplikat gewidmet.)</li>
+        <li>Jede verschlüsselte Familie hat einen eigenen <b>Schreibschutz</b> — nur eure Geräte können eure Daten ändern.</li>
+        <li>96 automatische Tests prüfen jede Änderung auf zwei Browser-Engines, bevor sie live geht.</li>
+      </ul>
+    </section>
+
+    <p class="foot">Gebaut zwischen Abendessen und Mitternacht. Danke für jede Fehlermeldung — die besten Funde kamen von euch. 💙</p>
+  </div>
+
+  <!-- ============ ENGLISH ============ -->
+  <div id="lang-en" hidden>
+    <p class="intro">The biggest Fairli week yet. Your household can now be <b>encrypted</b>, the app speaks <b>20 languages</b>, everyday things got faster, calmer and more flexible — and Fairli has a new face.</p>
+
+    <section>
+      <h2>🔐 Encryption for your household</h2>
+      <ul>
+        <li>Names, tasks, notes and the whole history are now stored <b>encrypted</b> — the server only sees unreadable gibberish. The key lives in your family link and never leaves your devices.</li>
+        <li>Existing households switch with <b>one tap</b> (⚙︎ → Encryption). Same link, same icons — nobody needs a new invite. The app downloads a backup to your device first.</li>
+        <li>New households are <b>encrypted from birth</b>.</li>
+        <li>Devices running an outdated app <b>can't break anything</b> after the switch: the server rejects their writes, and they rejoin automatically on their next launch.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>🌍 Fairli speaks 20 languages</h2>
+      <ul>
+        <li>From German through Italian and Romanian to Japanese — switchable in settings, applies instantly to the whole app.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>⚙️ New settings</h2>
+      <ul>
+        <li><b>Tile sorting:</b> "By creation" (default — positions stay put, new tiles join at the end), "Alphabetical" or "By usage". Per device.</li>
+        <li><b>Max points:</b> scale of 3, 5 or 10 (default 5). Multiple taps add up — the scale is not a hard limit.</li>
+        <li>New tiles appear at their sorted position; the app scrolls there and flashes the tile briefly.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>✅ Points — more flexible and more honest</h2>
+      <ul>
+        <li><b>Tap again to add:</b> another tap on the same task within an hour adds the points to the same entry — no more row clutter.</li>
+        <li><b>Edit points later:</b> tap an entry in History → adjust the points. The Points view follows instantly.</li>
+        <li><b>Duplicate tiles prevented:</b> when creating, Fairli warns if the task already exists — and offers to log it there instead.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>📜 History with day headers</h2>
+      <ul>
+        <li>Entries group under <b>"Today", "Yesterday"</b> or the date; rows show just the time. Cleaner — like a diary.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>🖼️ A calmer, prettier interface</h2>
+      <ul>
+        <li><b>New app icon:</b> four colorful tiles — like your task board. (On Android you may need to re-add the icon to your home screen once.)</li>
+        <li>Tile art loads with a soft shimmer instead of popping in — and <b>never flickers again</b>.</li>
+        <li>The people row wraps cleanly for big families — nobody gets cut off at the side, nobody stands alone on the second line.</li>
+        <li>The header slims down as you scroll; logging gives a short vibration (Android).</li>
+        <li>The Android keyboard no longer covers buttons.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>🔗 Prettier links</h2>
+      <ul>
+        <li>Invites, personal links and the QR code now show the pretty <b>…/fairli/</b> address. All old links keep working, of course.</li>
+      </ul>
+    </section>
+
+    <section class="hood">
+      <h2>🛠 Under the hood</h2>
+      <ul>
+        <li>App launches load up to <b>10× less data</b> (only what changed).</li>
+        <li>Deleting is now <b>verified</b>: if it fails in the background, the tile visibly returns instead of resurfacing weeks later as a zombie. (Yes, that happened once. Dedicated to the Haus-kühlen duplicate.)</li>
+        <li>Every encrypted family has its own <b>write protection</b> — only your devices can change your data.</li>
+        <li>96 automated tests check every change on two browser engines before it goes live.</li>
+      </ul>
+    </section>
+
+    <p class="foot">Built between dinner and midnight. Thanks for every bug report — the best finds came from you. 💙</p>
+  </div>
+</div>
+
+<script>
+  function setLang(l){
+    document.getElementById('lang-de').hidden = (l !== 'de');
+    document.getElementById('lang-en').hidden = (l !== 'en');
+    document.getElementById('de').classList.toggle('on', l === 'de');
+    document.getElementById('en').classList.toggle('on', l === 'en');
+    document.documentElement.lang = l;
+    document.querySelectorAll('[data-'+l+']').forEach(function(el){ el.textContent = el.getAttribute('data-'+l); });
+    try { localStorage.setItem('fairli.notes.lang', l); } catch(e){}
+  }
+  // Startsprache: gemerkte Wahl, sonst Browsersprache
+  (function(){
+    var saved; try { saved = localStorage.getItem('fairli.notes.lang'); } catch(e){}
+    var l = saved || ((navigator.language||'de').slice(0,2) === 'en' ? 'en' : 'de');
+    setLang(l);
+  })();
+</script>
+</body>
+</html>

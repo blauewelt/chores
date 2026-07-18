@@ -1,0 +1,16 @@
+name: db-migrate
+on: workflow_dispatch
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply migrations
+        env:
+          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          for f in supabase/migrations/*.sql; do
+            echo "== applying $f"
+            psql -h aws-1-eu-north-1.pooler.supabase.com -p 5432 -d postgres \
+                 -U postgres.uggipomhmnnmiqpbpxcc -v ON_ERROR_STOP=1 -f "$f"
+          done

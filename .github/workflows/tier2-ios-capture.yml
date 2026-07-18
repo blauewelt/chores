@@ -1,0 +1,100 @@
+name: tier2-ios-capture
+# Testet MAINTAINER-HYPOTHESE (12.07.): «Beim Hinzufuegen zum Home-Bildschirm
+# wird nur die Basis-URL gespeichert.» Ablauf: Safari oeffnet den
+# Familien-Deep-Link → Share-Sheet → «Add to Home Screen» → «Add» → dann
+# wird die GROUND TRUTH gelesen: die frisch erzeugte
+# WebClips/<X>.webclip/Info.plist im Simulator-Dateisystem.
+# GRUEN  = eingebackene URL enthaelt den Familien-Pfad (Capture korrekt).
+# ROT    = Basis-URL eingebacken → Hypothese bestaetigt, systemischer Bug.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '37 3 * * *'   # nightly 03:37 UTC — Regressionswache fuer die Capture-Semantik
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+
+jobs:
+  capture:
+    runs-on: macos-14
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Boot simulator
+        run: |
+          DEVICE=$(xcrun simctl list devices available | grep "iPhone 15 Pro (" | head -1 | grep -oE '[0-9A-F-]{36}')
+          echo "DEVICE=$DEVICE" >> $GITHUB_ENV
+          xcrun simctl erase "$DEVICE"
+          xcrun simctl boot "$DEVICE"; xcrun simctl bootstatus "$DEVICE" -b
+          sleep 5
+
+      - name: Install idb
+        run: |
+          brew tap facebook/fb
+          brew trust facebook/fb || true
+          brew install idb-companion tesseract
+          /usr/bin/python3 -m pip install --user --quiet pytesseract pillow
+          /usr/bin/python3 -m ensurepip --user 2>/dev/null || true
+          /usr/bin/python3 -m pip install --user --quiet fb-idb
+          USERBIN=$(/usr/bin/python3 -m site --user-base)/bin
+          echo "$USERBIN" >> $GITHUB_PATH
+          # Companion primen — ohne das liefert describe-all leere Antworten
+          "$USERBIN/idb" list-targets | head -3
+          "$USERBIN/idb" connect "$DEVICE" || true
+          sleep 3
+
+      - name: Open family deep link in Safari
+        run: |
+          xcrun simctl openurl "$DEVICE" "https://blauewelt.github.io/chores/f/fam-e2e-fairli01"
+          sleep 12
+          xcrun simctl io "$DEVICE" screenshot 1-loaded.png
+
+      - name: Share sheet → Add to Home Screen → Add
+        run: |
+          # Share oeffnen: Koordinaten-Tap (Safari-Toolbar; per Screenshot verifiziert,
+          # idb-Accessibility ist fuer Sheet-Inhalte zu flach → OCR-Taps)
+          idb ui tap --udid "$DEVICE" 196 812
+          sleep 3
+          xcrun simctl io "$DEVICE" screenshot 2-sheet.png
+          /usr/bin/python3 scripts/ocr-tap.py "$DEVICE" 2-sheet.png "Add to Home Screen" || {
+            echo "unter dem Falz — im Sheet hochwischen"
+            idb ui swipe --udid "$DEVICE" 200 750 200 350
+            sleep 2
+            xcrun simctl io "$DEVICE" screenshot 2b-sheet.png
+            /usr/bin/python3 scripts/ocr-tap.py "$DEVICE" 2b-sheet.png "Add to Home Screen"
+          }
+          sleep 3
+          xcrun simctl io "$DEVICE" screenshot 3-edit.png
+          /usr/bin/python3 scripts/ocr-tap.py "$DEVICE" 3-edit.png "Add" --exact
+          sleep 4
+          xcrun simctl io "$DEVICE" screenshot 4-after.png
+
+      - name: "GROUND TRUTH: read the freshly baked Web Clip plist"
+        run: |
+          CLIPS=~/Library/Developer/CoreSimulator/Devices/$DEVICE/data/Library/WebClips
+          ls -la "$CLIPS" || { echo "FEHLER: kein WebClip erzeugt"; exit 1; }
+          PLIST=$(ls -d "$CLIPS"/*.webclip | head -1)/Info.plist
+          echo "--- $PLIST ---"
+          plutil -p "$PLIST" | tee plist.txt
+          URL=$(plutil -extract URL raw "$PLIST")
+          echo "Eingebackene URL: $URL"
+          if echo "$URL" | grep -q "/f/fam-e2e-fairli01"; then
+            echo "CAPTURE KORREKT: aktuelle Deep-URL wurde eingebacken"
+          else
+            echo "HYPOTHESE BESTAETIGT: nur Basis-URL eingebacken — systemischer Bug!"
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: capture-artifacts
+          path: |
+            1-loaded.png
+            2-sheet.png
+            3-edit.png
+            4-after.png
+            plist.txt
+            2b-sheet.png

@@ -1,0 +1,152 @@
+name: tier2-ios-webclip
+# S2/S3 aus TESTING_TIER2.md via WebClip-Injektion: echte Web Clips werden in
+# das Simulator-Dateisystem geschrieben (Data/Library/WebClips), die
+# Springboard-Icons per idb angetippt, das Ergebnis per Screenshot-OCR
+# geprueft. Testet die LAUNCH-Semantik installierter Icons:
+#  - «OK»-Clip (persoenliche URL) → verriegelte Mitglieder-Sicht, standalone
+#  - «Stale»-Clip (blanke index.html, Noels Falle) → Einstiegsseite,
+#    Diagnose vorhanden
+# Die Share-Sheet-ERFASSUNG (baeckt iOS die aktuelle URL ein?) bleibt der
+# naechste Ausbau — sie braucht UI-Automation des Teilen-Dialogs.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '27 3 * * *'   # nightly 03:27 UTC
+
+jobs:
+  webclip-launch:
+    runs-on: macos-14
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare simulator with injected Web Clips
+        run: |
+          # iOS 18.x ignoriert dateisystem-injizierte WebClips (Diagnose 14.07:
+          # plists intakt, Springboard leer). Deshalb: eigenes Geraet, fest auf
+          # iOS 17.x gepinnt, statt Regex-Roulette ueber die Runner-Defaults.
+          RUNTIME=$(xcrun simctl list runtimes | grep -oE 'com\.apple\.CoreSimulator\.SimRuntime\.iOS-17-[0-9]+' | tail -1)
+          if [ -n "$RUNTIME" ]; then
+            DEVICE=$(xcrun simctl create "fairli-e2e-ios17" "iPhone 15" "$RUNTIME")
+            echo "erzeugt: iPhone 15 @ $RUNTIME → $DEVICE"
+          else
+            echo "WARNUNG: kein iOS-17-Runtime mehr — Fallback auf Default (Injektion wird vermutlich scheitern; dann auf Capture-Flow-Erzeugung umbauen)"
+            DEVICE=$(xcrun simctl list devices available | grep -E "iPhone 1[45]" | head -1 | grep -oE '[0-9A-F-]{36}')
+          fi
+          echo "DEVICE=$DEVICE" >> $GITHUB_ENV
+          xcrun simctl erase "$DEVICE"
+          xcrun simctl boot "$DEVICE"; xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl shutdown "$DEVICE"
+          CLIPS=~/Library/Developer/CoreSimulator/Devices/$DEVICE/data/Library/WebClips
+          mkdir -p "$CLIPS/E2EOK.webclip" "$CLIPS/E2ESTALE.webclip"
+          cat > "$CLIPS/E2EOK.webclip/Info.plist" << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>Title</key><string>FairliOK</string>
+            <key>URL</key><string>https://blauewelt.github.io/chores/f/fam-e2e-fairli01/u/e2etest0001</string>
+            <key>FullScreen</key><true/>
+            <key>IsRemovable</key><true/>
+          </dict></plist>
+          PLIST
+          cat > "$CLIPS/E2ESTALE.webclip/Info.plist" << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>Title</key><string>FairliStale</string>
+            <key>URL</key><string>https://blauewelt.github.io/chores/index.html</string>
+            <key>FullScreen</key><true/>
+            <key>IsRemovable</key><true/>
+          </dict></plist>
+          PLIST
+          xcrun simctl boot "$DEVICE"; xcrun simctl bootstatus "$DEVICE" -b
+          sleep 5
+
+      - name: Install idb + tesseract
+        run: |
+          brew tap facebook/fb
+          brew trust facebook/fb || true   # neueres Homebrew verlangt Vertrauen fuer Fremd-Taps
+          brew install idb-companion tesseract
+          # fb-idb ist mit brew-Python 3.14 inkompatibel (asyncio.get_event_loop
+          # entfernt) → System-Python (CLT, 3.9) benutzen
+          /usr/bin/python3 -m ensurepip --user 2>/dev/null || true
+          /usr/bin/python3 -m pip install --user --quiet fb-idb
+          USERBIN=$(/usr/bin/python3 -m site --user-base)/bin
+          echo "$USERBIN" >> $GITHUB_PATH
+          "$USERBIN/idb" list-targets | head -3
+
+      - name: "Diagnose: do injected clips survive the new runtime's boot?"
+        run: |
+          CLIPS=~/Library/Developer/CoreSimulator/Devices/$DEVICE/data/Library/WebClips
+          echo "--- WebClips-Verzeichnis nach Boot ---"
+          ls -la "$CLIPS" 2>/dev/null || echo "VERZEICHNIS WEG — Boot/Migration hat es entfernt"
+          for p in "$CLIPS"/*.webclip/Info.plist; do
+            [ -f "$p" ] && { echo "--- $p ---"; plutil -p "$p"; }
+          done
+          echo "--- iOS-Runtime ---"
+          xcrun simctl list runtimes | grep iOS
+          echo "--- Alle AXLabels auf dem Springboard ---"
+          idb ui describe-all --udid "$DEVICE" 2>/dev/null | python3 -c "
+          import json,sys
+          try: items=json.load(sys.stdin)
+          except: items=[]
+          def walk(n):
+              if isinstance(n,dict):
+                  yield n
+                  for v in n.values(): yield from walk(v)
+              elif isinstance(n,list):
+                  for v in n: yield from walk(v)
+          labs=set()
+          for el in walk(items):
+              l=el.get('AXLabel')
+              if l and l.strip(): labs.add(l.strip()[:30])
+          print(sorted(labs))
+          " || true
+
+      - name: "Unlock: dismiss lock screen (fresh-boot sims may lock since runner update)"
+        run: |
+          # Grosse Uhr im describe-all = Lock Screen. Swipe-up ist die
+          # Entsperr-Geste (Sims haben keinen Passcode); HOME als Gurt.
+          idb ui swipe --udid "$DEVICE" 196 800 196 250 || true
+          sleep 2
+          idb ui button --udid "$DEVICE" HOME || true
+          sleep 3
+          xcrun simctl io "$DEVICE" screenshot 0-home.png
+
+      - name: "S3a: healthy clip → member view, standalone"
+        run: |
+          python3 scripts/idb-find-tap.py "$DEVICE" "FairliOK"
+          sleep 15
+          xcrun simctl io "$DEVICE" screenshot ok.png
+          tesseract ok.png ok -l eng 2>/dev/null
+          echo "--- OCR ---"; head -30 ok.txt
+          grep -qi "Testhaushalt" ok.txt
+          if grep -qi "Haushalt erstellen" ok.txt; then echo "FEHLER: Einstiegsseite"; exit 1; fi
+          echo "S3a GRUEN: Web Clip mit Personen-URL startet in die Mitglieder-Sicht"
+
+      - name: "Back to home screen"
+        run: |
+          idb ui button --udid "$DEVICE" HOME || xcrun simctl spawn "$DEVICE" launchctl kickstart -k system/com.apple.SpringBoard
+          sleep 4
+
+      - name: "S3b: stale clip (Noel) → entry screen with diagnostic"
+        run: |
+          python3 scripts/idb-find-tap.py "$DEVICE" "FairliStale"
+          sleep 12
+          xcrun simctl io "$DEVICE" screenshot stale.png
+          tesseract stale.png stale -l eng 2>/dev/null
+          echo "--- OCR ---"; head -30 stale.txt
+          grep -qi "Haushalt erstellen" stale.txt
+          echo "S3b GRUEN: Stale-Icon landet (wie erwartet) auf der Einstiegsseite"
+          grep -i "standalone" stale.txt && echo "Bonus: Modus-Diagnose per OCR lesbar" || echo "Hinweis: Modus-Zeile zu klein fuer OCR (nicht kritisch)"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: webclip-artifacts
+          path: |
+            0-home.png
+            ok.png
+            ok.txt
+            stale.png
+            stale.txt
