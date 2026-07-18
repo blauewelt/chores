@@ -1,3 +1,14 @@
+## 2026-07-18 — v4.47.4: ✎ aus dem Verlauf entfernt — die ganze Zeile bedeutet Bearbeiten
+
+- Konsequenz der Stift-Semantik (v4.47.3): das ✎ ist nur dort ein
+  Tap-Ziel, wo die Fläche etwas ANDERES bedeutet. Im Verlauf bedeutet
+  die ganze Zeile Bearbeiten → das dekorative ✎ (v4.42.1) markierte
+  nichts Eigenes und ist raus. Die Rechte-Unterscheidung bleibt
+  strukturell: editierbare Zeilen sind Buttons, gesperrte DIVs — der
+  Rechte-Test prüft jetzt genau das statt des Symbols
+- 70/70 Chromium, 69+1 WebKit
+- APP_VERSION 4.47.4, SW-Cache haushalt-v136
+
 ## 2026-07-18 — v4.47.3: Namensfeld im Bearbeiten-Sheet ist ein normales Eingabefeld
 
 - MAINTAINER-KLARSTELLUNG (mit Screenshot): der Stift gehört auf die

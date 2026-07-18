@@ -246,7 +246,6 @@
   button.entry:active{background:rgba(255,255,255,.05)}
   /* Gesperrte Zeilen (fremde Eintraege am persoenlichen Link): gleiche Optik, nicht tippbar */
   div.entry{border:none}
-  .entry .editicon{color:rgba(255,255,255,.65); font-size:16px; margin-left:2px; flex:none}
   #toast.show{pointer-events:auto}   /* Aktions-Toast (Rückgängig) muss klickbar sein */
   #toast .tact{margin-left:12px; border:none; background:none; color:var(--accent);
     font-family:var(--body); font-size:14px; font-weight:800; cursor:pointer; padding:4px 2px}
@@ -489,7 +488,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.47.3';
+  const APP_VERSION = '4.47.4';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1701,7 +1700,7 @@
               </span>
               <span class="pts">+${sum}</span>`;
             return editable
-              ? `<button class="entry" data-editlog="${ids}">${inner}<span class="editicon" aria-hidden="true">✎</span></button>`
+              ? `<button class="entry" data-editlog="${ids}">${inner}</button>`
               : `<div class="entry">${inner}</div>`;
           }).map((html, i) => {
             const day = dayKey(groups[i].entries[0].done_at);

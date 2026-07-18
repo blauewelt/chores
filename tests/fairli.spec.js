@@ -540,7 +540,9 @@ test.describe('Fairli', () => {
     // Fremde Zeile: KEIN Button, kein Chevron, öffnet nichts
     const other = page.locator('.entry', { hasText: 'Timon' });
     await expect(other).toHaveJSProperty('tagName', 'DIV');
-    await expect(other.locator('.editicon')).toHaveCount(0);
+    // Gesperrte Zeilen sind DIVs (kein Button = kein Edit) — das ✎ gibt es
+    // seit v4.47.4 nirgends mehr im Verlauf
+    await expect(other).toHaveJSProperty('tagName', 'DIV');
     await other.click();
     await expect(page.locator('#logSheet')).toHaveCount(0);
     await own.click();
@@ -686,7 +688,9 @@ test.describe('Fairli', () => {
     // Verlauf: Bearbeiten-Symbol ist das Kachel-✎, kein Chevron mehr
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     const row = page.locator('button.entry').first();
-    await expect(row.locator('.editicon')).toHaveText('✎');
+    // Kein ✎ und kein Chevron mehr (v4.47.4): die GANZE Zeile bedeutet
+    // Bearbeiten — Deko-Symbole markieren hier nichts Eigenes
+    await expect(row.locator('.editicon')).toHaveCount(0);
     await expect(row.locator('.chev')).toHaveCount(0);
     // reduced-motion: Animation ist AUS (globale Regel greift)
     await page.emulateMedia({ reducedMotion: 'reduce' });

@@ -328,9 +328,10 @@ setzt die Marke still; Link → updates.html, × und Klick markieren
 gesehen).
 
 ### Kacheln & Grid
-Stift-Semantik (v4.47.3): das ✎ ist NUR dort ein eigenes Tap-Ziel, wo
-die umgebende Fläche eine ANDERE Bedeutung trägt (Kachel = verbuchen,
-Verlaufszeile = ganze Zeile öffnet). In Sheets sind Felder normale,
+Stift-Semantik (v4.47.3/4): das ✎ existiert NUR dort, wo die umgebende
+Fläche eine ANDERE Bedeutung trägt — also ausschliesslich auf den
+Kacheln (Kachel = verbuchen, ✎ = bearbeiten). Überall sonst: ganze
+Fläche = eine Bedeutung, kein Symbol. In Sheets sind Felder normale,
 direkt editierbare Inputs — ohne Fokus beim Öffnen springt auch keine
 Tastatur auf; KEINE Statisch-Text-Konstruktionen bauen.
 - Einmalig-Kachel IMMER erstes Grid-Element (gestrichelt, Sternschnuppe).
@@ -354,8 +355,8 @@ Tastatur auf; KEINE Statisch-Text-Konstruktionen bauen.
 
 ### Verlauf & Punkte
 Tages-Köpfe (Heute/Gestern/lokalisiertes Datum), Zeilen zeigen nur die
-Zeit. Einträge sind Buttons (ganze Zeile tappbar, dekoratives ✎ .editicon
-wie auf den Kacheln — v4.42.1, kein Chevron) → #logSheet: Titel, Punkte, Notiz, Zeit —
+Zeit. Einträge sind Buttons (ganze Zeile tappbar = Bearbeiten, OHNE
+Symbol — v4.47.4; gesperrte Zeilen sind DIVs) → #logSheet: Titel, Punkte, Notiz, Zeit —
 GLEICHE Feldordnung und -elemente wie das Aufgaben-Sheet. Punkte (nur
 Einzelzeilen) sind seit v4.38.0 derselbe ptsrow+range-Slider wie beim
 Anlegen; EINE Mechanik `syncPtsRange(sl, out, v)` für cPts UND lPts
