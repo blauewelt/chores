@@ -990,6 +990,9 @@ test.describe('Fairli', () => {
     await tile.locator('.edit').click();
     await expect(page.locator('#nameStatic')).toBeVisible();
     await expect(page.locator('#cName')).toBeHidden();
+    // Kein separater Ändern-Knopf mehr — nur das dekorative ✎ (v4.47.2)
+    await expect(page.locator('#editName')).toHaveCount(0);
+    await expect(page.locator('#nameStatic .editicon')).toHaveText('✎');
     // … und die GANZE Zeile (der Text selbst, nicht nur der Stift) macht editierbar
     await page.locator('#nameText').click();
     await expect(page.locator('#cName')).toBeVisible();

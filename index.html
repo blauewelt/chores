@@ -452,7 +452,7 @@
       <div class="namerow" id="nameStatic" style="display:none; cursor:pointer" role="button" tabindex="0"
            title="Tippen zum Ändern">
         <span id="nameText"></span>
-        <button type="button" class="barbtn" id="editName" data-i18n tabindex="-1">✎ Ändern</button>
+        <span class="editicon" aria-hidden="true">✎</span>
       </div>
       <div id="dupHint" style="display:none;background:color-mix(in srgb, var(--accent) 12%, transparent);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--ink);margin-bottom:2px">
         <span id="dupHintText"></span>
@@ -494,7 +494,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.47.1';
+  const APP_VERSION = '4.47.2';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------

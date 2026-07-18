@@ -1,3 +1,14 @@
+## 2026-07-18 — v4.47.2: Ändern-Knopf im Namensfeld entfernt — dekoratives ✎ wie überall
+
+- Der ✎-Ändern-Knopf in der Namenszeile war seit v4.47.1 redundant
+  (die ganze Zeile ist der Tap-Bereich) — jetzt ersetzt durch das
+  dekorative ✎ nach dem etablierten Muster (Kacheln v4.26, Verlauf
+  v4.42.1: ganze Fläche tappbar, Stift als reine Affordanz).
+  Wörterbuch-Schlüssel «✎ Ändern» aus 19 Sprachen entfernt
+- Test prüft: kein #editName mehr, dekoratives ✎ da, Tipp auf den
+  Namen öffnet das Feld. 70/70 Chromium, 69+1 WebKit
+- APP_VERSION 4.47.2, SW-Cache haushalt-v134
+
 ## 2026-07-18 — v4.47.1: Aufgaben-Umbenennen — Namenszeile direkt tappbar, Änderung überlebt den Pull
 
 - NAMENSZEILE (Maintainer, Punkt 1): im Bearbeiten-Modus steht der Name
