@@ -449,11 +449,6 @@
     </div>
     <div class="field">
       <label for="cName" data-i18n>Aufgabe</label>
-      <div class="namerow" id="nameStatic" style="display:none; cursor:pointer" role="button" tabindex="0"
-           title="Tippen zum Ändern">
-        <span id="nameText"></span>
-        <span class="editicon" aria-hidden="true">✎</span>
-      </div>
       <div id="dupHint" style="display:none;background:color-mix(in srgb, var(--accent) 12%, transparent);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--ink);margin-bottom:2px">
         <span id="dupHintText"></span>
         <button type="button" id="dupRecord" class="barbtn" style="margin-left:8px">…</button>
@@ -494,7 +489,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.47.2';
+  const APP_VERSION = '4.47.3';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2044,23 +2039,16 @@
     document.getElementById('saveAndRecord').hidden = !!(oneOffMode || c);
     document.getElementById('cName').value = c ? c.name : '';
     document.getElementById('cNote').value = c && c.note ? c.note : '';
-    // Beim Bearbeiten: Name als Text – Tastatur bleibt unten, alles sichtbar
-    document.getElementById('nameText').textContent = c ? c.name : '';
-    document.getElementById('nameStatic').style.display = c ? '' : 'none';
-    document.getElementById('cName').style.display = c ? 'none' : '';
+    // Name ist IMMER ein normales, direkt editierbares Feld (v4.47.3,
+    // Maintainer-Screenshot: wie im Einmalig-Sheet). Der Stift gehört auf
+    // die KACHELN, wo er eine andere Bedeutung als die Flaeche traegt —
+    // hier drin gibt es diese Zweideutigkeit nicht. Kein Fokus beim
+    // Oeffnen im Bearbeiten-Modus: ohne Fokus keine Tastatur.
     setPtsSlider(c ? c.points : 1);
     document.getElementById('deleteChore').style.visibility = c ? 'visible' : 'hidden';
     choreDirty = false;
     choreSheet.showModal();
   }
-  // Die GANZE Namenszeile ist der Tap-Bereich (v4.47.1, Maintainer: kein
-  // Stift-Suchen) — der Klick des Stifts bubbelt hierher. Absichtliches
-  // Tippen bleibt Bedingung: so springt beim Öffnen keine Tastatur auf.
-  document.getElementById('nameStatic').addEventListener('click', () => {
-    document.getElementById('nameStatic').style.display = 'none';
-    const inp = document.getElementById('cName');
-    inp.style.display = ''; inp.focus(); inp.select();
-  });
   // + folgt der Regel «keine unsichtbaren Aktionen»: im Verlauf erzeugt es
   // einen Eintrag (sofort sichtbar), keine Kachel zwei Ansichten weiter.
   document.getElementById('openSettings').addEventListener('click', openSettingsSheet);

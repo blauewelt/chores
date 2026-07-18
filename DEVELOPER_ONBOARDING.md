@@ -328,6 +328,11 @@ setzt die Marke still; Link → updates.html, × und Klick markieren
 gesehen).
 
 ### Kacheln & Grid
+Stift-Semantik (v4.47.3): das ✎ ist NUR dort ein eigenes Tap-Ziel, wo
+die umgebende Fläche eine ANDERE Bedeutung trägt (Kachel = verbuchen,
+Verlaufszeile = ganze Zeile öffnet). In Sheets sind Felder normale,
+direkt editierbare Inputs — ohne Fokus beim Öffnen springt auch keine
+Tastatur auf; KEINE Statisch-Text-Konstruktionen bauen.
 - Einmalig-Kachel IMMER erstes Grid-Element (gestrichelt, Sternschnuppe).
   Alles Verbuchen läuft durch `recordEntry(choreLike)`; chore_id darf
   null sein.

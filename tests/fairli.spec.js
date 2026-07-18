@@ -986,18 +986,15 @@ test.describe('Fairli', () => {
     const tile = page.locator('.chore[data-cid]').first();
     await expect(tile).toBeVisible();
     const cid = await tile.getAttribute('data-cid');
-    // 1) Bearbeiten öffnen: Name steht als STATISCHER Text (keine Auto-Tastatur) …
+    // 1) Bearbeiten öffnen: Name ist ein NORMALES, sofort editierbares Feld
+    //    (v4.47.3, wie im Einmalig-Sheet) — aber OHNE Fokus beim Öffnen,
+    //    damit keine Tastatur aufspringt
     await tile.locator('.edit').click();
-    await expect(page.locator('#nameStatic')).toBeVisible();
-    await expect(page.locator('#cName')).toBeHidden();
-    // Kein separater Ändern-Knopf mehr — nur das dekorative ✎ (v4.47.2)
-    await expect(page.locator('#editName')).toHaveCount(0);
-    await expect(page.locator('#nameStatic .editicon')).toHaveText('✎');
-    // … und die GANZE Zeile (der Text selbst, nicht nur der Stift) macht editierbar
-    await page.locator('#nameText').click();
+    await expect(page.locator('#nameStatic')).toHaveCount(0);
     await expect(page.locator('#cName')).toBeVisible();
-    await expect(page.locator('#cName')).toBeFocused();
-    // 2) Umbenennen, speichern
+    await expect(page.locator('#cName')).not.toBeFocused();
+    await expect(page.locator('#cName')).toHaveValue(/./);   // vorbefüllt
+    // 2) Direkt reintippen und speichern — kein Zwischenschritt
     await page.locator('#cName').fill('Frisch umbenannt');
     await page.locator('#saveChore').click();
     // Kachel zeigt SOFORT den neuen Namen, Kunst-Prompt hängt am neuen Namen

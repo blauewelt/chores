@@ -1,3 +1,20 @@
+## 2026-07-18 — v4.47.3: Namensfeld im Bearbeiten-Sheet ist ein normales Eingabefeld
+
+- MAINTAINER-KLARSTELLUNG (mit Screenshot): der Stift gehört auf die
+  KACHELN — dort ist er ein echtes Tap-Ziel mit ANDERER Bedeutung als
+  die Fläche (Fläche = verbuchen, Stift = bearbeiten). Im
+  Bearbeiten-Sheet gibt es diese Zweideutigkeit nicht → der Name ist
+  jetzt ein normales, sofort editierbares Feld wie im Einmalig-Sheet.
+  Die ganze Statisch-Text-Konstruktion (v4.47.1/2: nameStatic,
+  Tap-Zeile, dekoratives ✎) ist ersatzlos raus
+- Die ursprüngliche Sorge (Tastatur springt beim Öffnen auf) löst sich
+  einfacher: im Bearbeiten-Modus wird das Feld NICHT fokussiert — ohne
+  Fokus keine Tastatur. Lehre: erst die einfachste Mechanik prüfen,
+  bevor man Zustände baut
+- Test: Feld sofort sichtbar + vorbefüllt + unfokussiert beim Öffnen,
+  direkt tippen → speichern. 70/70 Chromium, 69+1 WebKit
+- APP_VERSION 4.47.3, SW-Cache haushalt-v135
+
 ## 2026-07-18 — v4.47.2: Ändern-Knopf im Namensfeld entfernt — dekoratives ✎ wie überall
 
 - Der ✎-Ändern-Knopf in der Namenszeile war seit v4.47.1 redundant
