@@ -1,3 +1,24 @@
+## 2026-07-18 — v4.47.6: Recap v4.38–v4.47 (Banner zündet einmal), famName-Wache — letzte Ausnahme getilgt
+
+- UPDATES.HTML NEU (de+en): die Ära v4.38–v4.47 in Familiensprache —
+  frischer Familien-Link (Rotation, Ersetzt-Hinweis), «Zugriff
+  sichern»-Onboarding mit Android-Ein-Tipp, Einladen ohne Rätselraten,
+  Slide/Swipe-Bedienung, Mein Name/Haushaltsname, felsenfestes
+  Speichern (Sync-Wettlauf app-weit behoben), Notiz→Kachel-Kunst,
+  ruhiger News-Hinweis, Unter-der-Haube (Privacy-Reinigung).
+  NEWS_VERSION → 4.47.0 im SELBEN Commit (Disziplin) — die Familie
+  bekommt EINEN verdienten Banner für den ganzen Sprint
+- FAMNAME-WACHE (Maintainer-Frage «warum braucht das Umbenennen eine
+  Ausnahme?» — ehrliche Antwort: brauchte es nicht; famName ist ein
+  SKALAR und läuft nicht durch reconcile, die Ausnahme war
+  Bequemlichkeit): kleines Pendant zum Zeilen-Overlay
+  (pendingFamName, lokal massgeblich bis Server-Bestätigung + vom
+  Pull gesehen). Umbenennen-Test ums 2-s-Commit-Race erweitert.
+  Damit ist die Regel ausnahmslos: JEDE Schreibung ist pull-geschützt
+- Ein einzelner unreproduzierter Chromium-Flake in einem Volllauf
+  (Folgelauf 71/71 sauber) — beobachten. 71/71 Chromium, 70+1 WebKit
+- APP_VERSION 4.47.6, SW-Cache haushalt-v138
+
 ## 2026-07-18 — v4.47.5: Konsistenz-Audit — letzte Race-Lücken (Verlauf), doppelte Sheet-Registrierung, Waisen weg
 
 - AUDIT (Maintainer: «haben wir etwas Inkonsistentes hinterlassen?»),

@@ -625,16 +625,25 @@ test.describe('Fairli', () => {
   test('Einstellungen: Haushalt umbenennen — Titel folgt sofort, PATCH an families; persönlicher Link sieht die Option nicht (v4.41.0)', async ({ context, page }) => {
     await mockBackend(context);
     const patches = [];
-    await context.route(`${SB}/rest/v1/families*`, route => {
+    await context.route(`${SB}/rest/v1/families*`, async route => {
       const req = route.request();
-      if (req.method() === 'PATCH') { patches.push(req.postDataJSON()); return route.fulfill({ status: 204, body: '' }); }
-      return route.fallback();   // GETs weiter an den mockBackend-Handler
+      if (req.method() === 'PATCH') {
+        patches.push(req.postDataJSON());
+        await new Promise(r => setTimeout(r, 2000));   // Commit-Fenster (Race-Modell)
+        return route.fulfill({ status: 204, body: '' });
+      }
+      return route.fallback();   // GETs weiter an den mockBackend-Handler (alter Name!)
     });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.locator('#openSettings').click();
     await page.locator('#setName').click();
     await page.locator('#renName').fill('Villa Kunterbunt');
     await page.locator('#saveRename').click();
+    await expect(page.locator('#famTitle')).toHaveText('Villa Kunterbunt');
+    // Pull WÄHREND des offenen Commits (Server kennt noch den alten Namen):
+    // die famName-Wache hält den lokalen Stand (v4.47.6 — Ausnahme getilgt)
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await page.waitForTimeout(600);
     await expect(page.locator('#famTitle')).toHaveText('Villa Kunterbunt');
     await expect.poll(() => patches.length).toBeGreaterThan(0);
     expect(patches[0].name).toBe('Villa Kunterbunt');

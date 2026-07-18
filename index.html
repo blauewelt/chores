@@ -484,7 +484,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.47.5';
+  const APP_VERSION = '4.47.6';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -780,9 +780,12 @@
       window.__setFamTitle(name);   // Titel + Groessenstufe + wide sofort
       sh.close();
       toast(t('Gespeichert'));
+      pendingFamName = { resolvedAt: null };       // Pull-Wache scharf
       try {
         await sb('families', 'PATCH', { name });   // famScope zielt auf die Zeile; encRow verschluesselt bei Bedarf
+        pendingFamName.resolvedAt = Date.now();
       } catch {
+        pendingFamName = null;                     // gescheitert: Server behaelt den alten Namen
         toast(t('Konnte nicht speichern — bitte erneut versuchen'));
       }
     };
@@ -1214,7 +1217,11 @@
   // Alle Zustaende der Abgleich-Schicht VOR pull() deklarieren (pull liest sie).
   let mutationSeq = 0;
   const pendingDeletes = new Map();   // "table:id" -> { resolvedAt }
-  const pendingCreates = new Map();   // "table:id" -> { row, resolvedAt }
+  const pendingCreates = new Map();
+  // famName ist ein SKALAR und laeuft nicht durch reconcile — eigene kleine
+  // Wache mit identischer Semantik (v4.47.6, Audit-Nachzug: die «dokumentierte
+  // Ausnahme» war keine Notwendigkeit, nur Bequemlichkeit):
+  let pendingFamName = null;   // { resolvedAt } — lokaler Name massgeblich bis Server-Bestaetigung   // "table:id" -> { row, resolvedAt }
   async function pull() {
     if (!cfg) return;
     const pullStartedAt = Date.now();
@@ -1258,7 +1265,13 @@
       // ist das Chiffrat (Kauderwelsch-Reihenfolge). Nach dem Entschluesseln
       // clientseitig alphabetisch sortieren, fuer alle Familien einheitlich.
       members.sort((a, b) => String(a.name).localeCompare(String(b.name), LOCALE, { sensitivity: 'base' }));
-      state.famName = (fam[0] && fam[0].name) || '';
+      {
+        const srvName = (fam[0] && fam[0].name) || '';
+        if (!pendingFamName) state.famName = srvName;
+        else if (pendingFamName.resolvedAt && pendingFamName.resolvedAt < pullStartedAt) {
+          pendingFamName = null; state.famName = srvName;   // bestaetigt UND vom Pull gesehen
+        } // sonst: pendente Umbenennung — lokaler Stand bleibt
+      }
       // Backfill: verschluesselte Familie, deren families-Zeile noch keinen
       // Write-Key-Hash traegt (vor v4.36 migriert) → einmalig nachruesten.
       // NICHT via push(): das erhoeht mutationSeq und entwertete DIESEN pull
@@ -2157,7 +2170,7 @@
     // egal wie viele Releases folgen. Erst ein Bump von NEWS_VERSION
     // (ZUSAMMEN mit neuem updates.html-Inhalt!) zündet erneut. Marke wird
     // bei stillen Durchläufen aktuell gehalten.
-    const NEWS_VERSION = '4.37.0';   // updates.html berichtet bis v4.37 — nur mit neuem Inhalt bumpen!
+    const NEWS_VERSION = '4.47.0';   // updates.html berichtet bis v4.47 — nur mit neuem Inhalt bumpen!
     const vcmp = (a, b) => {
       a = String(a).split('.').map(Number); b = String(b).split('.').map(Number);
       for (let i = 0; i < 3; i++) { const d = (a[i] || 0) - (b[i] || 0); if (d) return d; }
