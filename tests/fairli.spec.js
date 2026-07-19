@@ -98,19 +98,26 @@ test.describe('Fairli', () => {
     await expect(sheet.getByText('NEUEN, leeren Haushalt')).toBeVisible();          // Warnung am App-Link
   });
 
-  test('Admin-Link: Familien-Block + QR-Bildunterschriften', async ({ context, page }) => {
-    await mockBackend(context);
+  test('Einladen-Sheet (v4.55.0): kein separater Familien-Link mehr — Admins sind gekennzeichnet, Hinweis nennt sie', async ({ context, page }) => {
+    await mockBackend(context, { memberRows: () => [
+      { id: 'm-chris', name: 'Timon', color: '#2FAE6A', family_id: FAM, url_slug: 'slugchris1', admin: true },
+      { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: false },
+    ] });
     await page.goto(`${BASE}/f/${FAM}`);
-    await expect(page.locator('html')).not.toHaveClass(/userlink/);
+    await expect(page.locator('html')).not.toHaveClass(/userlink/);   // blanker Link bleibt Admin
     await expect(page.locator('#openMembers')).toBeVisible();
     await page.locator('#openShareTop').click();
     const sheet = page.locator('#shareSheet');
-    await expect(sheet.locator('.shname', { hasText: 'Admin-Link' })).toBeVisible();
-    await expect(sheet.locator('.subnote', { hasText: 'Gibt vollen Zugriff auf alle Mitglieder' })).toBeVisible();
-    // Onboarding v4.44.0: Sichern-Warnung am Admin-Link, Erklärung an den persönlichen Links
-    await expect(sheet.locator('.savenote')).toContainText('Ohne ihn verliert ihr den Zugriff');
+    // Der separate Admin-Link-Block ist ersatzlos weg
+    await expect(sheet.locator('.shfam')).toHaveCount(0);
+    await expect(sheet.locator('.shname', { hasText: 'Admin-Link' })).toHaveCount(0);
+    // Stattdessen: Admin am Namen erkennbar + Hinweis, mindestens einen zu sichern
+    await expect(sheet.locator('.shrow', { hasText: 'Timon' }).locator('.shname')).toContainText('🔑');
+    await expect(sheet.locator('.shrow', { hasText: 'Mira' }).locator('.shname')).not.toContainText('🔑');
+    await expect(sheet.locator('.savenote')).toContainText('Admin: Timon');
+    await expect(sheet.locator('.savenote')).toContainText('Lesezeichen');
     await expect(sheet.locator('.subnote', { hasText: 'Verschick sie an deine Mitbewohner oder Familie' })).toBeVisible();
-    // QR aufklappen → Caption benennt den Inhalt (v4.19.0)
+    // QR-Bildunterschriften unverändert (v4.19.0)
     await sheet.locator('.shrow', { hasText: 'Mira' }).locator('.qrtog').click();
     await expect(sheet.getByText('Persönlicher Link für Mira')).toBeVisible();
   });
@@ -1401,6 +1408,72 @@ test.describe('Fairli', () => {
     await expect(page.locator('#logSheet')).toContainText('Familien-Link');
   });
 
+  test('Admin ist eine Eigenschaft von Personen (v4.55.0): Admin-Link gibt volle Rechte, Nicht-Admin nicht', async ({ context, page }) => {
+    const MEM = () => [
+      { id: 'm-chris', name: 'Timon', color: '#2FAE6A', family_id: FAM, url_slug: 'slugchris1', admin: true },
+      { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: false },
+    ];
+    await mockBackend(context, { memberRows: MEM });
+    // a) Admin über den EIGENEN persönlichen Link: Personen-Knopf + Admin-Einstellungen
+    await page.goto(`${BASE}/f/${FAM}/u/slugchris1`);
+    await expect(page.locator('#openMembers')).toBeVisible();
+    await expect(page.locator('html')).not.toHaveClass(/userlink/);
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setName')).toBeVisible();        // Haushaltsname
+    await expect(page.locator('#setRetention')).toBeVisible();   // Aufbewahrung
+    await expect(page.locator('#setMyName')).toBeVisible();      // hat trotzdem eine Identität
+    await page.locator('#closeSettings').click();
+    // Admin darf für alle eintragen (alle Chips sichtbar)
+    await expect(page.locator('.iam .chip')).toHaveCount(2);
+    // b) Nicht-Admin: keine Personen-Verwaltung, keine Admin-Einstellungen
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+    await expect(page.locator('#openMembers')).toBeHidden();
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setName')).toHaveCount(0);
+    await expect(page.locator('#setRetention')).toHaveCount(0);
+    await expect(page.locator('#setMyName')).toBeVisible();
+    await page.locator('#closeSettings').click();
+    // … darf aber Links teilen (alle Personen)
+    await page.locator('#openShareTop').click();
+    await expect(page.locator('#shareSheet .shrow [data-share]:not([data-app])')).toHaveCount(2);   // beide Personen (die Empfehlen-Zeile zählt nicht)
+  });
+
+  test('Admin-Schalter: nur Admins, und der letzte Admin bleibt (v4.55.0)', async ({ context, page }) => {
+    const posts = [];
+    await mockBackend(context, { memberRows: () => [
+      { id: 'm-chris', name: 'Timon', color: '#2FAE6A', family_id: FAM, url_slug: 'slugchris1', admin: true },
+      { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: false },
+    ] });
+    await context.route(`${SB}/rest/v1/members*`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') { posts.push(req.postDataJSON()); return route.fulfill({ status: 201, body: '' }); }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.locator('#openMembers').click();
+    // Timon ist Admin: Häkchen im Menü, 🔑 in der Zeile
+    const timonRow = page.locator('.mrow', { has: page.locator('[data-mmenu="m-chris"]') });
+    await expect(timonRow.locator('.assistbadge', { hasText: '🔑' })).toBeVisible();
+    // Letzten Admin entziehen → verweigert
+    await page.locator('[data-mmenu="m-chris"]').click();
+    await page.locator('[data-madmin="m-chris"]').click();
+    await expect(page.locator('#toast')).toContainText('Mindestens eine Person muss Admin bleiben');
+    await expect(timonRow.locator('.assistbadge', { hasText: '🔑' })).toBeVisible();   // unverändert
+    // Zweiten Admin ernennen, DANN darf der erste abgeben
+    await page.locator('[data-mmenu="m-mira"]').click();
+    await page.locator('[data-madmin="m-mira"]').click();
+    await expect(page.locator('.mrow', { has: page.locator('[data-mmenu="m-mira"]') })
+      .locator('.assistbadge', { hasText: '🔑' })).toBeVisible();
+    await page.locator('[data-mmenu="m-chris"]').click();
+    await page.locator('[data-madmin="m-chris"]').click();
+    await expect(timonRow.locator('.assistbadge', { hasText: '🔑' })).toHaveCount(0);
+    await page.locator('#doneMembers').click();
+    await expect.poll(() => posts.length).toBeGreaterThan(0);
+    const saved = [].concat(posts[0]);
+    expect(saved.find(r => r.id === 'm-mira').admin).toBe(true);
+    expect(saved.find(r => r.id === 'm-chris').admin).toBe(false);
+  });
+
   test('Boot-Splash: Overlay räumt sich weg, Kopf-Logo erscheint, nichts blockiert (v4.39.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);
@@ -1426,9 +1499,10 @@ test.describe('Fairli', () => {
     await page.locator('#openShareTop').click();
     const sheet = page.locator('#shareSheet');
     await expect(sheet.locator('h2')).toHaveText('Invite');
-    await expect(sheet.locator('.shname', { hasText: 'Admin link' })).toBeVisible();
-    // Familien-Link ist unmissverständlich als Admin-Link markiert (v4.43.1)
-    await expect(sheet.locator('.subnote', { hasText: 'Gives full access to all members' })).toBeVisible();
+    // Seit v4.55.0 kein Admin-Link-Block mehr — der Admin-Hinweis muss
+    // trotzdem vollständig übersetzt sein (kein deutsches Leck)
+    await expect(sheet.locator('.savenote')).toContainText('admin');
+    await expect(sheet.locator('.savenote')).not.toContainText('Lesezeichen');
     await expect(sheet.locator('.subnote', { hasText: 'For friends' })).toBeVisible();
     // Empfehlen-Knopf im GLEICHEN Akzent-Blau wie alle Teilen-Knöpfe (kein ghost mehr)
     const bgRec = await sheet.locator('.shbtn[data-app]').evaluate(el => getComputedStyle(el).backgroundColor);
@@ -1537,8 +1611,9 @@ test.describe('Fairli', () => {
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page).toHaveURL(new RegExp('/chores/f/' + FAM));   // App laeuft weiterhin unter /chores/
     await page.locator('#openShareTop').click();
-    const familyBtn = page.locator('.shrow.shfam [data-share]');   // die Familien-Zeile, nicht Mitglieder-Zeilen
-    await expect(familyBtn).toHaveAttribute('data-share', new RegExp('^https?://[^/]+/fairli/f/' + FAM + '$'));
+    // v4.55.0: es gibt nur noch persönliche Links — auch sie tragen den Alias
+    const memberBtn = page.locator('.shrow [data-share]').first();
+    await expect(memberBtn).toHaveAttribute('data-share', new RegExp('^https?://[^/]+/fairli/f/' + FAM + '/u/'));
     const recommendBtn = page.locator('[data-share][data-app="1"]');
     await expect(recommendBtn).toHaveAttribute('data-share', /^https?:\/\/[^/]+\/fairli\/$/);
   });

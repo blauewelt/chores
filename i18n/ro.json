@@ -143,5 +143,10 @@
   "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Doar pentru imaginea plăcii — nu apare în text. Descrierile în engleză funcționează de obicei mai bine.",
   "Eingetragen von {name}": "Înregistrat de {name}",
   "Eingetragen von einem entfernten Mitglied": "Înregistrat de un membru șters",
-  "Eingetragen über den Familien-Link": "Înregistrat prin linkul de familie"
+  "Eingetragen über den Familien-Link": "Înregistrat prin linkul de familie",
+  "Admin": "Admin",
+  "Nur Admins können das ändern": "Doar adminii pot schimba asta",
+  "Mindestens eine Person muss Admin bleiben": "Cel puțin o persoană trebuie să rămână admin",
+  "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Încă nimeni nu e admin. Setați cel puțin o persoană în „Persoane”.",
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Salvați cel puțin un link de admin — fără el gospodăria nu mai poate fi administrată."
 }

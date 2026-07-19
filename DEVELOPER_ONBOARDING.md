@@ -381,6 +381,14 @@ onFail)` — 1 Retry, dann Wiederherstellung + ehrlicher Toast
 Krone, Zähler. **NIE eine Variable `t` nennen** (schattet i18n; Live-Bug
 Punkte-Tab leer).
 
+### Admin-Modell (v4.55.0)
+`members.admin`. **Alle** Rechte-Fragen laufen über `isAdmin()` —
+niemals über `USER_SLUG` (das ist nur die IDENTITÄT). Der blanke
+Familien-Link gilt weiter als namenloser Admin (Bestandsschutz), wird
+aber nicht mehr angeboten. Invarianten: mindestens ein Admin;
+Nicht-Admins dürfen den Schalter nicht bedienen, aber Links teilen.
+Neue Haushalte: erste Person = Admin.
+
 ### Wer hat verbucht (v4.54.0)
 `log.logged_by` = Mitglieds-ID des LINKS (slugSelf()), NULL am
 Familien-Link. Nur Kontext im Detail-Sheet, nie in der Liste. Beim

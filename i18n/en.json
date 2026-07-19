@@ -143,5 +143,10 @@
   "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Only for the tile picture — never shown in any text. English descriptions usually work best.",
   "Eingetragen von {name}": "Logged by {name}",
   "Eingetragen von einem entfernten Mitglied": "Logged by a removed member",
-  "Eingetragen über den Familien-Link": "Logged via the family link"
+  "Eingetragen über den Familien-Link": "Logged via the family link",
+  "Admin": "Admin",
+  "Nur Admins können das ändern": "Only admins can change that",
+  "Mindestens eine Person muss Admin bleiben": "At least one person must stay admin",
+  "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Nobody is admin yet. Set at least one person as admin under \"People\".",
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Bookmark at least one admin link — without it the household can no longer be managed."
 }

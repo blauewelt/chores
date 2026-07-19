@@ -143,5 +143,10 @@
   "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "タイル画像専用 — 文章には一切表示されません。英語の説明のほうがうまくいきます。",
   "Eingetragen von {name}": "{name} が記録",
   "Eingetragen von einem entfernten Mitglied": "削除されたメンバーが記録",
-  "Eingetragen über den Familien-Link": "家族リンクから記録"
+  "Eingetragen über den Familien-Link": "家族リンクから記録",
+  "Admin": "管理者",
+  "Nur Admins können das ändern": "変更できるのは管理者だけです",
+  "Mindestens eine Person muss Admin bleiben": "少なくとも一人は管理者である必要があります",
+  "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "まだ管理者がいません。「メンバー」で少なくとも一人を設定してください。",
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "管理者：{names}。管理者リンクを少なくとも一つ保存してください — ないと家の管理ができなくなります。"
 }

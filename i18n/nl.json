@@ -143,5 +143,10 @@
   "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Alleen voor de tegelafbeelding — verschijnt nergens in tekst. Engelse beschrijvingen werken meestal beter.",
   "Eingetragen von {name}": "Ingevoerd door {name}",
   "Eingetragen von einem entfernten Mitglied": "Ingevoerd door een verwijderd lid",
-  "Eingetragen über den Familien-Link": "Ingevoerd via de gezinslink"
+  "Eingetragen über den Familien-Link": "Ingevoerd via de gezinslink",
+  "Admin": "Beheerder",
+  "Nur Admins können das ändern": "Alleen beheerders kunnen dat wijzigen",
+  "Mindestens eine Person muss Admin bleiben": "Minstens één persoon moet beheerder blijven",
+  "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Nog niemand is beheerder. Stel er minstens één in bij «Personen».",
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Beheer: {names}. Bewaar minstens één beheerderslink — zonder die kan het huishouden niet meer beheerd worden."
 }

@@ -143,5 +143,10 @@
   "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "타일 그림에만 사용 — 어떤 텍스트에도 표시되지 않아요. 영어 설명이 보통 더 잘 맞아요.",
   "Eingetragen von {name}": "{name} 님이 기록",
   "Eingetragen von einem entfernten Mitglied": "삭제된 멤버가 기록",
-  "Eingetragen über den Familien-Link": "가족 링크로 기록"
+  "Eingetragen über den Familien-Link": "가족 링크로 기록",
+  "Admin": "관리자",
+  "Nur Admins können das ändern": "관리자만 변경할 수 있어요",
+  "Mindestens eine Person muss Admin bleiben": "최소 한 명은 관리자로 남아야 해요",
+  "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "아직 관리자가 없어요. 「사람」에서 최소 한 명을 지정하세요.",
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "관리자: {names}. 관리자 링크를 최소 하나는 저장하세요 — 없으면 집을 관리할 수 없어요."
 }

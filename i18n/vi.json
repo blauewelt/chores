@@ -143,5 +143,10 @@
   "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Chỉ dùng cho ảnh thẻ — không hiện trong văn bản. Mô tả tiếng Anh thường hiệu quả hơn.",
   "Eingetragen von {name}": "Được ghi bởi {name}",
   "Eingetragen von einem entfernten Mitglied": "Được ghi bởi thành viên đã xoá",
-  "Eingetragen über den Familien-Link": "Được ghi qua liên kết gia đình"
+  "Eingetragen über den Familien-Link": "Được ghi qua liên kết gia đình",
+  "Admin": "Quản trị",
+  "Nur Admins können das ändern": "Chỉ quản trị viên mới đổi được",
+  "Mindestens eine Person muss Admin bleiben": "Ít nhất một người phải là quản trị viên",
+  "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Chưa có quản trị viên. Hãy đặt ít nhất một người trong «Thành viên».",
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Quản trị: {names}. Hãy lưu ít nhất một liên kết quản trị — thiếu nó sẽ không quản lý được nhà."
 }

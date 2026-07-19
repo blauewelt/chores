@@ -1,3 +1,40 @@
+## 2026-07-19 — v4.55.0: Admin ist eine Eigenschaft von PERSONEN — kein anonymer Familien-Link mehr im Einladen-Sheet
+
+- MODELLWECHSEL (Maintainer): Rechte hingen bisher am LINK-TYP (blanker
+  Familien-Link = allmächtig und namenlos). Jetzt an der PERSON:
+  members.admin. Ein Admin arbeitet über den EIGENEN persönlichen Link
+  — damit ist bei jedem Eintrag klar, wer verbucht hat (v4.54.0), auch
+  bei Admin-Handlungen
+- KONKRET: zentrale Frage `isAdmin()` (= blanker Link ODER
+  slugSelf().admin) ersetzt alle Rechte-Weichen: Personen-Verwaltung,
+  Haushaltsname, Aufbewahrung, Verschlüsselung, freie Chip-Wahl,
+  Verlauf-Rechte, Aufräumen. Personen-Menü bekommt «🔑 Admin»
+  (Häkchen + Abzeichen in der Zeile). Einladen-Sheet: separater
+  Admin-Link-Block ERSATZLOS raus; Admins am 🔑 erkennbar; Hinweis
+  «Admin: Mira. Sichert mindestens einen Admin-Link als Lesezeichen»
+- SCHUTZREGELN: Nicht-Admins können den Schalter nicht bedienen
+  («Nur Admins können das ändern»), und der LETZTE Admin kann sich
+  nicht selbst entmachten («Mindestens eine Person muss Admin
+  bleiben»). Neue Haushalte: die erste Person ist automatisch Admin
+- BESTAND: der blanke Familien-Link bleibt gültig und gilt als
+  namenloser Admin — sonst wären alle bisherigen Geräte ausgesperrt.
+  Er wird nur nicht mehr beworben
+- BEIFANG (vom Test gefunden, echter App-Fehler): das Personen-Menü hat
+  jetzt VIER Einträge und klappte bei den obersten Zeilen aus dem Sheet
+  heraus — es kippt nun nach unten, wenn oben kein Platz ist
+- BEIFANG 2: der Android-Ein-Tipp-Installationsknopf wohnte im
+  entfernten Familien-Block; er sitzt jetzt in der Sichern-Warnung
+  (gleiche Stelle wie beim späten Nachrüsten)
+- Schema: members.admin boolean default false, per CI ausgerollt;
+  Pull-Spalten erweitert (sonst käme das Flag NIE an — beinahe-Falle)
+- EMULATOR-CHECK (drei Perspektiven): Admin über persönlichen Link hat
+  Personen-Knopf, alle Chips, kein Familien-Block, Hinweis nennt sie ✓
+  Ernennung landet am Server ✓ Nicht-Admin ohne Personen-Knopf und ohne
+  Admin-Einstellungen, aber mit «Mein Name», darf alle Links teilen,
+  Eintrag trägt logged_by ✓ blanker Bestands-Link bleibt Admin ✓
+- 7 Schlüssel ×19 (zwei tote entfernt). 83/83 Chromium, 82+1 WebKit
+- APP_VERSION 4.55.0, SW haushalt-v146, NEWS_VERSION 4.55.0
+
 ## 2026-07-19 — v4.54.0: «Wer hat verbucht» im Detail-Sheet; Recap um Aufbewahrung, Bild-Idee und Verbucher ergänzt
 
 - NEUE FUNKTION (Maintainer): jeder Verlaufs-Eintrag merkt sich, über

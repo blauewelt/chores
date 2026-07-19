@@ -143,5 +143,10 @@
   "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Endast för bilden på brickan — visas aldrig i text. Engelska beskrivningar fungerar oftast bäst.",
   "Eingetragen von {name}": "Loggad av {name}",
   "Eingetragen von einem entfernten Mitglied": "Loggad av en borttagen medlem",
-  "Eingetragen über den Familien-Link": "Loggad via familjelänken"
+  "Eingetragen über den Familien-Link": "Loggad via familjelänken",
+  "Admin": "Admin",
+  "Nur Admins können das ändern": "Bara admins kan ändra det",
+  "Mindestens eine Person muss Admin bleiben": "Minst en person måste förbli admin",
+  "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Ingen är admin ännu. Ange minst en person under ”Personer”.",
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Spara minst en adminlänk som bokmärke — utan den går hushållet inte att administrera."
 }

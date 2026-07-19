@@ -143,5 +143,10 @@
   "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Kun til flisens billede — vises aldrig i tekst. Engelske beskrivelser virker som regel bedst.",
   "Eingetragen von {name}": "Registreret af {name}",
   "Eingetragen von einem entfernten Mitglied": "Registreret af et fjernet medlem",
-  "Eingetragen über den Familien-Link": "Registreret via familielinket"
+  "Eingetragen über den Familien-Link": "Registreret via familielinket",
+  "Admin": "Admin",
+  "Nur Admins können das ändern": "Kun admins kan ændre det",
+  "Mindestens eine Person muss Admin bleiben": "Mindst én person skal forblive admin",
+  "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Ingen er admin endnu. Vælg mindst én person under »Personer«.",
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Gem mindst ét adminlink som bogmærke — uden det kan husstanden ikke administreres."
 }

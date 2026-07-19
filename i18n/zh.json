@@ -143,5 +143,10 @@
   "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "仅用于磁贴图片——不会出现在任何文字中。英文描述通常效果更好。",
   "Eingetragen von {name}": "由 {name} 记录",
   "Eingetragen von einem entfernten Mitglied": "由已移除的成员记录",
-  "Eingetragen über den Familien-Link": "通过家庭链接记录"
+  "Eingetragen über den Familien-Link": "通过家庭链接记录",
+  "Admin": "管理员",
+  "Nur Admins können das ändern": "只有管理员可以更改",
+  "Mindestens eine Person muss Admin bleiben": "至少要保留一名管理员",
+  "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "还没有管理员。请在「成员」中至少设置一位。",
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "管理员：{names}。请至少收藏一个管理员链接——否则将无法管理这个家。"
 }

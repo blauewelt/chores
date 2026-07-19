@@ -143,5 +143,10 @@
   "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Uniquement pour l’image de la tuile — jamais affichée dans le texte. Les descriptions en anglais fonctionnent souvent mieux.",
   "Eingetragen von {name}": "Enregistré par {name}",
   "Eingetragen von einem entfernten Mitglied": "Enregistré par un membre supprimé",
-  "Eingetragen über den Familien-Link": "Enregistré via le lien familial"
+  "Eingetragen über den Familien-Link": "Enregistré via le lien familial",
+  "Admin": "Admin",
+  "Nur Admins können das ändern": "Seuls les admins peuvent modifier cela",
+  "Mindestens eine Person muss Admin bleiben": "Au moins une personne doit rester admin",
+  "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Personne n’est encore admin. Désignez au moins une personne dans « Personnes ».",
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin : {names}. Mettez au moins un lien admin en favori — sans lui, le foyer ne peut plus être géré."
 }

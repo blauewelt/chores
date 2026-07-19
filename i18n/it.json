@@ -143,5 +143,10 @@
   "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Solo per l’immagine della piastrella — non appare in nessun testo. Le descrizioni in inglese funzionano meglio.",
   "Eingetragen von {name}": "Registrato da {name}",
   "Eingetragen von einem entfernten Mitglied": "Registrato da un membro rimosso",
-  "Eingetragen über den Familien-Link": "Registrato tramite il link famiglia"
+  "Eingetragen über den Familien-Link": "Registrato tramite il link famiglia",
+  "Admin": "Admin",
+  "Nur Admins können das ändern": "Solo gli admin possono cambiarlo",
+  "Mindestens eine Person muss Admin bleiben": "Almeno una persona deve restare admin",
+  "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Nessuno è ancora admin. Impostate almeno una persona in «Persone».",
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Salvate almeno un link admin nei preferiti — senza non si può più gestire la casa."
 }

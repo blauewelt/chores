@@ -143,5 +143,10 @@
   "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Только для картинки плитки — нигде в тексте не появляется. Описания на английском обычно работают лучше.",
   "Eingetragen von {name}": "Записал(а) {name}",
   "Eingetragen von einem entfernten Mitglied": "Записано удалённым участником",
-  "Eingetragen über den Familien-Link": "Записано через семейную ссылку"
+  "Eingetragen über den Familien-Link": "Записано через семейную ссылку",
+  "Admin": "Админ",
+  "Nur Admins können das ändern": "Менять это могут только админы",
+  "Mindestens eine Person muss Admin bleiben": "Хотя бы один человек должен остаться админом",
+  "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Пока нет администратора. Назначьте хотя бы одного в разделе «Люди».",
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Админ: {names}. Сохраните хотя бы одну админ-ссылку — без неё домом уже не управлять."
 }

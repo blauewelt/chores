@@ -143,5 +143,10 @@
   "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Hanya untuk gambar ubin — tidak muncul di teks mana pun. Deskripsi bahasa Inggris biasanya lebih tepat.",
   "Eingetragen von {name}": "Dicatat oleh {name}",
   "Eingetragen von einem entfernten Mitglied": "Dicatat oleh anggota yang dihapus",
-  "Eingetragen über den Familien-Link": "Dicatat melalui tautan keluarga"
+  "Eingetragen über den Familien-Link": "Dicatat melalui tautan keluarga",
+  "Admin": "Admin",
+  "Nur Admins können das ändern": "Hanya admin yang bisa mengubahnya",
+  "Mindestens eine Person muss Admin bleiben": "Setidaknya satu orang harus tetap admin",
+  "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Belum ada admin. Tetapkan minimal satu orang di «Orang».",
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Simpan setidaknya satu tautan admin — tanpanya rumah tidak bisa dikelola."
 }

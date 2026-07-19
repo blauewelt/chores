@@ -143,5 +143,10 @@
   "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "सिर्फ़ टाइल की तस्वीर के लिए — किसी टेक्स्ट में नहीं दिखता। अंग्रेज़ी विवरण आमतौर पर बेहतर काम करते हैं।",
   "Eingetragen von {name}": "{name} द्वारा दर्ज",
   "Eingetragen von einem entfernten Mitglied": "हटाए गए सदस्य द्वारा दर्ज",
-  "Eingetragen über den Familien-Link": "परिवार लिंक से दर्ज"
+  "Eingetragen über den Familien-Link": "परिवार लिंक से दर्ज",
+  "Admin": "एडमिन",
+  "Nur Admins können das ändern": "इसे केवल एडमिन बदल सकते हैं",
+  "Mindestens eine Person muss Admin bleiben": "कम से कम एक व्यक्ति एडमिन रहना चाहिए",
+  "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "अभी कोई एडमिन नहीं है। «लोग» में कम से कम एक व्यक्ति चुनें।",
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "एडमिन: {names}। कम से कम एक एडमिन लिंक सहेजें — उसके बिना घर प्रबंधित नहीं होगा।"
 }

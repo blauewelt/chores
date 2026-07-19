@@ -143,5 +143,10 @@
   "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Sadece kart görseli için — hiçbir metinde görünmez. İngilizce açıklamalar genelde daha iyi sonuç verir.",
   "Eingetragen von {name}": "{name} tarafından kaydedildi",
   "Eingetragen von einem entfernten Mitglied": "Kaldırılmış bir üye tarafından kaydedildi",
-  "Eingetragen über den Familien-Link": "Aile bağlantısı üzerinden kaydedildi"
+  "Eingetragen über den Familien-Link": "Aile bağlantısı üzerinden kaydedildi",
+  "Admin": "Yönetici",
+  "Nur Admins können das ändern": "Bunu yalnızca yöneticiler değiştirebilir",
+  "Mindestens eine Person muss Admin bleiben": "En az bir kişi yönetici kalmalı",
+  "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Henüz kimse yönetici değil. «Kişiler» altında en az bir kişi belirleyin.",
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Yönetici: {names}. En az bir yönetici bağlantısını yer imlerine ekleyin — onsuz ev yönetilemez."
 }

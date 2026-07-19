@@ -289,6 +289,9 @@
   .mrow input[type=text]{flex:1; padding:10px 12px; font-size:16px; border:1px solid var(--line); border-radius:10px; background:#161D19; color:var(--ink)}
   .mrow input[type=color]{width:42px; height:42px; border:none; background:none; padding:0; cursor:pointer}
   .mrow .menupop{top:auto; bottom:100%; margin:0 0 4px}
+  /* Kein Platz nach oben (erste Zeilen, seit v4.55.0 vier Eintraege)?
+     Dann nach UNTEN aufklappen — sonst liegt das Menue ausserhalb des Sheets. */
+  .mrow .menupop.down{top:100%; bottom:auto; margin:4px 0 0}
   .assistbadge{flex:none; font-size:15px; opacity:.85}   /* im Sheet nach OBEN aufklappen (kein Clipping) */
   .shrow{padding:14px 0; border-top:1px solid var(--line); display:flex; flex-direction:column; align-items:center; gap:10px}
   .shrow:first-of-type{border-top:none}
@@ -504,7 +507,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.54.0';
+  const APP_VERSION = '4.55.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -748,19 +751,19 @@
       </div>
       ${USER_SLUG ? `<button class="menuitem setrow" id="setMyName" style="border-radius:12px">
         <span class="seticon">👤</span><span class="setlabel">${t('Mein Name')}</span><span class="setval">${esc((slugSelf() || {}).name || '')}</span><span class="chev">›</span></button>` : ''}
-      ${USER_SLUG ? '' : `<button class="menuitem setrow" id="setName" style="border-radius:12px">
+      ${!isAdmin() ? '' : `<button class="menuitem setrow" id="setName" style="border-radius:12px">
         <span class="seticon">🏠</span><span class="setlabel">${t('Haushaltsname')}</span><span class="setval">${esc(state.famName || '')}</span><span class="chev">›</span></button>`}
       <button class="menuitem setrow" id="setLang" style="border-radius:12px">
         <span class="seticon">🌐</span><span class="setlabel">${t('Sprache')}</span><span class="setval">${LANGS[LANG]}</span><span class="chev">›</span></button>
       <button class="menuitem setrow" id="setSort" style="border-radius:12px">
         <span class="seticon">↕️</span><span class="setlabel">${t('Sortierung')}</span><span class="setval">${t(SORT === 'alpha' ? 'Alphabetisch' : SORT === 'usage' ? 'Nach Nutzung' : 'Nach Erstellung')}</span><span class="chev">›</span></button>
-      ${USER_SLUG ? '' : `<button class="menuitem setrow" id="setRetention" style="border-radius:12px">
+      ${!isAdmin() ? '' : `<button class="menuitem setrow" id="setRetention" style="border-radius:12px">
         <span class="seticon">🗓️</span><span class="setlabel">${t('Verlauf aufbewahren')}</span><span class="setval">${RETENTION ? t('{n} Tage', { n: RETENTION }) : t('Unbegrenzt')}</span><span class="chev">›</span></button>`}
       <button class="menuitem setrow" id="setSearch" style="border-radius:12px">
         <span class="seticon">🔎</span><span class="setlabel">${t('Suche')}</span><span class="setval">${t(SEARCH_ON ? 'An' : 'Aus')}</span></button>
       <button class="menuitem setrow" id="setMaxPts" style="border-radius:12px">
         <span class="seticon">🎯</span><span class="setlabel">${t('Max. Punkte')}</span><span class="setval">${MAXPTS}</span><span class="chev">›</span></button>
-      ${IS_ENC || USER_SLUG ? '' : `<button class="menuitem setrow" id="setEnc" style="border-radius:12px">
+      ${IS_ENC || !isAdmin() ? '' : `<button class="menuitem setrow" id="setEnc" style="border-radius:12px">
         <span class="seticon">🔒</span><span class="setlabel">${t('Verschlüsselung')}</span><span class="setval">${encState}</span><span class="chev">›</span></button>`}
       <a class="menuitem setrow" href="/chores/updates.html" target="_blank" rel="noopener" style="border-radius:12px;text-decoration:none">
         <span class="seticon">✨</span><span class="setlabel">${t('Was ist neu')}</span><span class="setval">↗</span></a>
@@ -1152,11 +1155,17 @@
   // Slug-Selbst: die Identitaet des LINKS (fuer Einstellungen/Mein Name) —
   // unabhaengig davon, WEN der Chip gerade zum Eintragen ausgewaehlt hat
   // (betreute Mitglieder, v4.49.0).
+  // ADMIN IST EINE EIGENSCHAFT VON PERSONEN (v4.55.0), nicht mehr eines
+  // anonymen Links. Der blanke Familien-Link bleibt aus Bestandsgruenden
+  // gueltig und gilt als (namenloser) Admin — sonst waeren alle bisherigen
+  // Geraete ausgesperrt.
+  const isAdmin = () => !USER_SLUG || !!(slugSelf() || {}).admin;
+  const adminMembers = () => state.members.filter(m => m.admin);
   const slugSelf = () => USER_SLUG
     ? state.members.find(m => (m.url_slug || '').toLowerCase() === USER_SLUG) || null
     : null;
   const allowedIds = () => {
-    if (!USER_SLUG) return null;   // Admin: alle
+    if (isAdmin()) return null;    // Admin: alle
     const ids = new Set(state.members.filter(m => m.assisted).map(m => m.id));
     const self = slugSelf(); if (self) ids.add(self.id);
     return ids;
@@ -1336,7 +1345,7 @@
         ? `log?select=${LCOLS}&or=(created_at.gt.${encodeURIComponent(wm)},updated_at.gt.${encodeURIComponent(wm)})&order=done_at.desc&limit=300`
         : `log?select=${LCOLS}&order=done_at.desc&limit=300`;
       const [members, chores, logRows, fam] = await Promise.all([
-        sb('members?select=id,name,color,url_slug,assisted&order=name'),
+        sb('members?select=id,name,color,url_slug,assisted,admin&order=name'),
         sb('chores?select=id,name,points,note,art,created_at&order=points.desc,name'),
         sb(logQ),
         sb('families?select=*')
@@ -1472,7 +1481,9 @@
       const names = document.getElementById('frMembers').value.split('\n').map(s => s.trim()).filter(Boolean);
       const seed = document.getElementById('frSeed').checked;
       state.famName = name;
-      state.members = (names.length ? names : ['Ich']).map((n, i) => ({ id: uid(), name: n, color: palette[i % palette.length] }));
+      // v4.55.0: die erste Person ist Admin — sonst startet ein Haushalt ohne
+      // jede admin-berechtigte Person (der blanke Link bliebe die einzige Tuer).
+      state.members = (names.length ? names : ['Ich']).map((n, i) => ({ id: uid(), name: n, color: palette[i % palette.length], admin: i === 0 }));
       state.chores = seed ? SEED.map(([n, p]) => ({ id: uid(), name: n, points: p })) : [];
       state.log = [];
       save();
@@ -1658,7 +1669,7 @@
   // Wiederholung bei Fehlschlag).
   let purgeRunning = false;
   async function purgeExpired() {
-    if (purgeRunning || USER_SLUG || !RETENTION) return;
+    if (purgeRunning || !isAdmin() || !RETENTION) return;
     const due = expiredEntries();
     if (!due.length) return;
     purgeRunning = true;
@@ -1756,6 +1767,7 @@
     maybeOnboard();   // Erstbesuch (v4.45.0): «Zugriff sichern», sobald die Familie steht
     document.querySelectorAll('.tab').forEach(b =>
       b.setAttribute('aria-selected', String(b.dataset.view === view)));
+    syncAdminClass();    // v4.55.0: Admin-Status kommt erst mit den Mitgliedern
     maybeAutoSearch();   // v4.51.0: grosse Haushalte bekommen die Suche von selbst
     const bar = document.getElementById('searchBar');
     if (bar) bar.hidden = !SEARCH_ON || view === 'scores';
@@ -1769,7 +1781,7 @@
     // Betreute eintragen, nicht nur Admins.
     const allow = allowedIds();
     const shown = allow ? state.members.filter(m => allow.has(m.id)) : state.members;
-    const locked = !!USER_SLUG && shown.length < 2;
+    const locked = !isAdmin() && shown.length < 2;
     iam.innerHTML = '<span class="lbl">Ich bin</span>' + shown.map(m =>
       `<button class="chip" data-mid="${m.id}" aria-pressed="${me === m.id}" ${locked ? 'style="cursor:default"' : ''}>
         <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>${esc(m.name)}
@@ -1955,8 +1967,8 @@
 
   document.getElementById('iamRow').addEventListener('click', e => {
     const c = e.target.closest('.chip'); if (!c) return;
-    if (USER_SLUG) {
-      // Persoenlicher Link: fixiert — AUSSER auf Betreute (v4.49.0). Die
+    if (!isAdmin()) {
+      // Persoenlicher Link ohne Admin: fixiert — AUSSER auf Betreute (v4.49.0). Die
       // gerenderten Chips sind bereits die erlaubte Menge; hier trotzdem
       // pruefen, falls sich der Zustand zwischen Render und Klick aendert.
       const allow = allowedIds();
@@ -1966,11 +1978,12 @@
     if (!USER_SLUG) localStorage.setItem(LS_ME, me);   // Slug-Boot ignoriert LS_ME ohnehin
     render();
   });
-  if (USER_SLUG) {
-    document.documentElement.classList.add('userlink');
-  } else {
-    document.documentElement.classList.remove('userlink');
+  // Klasse steuert die Sichtbarkeit des Personen-Knopfs; sie wird nach jedem
+  // Render neu bestimmt, weil der Admin-Status erst mit den Mitgliedern kommt.
+  function syncAdminClass() {
+    document.documentElement.classList.toggle('userlink', !isAdmin());
   }
+  syncAdminClass();
 
   let pressLock = false;
   listEl.addEventListener('click', e => {
@@ -2083,7 +2096,7 @@
   // Link = nur eigene Verlaufs-Eintraege. Client-seitige Durchsetzung —
   // serverseitig teilen alle den Familien-Write-Key (siehe Onboarding-Doku).
   const canEditLog = en => {
-    if (!USER_SLUG) return true;
+    if (isAdmin()) return true;
     const allow = allowedIds();               // selbst + betreute (v4.49.0)
     return !!allow && allow.has(en.member_id);
   };
@@ -2369,11 +2382,13 @@
       `<div class="mrow" data-mid="${m.id}">
         <input type="color" value="${esc(m.color)}" aria-label="Farbe">
         <input type="text" maxlength="30" aria-label="Name">
+        ${m.admin ? `<span class="assistbadge" title="${t('Admin')}">🔑</span>` : ''}
         ${m.assisted ? `<span class="assistbadge" title="${t('Ohne eigenes Telefon')}">📵</span>` : ''}
         <div class="entmenu">
           <button class="kebab" data-mmenu="${m.id}" aria-label="Optionen">⋯</button>
           <div class="menupop" id="mmenu-${m.id}" hidden>
             <button class="menuitem" data-mshare="${m.id}">${t('Link teilen')}</button>
+            <button class="menuitem" data-madmin="${m.id}">${m.admin ? '✓ ' : ''}🔑 ${t('Admin')}</button>
             <button class="menuitem" data-massist="${m.id}">${m.assisted ? '✓ ' : ''}📵 ${t('Ohne eigenes Telefon')}</button>
             <button class="menuitem danger" data-mdel="${m.id}">${t('Löschen')}</button>
           </div>
@@ -2393,7 +2408,7 @@
     // egal wie viele Releases folgen. Erst ein Bump von NEWS_VERSION
     // (ZUSAMMEN mit neuem updates.html-Inhalt!) zündet erneut. Marke wird
     // bei stillen Durchläufen aktuell gehalten.
-    const NEWS_VERSION = '4.54.0';   // = Version des Recap-RELEASES selbst! Die seenver-Marke
+    const NEWS_VERSION = '4.55.0';   // = Version des Recap-RELEASES selbst! Die seenver-Marke
     // rueckt bei jedem Besuch still auf APP_VERSION vor — ein NEWS_VERSION
     // UNTER bereits gesehenen Versionen kann darum nie zuenden (Live-Fund
     // 18.07.: Familie sah keinen Banner, Marken standen auf 4.47.x).
@@ -2653,9 +2668,10 @@
       // Registrierung passiert unten pro Erst-Öffnung (dataset-Wache) —
       // hier NICHT nochmal, sonst laufen Swipe/Close-Handler doppelt (Audit v4.47.5)
     }
-    // Mitglieder duerfen die persoenlichen Links ALLER Personen teilen (sonst
-    // koennen sie niemanden einladen — genau daran scheiterte das Onboarding eines neuen Mitglieds).
-    // Der Familien-/Admin-Link bleibt fuer sie verborgen.
+    // ALLE duerfen die persoenlichen Links ALLER Personen teilen — auch
+    // Nicht-Admins (sonst koennen sie niemanden einladen). Seit v4.55.0 gibt
+    // es hier keinen separaten Familien-/Admin-Link mehr: Admin ist eine
+    // Eigenschaft von Personen, ihr persoenlicher Link ist ihr Admin-Zugang.
     const own = USER_SLUG ? state.members.find(m => (m.url_slug || '').toLowerCase() === USER_SLUG) : null;
     const rows = state.members.map(m => {
       const url = userLink(m);
@@ -2663,7 +2679,7 @@
       return `<div class="shrow">
         <div class="shhead">
           <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>
-          <span class="shname">${esc(m.name || '—')}${own && m.id === own.id ? ' <span style="font-weight:400;color:var(--muted);font-size:12.5px">(du)</span>' : ''}</span>
+          <span class="shname">${esc(m.name || '—')}${m.admin ? ' <span title="' + t('Admin') + '">🔑</span>' : ''}${own && m.id === own.id ? ' <span style="font-weight:400;color:var(--muted);font-size:12.5px">(du)</span>' : ''}</span>
           ${qr ? `<button class="qrtog" aria-label="${t('QR-Code anzeigen')}">QR</button>` : ''}
           <button class="shbtn" data-share="${esc(url)}" data-name="${esc(m.name || '')}">${t('Einladen')}</button>
         </div>
@@ -2686,25 +2702,22 @@
         <h2>${t('Einladen')}</h2>
         <div class="slot end"><button class="x" id="closeShare" aria-label="${t('Schließen')}">×</button></div>
       </div>
-      ${USER_SLUG ? '' : `<div class="shrow shfam" style="border-top:none;padding-top:4px">
-        <div class="shhead">
-          <span class="shname">${t('Admin-Link')}<br><span class="subnote">${t('Gibt vollen Zugriff auf alle Mitglieder und ihre Aktivitäten')}</span></span>
-          ${famQr ? `<button class="qrtog" aria-label="${t('QR-Code anzeigen')}">QR</button>` : ''}
-          <button class="shbtn" data-share="${esc(familyLink())}">${t('Einladen')}</button>
-        </div>
-        ${famQr ? `<div class="qrwrap" hidden>
-          <img class="shqr" src="${famQr}" alt="${t('Familien-Link')}" width="116" height="116">
-          <div class="qrcap">${t('Admin-Link')} · ${t('Gibt vollen Zugriff auf alle Mitglieder und ihre Aktivitäten')}</div>
-        </div>` : ''}
-        <div class="savenote">🔖 ${t('Wichtig: diesen Link sichern — als Lesezeichen oder auf dem Home-Bildschirm. Ohne ihn verliert ihr den Zugriff auf euren Haushalt.')}
-          ${deferredInstall ? `<button type="button" class="btn primary wide" id="shInstall" style="margin-top:10px">${t('Zum Home-Bildschirm hinzufügen')}</button>` : ''}
-        </div>
-      </div>
-      ${installBlock}`}
       <div style="font-weight:700;font-size:14px;color:var(--muted);margin:18px 0 0">${t('Persönliche Links')}
         <span class="subnote" style="font-weight:400">${t('Verschick sie an deine Mitbewohner oder Familie — jede Person loggt damit ihre Aufgaben')}</span></div>
       ${rows}
-      ${USER_SLUG ? installBlock : ''}
+      ${(() => {
+        const ad = adminMembers();
+        const txt = ad.length
+          ? t('Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.', { names: ad.map(m => esc(m.name)).join(', ') })
+          : t('Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.');
+        // Android-Ein-Tipp-Knopf wohnt seit v4.55.0 hier (vorher im entfernten
+        // Familien-Link-Block) — gleiche Stelle wie beim spaeten Nachruesten.
+        const btn = deferredInstall
+          ? `<button type="button" class="btn primary wide" id="shInstall" style="margin-top:10px">${t('Zum Home-Bildschirm hinzufügen')}</button>`
+          : '';
+        return `<p class="savenote">${txt}${btn}</p>`;
+      })()}
+      ${installBlock}
       <div class="shrow shapp">
         <div class="shhead">
           <span class="shname">${t('Fairli weiterempfehlen')}<br><span class="subnote">${t('Für Freunde: startet einen neuen, leeren Haushalt — zum Beitreten euren Familien-Link nutzen')}</span></span>
@@ -2750,7 +2763,31 @@
       e.stopPropagation();
       const pop = document.getElementById('mmenu-' + kb.dataset.mmenu);
       document.querySelectorAll('.menupop').forEach(p => { if (p !== pop) p.hidden = true; });
-      if (pop) pop.hidden = !pop.hidden;
+      if (pop) {
+        pop.hidden = !pop.hidden;
+        if (!pop.hidden) {
+          // Richtung nach Platz waehlen (v4.55.0): oberhalb messen, sonst kippen
+          pop.classList.remove('down');
+          const row = kb.closest('.mrow'), sheet = pop.closest('.sheet') || document.body;
+          if (row && sheet) {
+            const rowTop = row.getBoundingClientRect().top;
+            const sheetTop = sheet.getBoundingClientRect().top;
+            if (rowTop - sheetTop < pop.getBoundingClientRect().height + 12) pop.classList.add('down');
+          }
+        }
+      }
+      return;
+    }
+    // Admin-Schalter (v4.55.0) — nur Admins duerfen ihn bedienen, und der
+    // LETZTE Admin kann sich nicht selbst entmachten.
+    const ad = e.target.closest('[data-madmin]');
+    if (ad) {
+      const m = memberById(ad.dataset.madmin);
+      document.querySelectorAll('.menupop').forEach(p => p.hidden = true);
+      if (!m) return;
+      if (!isAdmin()) { toast(t('Nur Admins können das ändern')); return; }
+      if (m.admin && adminMembers().length <= 1) { toast(t('Mindestens eine Person muss Admin bleiben')); return; }
+      m.admin = !m.admin; changedMembers.add(m.id); save(); renderMemberRows();
       return;
     }
     // Betreut-Toggle (ohne eigenes Telefon) — v4.49.0
