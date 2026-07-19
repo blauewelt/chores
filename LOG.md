@@ -1,3 +1,27 @@
+## 2026-07-19 — Lizenz: proprietär, ausdrückliche Zustimmung nötig; News-Banner-Verhalten empirisch verifiziert
+
+- LIZENZ (Maintainer): LICENSE ergänzt — alle Rechte vorbehalten, jede
+  Nutzung/Kopie/Bearbeitung/Verbreitung braucht vorherige ausdrückliche
+  schriftliche Zustimmung. Ehrliche Abgrenzung im Text: Lesen und die
+  App benutzen ist frei; zwingende gesetzliche Schranken (CH/EU) und
+  die von GitHubs ToS zwangsläufig mitgelieferte Fork-Funktion sind
+  ausgenommen — ein solcher Fork erlaubt aber kein Deployment und keine
+  Weiterverbreitung ausserhalb GitHubs. Dazu Dritt-Komponenten-Hinweis,
+  Contribution-Klausel, Gewährleistungsausschluss, deutsche
+  Kurzfassung. README nennt die Lizenz jetzt statt nur «# chores»
+- NEWS-BANNER EMPIRISCH GEPRÜFT (Maintainer-Frage «zeigt es sich
+  wirklich nur einmal?»): eigener Prüf-Server liefert index.html mit
+  variabler APP_VERSION/NEWS_VERSION, ein Gerät durchläuft acht
+  simulierte Releases. Ergebnis: Banner bei 4.51.0 (Recap neu) JA →
+  nach dem Antippen bei 4.52.0/4.53.1/4.60.0 NEIN, Marke rückt still
+  mit → bei 4.61.0 MIT neuem Recap wieder JA → danach 4.62.0/4.70.0
+  NEIN. Genau einmal pro Recap. (Prüf-Harnisch hatte im ersten Anlauf
+  selbst einen Fehler — addInitScript setzte die Marke bei JEDER
+  Navigation zurück und meldete Dauer-Banner; korrigiert, dann sauber)
+- Verhalten bewusst so: wer den Hinweis IGNORIERT (weder antippt noch
+  wegwischt), sieht ihn beim nächsten Start wieder — er gilt erst als
+  gesehen, wenn er quittiert wurde
+
 ## 2026-07-18 — v4.51.0: Suche schaltet sich bei grossen Haushalten selbst ein; Recap um Suche und betreute Mitglieder ergänzt
 
 - AUTO-AKTIVIERUNG (Maintainer): mehr als 7 Kacheln → die Suche geht

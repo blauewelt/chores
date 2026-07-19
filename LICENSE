@@ -1,0 +1,64 @@
+Copyright (c) 2026 blauewelt (github.com/blauewelt). All rights reserved.
+
+Fairli — proprietary source code. NOT open source.
+
+This repository is publicly readable so that the people who use Fairli can
+see how their data is handled. Public visibility is NOT a licence.
+
+No permission is granted
+------------------------
+No right to use, copy, modify, merge, publish, distribute, sublicense,
+translate, port, host, sell, or create derivative works of this software
+or any part of it (including source code, layout, texts, translations,
+graphics, and configuration) is granted by default.
+
+Any such use requires the prior, explicit, written consent of the copyright
+holder. Consent given for one purpose does not extend to any other purpose.
+To request permission, open an issue at github.com/blauewelt/chores or
+contact the copyright holder directly.
+
+What you may do without asking
+------------------------------
+1. View and read the source code in this repository.
+2. Use the hosted application itself as an ordinary user.
+3. Exercise rights that cannot be excluded by contract under applicable
+   law (for example mandatory exceptions under Swiss and EU copyright law,
+   such as certain private use, quotation, or interoperability provisions).
+4. Perform the actions that GitHub's Terms of Service necessarily attach
+   to publishing a public repository on that platform (notably forking
+   within GitHub). Such a fork grants no licence beyond what those Terms
+   require, and does not permit deployment, distribution, or derivative
+   works outside GitHub.
+
+Contributions
+-------------
+Unsolicited contributions are welcome only after prior agreement. By
+submitting a contribution you agree that the copyright holder may use it
+under this licence without further obligation.
+
+Third-party components
+----------------------
+Third-party services and libraries referenced by this software (for
+example Supabase and the image-generation service used for tile art)
+remain subject to their own licences and terms.
+
+No warranty
+-----------
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF,
+OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+Kurzfassung (unverbindlich, es gilt der englische Text oben)
+------------------------------------------------------------
+Der Quellcode ist öffentlich lesbar, damit die Nutzerinnen und Nutzer
+nachvollziehen können, was mit ihren Daten passiert — er ist aber NICHT
+frei verwendbar. Jede Nutzung, Kopie, Bearbeitung oder Verbreitung
+braucht die vorherige, ausdrückliche, schriftliche Zustimmung des
+Rechteinhabers. Lesen und die App benutzen: gerne. Alles andere: bitte
+vorher fragen.
