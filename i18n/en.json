@@ -132,5 +132,11 @@
   "Keine Aufgabe passt zu «{q}».": "No task matches \"{q}\".",
   "Kein Eintrag passt zu «{q}».": "No entry matches \"{q}\".",
   "Leeren": "Clear",
-  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Search enabled — lots of tasks. You can turn it off in settings."
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Search enabled — lots of tasks. You can turn it off in settings.",
+  "Verlauf aufbewahren": "Keep history",
+  "Unbegrenzt": "Forever",
+  "{n} Tage": "{n} days",
+  "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Older history entries are then deleted automatically. Tasks, people and point totals are untouched.",
+  "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} existing entries are older than {d} days and will be deleted now. This cannot be undone.",
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "From now on, entries older than {d} days are deleted automatically."
 }

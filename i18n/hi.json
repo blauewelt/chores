@@ -132,5 +132,11 @@
   "Keine Aufgabe passt zu «{q}».": "«{q}» से कोई काम मेल नहीं खाता।",
   "Kein Eintrag passt zu «{q}».": "«{q}» से कोई प्रविष्टि मेल नहीं खाती।",
   "Leeren": "साफ़ करें",
-  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "खोज चालू — बहुत सारे काम। सेटिंग्स में बंद कर सकते हैं।"
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "खोज चालू — बहुत सारे काम। सेटिंग्स में बंद कर सकते हैं।",
+  "Verlauf aufbewahren": "इतिहास रखें",
+  "Unbegrenzt": "हमेशा",
+  "{n} Tage": "{n} दिन",
+  "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "पुरानी प्रविष्टियाँ फिर अपने आप हट जाती हैं। काम, लोग और अंक अछूते रहते हैं।",
+  "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} मौजूदा प्रविष्टियाँ {d} दिन से पुरानी हैं और अभी हट जाएँगी। इसे वापस नहीं किया जा सकता।",
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "अब से {d} दिन से पुरानी प्रविष्टियाँ अपने आप हट जाएँगी।"
 }

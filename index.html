@@ -499,7 +499,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.51.0';
+  const APP_VERSION = '4.52.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -749,6 +749,8 @@
         <span class="seticon">🌐</span><span class="setlabel">${t('Sprache')}</span><span class="setval">${LANGS[LANG]}</span><span class="chev">›</span></button>
       <button class="menuitem setrow" id="setSort" style="border-radius:12px">
         <span class="seticon">↕️</span><span class="setlabel">${t('Sortierung')}</span><span class="setval">${t(SORT === 'alpha' ? 'Alphabetisch' : SORT === 'usage' ? 'Nach Nutzung' : 'Nach Erstellung')}</span><span class="chev">›</span></button>
+      ${USER_SLUG ? '' : `<button class="menuitem setrow" id="setRetention" style="border-radius:12px">
+        <span class="seticon">🗓️</span><span class="setlabel">${t('Verlauf aufbewahren')}</span><span class="setval">${RETENTION ? t('{n} Tage', { n: RETENTION }) : t('Unbegrenzt')}</span><span class="chev">›</span></button>`}
       <button class="menuitem setrow" id="setSearch" style="border-radius:12px">
         <span class="seticon">🔎</span><span class="setlabel">${t('Suche')}</span><span class="setval">${t(SEARCH_ON ? 'An' : 'Aus')}</span></button>
       <button class="menuitem setrow" id="setMaxPts" style="border-radius:12px">
@@ -766,6 +768,8 @@
     if (smn) smn.onclick = () => { sh.close(); openMyNameSheet(); };
     sh.querySelector('#setLang').onclick = () => { sh.close(); openLangSheet(); };
     sh.querySelector('#setSort').onclick = () => { sh.close(); openSortSheet(); };
+    const sr = sh.querySelector('#setRetention');
+    if (sr) sr.onclick = () => { sh.close(); openRetentionSheet(); };
     sh.querySelector('#setSearch').onclick = e => {
       setSearchOn(!SEARCH_ON);
       e.currentTarget.querySelector('.setval').textContent = t(SEARCH_ON ? 'An' : 'Aus');
@@ -814,6 +818,57 @@
     sh.showModal();
     const inp = sh.querySelector('#renName');
     inp.focus(); inp.select();
+  }
+
+  // ---------- Verlauf aufbewahren (v4.52.0, nur Admin) ----------
+  function openRetentionSheet() {
+    let sh = document.getElementById('retentionSheet');
+    if (!sh) { sh = document.createElement('dialog'); sh.id = 'retentionSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
+    const label = d => d ? t('{n} Tage', { n: d }) : t('Unbegrenzt');
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"></div>
+        <h2>${t('Verlauf aufbewahren')}</h2>
+        <div class="slot end"><button class="x" id="closeRet" aria-label="${t('Schließen')}">×</button></div>
+      </div>
+      <p class="subnote" style="margin:0 0 10px">${t('Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.')}</p>
+      ${RETENTION_CHOICES.map(d => `<button class="menuitem setrow" data-ret="${d === null ? '' : d}" style="border-radius:12px">
+        <span class="setlabel">${label(d)}</span>${(RETENTION || null) === d ? '<span class="setval">✓</span>' : ''}</button>`).join('')}
+    </div>`;
+    sh.querySelector('#closeRet').onclick = () => sh.close();
+    sh.querySelectorAll('[data-ret]').forEach(btn => btn.onclick = async () => {
+      const raw = btn.dataset.ret;
+      const days = raw === '' ? null : +raw;
+      if (days === (RETENTION || null)) { sh.close(); return; }
+      if (days) {
+        // Zaehlen, WAS konkret verschwaende — und ausdruecklich bestaetigen lassen
+        const cut = Date.now() - days * 86400e3;
+        const hit = state.log.filter(e => {
+          const ts = Date.parse(e.done_at || e.created_at || '');
+          return Number.isFinite(ts) && ts < cut;
+        }).length;
+        const ok = confirm(hit
+          ? t('{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.', { n: hit, d: days })
+          : t('Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.', { d: days }));
+        if (!ok) return;
+      }
+      const prev = RETENTION;
+      RETENTION = days;
+      sh.close();
+      toast(t('Gespeichert'));
+      try {
+        await sb('families', 'PATCH', { retention_days: days });
+      } catch {
+        RETENTION = prev;                       // zurueck auf den ALTEN Wert, nie auf null raten
+        toast(t('Konnte nicht speichern — bitte erneut versuchen'));
+        render();
+        return;                                 // und ganz sicher NICHTS loeschen
+      }
+      purgeExpired();
+      render();
+    });
+    sh.showModal();
   }
 
   // ---------- Mein Name (v4.46.0, nur persoenlicher Link) ----------
@@ -1300,6 +1355,7 @@
       // clientseitig alphabetisch sortieren, fuer alle Familien einheitlich.
       members.sort((a, b) => String(a.name).localeCompare(String(b.name), LOCALE, { sensitivity: 'base' }));
       {
+        RETENTION = (fam[0] && fam[0].retention_days) || null;   // v4.52.0
         const srvName = (fam[0] && fam[0].name) || '';
         if (!pendingFamName) state.famName = srvName;
         else if (pendingFamName.resolvedAt && pendingFamName.resolvedAt < pullStartedAt) {
@@ -1352,6 +1408,7 @@
       }
       {
         state.members = reconcile('members', members, pullStartedAt);
+      setTimeout(purgeExpired, 0);   // v4.52.0: nach dem Abgleich, nie waehrenddessen
         state.chores  = reconcile('chores',  chores,  pullStartedAt);
         state.log     = reconcile('log',     log,     pullStartedAt)
                           .sort((a, b) => (a.done_at < b.done_at ? 1 : -1));
@@ -1575,6 +1632,38 @@
     const hay = fields.map(norm).join(' ');
     return q.split(/\s+/).every(w => hay.includes(w));   // mehrere Woerter: alle muessen vorkommen
   };
+  // ---------- Aufbewahrung (v4.52.0) ----------
+  // Pro HAUSHALT (nicht pro Geraet — sonst loescht Geraet A, was Geraet B
+  // behalten will). Standard: unbegrenzt. Betrifft AUSSCHLIESSLICH log.
+  const RETENTION_CHOICES = [null, 30, 90];
+  let RETENTION = null;                 // aus families.retention_days
+  const retentionCutoff = () => RETENTION ? Date.now() - RETENTION * 86400e3 : null;
+  const expiredEntries = () => {
+    const cut = retentionCutoff();
+    if (!cut) return [];
+    return state.log.filter(e => {
+      const ts = Date.parse(e.done_at || e.created_at || '');
+      return Number.isFinite(ts) && ts < cut;
+    });
+  };
+  // Aufraeumen laeuft NUR am Admin-Link (voller Scope, eine Instanz statt
+  // vieler paralleler Loeschlaeufe) und immer ueber deleteRemote (Pull-Schutz,
+  // Wiederholung bei Fehlschlag).
+  let purgeRunning = false;
+  async function purgeExpired() {
+    if (purgeRunning || USER_SLUG || !RETENTION) return;
+    const due = expiredEntries();
+    if (!due.length) return;
+    purgeRunning = true;
+    try {
+      for (const e of due) {
+        state.log = state.log.filter(x => x.id !== e.id);
+        deleteRemote('log', e.id);
+      }
+      save(); render();
+    } finally { purgeRunning = false; }
+  }
+
   const SEARCH_AUTO_AT = 7;   // ab mehr als 7 Kacheln lohnt sich die Suche
   function maybeAutoSearch() {
     if (SEARCH_ON) return;

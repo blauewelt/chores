@@ -132,5 +132,11 @@
   "Keine Aufgabe passt zu «{q}».": "Không có việc nào khớp với «{q}».",
   "Kein Eintrag passt zu «{q}».": "Không có mục nào khớp với «{q}».",
   "Leeren": "Xoá",
-  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Đã bật tìm kiếm — nhiều việc. Có thể tắt trong cài đặt."
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Đã bật tìm kiếm — nhiều việc. Có thể tắt trong cài đặt.",
+  "Verlauf aufbewahren": "Lưu lịch sử",
+  "Unbegrenzt": "Mãi mãi",
+  "{n} Tage": "{n} ngày",
+  "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Các mục cũ hơn sẽ tự động bị xoá. Công việc, thành viên và điểm không bị ảnh hưởng.",
+  "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} mục hiện có cũ hơn {d} ngày và sẽ bị xoá ngay. Không thể hoàn tác.",
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Từ giờ, các mục cũ hơn {d} ngày sẽ tự động bị xoá."
 }

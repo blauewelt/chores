@@ -132,5 +132,11 @@
   "Keine Aufgabe passt zu «{q}».": "Нет задач по запросу «{q}».",
   "Kein Eintrag passt zu «{q}».": "Нет записей по запросу «{q}».",
   "Leeren": "Очистить",
-  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Поиск включён — много задач. Можно отключить в настройках."
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Поиск включён — много задач. Можно отключить в настройках.",
+  "Verlauf aufbewahren": "Хранение истории",
+  "Unbegrenzt": "Бессрочно",
+  "{n} Tage": "{n} дней",
+  "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Более старые записи будут удаляться автоматически. Задачи, люди и очки не затрагиваются.",
+  "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} записей старше {d} дней будут удалены сейчас. Это нельзя отменить.",
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "С этого момента записи старше {d} дней удаляются автоматически."
 }

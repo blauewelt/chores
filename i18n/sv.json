@@ -132,5 +132,11 @@
   "Keine Aufgabe passt zu «{q}».": "Ingen syssla matchar ”{q}”.",
   "Kein Eintrag passt zu «{q}».": "Ingen post matchar ”{q}”.",
   "Leeren": "Rensa",
-  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Sök aktiverad — många sysslor. Kan stängas av i inställningar."
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Sök aktiverad — många sysslor. Kan stängas av i inställningar.",
+  "Verlauf aufbewahren": "Spara historik",
+  "Unbegrenzt": "För alltid",
+  "{n} Tage": "{n} dagar",
+  "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Äldre poster raderas då automatiskt. Sysslor, personer och poäng berörs inte.",
+  "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} befintliga poster är äldre än {d} dagar och raderas nu. Detta kan inte ångras.",
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Från och med nu raderas poster äldre än {d} dagar automatiskt."
 }

@@ -132,5 +132,11 @@
   "Keine Aufgabe passt zu «{q}».": "Geen taak komt overeen met «{q}».",
   "Kein Eintrag passt zu «{q}».": "Geen invoer komt overeen met «{q}».",
   "Leeren": "Wissen",
-  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Zoeken ingeschakeld — veel taken. Uit te zetten in instellingen."
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Zoeken ingeschakeld — veel taken. Uit te zetten in instellingen.",
+  "Verlauf aufbewahren": "Geschiedenis bewaren",
+  "Unbegrenzt": "Onbeperkt",
+  "{n} Tage": "{n} dagen",
+  "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Oudere items worden dan automatisch verwijderd. Taken, personen en punten blijven ongemoeid.",
+  "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} bestaande items zijn ouder dan {d} dagen en worden nu verwijderd. Dit kan niet ongedaan worden gemaakt.",
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Vanaf nu worden items ouder dan {d} dagen automatisch verwijderd."
 }

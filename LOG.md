@@ -1,3 +1,43 @@
+## 2026-07-19 — v4.52.0: Aufbewahrungsdauer für den Verlauf (30/90 Tage/unbegrenzt, Standard unbegrenzt)
+
+- NEUE FUNKTION (Maintainer): ⚙︎ → 🗓️ «Verlauf aufbewahren» mit
+  Unbegrenzt (STANDARD) / 30 Tage / 90 Tage. Ältere VERLAUFS-Einträge
+  werden dann automatisch gelöscht
+- BEWUSSTE ABGRENZUNGEN, weil die Funktion destruktiv ist:
+  · Betrifft AUSSCHLIESSLICH die Tabelle log. Aufgaben, Personen,
+    Haushalt und die Punkte-Stände werden nie angefasst (Test prüft,
+    dass KEIN DELETE auf members/chores/families geht)
+  · Einstellung liegt am HAUSHALT (families.retention_days, NULL =
+    unbegrenzt), nicht am Gerät — sonst löscht Gerät A, was Gerät B
+    behalten will
+  · Nur der Admin-Link zeigt die Einstellung UND räumt auf (eine
+    Instanz statt paralleler Löschläufe); persönliche Links sehen die
+    Zeile nicht und löschen nichts
+  · Beim Einschalten Bestätigungsdialog MIT Anzahl der betroffenen
+    Einträge und Hinweis auf Endgültigkeit; Abbruch speichert nichts
+    und löscht nichts
+  · Löschungen laufen über deleteRemote (Pull-Schutz, Retry)
+  · Schlägt das Speichern der Einstellung fehl, wird auf den ALTEN Wert
+    zurückgesetzt und NICHTS gelöscht
+- Schema: families.retention_days integer (NULL = unbegrenzt), per
+  CI-Workflow ausgerollt (Spalte nach ~30 s live)
+- HINWEIS ZUR HAUSREGEL «niemals Nutzerdaten löschen»: die gilt weiter
+  für die KI-Seite (kein eigenmächtiges Löschen). Hier löscht
+  ausschliesslich der Mensch durch ausdrückliche, bestätigte
+  Einstellung — Standard bleibt unbegrenzt
+- TESTS (3 neue): Standard löscht nichts + Abbruch löscht nichts;
+  bestätigte 30 Tage löscht GENAU die zwei alten Einträge (Grenzfall
+  29/31 Tage geprüft), nichts ausserhalb des Verlaufs; persönlicher
+  Link ohne Einstellung und ohne Löschung. Test-Fallstrick dokumentiert:
+  «l-1» ist Teilstring von «l-120» — IDs exakt vergleichen
+- EMULATOR-CHECK mit reagierendem Fake-Server: 90 Tage → Dialog nennt
+  2 Einträge → Server-Log von 4 auf 2 → zweites Gerät sieht denselben
+  Stand ohne selbst zu löschen → zurück auf Unbegrenzt löscht nichts
+  weiter; nach Neuladen: Kacheln, Personen und Punkte intakt,
+  Einstellung steht auf «30 Tage»
+- 6 Schlüssel ×19. 78/78 Chromium, 77+1 WebKit
+- APP_VERSION 4.52.0, SW-Cache haushalt-v143
+
 ## 2026-07-19 — Lizenz: proprietär, ausdrückliche Zustimmung nötig; News-Banner-Verhalten empirisch verifiziert
 
 - LIZENZ (Maintainer): LICENSE ergänzt — alle Rechte vorbehalten, jede

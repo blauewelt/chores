@@ -1214,6 +1214,109 @@ test.describe('Fairli', () => {
     await expect(page.locator('#searchBar')).toBeHidden();  // bleibt aus
   });
 
+  test('Aufbewahrung (v4.52.0): Standard unbegrenzt, Admin-only, Abbruch löscht NICHTS', async ({ context, page }) => {
+    const days = n => new Date(Date.now() - n * 86400e3).toISOString();
+    await mockBackend(context, { logRows: () => [
+      { id: 'l-alt', chore_id: 'c-1', chore_name: 'Müll rausbringen', member_id: 'm-mira', member_name: 'Mira', points: 1, done_at: days(120), family_id: FAM },
+      { id: 'l-neu', chore_id: 'c-1', chore_name: 'Müll rausbringen', member_id: 'm-mira', member_name: 'Mira', points: 1, done_at: days(2), family_id: FAM },
+    ] });
+    const dels = [], patches = [];
+    await context.route(`${SB}/rest/v1/log*`, route => {
+      if (route.request().method() === 'DELETE') { dels.push(route.request().url()); return route.fulfill({ status: 204, body: '' }); }
+      return route.fallback();
+    });
+    await context.route(`${SB}/rest/v1/families*`, route => {
+      if (route.request().method() === 'PATCH') { patches.push(route.request().postDataJSON()); return route.fulfill({ status: 204, body: '' }); }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    // 1) Standard: unbegrenzt — der 120 Tage alte Eintrag bleibt, nichts wird gelöscht
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('.entry')).toHaveCount(2);
+    await page.waitForTimeout(700);
+    expect(dels).toHaveLength(0);
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setRetention .setval')).toHaveText('Unbegrenzt');
+    // 2) Abbruch im Bestätigungsdialog → nichts gespeichert, nichts gelöscht
+    page.once('dialog', d => d.dismiss());
+    await page.locator('#setRetention').click();
+    await page.locator('[data-ret="30"]').click();
+    await page.waitForTimeout(600);
+    expect(patches).toHaveLength(0);
+    expect(dels).toHaveLength(0);
+    await expect(page.locator('#retentionSheet')).toBeVisible();   // Sheet bleibt offen
+  });
+
+  test('Aufbewahrung: bestätigte 30 Tage löscht NUR alte Log-Einträge — Aufgaben, Personen, junge Einträge bleiben', async ({ context, page }) => {
+    const days = n => new Date(Date.now() - n * 86400e3).toISOString();
+    await mockBackend(context, { logRows: () => [
+      { id: 'l-120', chore_id: 'c-1', chore_name: 'Müll rausbringen', member_id: 'm-mira', member_name: 'Mira', points: 1, done_at: days(120), family_id: FAM },
+      { id: 'l-31', chore_id: 'c-1', chore_name: 'Müll rausbringen', member_id: 'm-mira', member_name: 'Mira', points: 1, done_at: days(31), family_id: FAM },
+      { id: 'l-29', chore_id: 'c-1', chore_name: 'Müll rausbringen', member_id: 'm-mira', member_name: 'Mira', points: 1, done_at: days(29), family_id: FAM },
+      { id: 'l-1', chore_id: 'c-1', chore_name: 'Müll rausbringen', member_id: 'm-mira', member_name: 'Mira', points: 1, done_at: days(1), family_id: FAM },
+    ] });
+    const dels = [], patches = [], otherDels = [];
+    await context.route(`${SB}/rest/v1/log*`, route => {
+      if (route.request().method() === 'DELETE') { dels.push(decodeURIComponent(route.request().url())); return route.fulfill({ status: 204, body: '' }); }
+      return route.fallback();
+    });
+    for (const tbl of ['members', 'chores', 'families']) {
+      await context.route(`${SB}/rest/v1/${tbl}*`, route => {
+        const m = route.request().method();
+        if (m === 'DELETE') { otherDels.push(tbl); return route.fulfill({ status: 204, body: '' }); }
+        if (m === 'PATCH') { patches.push(route.request().postDataJSON()); return route.fulfill({ status: 204, body: '' }); }
+        return route.fallback();
+      });
+    }
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.locator('#openSettings').click();
+    let dialogText = '';
+    page.once('dialog', d => { dialogText = d.message(); d.accept(); });
+    await page.locator('#setRetention').click();
+    await page.locator('[data-ret="30"]').click();
+    // Bestätigung nennt die betroffene Anzahl (120 und 31 Tage alt = 2)
+    expect(dialogText).toContain('2');
+    await expect.poll(() => patches.length).toBeGreaterThan(0);
+    expect(patches[0].retention_days).toBe(30);
+    // Genau die zwei alten Einträge gelöscht — die jungen NICHT
+    await expect.poll(() => dels.length).toBe(2);
+    // Exakte IDs vergleichen — «l-1» ist Teilstring von «l-120» (Fallstrick!)
+    const deleted = dels.map(u => (u.match(/id=eq\.([^&]+)/) || [])[1]).sort();
+    expect(deleted).toEqual(['l-120', 'l-31']);
+    // NICHTS ausserhalb des Verlaufs angefasst
+    expect(otherDels).toHaveLength(0);
+    // Liste zeigt nur noch die jungen Einträge, Aufgaben unverändert da
+    // (das Sheet schliesst sich beim Auswählen selbst — nicht nochmal klicken,
+    //  ein Klick auf ein geschlossenes Element wartet bis zum Test-Timeout)
+    await expect(page.locator('#retentionSheet')).toBeHidden();
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('.entry')).toHaveCount(2);
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+  });
+
+  test('Aufbewahrung: persönlicher Link sieht die Einstellung nicht und löscht nichts (v4.52.0)', async ({ context, page }) => {
+    const days = n => new Date(Date.now() - n * 86400e3).toISOString();
+    await mockBackend(context, { logRows: () => [
+      { id: 'l-alt', chore_id: 'c-1', chore_name: 'Müll rausbringen', member_id: 'm-mira', member_name: 'Mira', points: 1, done_at: days(200), family_id: FAM },
+    ] });
+    const dels = [];
+    await context.route(`${SB}/rest/v1/log*`, route => {
+      if (route.request().method() === 'DELETE') { dels.push(route.request().url()); return route.fulfill({ status: 204, body: '' }); }
+      return route.fallback();
+    });
+    // Haushalt hat 30-Tage-Aufbewahrung eingestellt
+    await context.route(`${SB}/rest/v1/families*`, route => route.request().method() === 'GET'
+      ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ family_id: FAM, name: 'Fanti WG', retention_days: 30 }]) })
+      : route.fallback());
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+    await page.waitForTimeout(900);
+    // Kein Aufräumen von diesem Gerät (nur der Admin-Link räumt auf)
+    expect(dels).toHaveLength(0);
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setRetention')).toHaveCount(0);
+  });
+
   test('Boot-Splash: Overlay räumt sich weg, Kopf-Logo erscheint, nichts blockiert (v4.39.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);

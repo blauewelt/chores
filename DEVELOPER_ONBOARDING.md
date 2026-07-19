@@ -371,6 +371,14 @@ onFail)` — 1 Retry, dann Wiederherstellung + ehrlicher Toast
 Krone, Zähler. **NIE eine Variable `t` nennen** (schattet i18n; Live-Bug
 Punkte-Tab leer).
 
+### Aufbewahrung (v4.52.0)
+`families.retention_days` (NULL = unbegrenzt, Standard). `purgeExpired()`
+läuft NUR am Admin-Link und NUR über `deleteRemote`, ausschliesslich auf
+`log`. Einstellung ist admin-only; Aktivierung verlangt eine
+Bestätigung, die die betroffene Anzahl nennt. Beim Erweitern gilt:
+NIEMALS auf chores/members/families ausweiten — der Test prüft genau
+das.
+
 ### Suche (v4.50.0, Auto-Aktivierung v4.51.0)
 Ab mehr als `SEARCH_AUTO_AT` (7) Kacheln schaltet `maybeAutoSearch()`
 die Suche einmalig ein — aber NUR, wenn der LS-Schlüssel fehlt (die
@@ -664,7 +672,8 @@ Animations-GEFÜHL zeigen Screenshots nicht — das bleibt Geräte-Test
   sieht Kachel-Namen als Prompts).
 - **Nudge für Alt-Familien-Admins** zur Verschlüsselungs-Migration
   (gutgeheissen, nie beauftragt).
-- **TTL / Aufbewahrung** für inaktive Familien: offen.
+- **TTL für inaktive FAMILIEN** (ganze Haushalte, nicht Einträge):
+  weiterhin offen — v4.52.0 deckt nur den Verlauf ab.
 - **Custom Domain** (fairli.app/ch) + Option D (Cloudflare, private
   Repos, per-Person-Manifeste) — vor jeder URL-Migration Domain fixieren.
 - Android-Personen-Shortcuts = Browser-Tab (akzeptiert; echter Fix =

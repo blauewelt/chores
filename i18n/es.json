@@ -132,5 +132,11 @@
   "Keine Aufgabe passt zu «{q}».": "Ninguna tarea coincide con «{q}».",
   "Kein Eintrag passt zu «{q}».": "Ninguna entrada coincide con «{q}».",
   "Leeren": "Borrar",
-  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Búsqueda activada — muchas tareas. Puedes desactivarla en ajustes."
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Búsqueda activada — muchas tareas. Puedes desactivarla en ajustes.",
+  "Verlauf aufbewahren": "Conservar el historial",
+  "Unbegrenzt": "Para siempre",
+  "{n} Tage": "{n} días",
+  "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Las entradas más antiguas se eliminan automáticamente. Las tareas, las personas y los puntos no se tocan.",
+  "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} entradas existentes tienen más de {d} días y se eliminarán ahora. No se puede deshacer.",
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "A partir de ahora, las entradas de más de {d} días se eliminan automáticamente."
 }

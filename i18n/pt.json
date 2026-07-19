@@ -132,5 +132,11 @@
   "Keine Aufgabe passt zu «{q}».": "Nenhuma tarefa corresponde a «{q}».",
   "Kein Eintrag passt zu «{q}».": "Nenhum registo corresponde a «{q}».",
   "Leeren": "Limpar",
-  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Pesquisa ativada — muitas tarefas. Podes desativar nas definições."
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Pesquisa ativada — muitas tarefas. Podes desativar nas definições.",
+  "Verlauf aufbewahren": "Manter o histórico",
+  "Unbegrenzt": "Para sempre",
+  "{n} Tage": "{n} dias",
+  "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Os registos mais antigos são então apagados automaticamente. Tarefas, pessoas e pontos ficam intactos.",
+  "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} registos existentes têm mais de {d} dias e serão apagados agora. Não é reversível.",
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "A partir de agora, os registos com mais de {d} dias são apagados automaticamente."
 }

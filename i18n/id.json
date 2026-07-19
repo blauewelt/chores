@@ -132,5 +132,11 @@
   "Keine Aufgabe passt zu «{q}».": "Tidak ada tugas yang cocok dengan «{q}».",
   "Kein Eintrag passt zu «{q}».": "Tidak ada entri yang cocok dengan «{q}».",
   "Leeren": "Hapus",
-  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Pencarian diaktifkan — banyak tugas. Bisa dimatikan di pengaturan."
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Pencarian diaktifkan — banyak tugas. Bisa dimatikan di pengaturan.",
+  "Verlauf aufbewahren": "Simpan riwayat",
+  "Unbegrenzt": "Selamanya",
+  "{n} Tage": "{n} hari",
+  "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Entri yang lebih lama lalu dihapus otomatis. Tugas, orang, dan poin tidak tersentuh.",
+  "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} entri yang ada lebih tua dari {d} hari dan akan dihapus sekarang. Ini tidak bisa dibatalkan.",
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Mulai sekarang, entri yang lebih tua dari {d} hari dihapus otomatis."
 }

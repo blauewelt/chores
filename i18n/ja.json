@@ -132,5 +132,11 @@
   "Keine Aufgabe passt zu «{q}».": "「{q}」に一致する家事はありません。",
   "Kein Eintrag passt zu «{q}».": "「{q}」に一致する記録はありません。",
   "Leeren": "クリア",
-  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "検索をオンにしました — 家事が多いためです。設定でオフにできます。"
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "検索をオンにしました — 家事が多いためです。設定でオフにできます。",
+  "Verlauf aufbewahren": "履歴の保存",
+  "Unbegrenzt": "無期限",
+  "{n} Tage": "{n}日",
+  "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "古い記録は自動的に削除されます。家事・メンバー・ポイントはそのままです。",
+  "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{d}日より古い記録が{n}件あり、今すぐ削除されます。元に戻せません。",
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "今後、{d}日より古い記録は自動的に削除されます。"
 }

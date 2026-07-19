@@ -132,5 +132,11 @@
   "Keine Aufgabe passt zu «{q}».": "「{q}」와 일치하는 집안일이 없어요.",
   "Kein Eintrag passt zu «{q}».": "「{q}」와 일치하는 기록이 없어요.",
   "Leeren": "지우기",
-  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "검색을 켰어요 — 집안일이 많네요. 설정에서 끌 수 있어요."
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "검색을 켰어요 — 집안일이 많네요. 설정에서 끌 수 있어요.",
+  "Verlauf aufbewahren": "기록 보관",
+  "Unbegrenzt": "무제한",
+  "{n} Tage": "{n}일",
+  "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "오래된 기록은 자동으로 삭제돼요. 집안일, 사람, 점수는 그대로예요.",
+  "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{d}일보다 오래된 기록 {n}개가 지금 삭제돼요. 되돌릴 수 없어요.",
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "이제부터 {d}일보다 오래된 기록은 자동으로 삭제돼요."
 }

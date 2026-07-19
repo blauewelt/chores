@@ -132,5 +132,11 @@
   "Keine Aufgabe passt zu «{q}».": "没有与「{q}」匹配的任务。",
   "Kein Eintrag passt zu «{q}».": "没有与「{q}」匹配的记录。",
   "Leeren": "清除",
-  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "已开启搜索——任务较多。可在设置中关闭。"
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "已开启搜索——任务较多。可在设置中关闭。",
+  "Verlauf aufbewahren": "历史保留",
+  "Unbegrenzt": "永久",
+  "{n} Tage": "{n} 天",
+  "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "较早的记录随后会自动删除。任务、成员和积分不受影响。",
+  "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "有 {n} 条记录超过 {d} 天，将立即删除。此操作无法撤销。",
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "从现在起，超过 {d} 天的记录会自动删除。"
 }
