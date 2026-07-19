@@ -1317,6 +1317,47 @@ test.describe('Fairli', () => {
     await expect(page.locator('#setRetention')).toHaveCount(0);
   });
 
+  test('Bild-Idee (v4.53.0): steuert allein das Kachelbild, erscheint aber NIRGENDS im Text; leeren fällt auf Name+Notiz zurück', async ({ context, page }) => {
+    await mockBackend(context, { logRows: () => [
+      { id: 'l-1', chore_id: 'c-1', chore_name: 'Rasen mähen', chore_note: 'hinterm Haus',
+        member_id: 'm-mira', member_name: 'Mira', points: 1, done_at: new Date().toISOString(), family_id: FAM },
+    ] });
+    await context.route(`${SB}/rest/v1/chores*`, route => route.request().method() === 'GET'
+      ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+          { id: 'c-1', name: 'Rasen mähen', points: 1, note: 'hinterm Haus', art: null, family_id: FAM }]) })
+      : route.fallback());
+    await page.goto(`${BASE}/f/${FAM}`);
+    const tile = page.locator('.chore[data-cid="c-1"]');
+    const artOf = () => tile.locator('img.art').evaluate(el => decodeURIComponent(el.src));
+    // Ausgangslage: Prompt = Name + Notiz
+    expect(await artOf()).toContain('Rasen mähen, hinterm Haus');
+    // Bild-Idee setzen
+    await tile.locator('.edit').click();
+    await expect(page.locator('#cArt')).toHaveValue('');            // leer, weil art null
+    await page.locator('#cArt').fill('mowing the lawn with a lawnmower');
+    await page.locator('#saveChore').click();
+    // Prompt besteht NUR aus der Bild-Idee
+    const withHint = await artOf();
+    expect(withHint).toContain('mowing the lawn with a lawnmower');
+    expect(withHint).not.toContain('Rasen mähen');
+    expect(withHint).not.toContain('hinterm Haus');
+    // Text bleibt unangetastet: Kachel zeigt Name + Notiz, NICHT die Bild-Idee
+    await expect(tile).toContainText('Rasen mähen');
+    await expect(tile).toContainText('hinterm Haus');
+    await expect(tile).not.toContainText('lawnmower');
+    // Auch der Verlauf zeigt sie nicht
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('.entry').first()).toContainText('Rasen mähen');
+    await expect(page.locator('#list')).not.toContainText('lawnmower');
+    // Wieder leeren → zurück auf Name + Notiz
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await tile.locator('.edit').click();
+    await expect(page.locator('#cArt')).toHaveValue('mowing the lawn with a lawnmower');
+    await page.locator('#cArt').fill('');
+    await page.locator('#saveChore').click();
+    expect(await artOf()).toContain('Rasen mähen, hinterm Haus');
+  });
+
   test('Boot-Splash: Overlay räumt sich weg, Kopf-Logo erscheint, nichts blockiert (v4.39.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);

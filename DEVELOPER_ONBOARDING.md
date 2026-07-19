@@ -275,6 +275,10 @@ Edge-Function für per-Person-Manifeste. Vorher eigene Domain festlegen.
   beurteilt. Prompt-Qualität lässt sich nicht aus dem Code ableiten;
   «klingt besser» ist kein Nachweis. Skript-Muster: URLs bauen, Bilder
   holen, mit PIL zu einem beschrifteten Blatt montieren, präsentieren.
+- `c.art` = **Bild-Idee**, seit v4.53.0 im Bearbeiten-Sheet sichtbar
+  (#cArt). Gesetzt: sie ist der ganze Prompt und erscheint NIE im
+  sichtbaren Text (Kachel/Verlauf zeigen Name+Notiz). Englische
+  Beschreibungen treffen deutlich besser als deutsche Verbphrasen.
 - Kachel-Kunst-Prompt = `c.art || name + ', ' + note` (v4.46.2 — die
   Notiz erzaehlt dem Modell mehr; ein Custom-art gewinnt allein).
 - Kachel-Kunst flackert nie: `ARTOK`-Set merkt geladene Bild-URLs; beim

@@ -138,5 +138,7 @@
   "{n} Tage": "{n} ngày",
   "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Các mục cũ hơn sẽ tự động bị xoá. Công việc, thành viên và điểm không bị ảnh hưởng.",
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} mục hiện có cũ hơn {d} ngày và sẽ bị xoá ngay. Không thể hoàn tác.",
-  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Từ giờ, các mục cũ hơn {d} ngày sẽ tự động bị xoá."
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Từ giờ, các mục cũ hơn {d} ngày sẽ tự động bị xoá.",
+  "Bild-Idee": "Ý tưởng hình",
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Chỉ dùng cho ảnh thẻ — không hiện trong văn bản. Mô tả tiếng Anh thường hiệu quả hơn."
 }

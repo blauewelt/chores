@@ -138,5 +138,7 @@
   "{n} Tage": "{n} 天",
   "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "较早的记录随后会自动删除。任务、成员和积分不受影响。",
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "有 {n} 条记录超过 {d} 天，将立即删除。此操作无法撤销。",
-  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "从现在起，超过 {d} 天的记录会自动删除。"
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "从现在起，超过 {d} 天的记录会自动删除。",
+  "Bild-Idee": "图片创意",
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "仅用于磁贴图片——不会出现在任何文字中。英文描述通常效果更好。"
 }

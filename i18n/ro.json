@@ -138,5 +138,7 @@
   "{n} Tage": "{n} zile",
   "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Înregistrările mai vechi sunt apoi șterse automat. Sarcinile, persoanele și punctele rămân neatinse.",
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} înregistrări existente sunt mai vechi de {d} zile și vor fi șterse acum. Nu se poate anula.",
-  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "De acum, înregistrările mai vechi de {d} zile sunt șterse automat."
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "De acum, înregistrările mai vechi de {d} zile sunt șterse automat.",
+  "Bild-Idee": "Idee de imagine",
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Doar pentru imaginea plăcii — nu apare în text. Descrierile în engleză funcționează de obicei mai bine."
 }

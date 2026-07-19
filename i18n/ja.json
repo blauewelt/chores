@@ -138,5 +138,7 @@
   "{n} Tage": "{n}日",
   "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "古い記録は自動的に削除されます。家事・メンバー・ポイントはそのままです。",
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{d}日より古い記録が{n}件あり、今すぐ削除されます。元に戻せません。",
-  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "今後、{d}日より古い記録は自動的に削除されます。"
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "今後、{d}日より古い記録は自動的に削除されます。",
+  "Bild-Idee": "画像のアイデア",
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "タイル画像専用 — 文章には一切表示されません。英語の説明のほうがうまくいきます。"
 }

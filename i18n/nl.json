@@ -138,5 +138,7 @@
   "{n} Tage": "{n} dagen",
   "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Oudere items worden dan automatisch verwijderd. Taken, personen en punten blijven ongemoeid.",
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} bestaande items zijn ouder dan {d} dagen en worden nu verwijderd. Dit kan niet ongedaan worden gemaakt.",
-  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Vanaf nu worden items ouder dan {d} dagen automatisch verwijderd."
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Vanaf nu worden items ouder dan {d} dagen automatisch verwijderd.",
+  "Bild-Idee": "Beeldidee",
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Alleen voor de tegelafbeelding — verschijnt nergens in tekst. Engelse beschrijvingen werken meestal beter."
 }

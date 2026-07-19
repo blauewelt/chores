@@ -138,5 +138,7 @@
   "{n} Tage": "{n} giorni",
   "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Le voci più vecchie vengono poi eliminate automaticamente. Faccende, persone e punteggi restano intatti.",
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} voci esistenti sono più vecchie di {d} giorni e verranno eliminate ora. Non è reversibile.",
-  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "D’ora in poi le voci più vecchie di {d} giorni vengono eliminate automaticamente."
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "D’ora in poi le voci più vecchie di {d} giorni vengono eliminate automaticamente.",
+  "Bild-Idee": "Idea per l’immagine",
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Solo per l’immagine della piastrella — non appare in nessun testo. Le descrizioni in inglese funzionano meglio."
 }

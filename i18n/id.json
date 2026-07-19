@@ -138,5 +138,7 @@
   "{n} Tage": "{n} hari",
   "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Entri yang lebih lama lalu dihapus otomatis. Tugas, orang, dan poin tidak tersentuh.",
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} entri yang ada lebih tua dari {d} hari dan akan dihapus sekarang. Ini tidak bisa dibatalkan.",
-  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Mulai sekarang, entri yang lebih tua dari {d} hari dihapus otomatis."
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Mulai sekarang, entri yang lebih tua dari {d} hari dihapus otomatis.",
+  "Bild-Idee": "Ide gambar",
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Hanya untuk gambar ubin — tidak muncul di teks mana pun. Deskripsi bahasa Inggris biasanya lebih tepat."
 }

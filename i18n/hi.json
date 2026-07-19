@@ -138,5 +138,7 @@
   "{n} Tage": "{n} दिन",
   "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "पुरानी प्रविष्टियाँ फिर अपने आप हट जाती हैं। काम, लोग और अंक अछूते रहते हैं।",
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} मौजूदा प्रविष्टियाँ {d} दिन से पुरानी हैं और अभी हट जाएँगी। इसे वापस नहीं किया जा सकता।",
-  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "अब से {d} दिन से पुरानी प्रविष्टियाँ अपने आप हट जाएँगी।"
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "अब से {d} दिन से पुरानी प्रविष्टियाँ अपने आप हट जाएँगी।",
+  "Bild-Idee": "चित्र विचार",
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "सिर्फ़ टाइल की तस्वीर के लिए — किसी टेक्स्ट में नहीं दिखता। अंग्रेज़ी विवरण आमतौर पर बेहतर काम करते हैं।"
 }

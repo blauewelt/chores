@@ -138,5 +138,7 @@
   "{n} Tage": "{n} jours",
   "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Les entrées plus anciennes sont alors supprimées automatiquement. Les tâches, les personnes et les points ne sont pas touchés.",
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} entrées existantes datent de plus de {d} jours et seront supprimées maintenant. C’est irréversible.",
-  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Désormais, les entrées de plus de {d} jours sont supprimées automatiquement."
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Désormais, les entrées de plus de {d} jours sont supprimées automatiquement.",
+  "Bild-Idee": "Idée d’image",
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Uniquement pour l’image de la tuile — jamais affichée dans le texte. Les descriptions en anglais fonctionnent souvent mieux."
 }

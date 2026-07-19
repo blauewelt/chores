@@ -138,5 +138,7 @@
   "{n} Tage": "{n} днів",
   "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Старіші записи видалятимуться автоматично. Завдання, люди та бали не змінюються.",
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} записів старші за {d} днів буде видалено зараз. Це не можна скасувати.",
-  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Відтепер записи, старші за {d} днів, видаляються автоматично."
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Відтепер записи, старші за {d} днів, видаляються автоматично.",
+  "Bild-Idee": "Ідея картинки",
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Лише для картинки плитки — у тексті не з’являється. Описи англійською зазвичай працюють краще."
 }

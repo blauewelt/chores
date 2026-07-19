@@ -138,5 +138,7 @@
   "{n} Tage": "{n} gün",
   "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Daha eski kayıtlar otomatik olarak silinir. Görevler, kişiler ve puanlar etkilenmez.",
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} mevcut kayıt {d} günden eski ve şimdi silinecek. Bu geri alınamaz.",
-  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Bundan sonra {d} günden eski kayıtlar otomatik silinir."
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Bundan sonra {d} günden eski kayıtlar otomatik silinir.",
+  "Bild-Idee": "Görsel fikri",
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Sadece kart görseli için — hiçbir metinde görünmez. İngilizce açıklamalar genelde daha iyi sonuç verir."
 }

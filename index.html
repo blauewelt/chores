@@ -473,6 +473,11 @@
       <label for="cNote"><span data-i18n>Notiz</span> <span style="font-weight:400;color:var(--muted)" data-i18n>(optional)</span></label>
       <input type="text" id="cNote" placeholder="kurze Erklärung, z. B. «nur Restmüll»" maxlength="60" autocomplete="off">
     </div>
+    <div class="field">
+      <label for="cArt"><span data-i18n>Bild-Idee</span> <span style="font-weight:400;color:var(--muted)" data-i18n>(optional)</span></label>
+      <input type="text" id="cArt" placeholder="z. B. «mowing the lawn with a lawnmower»" maxlength="120" autocomplete="off">
+      <span class="subnote" style="display:block;margin-top:6px" data-i18n>Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.</span>
+    </div>
     <button type="submit" class="btn primary wide" id="saveChore">Speichern</button>
     <button type="button" class="btn ghost wide" id="saveAndRecord" hidden>Nur speichern</button>
   </form>
@@ -499,7 +504,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.52.0';
+  const APP_VERSION = '4.53.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1013,9 +1018,11 @@
     setTimeout(() => { img.src = ''; img.src = src; }, n * 5000);
   };
   const choreArt = c => 'https://gen.pollinations.ai/image/' +
-    // Notiz fliesst in den Prompt ein (v4.46.2, Maintainer): «Kochen, für zwei
-    // Personen» erzaehlt dem Modell mehr als «Kochen». Ein explizites
-    // c.art (eigener Prompt) bleibt allein massgeblich.
+    // Bild-Idee (c.art, v4.53.0 im Sheet sichtbar) schlaegt alles: sie ist der
+    // ganze Prompt. Sonst Name + Notiz (v4.46.2). Hintergrund: kurze deutsche
+    // Verbphrasen («Rasen mähen») geben dem Modell wenig Bildhaftes —
+    // eine englische Beschreibung trifft deutlich besser (Vergleichsblatt
+    // 19.07.2026, vom Maintainer beurteilt).
     encodeURIComponent((c.art || [c.name, c.note].filter(Boolean).join(', ')) +
       ', minimalist flat vector illustration, single subject, centered, ' +
       'dark moody background, vibrant accent color, no text, no words') +
@@ -2250,6 +2257,7 @@
     document.getElementById('saveAndRecord').hidden = !!(oneOffMode || c);
     document.getElementById('cName').value = c ? c.name : '';
     document.getElementById('cNote').value = c && c.note ? c.note : '';
+    document.getElementById('cArt').value = c && c.art ? c.art : '';
     // Name ist IMMER ein normales, direkt editierbares Feld (v4.47.3,
     // Maintainer-Screenshot: wie im Einmalig-Sheet). Der Stift gehört auf
     // die KACHELN, wo er eine andere Bedeutung als die Flaeche traegt —
@@ -2298,6 +2306,7 @@
     const name = document.getElementById('cName').value.trim();
     const points = Math.max(0, Math.min(15, parseInt(document.getElementById('cPts').value) || 0));
     const note = document.getElementById('cNote').value.trim() || null;
+    const artHint = document.getElementById('cArt').value.trim() || null;
     if (!name) return false;
     if (oneOffMode) {
       // Einmalig: NUR verbuchen, keine Kachel (gegen Kachel-Inflation)
@@ -2308,13 +2317,14 @@
     if (editingChore) {
       const c = state.chores.find(x => x.id === editingChore);
       c.name = name; c.points = points; c.note = note;
+      c.art = artHint;             // leer = Bild wieder aus Name + Notiz ableiten
       // upsertRemote statt push(PATCH) (v4.47.1): der ungeschützte PATCH
       // verlor das Race gegen pull() — alter Name/Notiz kamen zurück und
       // damit auch die alte Kachel-Kunst (URL hängt an name+note). Gleiche
       // Wurzel wie der Personen-Bug v4.46.1, gleiche Medizin.
       upsertRemote('chores', [c]);
     } else {
-      const c = { id: uid(), name, points, note };
+      const c = { id: uid(), name, points, note, art: artHint };
       state.chores.push(c);
       c.created_at = new Date().toISOString();   // lokal sofort korrekt einsortieren
       createRemote('chores', c);

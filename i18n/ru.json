@@ -138,5 +138,7 @@
   "{n} Tage": "{n} дней",
   "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Более старые записи будут удаляться автоматически. Задачи, люди и очки не затрагиваются.",
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} записей старше {d} дней будут удалены сейчас. Это нельзя отменить.",
-  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "С этого момента записи старше {d} дней удаляются автоматически."
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "С этого момента записи старше {d} дней удаляются автоматически.",
+  "Bild-Idee": "Идея картинки",
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Только для картинки плитки — нигде в тексте не появляется. Описания на английском обычно работают лучше."
 }

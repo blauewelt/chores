@@ -138,5 +138,7 @@
   "{n} Tage": "{n} dagar",
   "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Äldre poster raderas då automatiskt. Sysslor, personer och poäng berörs inte.",
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} befintliga poster är äldre än {d} dagar och raderas nu. Detta kan inte ångras.",
-  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Från och med nu raderas poster äldre än {d} dagar automatiskt."
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Från och med nu raderas poster äldre än {d} dagar automatiskt.",
+  "Bild-Idee": "Bildidé",
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Endast för bilden på brickan — visas aldrig i text. Engelska beskrivningar fungerar oftast bäst."
 }

@@ -138,5 +138,7 @@
   "{n} Tage": "{n} dage",
   "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Ældre poster slettes derefter automatisk. Opgaver, personer og point røres ikke.",
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} eksisterende poster er ældre end {d} dage og slettes nu. Dette kan ikke fortrydes.",
-  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Fra nu af slettes poster ældre end {d} dage automatisk."
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Fra nu af slettes poster ældre end {d} dage automatisk.",
+  "Bild-Idee": "Billedidé",
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Kun til flisens billede — vises aldrig i tekst. Engelske beskrivelser virker som regel bedst."
 }

@@ -138,5 +138,7 @@
   "{n} Tage": "{n} dias",
   "Ältere Verlaufs-Einträge werden dann automatisch gelöscht. Aufgaben, Personen und Punkte-Stände bleiben unberührt.": "Os registos mais antigos são então apagados automaticamente. Tarefas, pessoas e pontos ficam intactos.",
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} registos existentes têm mais de {d} dias e serão apagados agora. Não é reversível.",
-  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "A partir de agora, os registos com mais de {d} dias são apagados automaticamente."
+  "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "A partir de agora, os registos com mais de {d} dias são apagados automaticamente.",
+  "Bild-Idee": "Ideia de imagem",
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Apenas para a imagem do mosaico — nunca aparece no texto. Descrições em inglês costumam funcionar melhor."
 }

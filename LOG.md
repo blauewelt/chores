@@ -1,3 +1,27 @@
+## 2026-07-19 — v4.53.0: Feld «Bild-Idee» — englische Bildbeschreibung steuert das Kachelbild
+
+- BEFUND BESTÄTIGT (Maintainer beurteilte das Vergleichsblatt):
+  Variante C (englische Bildbeschreibung) ist für «Papier bündeln» und
+  «Rasen mähen» klar am besten. Kurze deutsche Verbphrasen geben dem
+  Modell zu wenig Bildhaftes
+- LÖSUNG: das intern längst vorhandene Feld `chores.art` ist jetzt im
+  Bearbeiten-Sheet sichtbar — «Bild-Idee (optional)», Platzhalter
+  «mowing the lawn with a lawnmower», Hinweis: nur fürs Kachelbild,
+  erscheint nirgends im Text, englische Beschreibungen treffen meist
+  besser. Gesetzt = sie ist der GANZE Prompt; leer = wieder Name+Notiz
+  (v4.46.2-Semantik unverändert). Bewusst KEINE Umdeutung des
+  Notiz-Feldes: die Notiz ist sichtbarer Text für Menschen, die
+  Bild-Idee reine Bild-Regie — zwei Zwecke, zwei Felder
+- Neu angelegte Aufgaben nehmen die Bild-Idee direkt mit
+- TEST: Prompt besteht bei gesetzter Idee NUR aus ihr (Name/Notiz raus),
+  Kachel und Verlauf zeigen weiterhin Name+Notiz und NIE die Bild-Idee,
+  Leeren fällt sauber auf Name+Notiz zurück
+- VORHER/NACHHER-BLATT erzeugt (Regel vom 19.07.): gleicher Seed,
+  App-eigene Prompt-Logik, vier Bilder — zur Beurteilung durch den
+  Maintainer
+- 2 Schlüssel ×19. 79/79 Chromium, 78+1 WebKit
+- APP_VERSION 4.53.0, SW-Cache haushalt-v144
+
 ## 2026-07-19 — Untersuchung: Kachel-Kunst «Papier bündeln» / «Rasen mähen» + neue Regel für Prompt-Änderungen
 
 - BEFUND (Maintainer-Meldung): Der Prompt OHNE Notiz lautet exakt
