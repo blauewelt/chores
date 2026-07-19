@@ -131,5 +131,6 @@
   "Nichts gefunden": "Nic nie znaleziono",
   "Keine Aufgabe passt zu «{q}».": "Żadne zadanie nie pasuje do „{q}”.",
   "Kein Eintrag passt zu «{q}».": "Żaden wpis nie pasuje do „{q}”.",
-  "Leeren": "Wyczyść"
+  "Leeren": "Wyczyść",
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Wyszukiwanie włączone — dużo zadań. Można wyłączyć w ustawieniach."
 }

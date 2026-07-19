@@ -131,5 +131,6 @@
   "Nichts gefunden": "Sin resultados",
   "Keine Aufgabe passt zu «{q}».": "Ninguna tarea coincide con «{q}».",
   "Kein Eintrag passt zu «{q}».": "Ninguna entrada coincide con «{q}».",
-  "Leeren": "Borrar"
+  "Leeren": "Borrar",
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Búsqueda activada — muchas tareas. Puedes desactivarla en ajustes."
 }

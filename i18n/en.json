@@ -131,5 +131,6 @@
   "Nichts gefunden": "Nothing found",
   "Keine Aufgabe passt zu «{q}».": "No task matches \"{q}\".",
   "Kein Eintrag passt zu «{q}».": "No entry matches \"{q}\".",
-  "Leeren": "Clear"
+  "Leeren": "Clear",
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Search enabled — lots of tasks. You can turn it off in settings."
 }

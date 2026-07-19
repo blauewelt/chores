@@ -131,5 +131,6 @@
   "Nichts gefunden": "찾을 수 없음",
   "Keine Aufgabe passt zu «{q}».": "「{q}」와 일치하는 집안일이 없어요.",
   "Kein Eintrag passt zu «{q}».": "「{q}」와 일치하는 기록이 없어요.",
-  "Leeren": "지우기"
+  "Leeren": "지우기",
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "검색을 켰어요 — 집안일이 많네요. 설정에서 끌 수 있어요."
 }

@@ -131,5 +131,6 @@
   "Nichts gefunden": "Nimic găsit",
   "Keine Aufgabe passt zu «{q}».": "Nicio sarcină nu se potrivește cu „{q}”.",
   "Kein Eintrag passt zu «{q}».": "Nicio înregistrare nu se potrivește cu „{q}”.",
-  "Leeren": "Golește"
+  "Leeren": "Golește",
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Căutare activată — multe sarcini. Se poate dezactiva în setări."
 }

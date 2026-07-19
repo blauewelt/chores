@@ -131,5 +131,6 @@
   "Nichts gefunden": "没有找到",
   "Keine Aufgabe passt zu «{q}».": "没有与「{q}」匹配的任务。",
   "Kein Eintrag passt zu «{q}».": "没有与「{q}」匹配的记录。",
-  "Leeren": "清除"
+  "Leeren": "清除",
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "已开启搜索——任务较多。可在设置中关闭。"
 }

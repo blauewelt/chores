@@ -371,7 +371,11 @@ onFail)` — 1 Retry, dann Wiederherstellung + ehrlicher Toast
 Krone, Zähler. **NIE eine Variable `t` nennen** (schattet i18n; Live-Bug
 Punkte-Tab leer).
 
-### Suche (v4.50.0)
+### Suche (v4.50.0, Auto-Aktivierung v4.51.0)
+Ab mehr als `SEARCH_AUTO_AT` (7) Kacheln schaltet `maybeAutoSearch()`
+die Suche einmalig ein — aber NUR, wenn der LS-Schlüssel fehlt (die
+Person hat nie selbst entschieden). Eine bewusste Abschaltung schreibt
+'0' und ist damit endgültig; Automatik überstimmt Menschen nicht.
 Schalter `SEARCH_ON` (localStorage, Default AUS), Eingabe in `QUERY`.
 Gefiltert wird beim Rendern: Aufgaben über `matches(name, note)`, Log
 über `matches(chore_name, chore_note, member_name)`. `norm()` ist

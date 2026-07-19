@@ -131,5 +131,6 @@
   "Nichts gefunden": "見つかりません",
   "Keine Aufgabe passt zu «{q}».": "「{q}」に一致する家事はありません。",
   "Kein Eintrag passt zu «{q}».": "「{q}」に一致する記録はありません。",
-  "Leeren": "クリア"
+  "Leeren": "クリア",
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "検索をオンにしました — 家事が多いためです。設定でオフにできます。"
 }

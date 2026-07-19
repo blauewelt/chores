@@ -131,5 +131,6 @@
   "Nichts gefunden": "Inget hittades",
   "Keine Aufgabe passt zu «{q}».": "Ingen syssla matchar ”{q}”.",
   "Kein Eintrag passt zu «{q}».": "Ingen post matchar ”{q}”.",
-  "Leeren": "Rensa"
+  "Leeren": "Rensa",
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Sök aktiverad — många sysslor. Kan stängas av i inställningar."
 }

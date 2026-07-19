@@ -131,5 +131,6 @@
   "Nichts gefunden": "Không tìm thấy",
   "Keine Aufgabe passt zu «{q}».": "Không có việc nào khớp với «{q}».",
   "Kein Eintrag passt zu «{q}».": "Không có mục nào khớp với «{q}».",
-  "Leeren": "Xoá"
+  "Leeren": "Xoá",
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Đã bật tìm kiếm — nhiều việc. Có thể tắt trong cài đặt."
 }

@@ -131,5 +131,6 @@
   "Nichts gefunden": "Nada encontrado",
   "Keine Aufgabe passt zu «{q}».": "Nenhuma tarefa corresponde a «{q}».",
   "Kein Eintrag passt zu «{q}».": "Nenhum registo corresponde a «{q}».",
-  "Leeren": "Limpar"
+  "Leeren": "Limpar",
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Pesquisa ativada — muitas tarefas. Podes desativar nas definições."
 }

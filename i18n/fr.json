@@ -131,5 +131,6 @@
   "Nichts gefunden": "Rien trouvé",
   "Keine Aufgabe passt zu «{q}».": "Aucune tâche ne correspond à « {q} ».",
   "Kein Eintrag passt zu «{q}».": "Aucune entrée ne correspond à « {q} ».",
-  "Leeren": "Effacer"
+  "Leeren": "Effacer",
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Recherche activée — beaucoup de tâches. Désactivable dans les réglages."
 }

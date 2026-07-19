@@ -1189,6 +1189,31 @@ test.describe('Fairli', () => {
     await expect(page.locator('#searchBar')).toBeHidden();
   });
 
+  test('Suche schaltet sich bei mehr als 7 Kacheln selbst ein — respektiert aber eine eigene Entscheidung (v4.51.0)', async ({ context, page }) => {
+    const many = n => Array.from({ length: n }, (_, i) => ({ id: 'c-' + i, name: 'Aufgabe ' + i, points: 1, note: '', family_id: FAM }));
+    // a) 7 Kacheln → bleibt AUS
+    await mockBackend(context);
+    let count = 7;
+    await context.route(`${SB}/rest/v1/chores*`, route => route.request().method() === 'GET'
+      ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(many(count)) })
+      : route.fallback());
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid]')).toHaveCount(7);
+    await expect(page.locator('#searchBar')).toBeHidden();
+    // b) 8 Kacheln → schaltet sich selbst ein, mit Hinweis
+    count = 8;
+    await page.reload();
+    await expect(page.locator('#searchBar')).toBeVisible();
+    await expect(page.locator('#toast')).toContainText('Suche aktiviert');
+    // c) Wer selbst ausschaltet, wird NICHT überstimmt — auch nach Neuladen nicht
+    await page.locator('#openSettings').click();
+    await page.locator('#setSearch').click();               // → Aus (schreibt die Entscheidung)
+    await expect(page.locator('#searchBar')).toBeHidden();
+    await page.reload();
+    await expect(page.locator('.chore[data-cid]')).toHaveCount(8);
+    await expect(page.locator('#searchBar')).toBeHidden();  // bleibt aus
+  });
+
   test('Boot-Splash: Overlay räumt sich weg, Kopf-Logo erscheint, nichts blockiert (v4.39.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);

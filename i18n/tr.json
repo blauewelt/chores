@@ -131,5 +131,6 @@
   "Nichts gefunden": "Bir şey bulunamadı",
   "Keine Aufgabe passt zu «{q}».": "«{q}» ile eşleşen görev yok.",
   "Kein Eintrag passt zu «{q}».": "«{q}» ile eşleşen kayıt yok.",
-  "Leeren": "Temizle"
+  "Leeren": "Temizle",
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Arama açıldı — çok görev var. Ayarlardan kapatabilirsin."
 }

@@ -131,5 +131,6 @@
   "Nichts gefunden": "Нічого не знайдено",
   "Keine Aufgabe passt zu «{q}».": "Немає завдань за запитом «{q}».",
   "Kein Eintrag passt zu «{q}».": "Немає записів за запитом «{q}».",
-  "Leeren": "Очистити"
+  "Leeren": "Очистити",
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Пошук увімкнено — багато завдань. Можна вимкнути в налаштуваннях."
 }

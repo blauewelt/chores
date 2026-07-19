@@ -1,3 +1,25 @@
+## 2026-07-18 — v4.51.0: Suche schaltet sich bei grossen Haushalten selbst ein; Recap um Suche und betreute Mitglieder ergänzt
+
+- AUTO-AKTIVIERUNG (Maintainer): mehr als 7 Kacheln → die Suche geht
+  von selbst an, mit Hinweis-Toast («abschaltbar in den
+  Einstellungen»). WICHTIG: nur solange die Person den Schalter NIE
+  selbst angefasst hat (fehlender LS-Schlüssel = unberührt). Wer die
+  Suche ausschaltet, schreibt '0' und wird nie wieder überstimmt —
+  auch nicht bei 50 Kacheln. Toast ×19
+- RECAP: zwei neue Abschnitte in updates.html (de+en) — «🔎 Suchen»
+  (Kacheln filtern, Verlauf nach Aufgabe ODER Person, Umlaute egal,
+  Selbstaktivierung) und «🐈 Personen ohne eigenes Telefon» (Markierung
+  im Personen-Menü, alle dürfen für sie eintragen). Ära → v4.38–v4.51,
+  NEWS_VERSION = 4.51.0 (Regel: = Version des Recap-Releases)
+- EMULATOR-CHECK (realistischer Zustand: Marke 4.50.0, Onboarding
+  durch, Suche nie angefasst, 8 Kacheln): Suche schaltet sich ein ✓
+  Toast erscheint ✓ News-Banner zündet ✓ «kü» filtert auf «Küche
+  aufräumen» + «Wäsche waschen» (Notiz-Treffer) ✓ Recap zeigt Ära
+  v4.38–v4.51 mit den beiden neuen Abschnitten zuoberst ✓
+- Test deckt die Grenze ab: 7 → aus, 8 → an, eigene Abschaltung hält
+  auch nach Neuladen. 75/75 Chromium, 74+1 WebKit
+- APP_VERSION 4.51.0, SW-Cache haushalt-v142, NEWS_VERSION 4.51.0
+
 ## 2026-07-18 — v4.50.0: Suche (Einstellung, standardmässig AUS) für Aufgaben und Verlauf
 
 - NEUE FUNKTION (Maintainer): ⚙︎ → 🔎 «Suche» (An/Aus, pro Gerät,

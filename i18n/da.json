@@ -131,5 +131,6 @@
   "Nichts gefunden": "Intet fundet",
   "Keine Aufgabe passt zu «{q}».": "Ingen opgave matcher »{q}«.",
   "Kein Eintrag passt zu «{q}».": "Ingen post matcher »{q}«.",
-  "Leeren": "Ryd"
+  "Leeren": "Ryd",
+  "Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.": "Søg slået til — mange opgaver. Kan slås fra i indstillinger."
 }

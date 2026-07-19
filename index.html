@@ -499,7 +499,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.50.0';
+  const APP_VERSION = '4.51.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1575,6 +1575,17 @@
     const hay = fields.map(norm).join(' ');
     return q.split(/\s+/).every(w => hay.includes(w));   // mehrere Woerter: alle muessen vorkommen
   };
+  const SEARCH_AUTO_AT = 7;   // ab mehr als 7 Kacheln lohnt sich die Suche
+  function maybeAutoSearch() {
+    if (SEARCH_ON) return;
+    let touched = true;
+    try { touched = localStorage.getItem(LS_SEARCH) !== null; } catch { return; }
+    if (touched) return;                       // Person hat selbst entschieden — Ruhe
+    if (state.chores.length <= SEARCH_AUTO_AT) return;
+    SEARCH_ON = true;
+    try { localStorage.setItem(LS_SEARCH, '1'); } catch {}
+    toast(t('Suche aktiviert — viele Aufgaben. Abschaltbar in den Einstellungen.'));
+  }
   function setSearchOn(v) {
     SEARCH_ON = v; try { localStorage.setItem(LS_SEARCH, v ? '1' : '0'); } catch {}
     if (!v) QUERY = '';
@@ -1649,6 +1660,7 @@
     maybeOnboard();   // Erstbesuch (v4.45.0): «Zugriff sichern», sobald die Familie steht
     document.querySelectorAll('.tab').forEach(b =>
       b.setAttribute('aria-selected', String(b.dataset.view === view)));
+    maybeAutoSearch();   // v4.51.0: grosse Haushalte bekommen die Suche von selbst
     const bar = document.getElementById('searchBar');
     if (bar) bar.hidden = !SEARCH_ON || view === 'scores';
     const fab = document.getElementById('openAdd');
@@ -2271,7 +2283,7 @@
     // egal wie viele Releases folgen. Erst ein Bump von NEWS_VERSION
     // (ZUSAMMEN mit neuem updates.html-Inhalt!) zündet erneut. Marke wird
     // bei stillen Durchläufen aktuell gehalten.
-    const NEWS_VERSION = '4.48.0';   // = Version des Recap-RELEASES selbst! Die seenver-Marke
+    const NEWS_VERSION = '4.51.0';   // = Version des Recap-RELEASES selbst! Die seenver-Marke
     // rueckt bei jedem Besuch still auf APP_VERSION vor — ein NEWS_VERSION
     // UNTER bereits gesehenen Versionen kann darum nie zuenden (Live-Fund
     // 18.07.: Familie sah keinen Banner, Marken standen auf 4.47.x).
