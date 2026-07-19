@@ -504,7 +504,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.53.0';
+  const APP_VERSION = '4.54.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1327,7 +1327,7 @@
       // Wasserzeichen existiert und der letzte VOLL-Abgleich < 24 h her ist.
       // Delta sieht neue UND (dank updated_at-Trigger) geaenderte Zeilen;
       // fremde LOESCHUNGEN erscheinen erst beim naechsten Voll-Abgleich.
-      const LCOLS = 'id,chore_id,chore_name,chore_note,member_id,member_name,points,done_at,created_at,updated_at';
+      const LCOLS = 'id,chore_id,chore_name,chore_note,member_id,member_name,logged_by,points,done_at,created_at,updated_at';
       const wmKey = 'haushalt.delta:' + FAMILY, fullKey = 'haushalt.full:' + FAMILY;
       let wm = null, lastFull = 0;
       try { wm = localStorage.getItem(wmKey); lastFull = +localStorage.getItem(fullKey) || 0; } catch {}
@@ -2129,6 +2129,14 @@
         <input id="lTime" type="datetime-local" value="${localDT(first.done_at)}">
       </div>
       <button type="button" class="btn primary wide" id="saveLog">${t('Speichern')}</button>
+      ${(() => {
+        // Nur Kontext, kein Formularfeld: wer hat das eingetragen? (v4.54.0)
+        const who = first.logged_by ? (memberById(first.logged_by) || {}).name : null;
+        const txt = first.logged_by
+          ? (who ? t('Eingetragen von {name}', { name: who }) : t('Eingetragen von einem entfernten Mitglied'))
+          : t('Eingetragen über den Familien-Link');
+        return `<p class="subnote" style="text-align:center;margin:12px 0 0">${esc(txt)}</p>`;
+      })()}
     </div>`;
     logSheetDirty = false;
     sh.querySelector('.sheet').addEventListener('input', () => { logSheetDirty = true; });
@@ -2193,6 +2201,9 @@
       id: uid(), chore_id: choreLike.id || null,
       chore_name: choreLike.name, chore_note: choreLike.note || null,
       member_id: m.id, member_name: m.name,
+      // Wer hat verbucht? (v4.54.0) Die Identitaet des LINKS — auf dem
+      // Familien-Link gehoert der niemandem einzeln, darum null.
+      logged_by: (slugSelf() || {}).id || null,
       points: choreLike.points, done_at: new Date().toISOString()
     };
     state.log.unshift(entry);
@@ -2382,7 +2393,7 @@
     // egal wie viele Releases folgen. Erst ein Bump von NEWS_VERSION
     // (ZUSAMMEN mit neuem updates.html-Inhalt!) zündet erneut. Marke wird
     // bei stillen Durchläufen aktuell gehalten.
-    const NEWS_VERSION = '4.51.0';   // = Version des Recap-RELEASES selbst! Die seenver-Marke
+    const NEWS_VERSION = '4.54.0';   // = Version des Recap-RELEASES selbst! Die seenver-Marke
     // rueckt bei jedem Besuch still auf APP_VERSION vor — ein NEWS_VERSION
     // UNTER bereits gesehenen Versionen kann darum nie zuenden (Live-Fund
     // 18.07.: Familie sah keinen Banner, Marken standen auf 4.47.x).

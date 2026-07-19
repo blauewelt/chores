@@ -140,5 +140,8 @@
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{d}日より古い記録が{n}件あり、今すぐ削除されます。元に戻せません。",
   "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "今後、{d}日より古い記録は自動的に削除されます。",
   "Bild-Idee": "画像のアイデア",
-  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "タイル画像専用 — 文章には一切表示されません。英語の説明のほうがうまくいきます。"
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "タイル画像専用 — 文章には一切表示されません。英語の説明のほうがうまくいきます。",
+  "Eingetragen von {name}": "{name} が記録",
+  "Eingetragen von einem entfernten Mitglied": "削除されたメンバーが記録",
+  "Eingetragen über den Familien-Link": "家族リンクから記録"
 }

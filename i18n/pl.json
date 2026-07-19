@@ -140,5 +140,8 @@
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} istniejących wpisów jest starszych niż {d} dni i zostanie teraz usuniętych. Tego nie można cofnąć.",
   "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Od teraz wpisy starsze niż {d} dni są usuwane automatycznie.",
   "Bild-Idee": "Pomysł na obrazek",
-  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Tylko do obrazka kafelka — nie pojawia się w tekście. Opisy po angielsku działają zwykle lepiej."
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Tylko do obrazka kafelka — nie pojawia się w tekście. Opisy po angielsku działają zwykle lepiej.",
+  "Eingetragen von {name}": "Zapisane przez {name}",
+  "Eingetragen von einem entfernten Mitglied": "Zapisane przez usuniętą osobę",
+  "Eingetragen über den Familien-Link": "Zapisane przez link rodzinny"
 }

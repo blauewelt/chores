@@ -140,5 +140,8 @@
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} entri yang ada lebih tua dari {d} hari dan akan dihapus sekarang. Ini tidak bisa dibatalkan.",
   "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Mulai sekarang, entri yang lebih tua dari {d} hari dihapus otomatis.",
   "Bild-Idee": "Ide gambar",
-  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Hanya untuk gambar ubin — tidak muncul di teks mana pun. Deskripsi bahasa Inggris biasanya lebih tepat."
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Hanya untuk gambar ubin — tidak muncul di teks mana pun. Deskripsi bahasa Inggris biasanya lebih tepat.",
+  "Eingetragen von {name}": "Dicatat oleh {name}",
+  "Eingetragen von einem entfernten Mitglied": "Dicatat oleh anggota yang dihapus",
+  "Eingetragen über den Familien-Link": "Dicatat melalui tautan keluarga"
 }

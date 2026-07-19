@@ -140,5 +140,8 @@
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} mevcut kayıt {d} günden eski ve şimdi silinecek. Bu geri alınamaz.",
   "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Bundan sonra {d} günden eski kayıtlar otomatik silinir.",
   "Bild-Idee": "Görsel fikri",
-  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Sadece kart görseli için — hiçbir metinde görünmez. İngilizce açıklamalar genelde daha iyi sonuç verir."
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Sadece kart görseli için — hiçbir metinde görünmez. İngilizce açıklamalar genelde daha iyi sonuç verir.",
+  "Eingetragen von {name}": "{name} tarafından kaydedildi",
+  "Eingetragen von einem entfernten Mitglied": "Kaldırılmış bir üye tarafından kaydedildi",
+  "Eingetragen über den Familien-Link": "Aile bağlantısı üzerinden kaydedildi"
 }

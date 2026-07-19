@@ -381,6 +381,11 @@ onFail)` — 1 Retry, dann Wiederherstellung + ehrlicher Toast
 Krone, Zähler. **NIE eine Variable `t` nennen** (schattet i18n; Live-Bug
 Punkte-Tab leer).
 
+### Wer hat verbucht (v4.54.0)
+`log.logged_by` = Mitglieds-ID des LINKS (slugSelf()), NULL am
+Familien-Link. Nur Kontext im Detail-Sheet, nie in der Liste. Beim
+Zusammenlegen (<1 h) bleibt der erste Verbucher stehen.
+
 ### Aufbewahrung (v4.52.0)
 `families.retention_days` (NULL = unbegrenzt, Standard). `purgeExpired()`
 läuft NUR am Admin-Link und NUR über `deleteRemote`, ausschliesslich auf

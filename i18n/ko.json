@@ -140,5 +140,8 @@
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{d}일보다 오래된 기록 {n}개가 지금 삭제돼요. 되돌릴 수 없어요.",
   "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "이제부터 {d}일보다 오래된 기록은 자동으로 삭제돼요.",
   "Bild-Idee": "그림 아이디어",
-  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "타일 그림에만 사용 — 어떤 텍스트에도 표시되지 않아요. 영어 설명이 보통 더 잘 맞아요."
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "타일 그림에만 사용 — 어떤 텍스트에도 표시되지 않아요. 영어 설명이 보통 더 잘 맞아요.",
+  "Eingetragen von {name}": "{name} 님이 기록",
+  "Eingetragen von einem entfernten Mitglied": "삭제된 멤버가 기록",
+  "Eingetragen über den Familien-Link": "가족 링크로 기록"
 }

@@ -140,5 +140,8 @@
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} bestaande items zijn ouder dan {d} dagen en worden nu verwijderd. Dit kan niet ongedaan worden gemaakt.",
   "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Vanaf nu worden items ouder dan {d} dagen automatisch verwijderd.",
   "Bild-Idee": "Beeldidee",
-  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Alleen voor de tegelafbeelding — verschijnt nergens in tekst. Engelse beschrijvingen werken meestal beter."
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Alleen voor de tegelafbeelding — verschijnt nergens in tekst. Engelse beschrijvingen werken meestal beter.",
+  "Eingetragen von {name}": "Ingevoerd door {name}",
+  "Eingetragen von einem entfernten Mitglied": "Ingevoerd door een verwijderd lid",
+  "Eingetragen über den Familien-Link": "Ingevoerd via de gezinslink"
 }

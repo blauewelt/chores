@@ -140,5 +140,8 @@
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "有 {n} 条记录超过 {d} 天，将立即删除。此操作无法撤销。",
   "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "从现在起，超过 {d} 天的记录会自动删除。",
   "Bild-Idee": "图片创意",
-  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "仅用于磁贴图片——不会出现在任何文字中。英文描述通常效果更好。"
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "仅用于磁贴图片——不会出现在任何文字中。英文描述通常效果更好。",
+  "Eingetragen von {name}": "由 {name} 记录",
+  "Eingetragen von einem entfernten Mitglied": "由已移除的成员记录",
+  "Eingetragen über den Familien-Link": "通过家庭链接记录"
 }

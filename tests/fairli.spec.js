@@ -1358,6 +1358,49 @@ test.describe('Fairli', () => {
     expect(await artOf()).toContain('Rasen mähen, hinterm Haus');
   });
 
+  test('Wer hat verbucht (v4.54.0): persönlicher Link schreibt logged_by, Familien-Link nicht; Detail-Sheet zeigt es', async ({ context, page }) => {
+    await mockBackend(context);
+    const posts = [];
+    await context.route(`${SB}/rest/v1/log*`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') { posts.push(req.postDataJSON()); return route.fulfill({ status: 201, body: '' }); }
+      return route.fallback();
+    });
+    // a) Persönlicher Link (Mira) → logged_by = m-mira
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+    await page.locator('.chore', { hasText: 'Müll rausbringen' }).click();
+    await page.waitForTimeout(350);
+    await expect.poll(() => posts.length).toBeGreaterThan(0);
+    expect([].concat(posts[0])[0].logged_by).toBe('m-mira');
+    // b) Familien-Link → logged_by null (gehört niemandem einzeln)
+    posts.length = 0;
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.locator('.chip', { hasText: 'Mira' }).click();
+    await page.locator('.chore', { hasText: 'Müll rausbringen' }).click();
+    await page.waitForTimeout(350);
+    await expect.poll(() => posts.length).toBeGreaterThan(0);
+    expect([].concat(posts[0])[0].logged_by).toBeNull();
+  });
+
+  test('Wer hat verbucht: Detail-Sheet nennt die Person bzw. den Familien-Link (v4.54.0)', async ({ context, page }) => {
+    await mockBackend(context, { logRows: () => [
+      { id: 'l-proxy', chore_id: 'c-1', chore_name: 'Fressen geben', member_id: 'm-chris', member_name: 'Timon',
+        logged_by: 'm-mira', points: 1, done_at: new Date().toISOString(), family_id: FAM },
+      { id: 'l-fam', chore_id: 'c-1', chore_name: 'Müll rausbringen', member_id: 'm-mira', member_name: 'Mira',
+        logged_by: null, points: 1, done_at: new Date(Date.now() - 3600e3).toISOString(), family_id: FAM },
+    ] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    // Stellvertretend eingetragen: nennt Mira — die Liste selbst bleibt unverändert schlank
+    await expect(page.locator('.entry').first()).not.toContainText('Eingetragen');
+    await page.locator('button.entry', { hasText: 'Fressen geben' }).click();
+    await expect(page.locator('#logSheet')).toContainText('Eingetragen von Mira');
+    await page.locator('#logSheet .x').click();
+    // Über den Familien-Link erfasst
+    await page.locator('button.entry', { hasText: 'Müll rausbringen' }).click();
+    await expect(page.locator('#logSheet')).toContainText('Familien-Link');
+  });
+
   test('Boot-Splash: Overlay räumt sich weg, Kopf-Logo erscheint, nichts blockiert (v4.39.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);

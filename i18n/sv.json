@@ -140,5 +140,8 @@
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} befintliga poster är äldre än {d} dagar och raderas nu. Detta kan inte ångras.",
   "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "Från och med nu raderas poster äldre än {d} dagar automatiskt.",
   "Bild-Idee": "Bildidé",
-  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Endast för bilden på brickan — visas aldrig i text. Engelska beskrivningar fungerar oftast bäst."
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Endast för bilden på brickan — visas aldrig i text. Engelska beskrivningar fungerar oftast bäst.",
+  "Eingetragen von {name}": "Loggad av {name}",
+  "Eingetragen von einem entfernten Mitglied": "Loggad av en borttagen medlem",
+  "Eingetragen über den Familien-Link": "Loggad via familjelänken"
 }

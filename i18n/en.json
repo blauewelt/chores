@@ -140,5 +140,8 @@
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} existing entries are older than {d} days and will be deleted now. This cannot be undone.",
   "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "From now on, entries older than {d} days are deleted automatically.",
   "Bild-Idee": "Picture idea",
-  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Only for the tile picture — never shown in any text. English descriptions usually work best."
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Only for the tile picture — never shown in any text. English descriptions usually work best.",
+  "Eingetragen von {name}": "Logged by {name}",
+  "Eingetragen von einem entfernten Mitglied": "Logged by a removed member",
+  "Eingetragen über den Familien-Link": "Logged via the family link"
 }

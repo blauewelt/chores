@@ -1,3 +1,30 @@
+## 2026-07-19 — v4.54.0: «Wer hat verbucht» im Detail-Sheet; Recap um Aufbewahrung, Bild-Idee und Verbucher ergänzt
+
+- NEUE FUNKTION (Maintainer): jeder Verlaufs-Eintrag merkt sich, über
+  WELCHEN LINK er verbucht wurde (log.logged_by = Mitglieds-ID des
+  Links; NULL am Familien-Link, der gehört niemandem einzeln). Anzeige
+  bewusst unauffällig: nur im Detail-Sheet als Fusszeile «Eingetragen
+  von Mira» bzw. «Eingetragen über den Familien-Link»; gelöschtes
+  Mitglied → «von einem entfernten Mitglied». Die Verlaufsliste bleibt
+  unverändert schlank
+- Nutzen (Maintainer-Beispiel): wenn der Kater besucht ist, sieht man,
+  wer zu Hause war und es eingetragen hat
+- Schema: log.logged_by text, per CI ausgerollt; LCOLS erweitert
+- RECAP: drei neue Abschnitte (de+en) — «🗓️ Verlauf aufräumen»,
+  «🖼️ Bild-Idee für Kacheln», «✍️ Wer hat eingetragen»; dafür der
+  Abschnitt über ersetzte Links entfernt (weniger wichtig, wie
+  freigegeben). Ära → v4.38–v4.54, NEWS_VERSION = 4.54.0
+- EMULATOR-CHECK: Mira trägt über ihren persönlichen Link für Tigi ein
+  → Server-Zeile member_id m-cat, logged_by m-1; Verlaufszeile bleibt
+  schlank; Detail-Sheet endet mit «Eingetragen von Mira»; News-Banner
+  zündet. ERSTER ANLAUF meldete logged_by null — das war ein Fehler im
+  PRÜF-SKRIPT (Slug «s1» zu kurz: Routen-Regex verlangt ≥4 Zeichen,
+  die App behandelte den Aufruf darum korrekt als Familien-Link).
+  Zweite Fehlerklasse im Harnisch nach der Marken-Rücksetzung —
+  Prüf-Skripte brauchen dieselbe Sorgfalt wie der Code
+- 3 Schlüssel ×19. 81/81 Chromium, 80+1 WebKit
+- APP_VERSION 4.54.0, SW-Cache haushalt-v145, NEWS_VERSION 4.54.0
+
 ## 2026-07-19 — v4.53.0: Feld «Bild-Idee» — englische Bildbeschreibung steuert das Kachelbild
 
 - BEFUND BESTÄTIGT (Maintainer beurteilte das Vergleichsblatt):

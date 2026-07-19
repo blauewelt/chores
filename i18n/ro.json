@@ -140,5 +140,8 @@
   "{n} vorhandene Einträge sind älter als {d} Tage und werden jetzt gelöscht. Das lässt sich nicht rückgängig machen.": "{n} înregistrări existente sunt mai vechi de {d} zile și vor fi șterse acum. Nu se poate anula.",
   "Ab jetzt werden Einträge älter als {d} Tage automatisch gelöscht.": "De acum, înregistrările mai vechi de {d} zile sunt șterse automat.",
   "Bild-Idee": "Idee de imagine",
-  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Doar pentru imaginea plăcii — nu apare în text. Descrierile în engleză funcționează de obicei mai bine."
+  "Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.": "Doar pentru imaginea plăcii — nu apare în text. Descrierile în engleză funcționează de obicei mai bine.",
+  "Eingetragen von {name}": "Înregistrat de {name}",
+  "Eingetragen von einem entfernten Mitglied": "Înregistrat de un membru șters",
+  "Eingetragen über den Familien-Link": "Înregistrat prin linkul de familie"
 }
