@@ -1,3 +1,27 @@
+## 2026-07-19 — Untersuchung: Kachel-Kunst «Papier bündeln» / «Rasen mähen» + neue Regel für Prompt-Änderungen
+
+- BEFUND (Maintainer-Meldung): Der Prompt OHNE Notiz lautet exakt
+  «<Name>, minimalist flat vector illustration, single subject,
+  centered, dark moody background, vibrant accent color, no text, no
+  words» — also nur der Aufgabenname plus Stil-Suffix. WICHTIG: Für
+  Aufgaben ohne Notiz hat die Notiz-Änderung (v4.46.2) den Prompt NICHT
+  verändert. «Papier bündeln» und «Rasen mähen» sind also keine
+  Regression, sondern zeigen die Grundqualität: kurze deutsche
+  Verbphrasen geben dem Modell wenig Bildhaftes («bündeln», «mähen»
+  sind Tätigkeiten, keine Motive)
+- VERGLEICHSBLATT erzeugt (gleicher Seed, drei Varianten je Kachel):
+  A = heute (nur Name), B = Name + «Haushaltsaufgabe», C = englische
+  Bildbeschreibung. Sechs Bilder, alle mit unterschiedlichem Hash —
+  das Modell reagiert also wirklich auf den Prompt, kein Platzhalter.
+  Beurteilung liegt beim Maintainer; KEINE Prompt-Änderung deployt,
+  bevor eine Variante gewählt ist
+- EHRLICHE EINSCHRÄNKUNG: die Bildanzeige der Sandbox liefert in dieser
+  Sitzung unlesbare Bilder — die KI konnte die Motive NICHT selbst
+  beurteilen. Deshalb Blatt zur menschlichen Beurteilung statt einer
+  behaupteten Bewertung
+- NEUE REGEL (§Kacheln): jede Prompt-Änderung braucht ein
+  Vorher/Nachher-Vergleichsblatt; «klingt besser» zählt nicht
+
 ## 2026-07-19 — v4.52.0: Aufbewahrungsdauer für den Verlauf (30/90 Tage/unbegrenzt, Standard unbegrenzt)
 
 - NEUE FUNKTION (Maintainer): ⚙︎ → 🗓️ «Verlauf aufbewahren» mit

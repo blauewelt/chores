@@ -269,6 +269,12 @@ Edge-Function für per-Person-Manifeste. Vorher eigene Domain festlegen.
   `html.splash` kommt SYNCHRON im Head-Inline (Logo nie vorab sichtbar);
   Overlay IMMER pointer-events:none; Timeouts statt transitionend (die
   globale reduced-motion-Regel unterdrückt Transitions).
+- **REGEL (19.07.2026, Maintainer): jede Änderung am Kunst-Prompt wird
+  mit einem VORHER/NACHHER-Vergleichsblatt belegt** — dieselben Kacheln,
+  derselbe Seed, Varianten nebeneinander als Bild, vom Menschen
+  beurteilt. Prompt-Qualität lässt sich nicht aus dem Code ableiten;
+  «klingt besser» ist kein Nachweis. Skript-Muster: URLs bauen, Bilder
+  holen, mit PIL zu einem beschrifteten Blatt montieren, präsentieren.
 - Kachel-Kunst-Prompt = `c.art || name + ', ' + note` (v4.46.2 — die
   Notiz erzaehlt dem Modell mehr; ein Custom-art gewinnt allein).
 - Kachel-Kunst flackert nie: `ARTOK`-Set merkt geladene Bild-URLs; beim
