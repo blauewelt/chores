@@ -387,7 +387,10 @@ Persönliche Links haben ein eigenes Manifest unter
 Der Service Worker beantwortet diese Adresse mit einem personalisierten
 Manifest (eigene id/start_url je Person). **`short_name` MUSS «Fairli»
 bleiben** — Android beschriftet das Symbol damit; der Personenname
-gehört nur in `name` (v4.56.1, Live-Befund); ohne SW liefert der statische
+gehört nur in `name` (v4.56.1, Live-Befund). **Farben MÜSSEN den
+App-Farben folgen** (`background_color` = var(--bg) #12161F,
+`theme_color` = #141A17) — sonst blitzt vor der dunklen App ein weisser
+System-Start-Bildschirm auf (v4.56.2, Live-Befund); ohne SW liefert der statische
 Host die normale Datei — auch das ist installierbar. iOS bleibt
 manifest-frei (Parse-Zeit-Falle, v4.20.0). `loadRoute()` bevorzugt die
 ZULETZT benutzte Route, damit der Start am generischen start_url nicht

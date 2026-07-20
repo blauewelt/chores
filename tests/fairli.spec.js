@@ -1512,6 +1512,8 @@ test.describe('Fairli', () => {
     });
     expect(man.display).toBe('standalone');
     expect(man.start_url).toBeTruthy();
+    // auch der statische Fallback startet dunkel, nicht weiss
+    expect(man.background_color.toUpperCase()).toBe('#12161F');
     expect(man.icons.map(i => i.sizes)).toEqual(expect.arrayContaining(['192x192', '512x512']));
     // Familien-Link unverändert: die statische Datei
     await page.goto(`${BASE}/f/${FAM}`);
@@ -1558,6 +1560,9 @@ test.describe('Fairli', () => {
     // bleiben, sonst heisst die App auf dem Startbildschirm wie die Person
     // (Live-Befund 20.07.2026).
     expect(man.body.short_name).toBe('Fairli');
+    // Start-Bildschirm darf nicht weiss aufblitzen: Farben = App-Farben
+    expect(man.body.background_color.toUpperCase()).toBe('#12161F');
+    expect(man.body.theme_color.toUpperCase()).toBe('#141A17');
     expect(man.body.scope).toContain('/chores/');
     expect(man.body.icons.every(i => /^https?:\/\//.test(i.src))).toBe(true);
   });

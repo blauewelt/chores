@@ -6,8 +6,8 @@
   "scope": "/chores/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#FFFFFF",
-  "theme_color": "#FFFFFF",
+  "background_color": "#12161F",
+  "theme_color": "#141A17",
   "lang": "de",
   "icons": [
     {

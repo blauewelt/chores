@@ -1,3 +1,29 @@
+## 2026-07-20 — v4.56.2: dunkler Start-Bildschirm statt weissem Blitz
+
+- MAINTAINER-BEFUND mit Screenshot: beim Start blitzt ein weisser
+  Bildschirm auf, bevor die dunkle App erscheint — passt nicht zum Rest.
+- URSACHE: Android malt den Start-Bildschirm der installierten App mit
+  `background_color` AUS DEM MANIFEST, bevor die Seite ueberhaupt
+  zeichnet. Beide Manifeste standen auf #FFFFFF, waehrend die App
+  --bg:#12161F nutzt. Der App-eigene Boot-Splash (v4.39.0) war laengst
+  dunkel — nur das Manifest war aus dem Tritt.
+- LOESUNG in BEIDEN Manifesten (statische Datei UND das vom Service
+  Worker erzeugte): background_color #12161F (= var(--bg), exakt die
+  Flaeche, die danach erscheint), theme_color #141A17 (= <meta
+  name="theme-color">). Damit gibt es zwischen System-Start-Bildschirm
+  und App keine sichtbare Naht mehr.
+- GEMESSEN: persoenliches Manifest meldet background #12161F, theme
+  #141A17, short_name «Fairli»; der Seitenhintergrund rechnet sich zu
+  rgb(18,22,31) — dieselbe Farbe.
+- TESTS: der @sw-Test haelt die dunklen Farben zusaetzlich zu
+  short_name fest; der Test fuer den statischen Fallback prueft, dass
+  auch dieser Weg dunkel startet (sonst blitzt es nur dort weiter).
+- HINWEIS an den Maintainer: Chrome frischt eine installierte WebAPK
+  verzoegert auf (typischerweise innerhalb eines Tages). Sofort wirksam
+  wird es, wenn das Symbol entfernt und neu hinzugefuegt wird.
+- 86/86 Chromium, 84+2 WebKit, 1/1 chromium-sw
+- APP_VERSION 4.56.2, SW-Cache haushalt-v149
+
 ## 2026-07-20 — v4.56.1: Symbol heisst wieder «Fairli» (short_name statt Personenname)
 
 - MAINTAINER-BEFUND mit Screenshot: das installierte Symbol trug den

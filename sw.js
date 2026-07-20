@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v148';
+const CACHE = 'haushalt-v149';
 const SHELL = [
   './',
   './index.html',
@@ -72,7 +72,11 @@ self.addEventListener('fetch', e => {
         description: 'Fairli – wer macht was im Haushalt, und wer punktet.',
         start_url: start, id: start, scope: location.origin + '/chores/',
         display: 'standalone', orientation: 'portrait',
-        background_color: '#FFFFFF', theme_color: '#FFFFFF',
+        // Android malt den Start-Bildschirm mit background_color, BEVOR die
+        // Seite zeichnet. Weiss ergab einen grellen Blitz vor der dunklen App
+        // (Maintainer-Befund 20.07.2026) — die Farben folgen jetzt der App:
+        // background = var(--bg), theme = <meta name="theme-color">.
+        background_color: '#12161F', theme_color: '#141A17',
         icons: [icon('icon-192.png?v=47', '192x192', 'any'),
                 icon('icon-512.png?v=47', '512x512', 'any'),
                 icon('icon-512-maskable.png?v=47', '512x512', 'maskable')]
