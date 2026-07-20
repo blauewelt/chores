@@ -385,7 +385,9 @@ Punkte-Tab leer).
 Persönliche Links haben ein eigenes Manifest unter
 `/chores/manifest.json?f=…&u=…&n=…` (gleiche Herkunft, NIE data:).
 Der Service Worker beantwortet diese Adresse mit einem personalisierten
-Manifest (eigene id/start_url je Person); ohne SW liefert der statische
+Manifest (eigene id/start_url je Person). **`short_name` MUSS «Fairli»
+bleiben** — Android beschriftet das Symbol damit; der Personenname
+gehört nur in `name` (v4.56.1, Live-Befund); ohne SW liefert der statische
 Host die normale Datei — auch das ist installierbar. iOS bleibt
 manifest-frei (Parse-Zeit-Falle, v4.20.0). `loadRoute()` bevorzugt die
 ZULETZT benutzte Route, damit der Start am generischen start_url nicht

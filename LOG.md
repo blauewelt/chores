@@ -1,3 +1,25 @@
+## 2026-07-20 — v4.56.1: Symbol heisst wieder «Fairli» (short_name statt Personenname)
+
+- MAINTAINER-BEFUND mit Screenshot: das installierte Symbol trug den
+  blossen Personennamen statt «Fairli».
+- URSACHE: Android beschriftet das Startbildschirm-Symbol mit
+  SHORT_NAME. Ich hatte `short_name: name || 'Fairli'` gesetzt — also
+  den blossen Personennamen. Korrekt ist short_name = «Fairli»
+  (Marke), der Personenname gehoert in `name` («Fairli · <Name>»),
+  das nur im Installationsdialog und in den App-Infos erscheint.
+- WICHTIGE NEBENERKENNTNIS (beantwortet die offene Frage aus v4.56.0):
+  weil das Symbol ueberhaupt den Personennamen trug, hat Chrome/Android beim
+  Bauen der WebAPK das vom SERVICE WORKER erzeugte Manifest benutzt —
+  nicht die statische Datei. Der SW-Weg funktioniert also auf echtem
+  Geraet. Der statische Fallback bleibt als Netz bestehen.
+- Test erweitert: der @sw-Test prueft jetzt short_name === 'Fairli'
+  zusaetzlich zum personalisierten name/start_url
+- HINWEIS an den Maintainer: Chrome aktualisiert eine bereits
+  installierte WebAPK verzoegert (typischerweise innerhalb eines Tages,
+  bei Bedarf: Symbol entfernen und neu installieren)
+- 86/86 Chromium, 1/1 chromium-sw
+- APP_VERSION 4.56.1, SW-Cache haushalt-v148
+
 ## 2026-07-20 — v4.56.0: persönliche Links sind installierbare Apps (Chrome bot vorher nur eine Verknüpfung)
 
 - MAINTAINER-BEFUND: Chrome installierte von persönlichen Links keine

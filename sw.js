@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v147';
+const CACHE = 'haushalt-v148';
 const SHELL = [
   './',
   './index.html',
@@ -64,7 +64,11 @@ self.addEventListener('fetch', e => {
       const icon = (f, s, p) => ({ src: location.origin + '/chores/' + f, sizes: s, type: 'image/png', purpose: p });
       const body = JSON.stringify({
         name: name ? 'Fairli · ' + name : 'Fairli',
-        short_name: name || 'Fairli',
+        // Android beschriftet das Symbol mit SHORT_NAME — der muss «Fairli»
+        // heissen (Maintainer-Befund 20.07.2026: das Symbol trug statt der
+        // Marke den blossen Personennamen). Der Name der Person gehoert in
+        // name, nicht auf den Startbildschirm.
+        short_name: 'Fairli',
         description: 'Fairli – wer macht was im Haushalt, und wer punktet.',
         start_url: start, id: start, scope: location.origin + '/chores/',
         display: 'standalone', orientation: 'portrait',

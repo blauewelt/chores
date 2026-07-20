@@ -1553,7 +1553,11 @@ test.describe('Fairli', () => {
     expect(man.type).toContain('manifest');
     expect(man.body.start_url).toContain(`/f/${FAM}/u/slugmira1`);
     expect(man.body.id).toBe(man.body.start_url);       // eigene App-Identität je Person
-    expect(man.body.name).toContain('Mira');            // Symbol trägt den Namen
+    expect(man.body.name).toContain('Mira');            // Vollname nennt die Person
+    // ABER: Android beschriftet das Symbol mit short_name — der muss «Fairli»
+    // bleiben, sonst heisst die App auf dem Startbildschirm wie die Person
+    // (Live-Befund 20.07.2026).
+    expect(man.body.short_name).toBe('Fairli');
     expect(man.body.scope).toContain('/chores/');
     expect(man.body.icons.every(i => /^https?:\/\//.test(i.src))).toBe(true);
   });
