@@ -225,16 +225,20 @@ test.describe('Fairli', () => {
     await expect(page.getByRole('button', { name: 'Neuen Haushalt erstellen' })).toHaveCount(0);
   });
 
-  test('Manifest-Regel: nie auf iOS, nie auf persönlichen Links, ja im Android-Familienkontext (v4.20.0)', async ({ context, page, browserName }) => {
+  test('Manifest-Regel: nie auf iOS, seit v4.56.0 aber sehr wohl auf persönlichen Links (Android/Desktop)', async ({ context, page, browserName }) => {
     await mockBackend(context);
     // Familien-Kontext
     await page.goto(`${BASE}/f/${FAM}`);
     const famCount = await page.locator('link[rel="manifest"]').count();
     if (browserName === 'webkit') expect(famCount).toBe(0);   // iOS-Profil: NIE (Parse-Zeit-Falle!)
     else expect(famCount).toBe(1);                            // Android: injiziert
-    // Persönlicher Link: auf KEINER Plattform
+    // Persönlicher Link: iOS weiterhin manifest-frei, Android/Desktop MIT
+    // eigenem Manifest — ohne das bot Chrome nur eine Verknüpfung an
+    // (Maintainer-Befund 20.07.2026), keine echte App.
     await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
-    expect(await page.locator('link[rel="manifest"]').count()).toBe(0);
+    const userCount = await page.locator('link[rel="manifest"]').count();
+    if (browserName === 'webkit') expect(userCount).toBe(0);
+    else expect(userCount).toBe(1);
   });
 
   test('Install-Banner: sichtbar für Link-Empfänger, öffnet Anleitung, Dismiss persistiert (v4.22.0)', async ({ context, page, browserName }) => {
@@ -1472,6 +1476,86 @@ test.describe('Fairli', () => {
     const saved = [].concat(posts[0]);
     expect(saved.find(r => r.id === 'm-mira').admin).toBe(true);
     expect(saved.find(r => r.id === 'm-chris').admin).toBe(false);
+  });
+
+  test('Manifest-Regel (v4.56.0): nie auf iOS — auf Android/Desktop in BEIDEN Kontexten', async ({ context, page, browserName }) => {
+    await mockBackend(context, { memberRows: () => [
+      { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: false },
+    ] });
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+    const links = page.locator('link[rel=manifest]');
+    if (browserName === 'webkit') {
+      // WebKit backt start_url beim PARSEN ein — ohne Manifest nimmt iOS die
+      // aktuelle URL, und genau das wollen wir für persönliche Links.
+      await expect(links).toHaveCount(0);
+    } else {
+      await expect(links).toHaveCount(1);
+      const href = await links.getAttribute('href');
+      expect(href.startsWith('data:')).toBe(false);          // data: ist nicht installierbar
+      expect(href).toContain('/chores/manifest.json?');
+      expect(href).toContain('u=slugmira1');
+    }
+  });
+
+  test('Installierbarkeit (v4.56.0): auch ohne Service Worker liefert die Manifest-Adresse ein gültiges Manifest', async ({ context, page, browserName }) => {
+    test.skip(browserName === 'webkit', 'iOS ist bewusst manifest-frei');
+    await mockBackend(context, { memberRows: () => [
+      { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: false },
+    ] });
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+    // Hier ist der SW geblockt → es antwortet der statische Host. Genau das
+    // sieht ein Abrufer, der den Service Worker nicht kennt; auch dieser Fall
+    // MUSS installierbar sein.
+    const man = await page.evaluate(async () => {
+      const h = document.querySelector('link[rel=manifest]').href;
+      return JSON.parse(await (await fetch(h)).text());
+    });
+    expect(man.display).toBe('standalone');
+    expect(man.start_url).toBeTruthy();
+    expect(man.icons.map(i => i.sizes)).toEqual(expect.arrayContaining(['192x192', '512x512']));
+    // Familien-Link unverändert: die statische Datei
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('link[rel=manifest]')).toHaveAttribute('href', '/chores/manifest.json');
+  });
+
+  test('Start am generischen start_url landet bei der ZULETZT benutzten Route (v4.56.0)', async ({ context, page }) => {
+    await mockBackend(context, { memberRows: () => [
+      { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: false },
+    ] });
+    // Gerät kennt BEIDE Routen — typisch für einen Admin, der früher den
+    // blanken Link benutzt hat. Zuletzt benutzt: der persönliche.
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(300);
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+    await page.waitForTimeout(300);
+    await page.goto(`${BASE}/`);                        // wie der Homescreen-Start
+    await expect(page).toHaveURL(new RegExp(`/f/${FAM}/u/slugmira1$`));
+    // Andersherum genauso: zuletzt der Familien-Link
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(300);
+    await page.goto(`${BASE}/`);
+    await expect(page).toHaveURL(new RegExp(`/f/${FAM}$`));
+  });
+
+  test('@sw Installierbarkeit: der Service Worker liefert das persönliche Manifest von GLEICHER Herkunft (v4.56.0)', async ({ context, page }) => {
+    await mockBackend(context, { memberRows: () => [
+      { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: false },
+    ] });
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
+    await page.reload();
+    await page.waitForTimeout(500);
+    const man = await page.evaluate(async () => {
+      const h = document.querySelector('link[rel=manifest]').href;
+      const r = await fetch(h);
+      return { type: r.headers.get('content-type'), body: JSON.parse(await r.text()) };
+    });
+    expect(man.type).toContain('manifest');
+    expect(man.body.start_url).toContain(`/f/${FAM}/u/slugmira1`);
+    expect(man.body.id).toBe(man.body.start_url);       // eigene App-Identität je Person
+    expect(man.body.name).toContain('Mira');            // Symbol trägt den Namen
+    expect(man.body.scope).toContain('/chores/');
+    expect(man.body.icons.every(i => /^https?:\/\//.test(i.src))).toBe(true);
   });
 
   test('Boot-Splash: Overlay räumt sich weg, Kopf-Logo erscheint, nichts blockiert (v4.39.0)', async ({ context, page }) => {

@@ -1,3 +1,56 @@
+## 2026-07-20 — v4.56.0: persönliche Links sind installierbare Apps (Chrome bot vorher nur eine Verknüpfung)
+
+- MAINTAINER-BEFUND: Chrome installierte von persönlichen Links keine
+  App, nur eine Verknüpfung; der alte blanke Admin-Link funktionierte.
+- URSACHE (eindeutig): persönliche Links waren MANIFEST-FREI. Die alte
+  Regel `if (!IS_IOS && !USER_SLUG)` hängte das Manifest NUR im
+  Familien-Kontext ein. Ohne Manifest kann Chrome keine App bauen —
+  genau das beschriebene Verhalten. Der damalige Grund (mehrere
+  Personen-Symbole pro Gerät dürfen sich nicht überschreiben) bleibt
+  gültig, ist aber sauberer lösbar.
+- LÖSUNG: jeder persönliche Link bekommt ein EIGENES Manifest mit
+  eigener id und eigenem start_url (= die persönliche Route). Adresse
+  ist IMMER gleiche Herkunft: /chores/manifest.json?f=…&u=…&n=…
+  · kontrolliert der Service Worker die Seite, erzeugt ER das
+    persönliche Manifest (Name «Fairli · Mira»)
+  · tut er es (noch) nicht, antwortet der statische Host mit der
+    normalen Datei — ebenfalls gültig und installierbar
+  · iOS bleibt bewusst manifest-frei (WebKit backt start_url beim
+    PARSEN ein; ohne Manifest nimmt es die aktuelle URL)
+- VERWORFEN: die zuerst gebaute data:-URL-Variante. Sie parst zwar
+  sauber, ist aber als App-Quelle nicht verlässlich — und ein Abrufer,
+  der den SW nicht kennt (z. B. die WebAPK-Erzeugung), sieht sie nie.
+  Gleiche Herkunft ist in JEDEM Fall besser.
+- ZWEITER FUND (gemessen, nicht vermutet): startet die App am
+  generischen start_url, gewann bisher IMMER die Familien-Route — ein
+  Admin mit altem Link wäre also unter falscher Identität gelandet
+  (logged_by!). loadRoute() nimmt jetzt die ZULETZT benutzte Route
+  (Zeitstempel; Altbestand ohne Stempel behält seinen Vorrang, wenn er
+  allein dasteht).
+- MESSUNGEN (CDP, Page.getAppManifest): Familien-Link unverändert;
+  persönlicher Link → Manifest-URL gleiche Herkunft, name «Fairli ·
+  Mira», start_url = persönliche Route, keine Parse-Fehler; ohne SW →
+  gültiges generisches Manifest (standalone, 3 Icons)
+- OFFEN, nur auf echtem Gerät prüfbar: ob Chrome/Android beim Bauen der
+  WebAPK das SW-Manifest oder die statische Datei verwendet. Beide Wege
+  führen jetzt zu einer echten App; im zweiten Fall heisst das Symbol
+  «Fairli» statt «Fairli · Mira» und startet über die zuletzt benutzte
+  Route. MAINTAINER-CHECK: heisst das Symbol «Fairli · <Name>»?
+- TESTPROJEKT chromium-sw (serviceWorkers: allow, grep @sw): der
+  SW-Pfad ist jetzt automatisiert abgedeckt; der Rest bleibt
+  deterministisch mit geblocktem SW
+- EIGENER FEHLER, offen dokumentiert: beim Umschreiben der Tests habe
+  ich mit einer Bereichs-Ersetzung zwischen zwei Markern versehentlich
+  622 Zeilen (rund 25 Tests) gelöscht. Aufgefallen an der Testzahl
+  (85 → 58) im Gesamtlauf, danach aus HEAD wiederhergestellt und die
+  vier neuen Tests sauber ergänzt. LEHRE: Bereichs-Ersetzungen nur mit
+  eindeutigem Start UND Ende desselben Blocks; danach IMMER die
+  Testzahl prüfen.
+- Alte Regel «persönliche Links nie mit Manifest» (v4.20.0) im Test
+  aktualisiert statt gelöscht — sie war die bewusst geänderte Annahme
+- 86/86 Chromium, 84+2 WebKit, 1/1 chromium-sw
+- APP_VERSION 4.56.0, SW-Cache haushalt-v147
+
 ## 2026-07-19 — v4.55.0: Admin ist eine Eigenschaft von PERSONEN — kein anonymer Familien-Link mehr im Einladen-Sheet
 
 - MODELLWECHSEL (Maintainer): Rechte hingen bisher am LINK-TYP (blanker

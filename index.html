@@ -507,7 +507,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.55.0';
+  const APP_VERSION = '4.56.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -534,15 +534,19 @@
   function saveRoute(r) {
     try {
       const key = r.userSlug ? LS_ROUTE + '.user' : LS_ROUTE + '.family';
-      localStorage.setItem(key, JSON.stringify(r));
+      localStorage.setItem(key, JSON.stringify({ ...r, at: Date.now() }));
       localStorage.setItem(LS_ROUTE, JSON.stringify(r)); // legacy/Resume-Anzeige
     } catch {}
   }
   function loadRoute() {
     try {
-      return JSON.parse(localStorage.getItem(LS_ROUTE + '.family'))
-          || JSON.parse(localStorage.getItem(LS_ROUTE + '.user'))
-          || JSON.parse(localStorage.getItem(LS_ROUTE));
+      // Startet die App am generischen start_url (Homescreen-Symbol), muss die
+      // ZULETZT benutzte Route gewinnen — Altbestand ohne Zeitstempel zaehlt
+      // als «sehr alt», behaelt aber seinen Vorrang, wenn er allein dasteht.
+      const fam = JSON.parse(localStorage.getItem(LS_ROUTE + '.family'));
+      const usr = JSON.parse(localStorage.getItem(LS_ROUTE + '.user'));
+      if (fam && usr) return ((usr.at || 0) > (fam.at || 0)) ? usr : fam;
+      return fam || usr || JSON.parse(localStorage.getItem(LS_ROUTE));
     } catch { return null; }
   }
   // kanonische Pfad-URL einer Familie/Person (für Teilen & Homescreen-Install)
@@ -595,10 +599,49 @@
   // Personen-Shortcuts pro Geraet).
   const IS_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  if (!IS_IOS && !USER_SLUG) {
-    const l = document.createElement('link');
-    l.rel = 'manifest'; l.href = '/chores/manifest.json';
-    document.head.appendChild(l);
+  // v4.56.0 (Maintainer-Befund): persoenliche Links waren MANIFEST-FREI —
+  // deshalb bot Chrome dort nur eine Verknuepfung an, keine echte App. Der
+  // Grund von damals (mehrere Personen-Shortcuts pro Geraet duerfen sich
+  // nicht ueberschreiben) bleibt gueltig, ist aber sauberer loesbar: JEDER
+  // persoenliche Link bekommt ein EIGENES Manifest mit eigener id und
+  // eigenem start_url. Damit ist jede Person eine eigene installierbare App
+  // — und die App startet direkt in der richtigen Ansicht, ohne Umweg ueber
+  // gespeicherte Routen. iOS bleibt bewusst manifest-frei (WebKit backt
+  // start_url beim PARSEN ein; ohne Manifest nimmt es die aktuelle URL).
+  let manifestLink = null;
+  function setManifest(href) {
+    if (!manifestLink) {
+      manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      document.head.appendChild(manifestLink);
+    }
+    if (manifestLink.href !== href) manifestLink.href = href;
+  }
+  // Same-Origin-Adresse, die der Service Worker beantwortet (WebAPK-tauglich);
+  // solange er die Seite noch nicht kontrolliert, dient die data:-Variante als
+  // Ueberbrueckung — sie parst sauber, nur die App-Erzeugung mag sie evtl. nicht.
+  function personalManifestUrl(name) {
+    const q = new URLSearchParams({ f: FAMILY || '', u: USER_SLUG || '' });
+    if (name) q.set('n', name);
+    return BASE + 'manifest.json?' + q.toString();
+  }
+  // IMMER die same-origin-Adresse verwenden (v4.56.0): kontrolliert der
+  // Service Worker die Seite, liefert er das persoenliche Manifest; tut er es
+  // (noch) nicht, antwortet der statische Host mit der normalen Datei. Beides
+  // ist ein gueltiges, installierbares Manifest — eine data:-URL waere es
+  // moeglicherweise NICHT, und genau daran scheiterte die App-Installation.
+  if (!IS_IOS) {
+    setManifest(USER_SLUG ? personalManifestUrl(null) : '/chores/manifest.json');
+    if (USER_SLUG && navigator.serviceWorker) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => refreshPersonalManifest());
+    }
+  }
+  // Sobald der Name der Person bekannt ist (nach dem ersten Abgleich), traegt
+  // die App ihn im Manifest — dann heisst das Symbol «Mira» statt «Fairli».
+  function refreshPersonalManifest() {
+    if (IS_IOS || !USER_SLUG) return;
+    const nm = (slugSelf() || {}).name || null;
+    setManifest(personalManifestUrl(nm));
   }
 
   window.addEventListener('popstate', () => {
@@ -1768,6 +1811,7 @@
     document.querySelectorAll('.tab').forEach(b =>
       b.setAttribute('aria-selected', String(b.dataset.view === view)));
     syncAdminClass();    // v4.55.0: Admin-Status kommt erst mit den Mitgliedern
+    refreshPersonalManifest();   // v4.56.0: Symbolname = Name der Person
     maybeAutoSearch();   // v4.51.0: grosse Haushalte bekommen die Suche von selbst
     const bar = document.getElementById('searchBar');
     if (bar) bar.hidden = !SEARCH_ON || view === 'scores';

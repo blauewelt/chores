@@ -381,6 +381,17 @@ onFail)` — 1 Retry, dann Wiederherstellung + ehrlicher Toast
 Krone, Zähler. **NIE eine Variable `t` nennen** (schattet i18n; Live-Bug
 Punkte-Tab leer).
 
+### Manifest & Installation (v4.56.0)
+Persönliche Links haben ein eigenes Manifest unter
+`/chores/manifest.json?f=…&u=…&n=…` (gleiche Herkunft, NIE data:).
+Der Service Worker beantwortet diese Adresse mit einem personalisierten
+Manifest (eigene id/start_url je Person); ohne SW liefert der statische
+Host die normale Datei — auch das ist installierbar. iOS bleibt
+manifest-frei (Parse-Zeit-Falle, v4.20.0). `loadRoute()` bevorzugt die
+ZULETZT benutzte Route, damit der Start am generischen start_url nicht
+unter falscher Identität landet. SW-abhängige Tests: Projekt
+`chromium-sw`, Titel mit `@sw` markieren.
+
 ### Admin-Modell (v4.55.0)
 `members.admin`. **Alle** Rechte-Fragen laufen über `isAdmin()` —
 niemals über `USER_SLUG` (das ist nur die IDENTITÄT). Der blanke

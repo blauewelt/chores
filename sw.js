@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v146';
+const CACHE = 'haushalt-v147';
 const SHELL = [
   './',
   './index.html',
@@ -50,6 +50,33 @@ self.addEventListener('activate', e => {
 // App-Shell: cache-first; alles andere (z. B. Google Fonts): network-first mit Cache-Fallback
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // PERSOENLICHES MANIFEST (v4.56.0): gleiche Herkunft statt data:-URL, damit
+  // Chrome auf Android eine echte App (WebAPK) bauen kann. Der Service Worker
+  // erzeugt es aus den Parametern — auf einem statischen Host waere das sonst
+  // unmoeglich. Ohne Parameter bleibt es die normale Datei.
+  {
+    const u = new URL(e.request.url);
+    if (u.origin === location.origin && u.pathname === '/chores/manifest.json' && u.searchParams.get('u')) {
+      const fam = u.searchParams.get('f') || '';
+      const slug = u.searchParams.get('u');
+      const name = u.searchParams.get('n') || '';
+      const start = location.origin + '/chores/f/' + fam + '/u/' + slug;
+      const icon = (f, s, p) => ({ src: location.origin + '/chores/' + f, sizes: s, type: 'image/png', purpose: p });
+      const body = JSON.stringify({
+        name: name ? 'Fairli · ' + name : 'Fairli',
+        short_name: name || 'Fairli',
+        description: 'Fairli – wer macht was im Haushalt, und wer punktet.',
+        start_url: start, id: start, scope: location.origin + '/chores/',
+        display: 'standalone', orientation: 'portrait',
+        background_color: '#FFFFFF', theme_color: '#FFFFFF',
+        icons: [icon('icon-192.png?v=47', '192x192', 'any'),
+                icon('icon-512.png?v=47', '512x512', 'any'),
+                icon('icon-512-maskable.png?v=47', '512x512', 'maskable')]
+      });
+      e.respondWith(new Response(body, { headers: { 'Content-Type': 'application/manifest+json' } }));
+      return;
+    }
+  }
   // Navigationsanfragen auf tiefe Pfade (/chores/f/...) → App-Shell ausliefern.
   // NUR fuer die App-Wurzel und f/-Routen — ECHTE Seiten wie updates.html
   // muessen normal durchgehen (Live-Bug 17.07.: der News-Banner fuehrte

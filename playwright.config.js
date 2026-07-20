@@ -17,7 +17,11 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Pixel 7'] } },
-    { name: 'webkit-iphone', use: { ...devices['iPhone 14'] } },
+    { name: 'chromium', use: { ...devices['Pixel 7'] }, grepInvert: /@sw/ },
+    { name: 'webkit-iphone', use: { ...devices['iPhone 14'] }, grepInvert: /@sw/ },
+    // Eigenes Projekt für das, was den ECHTEN Service Worker braucht
+    // (v4.56.0: das persönliche Manifest kommt von ihm). Bewusst klein
+    // gehalten und mit @sw markiert — der Rest bleibt deterministisch.
+    { name: 'chromium-sw', use: { ...devices['Pixel 7'], serviceWorkers: 'allow' }, grep: /@sw/ },
   ],
 });
