@@ -381,6 +381,13 @@ onFail)` — 1 Retry, dann Wiederherstellung + ehrlicher Toast
 Krone, Zähler. **NIE eine Variable `t` nennen** (schattet i18n; Live-Bug
 Punkte-Tab leer).
 
+### Einstiegsseite (v4.58.0)
+renderEntry() zeichnet die Haustür; nach loadDict() wird NEU gezeichnet,
+ausser #joinLink hat Text/Fokus (Eingabe nie verwerfen). Diagnose: im
+Browser als <details> eingeklappt, bei IS_STANDALONE IMMER offen
+(Icon-Problem-Kontext). Warn-Kästchen «Veraltetes Fairli-Icon» nie
+abschwächen. Beim Übersetzen neuer Haustür-Texte: Schlüssel ×19.
+
 ### Ersteinrichtung (v4.57.0)
 Nach dem Formular fragt «Wer bist du?» (Chips der eingetragenen Namen).
 claim(): admin=true NUR fuer die Gewaehlte, Slug erzeugen, upsert

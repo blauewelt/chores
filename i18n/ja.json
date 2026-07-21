@@ -150,5 +150,13 @@
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "まだ管理者がいません。「メンバー」で少なくとも一人を設定してください。",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "管理者：{names}。管理者リンクを少なくとも一つ保存してください — ないと家の管理ができなくなります。",
   "Wer bist du?": "あなたはどなた？",
-  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "あなたが管理者になり、これからは自分専用リンクを使います。"
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "あなたが管理者になり、これからは自分専用リンクを使います。",
+  "Aufgaben im Haushalt – fair verteilt.": "家事を、公平に分担。",
+  "Zu meinem Haushalt": "わが家へ",
+  "Beitreten": "参加する",
+  "Veraltetes Fairli-Icon": "古い Fairli アイコン",
+  "Dieses Homescreen-Icon öffnet nur die Startseite.": "このアイコンはスタートページしか開きません。",
+  "Füge unten deinen Einladungs-Link aus dem Chat ein — danach funktioniert genau dieses Icon dauerhaft.": "チャットで受け取った招待リンクを下に貼り付けてください — その後はこのアイコンがずっと使えます。",
+  "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "整理のヒント：古いアイコンは「Haushalt」や世帯名になっているかも — Spotlight検索で3つとも探してください。",
+  "Diagnose": "診断"
 }

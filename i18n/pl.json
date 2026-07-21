@@ -150,5 +150,13 @@
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Nikt nie jest jeszcze administratorem. Ustaw co najmniej jedną osobę w „Osoby”.",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Administracja: {names}. Zapiszcie co najmniej jeden link administratora — bez niego nie da się zarządzać domem.",
   "Wer bist du?": "Kim jesteś?",
-  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Zostajesz administratorem i od teraz używasz swojego osobistego linku."
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Zostajesz administratorem i od teraz używasz swojego osobistego linku.",
+  "Aufgaben im Haushalt – fair verteilt.": "Obowiązki domowe – sprawiedliwie podzielone.",
+  "Zu meinem Haushalt": "Do mojego domu",
+  "Beitreten": "Dołącz",
+  "Veraltetes Fairli-Icon": "Nieaktualna ikona Fairli",
+  "Dieses Homescreen-Icon öffnet nur die Startseite.": "Ta ikona otwiera tylko stronę startową.",
+  "Füge unten deinen Einladungs-Link aus dem Chat ein — danach funktioniert genau dieses Icon dauerhaft.": "Wklej poniżej link z zaproszeniem z czatu — potem ta ikona będzie działać na stałe.",
+  "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Porządki: starsze ikony mogą nazywać się „Haushalt” lub jak wasz dom — poszukajcie wszystkich trzech przez Spotlight.",
+  "Diagnose": "Diagnostyka"
 }

@@ -150,5 +150,13 @@
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Пока нет администратора. Назначьте хотя бы одного в разделе «Люди».",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Админ: {names}. Сохраните хотя бы одну админ-ссылку — без неё домом уже не управлять.",
   "Wer bist du?": "Кто ты?",
-  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Ты становишься админом и с этого момента пользуешься своей личной ссылкой."
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Ты становишься админом и с этого момента пользуешься своей личной ссылкой.",
+  "Aufgaben im Haushalt – fair verteilt.": "Домашние дела – по справедливости.",
+  "Zu meinem Haushalt": "К моему дому",
+  "Beitreten": "Присоединиться",
+  "Veraltetes Fairli-Icon": "Устаревший значок Fairli",
+  "Dieses Homescreen-Icon öffnet nur die Startseite.": "Этот значок открывает только стартовую страницу.",
+  "Füge unten deinen Einladungs-Link aus dem Chat ein — danach funktioniert genau dieses Icon dauerhaft.": "Вставь ниже ссылку-приглашение из чата — после этого именно этот значок будет работать всегда.",
+  "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Наведите порядок: старые значки могут называться «Haushalt» или как ваш дом — найдите все три через Spotlight.",
+  "Diagnose": "Диагностика"
 }

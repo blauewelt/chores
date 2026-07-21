@@ -150,5 +150,13 @@
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "अभी कोई एडमिन नहीं है। «लोग» में कम से कम एक व्यक्ति चुनें।",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "एडमिन: {names}। कम से कम एक एडमिन लिंक सहेजें — उसके बिना घर प्रबंधित नहीं होगा।",
   "Wer bist du?": "तुम कौन हो?",
-  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "तुम एडमिन बन जाते हो और अब से अपना निजी लिंक इस्तेमाल करते हो।"
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "तुम एडमिन बन जाते हो और अब से अपना निजी लिंक इस्तेमाल करते हो।",
+  "Aufgaben im Haushalt – fair verteilt.": "घर के काम – बराबरी से बाँटे हुए।",
+  "Zu meinem Haushalt": "मेरे घर पर जाएँ",
+  "Beitreten": "शामिल हों",
+  "Veraltetes Fairli-Icon": "पुराना Fairli आइकन",
+  "Dieses Homescreen-Icon öffnet nur die Startseite.": "यह आइकन सिर्फ़ शुरुआती पेज खोलता है।",
+  "Füge unten deinen Einladungs-Link aus dem Chat ein — danach funktioniert genau dieses Icon dauerhaft.": "नीचे चैट से मिला निमंत्रण लिंक चिपकाओ — उसके बाद यही आइकन हमेशा काम करेगा।",
+  "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "सफ़ाई के लिए: पुराने आइकन «Haushalt» या आपके घर के नाम से हो सकते हैं — तीनों को Spotlight से खोजें।",
+  "Diagnose": "निदान"
 }

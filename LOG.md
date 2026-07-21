@@ -1,3 +1,38 @@
+## 2026-07-21 — v4.58.0: Einstiegsseite als Haustür — übersetzt sich, Diagnose eingeklappt, App-Icon
+
+- SCHRITT 2 des Store-Plans (Maintainer): Store-Installationen starten
+  am generischen start_url — die Einstiegsseite ist also die Haustür
+  der App und muss wie eine aussehen.
+- WICHTIGSTER FUND: der Einstiegs-Block lief VOR dem i18n-Boot und
+  kehrte mit `return` zurück — loadDict wurde NIE erreicht. Die
+  Haustür war für alle Welt deutsch, egal welche Sprache das Gerät
+  spricht. Jetzt ist sie eine Render-Funktion: einmal sofort zeichnen,
+  nach dem Wörterbuch-Nachladen neu — AUSSER der Mensch tippt bereits
+  im Beitreten-Feld (Neuaufbau würde die Eingabe verwerfen; Test
+  deckt genau das ab).
+- Diagnose (Amelie/Noel v4.19.x) bleibt vollständig erhalten, aber:
+  im Browser eingeklappt hinter «ⓘ Diagnose» (kein Debug-Anblick für
+  Neuankömmlinge); bei einem Standalone-Start weiterhin OFFEN — wer
+  dort landet, hat ein Icon-Problem, und dann muss sie ohne Umweg
+  ablesbar sein. Das Warn-Kästchen «Veraltetes Fairli-Icon» bleibt
+  unverändert prominent.
+- App-Icon (72 px) über dem Schriftzug; Tagline, Resume-Knopf,
+  Warn-Kästchen und «Beitreten» jetzt via t() — 8 Schlüssel ×19.
+- TESTS: Diagnose-Test klappt im Browser erst auf (Standalone-Test
+  unverändert — dort ist sie offen); neuer Test: englischer Browser
+  sieht die englische Haustür, Tipp-Eingabe im Beitreten-Feld
+  überlebt, Beitreten landet auf dem persönlichen Link.
+- EMULATOR (englisches Pixel, echter Erstkontakt wie aus dem Store):
+  Icon, englische Tagline, Diagnose zu → nach Tipp offen, Beitreten
+  mit vollem Link landet auf /f/…/u/…
+- SANDBOX-EINSCHRÄNKUNG (2. Sitzung in Folge, dokumentiert): WebKit-
+  Läufe werden derzeit vom Werkzeug abgebrochen — selbst EIN Test mit
+  60 s Limit, während Chromium-Läufe von 2 min durchgehen. Ein
+  verwaister Lauf bewies zwischendurch 21 grüne WebKit-Tests (~40 s) —
+  die Suite selbst ist gesund. Chromium 89/89. WebKit-Rückstand
+  (v4.57.0 + v4.58.0) beim nächsten gesunden Sandbox-Zustand nachholen.
+- APP_VERSION 4.58.0, SW-Cache haushalt-v151
+
 ## 2026-07-21 — v4.57.0: Ersteinrichtung fragt «Wer bist du?» — Antwort wird Admin und landet auf dem eigenen Link
 
 - DESIGN (Maintainer-Freigabe, bewusst OHNE Ausweich-Option «richte nur

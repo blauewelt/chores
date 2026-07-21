@@ -150,5 +150,13 @@
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Henüz kimse yönetici değil. «Kişiler» altında en az bir kişi belirleyin.",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Yönetici: {names}. En az bir yönetici bağlantısını yer imlerine ekleyin — onsuz ev yönetilemez.",
   "Wer bist du?": "Sen kimsin?",
-  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Yönetici olursun ve artık kişisel bağlantını kullanırsın."
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Yönetici olursun ve artık kişisel bağlantını kullanırsın.",
+  "Aufgaben im Haushalt – fair verteilt.": "Ev işleri – adil paylaşılır.",
+  "Zu meinem Haushalt": "Evime git",
+  "Beitreten": "Katıl",
+  "Veraltetes Fairli-Icon": "Eski Fairli simgesi",
+  "Dieses Homescreen-Icon öffnet nur die Startseite.": "Bu simge yalnızca başlangıç sayfasını açar.",
+  "Füge unten deinen Einladungs-Link aus dem Chat ein — danach funktioniert genau dieses Icon dauerhaft.": "Sohbetten aldığın davet bağlantısını aşağıya yapıştır — sonrasında bu simge kalıcı olarak çalışır.",
+  "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Temizlik için: eski simgeler «Haushalt» veya evinizin adını taşıyor olabilir — üçünü de Spotlight ile arayın.",
+  "Diagnose": "Tanılama"
 }

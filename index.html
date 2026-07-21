@@ -507,7 +507,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.57.0';
+  const APP_VERSION = '4.58.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1123,42 +1123,64 @@
     const d = document.createElement('div');
     d.style.cssText = 'position:fixed;inset:0;z-index:99;background:var(--bg);overflow:auto;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:32px;gap:16px';
     const btn = 'border:none;border-radius:999px;padding:15px 28px;font-size:16px;font-weight:700;cursor:pointer;width:100%;max-width:300px';
-    d.innerHTML = `
+    document.body.appendChild(d);
+    // v4.58.0: die Einstiegsseite ist die Haustuer der App (Store-Installationen
+    // starten genau hier). Sie ist jetzt eine Render-Funktion, damit das
+    // Woerterbuch sie NACHTRAEGLICH uebersetzen kann — der alte Aufbau lief vor
+    // dem i18n-Boot und blieb fuer alle Welt deutsch.
+    function renderEntry() {
+      d.innerHTML = `
+      <img src="/chores/icon-192.png?v=47" alt="" width="72" height="72" style="border-radius:18px">
       <h1 style="font-family:var(--display);font-weight:800;font-size:34px;margin:0 0 4px;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Fairli</h1>
-      <p style="color:var(--muted);max-width:300px;margin:0 0 8px">Aufgaben im Haushalt – fair verteilt.</p>
-      ${last && last.family ? `<button id="resume" style="${btn};background:var(--accent);color:#0C1220">Zu meinem Haushalt</button>` : ''}
+      <p style="color:var(--muted);max-width:300px;margin:0 0 8px">${t('Aufgaben im Haushalt – fair verteilt.')}</p>
+      ${last && last.family ? `<button id="resume" style="${btn};background:var(--accent);color:#0C1220">${t('Zu meinem Haushalt')}</button>` : ''}
       ${IS_STANDALONE ? `<div style="max-width:320px;background:rgba(232,163,61,.08);border:1px solid rgba(232,163,61,.35);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.45;color:var(--ink);text-align:left">
-        <b style="color:#E8A33D">⚠︎ Veraltetes Fairli-Icon</b><br>
-        Dieses Homescreen-Icon öffnet nur die Startseite.
-        <b>Füge unten deinen Einladungs-Link aus dem Chat ein — danach
-        funktioniert genau dieses Icon dauerhaft.</b><br>
-        <span style="color:var(--muted);font-size:13px">Zum Aufräumen: ältere
-        Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per
-        Spotlight-Suche nach allen dreien suchen.</span>
+        <b style="color:#E8A33D">⚠︎ ${t('Veraltetes Fairli-Icon')}</b><br>
+        ${t('Dieses Homescreen-Icon öffnet nur die Startseite.')}
+        <b>${t('Füge unten deinen Einladungs-Link aus dem Chat ein — danach funktioniert genau dieses Icon dauerhaft.')}</b><br>
+        <span style="color:var(--muted);font-size:13px">${t('Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.')}</span>
       </div>` : ''}
       <button id="newFam" style="${IS_STANDALONE ? 'border:none;background:none;color:var(--muted);font-size:14px;cursor:pointer;margin-top:4px' : btn + ';background:' + (last && last.family ? 'var(--card);border:1px solid var(--line);color:var(--ink)' : 'var(--accent);color:#0C1220')}">${t('Neuen Haushalt erstellen')}</button>
       <button id="showJoin" style="${IS_STANDALONE ? btn + ';background:var(--accent);color:#0C1220' : 'border:none;background:none;color:var(--muted);font-size:14px;cursor:pointer;margin-top:4px'}">${t('Ich habe einen Einladungs-Link')}</button>
-      <div style="color:var(--line);font-size:10.5px;max-width:320px;word-break:break-all;margin-top:14px;opacity:.7">Geöffnet: ${String(location.href).replace(/&/g,'&amp;').replace(/</g,'&lt;')}${document.referrer ? '<br>Von: ' + String(document.referrer).replace(/&/g,'&amp;').replace(/</g,'&lt;') : '<br>Von: (kein Referrer)'}<br>Modus: ${IS_STANDALONE ? 'standalone (Homescreen-Icon!)' : 'browser'}</div>
       <div id="joinWrap" style="display:none;flex-direction:column;gap:10px;width:100%;max-width:300px;margin-top:4px">
         <input id="joinLink" type="text" inputmode="url" autocomplete="off" autocapitalize="off"
           placeholder="${t('Link einfügen')}" style="width:100%;padding:12px;font-size:15px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);box-sizing:border-box">
-        <button id="joinBtn" style="${btn};background:var(--card);border:1px solid var(--line);color:var(--ink)">Beitreten</button>
-      </div>`;
-    document.body.appendChild(d);
-    const resume = document.getElementById('resume');
-    if (resume) resume.onclick = () => goto(last.family, last.userSlug);
-    document.getElementById('newFam').onclick = () => goto('famx-' + uid() + uid(), null);
-    document.getElementById('showJoin').onclick = () => {
-      const w = document.getElementById('joinWrap');
-      w.style.display = 'flex';
-      document.getElementById('showJoin').style.display = 'none';
-      document.getElementById('joinLink').focus();
-    };
-    document.getElementById('joinBtn').onclick = () => {
-      const p = parseAny(document.getElementById('joinLink').value);
-      if (!p) { toast(t('Link nicht erkannt')); return; }
-      goto(p.family, p.slug);
-    };
+        <button id="joinBtn" style="${btn};background:var(--card);border:1px solid var(--line);color:var(--ink)">${t('Beitreten')}</button>
+      </div>
+      ${(() => {
+        // Diagnose (Amelie/Noel, v4.19.x): unverzichtbar fuer Support per Chat,
+        // aber kein Anblick fuer Neuankoemmlinge. Im Browser eingeklappt; bei
+        // einem Homescreen-Start OFFEN — wer hier landet, hat ein Icon-Problem,
+        // und genau dann muss die Diagnose ohne Umweg ablesbar sein.
+        const diag = `Geöffnet: ${String(location.href).replace(/&/g,'&amp;').replace(/</g,'&lt;')}${document.referrer ? '<br>Von: ' + String(document.referrer).replace(/&/g,'&amp;').replace(/</g,'&lt;') : '<br>Von: (kein Referrer)'}<br>Modus: ${IS_STANDALONE ? 'standalone (Homescreen-Icon!)' : 'browser'}`;
+        return IS_STANDALONE
+          ? `<div style="color:var(--line);font-size:10.5px;max-width:320px;word-break:break-all;margin-top:14px;opacity:.7">${diag}</div>`
+          : `<details style="margin-top:14px"><summary style="color:var(--line);font-size:11.5px;cursor:pointer;list-style:none">ⓘ ${t('Diagnose')}</summary>
+             <div style="color:var(--line);font-size:10.5px;max-width:320px;word-break:break-all;margin-top:6px;opacity:.7">${diag}</div></details>`;
+      })()}`;
+      const resume = document.getElementById('resume');
+      if (resume) resume.onclick = () => goto(last.family, last.userSlug);
+      document.getElementById('newFam').onclick = () => goto('famx-' + uid() + uid(), null);
+      document.getElementById('showJoin').onclick = () => {
+        const w = document.getElementById('joinWrap');
+        w.style.display = 'flex';
+        document.getElementById('showJoin').style.display = 'none';
+        document.getElementById('joinLink').focus();
+      };
+      document.getElementById('joinBtn').onclick = () => {
+        const p = parseAny(document.getElementById('joinLink').value);
+        if (!p) { toast(t('Link nicht erkannt')); return; }
+        goto(p.family, p.slug);
+      };
+    }
+    renderEntry();
+    // Woerterbuch nachladen und neu zeichnen — ausser der Mensch tippt schon
+    // im Beitreten-Feld (dann wuerde der Neuaufbau die Eingabe verwerfen).
+    if (LANG !== 'de') loadDict(LANG).then(() => {
+      const j = document.getElementById('joinLink');
+      if (j && (j.value || document.activeElement === j)) return;
+      renderEntry();
+    });
     return;
   }
 

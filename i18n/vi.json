@@ -150,5 +150,13 @@
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Chưa có quản trị viên. Hãy đặt ít nhất một người trong «Thành viên».",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Quản trị: {names}. Hãy lưu ít nhất một liên kết quản trị — thiếu nó sẽ không quản lý được nhà.",
   "Wer bist du?": "Bạn là ai?",
-  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Bạn trở thành quản trị viên và từ giờ dùng liên kết cá nhân của mình."
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Bạn trở thành quản trị viên và từ giờ dùng liên kết cá nhân của mình.",
+  "Aufgaben im Haushalt – fair verteilt.": "Việc nhà – chia sẻ công bằng.",
+  "Zu meinem Haushalt": "Về nhà tôi",
+  "Beitreten": "Tham gia",
+  "Veraltetes Fairli-Icon": "Biểu tượng Fairli cũ",
+  "Dieses Homescreen-Icon öffnet nur die Startseite.": "Biểu tượng này chỉ mở trang khởi đầu.",
+  "Füge unten deinen Einladungs-Link aus dem Chat ein — danach funktioniert genau dieses Icon dauerhaft.": "Dán liên kết mời từ đoạn chat vào bên dưới — sau đó chính biểu tượng này sẽ hoạt động lâu dài.",
+  "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Dọn dẹp: biểu tượng cũ có thể tên «Haushalt» hoặc tên nhà bạn — tìm cả ba bằng Spotlight.",
+  "Diagnose": "Chẩn đoán"
 }

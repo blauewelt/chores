@@ -150,5 +150,13 @@
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Ingen är admin ännu. Ange minst en person under ”Personer”.",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Spara minst en adminlänk som bokmärke — utan den går hushållet inte att administrera.",
   "Wer bist du?": "Vem är du?",
-  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Du blir admin och använder från och med nu din personliga länk."
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Du blir admin och använder från och med nu din personliga länk.",
+  "Aufgaben im Haushalt – fair verteilt.": "Hushållssysslor – rättvist fördelade.",
+  "Zu meinem Haushalt": "Till mitt hushåll",
+  "Beitreten": "Gå med",
+  "Veraltetes Fairli-Icon": "Föråldrad Fairli-ikon",
+  "Dieses Homescreen-Icon öffnet nur die Startseite.": "Den här ikonen öppnar bara startsidan.",
+  "Füge unten deinen Einladungs-Link aus dem Chat ein — danach funktioniert genau dieses Icon dauerhaft.": "Klistra in din inbjudningslänk från chatten nedan — därefter fungerar just den här ikonen permanent.",
+  "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Städa upp: äldre ikoner kan heta «Haushalt» eller som ert hushåll — sök alla tre via Spotlight.",
+  "Diagnose": "Diagnostik"
 }

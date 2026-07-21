@@ -137,6 +137,10 @@ test.describe('Fairli', () => {
     await mockBackend(context);
     await page.goto(`${BASE}/`);
     await expect(page.getByRole('button', { name: 'Neuen Haushalt erstellen' })).toBeVisible();
+    // v4.58.0: im Browser ist die Diagnose eingeklappt (Haustuer, kein
+    // Debug-Anblick) — ein Tipp auf ⓘ öffnet sie für den Support-Fall
+    await expect(page.getByText('Geöffnet:')).toBeHidden();
+    await page.locator('summary', { hasText: 'Diagnose' }).click();
     await expect(page.getByText('Geöffnet:')).toBeVisible();
     await expect(page.getByText('Modus: browser')).toBeVisible();   // Icon-Start wuerde «standalone» zeigen
   });
@@ -1638,6 +1642,25 @@ test.describe('Fairli', () => {
     expect(store.members).toHaveLength(1);
     expect(store.members[0].admin).toBe(true);
     await expect(page.locator('#onboardSheet h2')).toHaveText('Zugriff sichern');
+  });
+
+  test('Einstiegsseite (v4.58.0): übersetzt sich nach — englischer Browser sieht Englisch, Tipp-Eingabe wird nie verworfen', async ({ browser }) => {
+    const ctx = await browser.newContext({ locale: 'en-GB' });
+    await mockBackend(ctx);
+    const page = await ctx.newPage();
+    await page.goto(`${BASE}/`);
+    // Nach dem Wörterbuch-Nachladen: englische Haustür
+    await expect(page.getByRole('button', { name: 'Create new household' })).toBeVisible();
+    await expect(page.getByText('Household chores – shared fairly.')).toBeVisible();
+    await expect(page.locator('summary', { hasText: 'Diagnostics' })).toBeVisible();
+    // Tippen im Beitreten-Feld übersteht jeden Neuaufbau
+    await page.getByRole('button', { name: 'I have an invitation link' }).click();
+    await page.locator('#joinLink').fill('f/testfam-abc123/u/slugmira1');
+    await page.waitForTimeout(400);
+    await expect(page.locator('#joinLink')).toHaveValue('f/testfam-abc123/u/slugmira1');
+    await page.getByRole('button', { name: 'Join' }).click();
+    await page.waitForURL(new RegExp('/f/testfam-abc123/u/slugmira1'));
+    await ctx.close();
   });
 
   test('Boot-Splash: Overlay räumt sich weg, Kopf-Logo erscheint, nichts blockiert (v4.39.0)', async ({ context, page }) => {

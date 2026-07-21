@@ -150,5 +150,13 @@
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "还没有管理员。请在「成员」中至少设置一位。",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "管理员：{names}。请至少收藏一个管理员链接——否则将无法管理这个家。",
   "Wer bist du?": "你是谁？",
-  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "你将成为管理员，从现在起使用你的个人链接。"
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "你将成为管理员，从现在起使用你的个人链接。",
+  "Aufgaben im Haushalt – fair verteilt.": "家务活——公平分担。",
+  "Zu meinem Haushalt": "进入我的家",
+  "Beitreten": "加入",
+  "Veraltetes Fairli-Icon": "过期的 Fairli 图标",
+  "Dieses Homescreen-Icon öffnet nur die Startseite.": "这个图标只会打开起始页。",
+  "Füge unten deinen Einladungs-Link aus dem Chat ein — danach funktioniert genau dieses Icon dauerhaft.": "把聊天里收到的邀请链接粘贴到下面——之后这个图标就能一直使用。",
+  "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "整理提示：旧图标可能叫「Haushalt」或你们家的名字——用聚焦搜索找出全部三个。",
+  "Diagnose": "诊断"
 }

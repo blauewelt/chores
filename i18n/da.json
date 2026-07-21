@@ -150,5 +150,13 @@
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Ingen er admin endnu. Vælg mindst én person under »Personer«.",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Gem mindst ét adminlink som bogmærke — uden det kan husstanden ikke administreres.",
   "Wer bist du?": "Hvem er du?",
-  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Du bliver admin og bruger fra nu af dit personlige link."
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Du bliver admin og bruger fra nu af dit personlige link.",
+  "Aufgaben im Haushalt – fair verteilt.": "Huslige pligter – retfærdigt fordelt.",
+  "Zu meinem Haushalt": "Til min husstand",
+  "Beitreten": "Deltag",
+  "Veraltetes Fairli-Icon": "Forældet Fairli-ikon",
+  "Dieses Homescreen-Icon öffnet nur die Startseite.": "Dette ikon åbner kun startsiden.",
+  "Füge unten deinen Einladungs-Link aus dem Chat ein — danach funktioniert genau dieses Icon dauerhaft.": "Indsæt dit invitationslink fra chatten nedenfor — derefter virker netop dette ikon permanent.",
+  "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Ryd op: ældre ikoner kan hedde «Haushalt» eller som jeres husstand — søg efter alle tre via Spotlight.",
+  "Diagnose": "Diagnostik"
 }

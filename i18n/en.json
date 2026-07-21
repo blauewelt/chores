@@ -150,5 +150,13 @@
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Nobody is admin yet. Set at least one person as admin under \"People\".",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Bookmark at least one admin link — without it the household can no longer be managed.",
   "Wer bist du?": "Who are you?",
-  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "You become admin and use your personal link from now on."
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "You become admin and use your personal link from now on.",
+  "Aufgaben im Haushalt – fair verteilt.": "Household chores – shared fairly.",
+  "Zu meinem Haushalt": "To my household",
+  "Beitreten": "Join",
+  "Veraltetes Fairli-Icon": "Outdated Fairli icon",
+  "Dieses Homescreen-Icon öffnet nur die Startseite.": "This home screen icon only opens the start page.",
+  "Füge unten deinen Einladungs-Link aus dem Chat ein — danach funktioniert genau dieses Icon dauerhaft.": "Paste your invitation link from the chat below — after that, this very icon works permanently.",
+  "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "To tidy up: older icons may be called \"Haushalt\" or after your household — use Spotlight search to find all three.",
+  "Diagnose": "Diagnostics"
 }
