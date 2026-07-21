@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Para arrumar: ícones antigos podem chamar-se «Haushalt» ou ter o nome da vossa casa — procurem os três no Spotlight.",
   "Diagnose": "Diagnóstico",
   "Später": "Mais tarde",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Recebes o teu link pessoal e continuas administrador — cada registo mostra quem o fez."
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Recebes o teu link pessoal e continuas administrador — cada registo mostra quem o fez.",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "Sem conexão no momento — tente novamente mais tarde",
+  "noch nicht in dieser Sitzung": "ainda não nesta sessão",
+  "gerade eben": "agora mesmo",
+  "vor {n} Min.": "há {n} min",
+  "Letzter Abgleich: {when}": "Última sincronização: {when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "Recebidas, ainda não aplicadas: {n} sincronizações",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} entradas ilegíveis (criptografia)"
 }

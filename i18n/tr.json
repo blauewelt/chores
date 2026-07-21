@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Temizlik için: eski simgeler «Haushalt» veya evinizin adını taşıyor olabilir — üçünü de Spotlight ile arayın.",
   "Diagnose": "Tanılama",
   "Später": "Sonra",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Kişisel bağlantını alırsın ve yönetici kalırsın — her kayıtta kimin girdiği görünür."
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Kişisel bağlantını alırsın ve yönetici kalırsın — her kayıtta kimin girdiği görünür.",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "Şu anda bağlantı yok — lütfen daha sonra tekrar deneyin",
+  "noch nicht in dieser Sitzung": "bu oturumda henüz değil",
+  "gerade eben": "az önce",
+  "vor {n} Min.": "{n} dk önce",
+  "Letzter Abgleich: {when}": "Son eşitleme: {when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "Alındı, henüz uygulanmadı: {n} eşitleme",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} kayıt okunamıyor (şifreleme)"
 }

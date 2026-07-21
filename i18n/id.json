@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Untuk merapikan: ikon lama mungkin bernama «Haushalt» atau nama rumahmu — cari ketiganya lewat Spotlight.",
   "Diagnose": "Diagnostik",
   "Später": "Nanti",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Kamu mendapat tautan pribadimu dan tetap admin — setiap entri menunjukkan siapa yang mencatatnya."
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Kamu mendapat tautan pribadimu dan tetap admin — setiap entri menunjukkan siapa yang mencatatnya.",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "Tidak ada koneksi saat ini — coba lagi nanti",
+  "noch nicht in dieser Sitzung": "belum dalam sesi ini",
+  "gerade eben": "baru saja",
+  "vor {n} Min.": "{n} mnt lalu",
+  "Letzter Abgleich: {when}": "Sinkronisasi terakhir: {when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "Diterima, belum diterapkan: {n} sinkronisasi",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} entri tidak terbaca (enkripsi)"
 }

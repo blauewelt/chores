@@ -31,6 +31,13 @@ async function mockBackend(context, { logRows = () => LOG, memberRows = null } =
         localStorage.setItem('haushalt.onboard:' + fam + ':a', '1');
         localStorage.setItem('haushalt.onboard:' + fam + ':u', '1');
       }
+      // v4.61.0: Identitäts-Angebot (v4.60.0) gilt als gesehen — es fehlte in
+      // DIESEM Standard-Persona (nur suppressOnboarding hatte die Marke) und
+      // blockierte als modales Sheet 18 Bestandstests. Claim-Tests schalten
+      // die Marke gezielt ab.
+      if (!sessionStorage.getItem('fairli.claimPersona.off')) {
+        localStorage.setItem('haushalt.claim:' + fam, '1');
+      }
     } catch {}
   }, FAM);
   await context.route('**://fonts.googleapis.com/**', r => r.abort());
@@ -2320,7 +2327,172 @@ test.describe('Fairli', () => {
     expect(await ios.locator('svg.ic').count()).toBeGreaterThanOrEqual(2);
   });
 
+
+  // ---------- v4.61.0: Der eingefrorene Leser (Live-Vorfall 19.–21.07.) ----------
+
+  test('Wasserzeichen-Ratsche: Tipp während des Pulls verwirft den Snapshot, aber die Zeilen kommen WIEDER (v4.61.0)', async ({ context, page }) => {
+    // Vorher: das Wasserzeichen wanderte VOR dem Stale-Guard — ein Tipp
+    // während eines laufenden Pulls machte die gerade geholten Server-Zeilen
+    // dauerhaft unsichtbar (bis zum 24-h-Voll-Abgleich, den dasselbe Rennen
+    // ebenfalls schlucken konnte). Genau so «verschwanden» die Einträge
+    // anderer Familienmitglieder ab So 19.07. abends.
+    const MIRAROW = { id: 'l-mira', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
+      member_id: 'm-mira', member_name: 'Mira', points: 2, done_at: '2026-07-20T18:48:40+00:00',
+      created_at: '2026-07-20T18:48:39.222222+00:00', updated_at: null, family_id: FAM };
+    const OLDROW = { id: 'l-old', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
+      member_id: 'm-chris', member_name: 'Timon', points: 2, done_at: '2026-07-19T16:58:35+00:00',
+      created_at: '2026-07-19T16:58:35+00:00', updated_at: null, family_id: FAM };
+    let holdLog = null;
+    await context.route('**://fonts.googleapis.com/**', r => r.abort());
+    await context.route('**://gen.pollinations.ai/**', r => r.abort());
+    await context.route(`${SB}/rest/v1/**`, async route => {
+      const req = route.request();
+      const u = new URL(req.url());
+      const famEq = (u.searchParams.get('family_id') || '').replace('eq.', '');
+      if (famEq && famEq !== FAM) return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+      if (req.method() !== 'GET') return route.fulfill({ status: 204, body: '' });
+      if (u.pathname.includes('/log')) {
+        const q = decodeURIComponent(u.search);
+        const m = q.match(/or=\(created_at\.gt\.([^,]+),updated_at\.gt\./);
+        const all = [MIRAROW, OLDROW];
+        const rows = m ? all.filter(r => (r.created_at && r.created_at > m[1]) || (r.updated_at && r.updated_at > m[1])) : all;
+        if (holdLog) { const h = holdLog; holdLog = null; await h; }   // Antwort festhalten, bis der Tipp passiert ist
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows) });
+      }
+      const body = u.pathname.includes('/members') ? MEMBERS : u.pathname.includes('/chores') ? CHORES : u.pathname.includes('/families') ? FAMILIES : [];
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+    });
+    await context.addInitScript(fam => {
+      localStorage.setItem('haushalt.onboard:' + fam + ':a', '1');
+      localStorage.setItem('haushalt.onboard:' + fam + ':u', '1');
+      localStorage.setItem('haushalt.claim:' + fam, '1');
+      // Geräte-Zustand: Sonntag-Schnappschuss + Sonntag-Wasserzeichen + frischer Voll-Marker
+      localStorage.setItem('haushalt.v2:' + fam, JSON.stringify({
+        members: [{ id: 'm-chris', name: 'Timon', color: '#2FAE6A', url_slug: 'slugchris1', admin: true }],
+        chores: [{ id: 'c-1', name: 'Müll rausbringen', points: 2, note: '' }],
+        log: [{ id: 'l-old', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '', member_id: 'm-chris', member_name: 'Timon', points: 2, done_at: '2026-07-19T16:58:35+00:00', created_at: '2026-07-19T16:58:35+00:00', updated_at: null }],
+        famName: 'Testhaushalt' }));
+      localStorage.setItem('haushalt.delta:' + fam, '2026-07-19T17:00:00+00:00');
+      localStorage.setItem('haushalt.full:' + fam, String(Date.now() - 3600e3));
+      // v4.61.0: Versions-Marke setzen, sonst erzwingt der Versionswechsel den
+      // Voll-Abgleich und der Delta-Pfad (den dieser Test prüft) läuft nie
+      localStorage.setItem('haushalt.pullver:' + fam, '4.61.0');
+    }, FAM);
+    let release; holdLog = new Promise(r => release = r);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(900);                       // Pull läuft, Log-Antwort hängt
+    await page.locator('.chip', { hasText: 'Timon' }).click();
+    await page.locator('button.chore[data-cid="c-1"]').click();   // Tipp WÄHREND des Pulls
+    release();                                            // jetzt trifft die Log-Antwort ein
+    await page.waitForTimeout(700);
+    // Der Snapshot wurde verworfen — aber das Wasserzeichen darf NICHT über
+    // Miras Zeile hinausgewandert sein:
+    const wm = await page.evaluate(fam => localStorage.getItem('haushalt.delta:' + fam), FAM);
+    expect(wm < '2026-07-20').toBeTruthy();
+    // Nächster (ungestörter) Pull bringt die Zeile wirklich:
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await page.waitForTimeout(800);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('#list')).toContainText('Mira');
+  });
+
+  test('Versionswechsel erzwingt EINEN Voll-Abgleich — Selbstheilung vergifteter Wasserzeichen (v4.61.0)', async ({ context, page }) => {
+    // Gerät mit einem Wasserzeichen, das (durch die alte Ratsche) bereits an
+    // unsichtbaren Zeilen VORBEI steht: nach dem App-Update muss ein
+    // Voll-Abgleich die Zeilen zurückbringen, obwohl das Delta sie nie sähe.
+    const HIDDEN = { id: 'l-hidden', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
+      member_id: 'm-mira', member_name: 'Mira', points: 2, done_at: '2026-07-20T12:00:00+00:00',
+      created_at: '2026-07-20T12:00:00+00:00', updated_at: null, family_id: FAM };
+    await mockBackend(context, { logRows: () => [HIDDEN, ...LOG] });
+    await context.addInitScript(fam => {
+      localStorage.setItem('haushalt.v2:' + fam, JSON.stringify({
+        members: [], chores: [],
+        log: [{ id: 'l-1', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: 'nur Restmüll', member_id: 'm-mira', member_name: 'Mira', points: 2, done_at: '2026-07-10T10:00:00Z' }],
+        famName: 'Testhaushalt' }));
+      // Wasserzeichen steht BEREITS HINTER der versteckten Zeile — Delta fände sie nie
+      localStorage.setItem('haushalt.delta:' + fam, '2026-07-21T00:00:00+00:00');
+      localStorage.setItem('haushalt.full:' + fam, String(Date.now() - 3600e3));
+      localStorage.setItem('haushalt.pullver:' + fam, '4.60.0');   // ALTE Version → Marke passt nicht
+    }, FAM);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('#list')).toContainText('Mira');     // Voll-Abgleich hat sie geholt
+    const ver = await page.evaluate(fam => localStorage.getItem('haushalt.pullver:' + fam), FAM);
+    expect(ver).toBe('4.61.0');                                    // Marke fortgeschrieben
+  });
+
+  test('Identität übernehmen: Angebot am blanken Link, Erfolg → persönlicher Link mit Admin (v4.61.0)', async ({ context, page }) => {
+    let upserted = null;
+    await context.addInitScript(() => { try { sessionStorage.setItem('fairli.claimPersona.off', '1'); } catch {} });
+    await mockBackend(context, { memberRows: () => [
+      { id: 'm-chris', name: 'Timon', color: '#2FAE6A', family_id: FAM, url_slug: null, admin: null },
+      { id: 'm-mira',  name: 'Mira',  color: '#3E6BD6', family_id: FAM, url_slug: null, admin: null },
+    ] });
+    await context.route(`${SB}/rest/v1/members**`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') { upserted = JSON.parse(req.postData() || '[]'); return route.fulfill({ status: 204, body: '' }); }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('#claimSheet')).toBeVisible();       // Angebot nach erstem Pull
+    await Promise.all([
+      page.waitForURL(/\/u\//),
+      page.locator('#claimSheet [data-claim="m-chris"]').click(),
+    ]);
+    // Server hat Slug + Admin gelernt, BEVOR navigiert wurde
+    const row = Array.isArray(upserted) ? upserted[0] : upserted;
+    expect(row.id).toBe('m-chris');
+    expect(row.admin).toBe(true);
+    expect(String(row.url_slug || '').length).toBeGreaterThan(8);
+    expect(page.url()).toContain('/u/' + row.url_slug);
+  });
+
+  test('Identität übernehmen: Upsert scheitert → KEINE Umleitung, keine Aussperrung (v4.61.0)', async ({ context, page }) => {
+    // Vorher schluckte ein catch{} den Fehler und navigierte trotzdem zu einem
+    // Slug, den der Server nie erfuhr → «Link ungültig», Gerät ausgesperrt.
+    await context.addInitScript(() => { try { sessionStorage.setItem('fairli.claimPersona.off', '1'); } catch {} });
+    await mockBackend(context, { memberRows: () => [
+      { id: 'm-chris', name: 'Timon', color: '#2FAE6A', family_id: FAM, url_slug: null, admin: null },
+    ] });
+    await context.route(`${SB}/rest/v1/members**`, route =>
+      route.request().method() === 'POST'
+        ? route.fulfill({ status: 500, body: 'kaputt' })
+        : route.fallback());
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('#claimSheet')).toBeVisible();
+    await page.locator('#claimSheet [data-claim="m-chris"]').click();
+    await page.waitForTimeout(800);
+    expect(page.url()).not.toContain('/u/');                       // am Familien-Link geblieben
+    await expect(page.locator('#toast')).toContainText('keine Verbindung');
+    // Gerät bleibt voll benutzbar — und beim Neuladen KEIN «Link ungültig»
+    await page.reload();
+    await page.waitForTimeout(700);
+    expect(await page.locator('body').innerText()).not.toContain('Link ungültig');
+  });
+
+  test('Identitäts-Angebot: Backdrop-Schließen zählt als «Später» — kein erneutes Nerven (v4.61.0)', async ({ context, page }) => {
+    await context.addInitScript(() => { try { sessionStorage.setItem('fairli.claimPersona.off', '1'); } catch {} });
+    await mockBackend(context, { memberRows: () => [
+      { id: 'm-chris', name: 'Timon', color: '#2FAE6A', family_id: FAM, url_slug: null, admin: null },
+    ] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('#claimSheet')).toBeVisible();
+    await page.evaluate(() => document.getElementById('claimSheet').close());   // wie Backdrop/Wischen
+    await page.reload();
+    await page.waitForTimeout(900);
+    await expect(page.locator('#claimSheet')).toBeHidden();        // Marke gesetzt, Ruhe
+  });
+
+  test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {
+    await mockBackend(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(600);
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#syncInfo')).toContainText('Letzter Abgleich');
+    await expect(page.locator('#syncInfo')).toContainText('gerade eben');
+  });
 });
+
 
 // Chrome auf iOS (CriOS): eigener UA, gleiche WebKit-Engine. Der Install
 // selbst ist ein OS-Dialog (nicht automatisierbar); getestet wird, dass die

@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Per fare ordine: le icone più vecchie possono chiamarsi «Haushalt» o come la vostra casa — cercate tutte e tre con Spotlight.",
   "Diagnose": "Diagnostica",
   "Später": "Più tardi",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Ricevi il tuo link personale e resti admin — ogni voce mostra poi chi l’ha registrata."
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Ricevi il tuo link personale e resti admin — ogni voce mostra poi chi l’ha registrata.",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "Nessuna connessione al momento — riprova più tardi",
+  "noch nicht in dieser Sitzung": "non ancora in questa sessione",
+  "gerade eben": "proprio ora",
+  "vor {n} Min.": "{n} min fa",
+  "Letzter Abgleich: {when}": "Ultima sincronizzazione: {when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "Ricevute, non ancora applicate: {n} sincronizzazioni",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} voci illeggibili (crittografia)"
 }

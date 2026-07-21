@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Opruimen: oudere iconen kunnen «Haushalt» heten of naar jullie huishouden — zoek alle drie via Spotlight.",
   "Diagnose": "Diagnose",
   "Später": "Later",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Je krijgt je persoonlijke link en blijft beheerder — elke invoer toont dan wie hem heeft ingevoerd."
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Je krijgt je persoonlijke link en blijft beheerder — elke invoer toont dan wie hem heeft ingevoerd.",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "Momenteel geen verbinding — probeer het later opnieuw",
+  "noch nicht in dieser Sitzung": "nog niet in deze sessie",
+  "gerade eben": "zojuist",
+  "vor {n} Min.": "{n} min geleden",
+  "Letzter Abgleich: {when}": "Laatste synchronisatie: {when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "Ontvangen, nog niet toegepast: {n} synchronisaties",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} items onleesbaar (versleuteling)"
 }

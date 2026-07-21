@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Dọn dẹp: biểu tượng cũ có thể tên «Haushalt» hoặc tên nhà bạn — tìm cả ba bằng Spotlight.",
   "Diagnose": "Chẩn đoán",
   "Später": "Để sau",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Bạn nhận liên kết cá nhân và vẫn là quản trị viên — mỗi mục sẽ hiện ai đã ghi."
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Bạn nhận liên kết cá nhân và vẫn là quản trị viên — mỗi mục sẽ hiện ai đã ghi.",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "Hiện không có kết nối — vui lòng thử lại sau",
+  "noch nicht in dieser Sitzung": "chưa có trong phiên này",
+  "gerade eben": "vừa xong",
+  "vor {n} Min.": "{n} phút trước",
+  "Letzter Abgleich: {when}": "Đồng bộ lần cuối: {when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "Đã nhận, chưa áp dụng: {n} lần đồng bộ",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} mục không đọc được (mã hóa)"
 }

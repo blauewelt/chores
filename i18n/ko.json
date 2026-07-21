@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "정리 팁: 오래된 아이콘은 «Haushalt»나 여러분 집 이름일 수 있어요 — Spotlight 검색으로 셋 다 찾아보세요.",
   "Diagnose": "진단",
   "Später": "나중에",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "개인 링크를 받고 관리자로 남아요 — 모든 기록에 누가 기록했는지 표시돼요."
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "개인 링크를 받고 관리자로 남아요 — 모든 기록에 누가 기록했는지 표시돼요.",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "현재 연결이 없습니다 — 나중에 다시 시도해 주세요",
+  "noch nicht in dieser Sitzung": "이번 세션에서는 아직 없음",
+  "gerade eben": "방금 전",
+  "vor {n} Min.": "{n}분 전",
+  "Letzter Abgleich: {when}": "마지막 동기화: {when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "수신됨, 아직 미적용: 동기화 {n}회",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "읽을 수 없는 항목 {n}개 (암호화)"
 }

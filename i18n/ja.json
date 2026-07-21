@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "整理のヒント：古いアイコンは「Haushalt」や世帯名になっているかも — Spotlight検索で3つとも探してください。",
   "Diagnose": "診断",
   "Später": "あとで",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "自分専用リンクを受け取り、管理者のままです — 各記録に誰が記録したかが表示されます。"
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "自分専用リンクを受け取り、管理者のままです — 各記録に誰が記録したかが表示されます。",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "現在接続がありません — 後でもう一度お試しください",
+  "noch nicht in dieser Sitzung": "このセッションではまだありません",
+  "gerade eben": "たった今",
+  "vor {n} Min.": "{n}分前",
+  "Letzter Abgleich: {when}": "最終同期: {when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "受信済み・未反映: {n}件の同期",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n}件のエントリが読み取れません（暗号化）"
 }

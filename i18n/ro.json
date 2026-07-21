@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Pentru curățenie: pictogramele vechi se pot numi „Haushalt” sau ca gospodăria voastră — căutați-le pe toate trei cu Spotlight.",
   "Diagnose": "Diagnostic",
   "Später": "Mai târziu",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Primești linkul tău personal și rămâi admin — fiecare înregistrare arată cine a făcut-o."
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Primești linkul tău personal și rămâi admin — fiecare înregistrare arată cine a făcut-o.",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "Momentan fără conexiune — încearcă din nou mai târziu",
+  "noch nicht in dieser Sitzung": "încă nu în această sesiune",
+  "gerade eben": "chiar acum",
+  "vor {n} Min.": "acum {n} min",
+  "Letzter Abgleich: {when}": "Ultima sincronizare: {when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "Primite, încă neaplicate: {n} sincronizări",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} intrări ilizibile (criptare)"
 }

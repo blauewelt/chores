@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "To tidy up: older icons may be called \"Haushalt\" or after your household — use Spotlight search to find all three.",
   "Diagnose": "Diagnostics",
   "Später": "Later",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "You get your personal link and stay admin — every entry then shows who logged it."
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "You get your personal link and stay admin — every entry then shows who logged it.",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "No connection right now — please try again later",
+  "noch nicht in dieser Sitzung": "not yet in this session",
+  "gerade eben": "just now",
+  "vor {n} Min.": "{n} min ago",
+  "Letzter Abgleich: {when}": "Last sync: {when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "Received, not yet applied: {n} syncs",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} entries unreadable (encryption)"
 }

@@ -670,6 +670,21 @@ in dieses describe.
 
 ## 11. Secrets & Arbeitsweise (für KI-Sessions)
 
+### ROTES CI = KEIN DEPLOY (Pflicht, 21.07.2026)
+tests.yml läuft bei jedem Push und ist die letzte Verteidigungslinie —
+auch und GERADE wenn der Sandbox-Runner kaputt ist. Vor jedem Deploy:
+Suite lokal grün ODER CI-Lauf des vorigen Pushs prüfen; ein roter Lauf
+blockiert den nächsten Deploy, ohne Ausnahme. Lehre aus v4.60: CI war
+rot (Claim-Sheet blockierte 18 Tests), der Deploy ging trotzdem raus,
+und die Regression stand einen halben Tag live.
+
+### Marken erst NACH der Übernahme (Sync-Invariante, 21.07.2026)
+Delta-Wasserzeichen, Voll-Marke und Versions-Marke dürfen erst wandern,
+wenn der Snapshot wirklich in state übernommen wurde (hinter dem
+Stale-Guard). Jede Persistenz VOR einem möglichen Verwerfen ist eine
+Ratsche: verworfene Zeilen werden nie wieder angefragt und «fehlen»
+dann kommentarlos. Vorfall «Der eingefrorene Leser», LOG 21.07.
+
 ### GRUNDREGEL: Keine sensiblen Informationen im Repo (Standing Rule, 18.07.2026)
 Weder App-Quellcode noch Tests noch Dokumentation dürfen sensible
 Informationen enthalten: keine echten Namen, Adressen, Orte, Anekdoten

@@ -507,7 +507,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.60.0';
+  const APP_VERSION = '4.61.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -810,7 +810,19 @@
         <span class="seticon">🔒</span><span class="setlabel">${t('Verschlüsselung')}</span><span class="setval">${encState}</span><span class="chev">›</span></button>`}
       <a class="menuitem setrow" href="/chores/updates.html" target="_blank" rel="noopener" style="border-radius:12px;text-decoration:none">
         <span class="seticon">✨</span><span class="setlabel">${t('Was ist neu')}</span><span class="setval">↗</span></a>
-      <p style="color:var(--muted);font-size:12.5px;margin:14px 4px 2px;text-align:center">Fairli ${APP_VERSION}</p>
+      ${(() => {
+        // v4.61.0: Abgleich sichtbar machen — ein eingefrorener Sync darf nie
+        // wieder wie fehlende Daten aussehen (Vorfall 19.–21.07.).
+        const mins = lastSyncAt ? Math.round((Date.now() - lastSyncAt) / 60000) : null;
+        const when = mins === null ? t('noch nicht in dieser Sitzung')
+          : mins < 1 ? t('gerade eben') : t('vor {n} Min.', { n: mins });
+        const unread = state.log.filter(e => e.chore_name === '···' || e.member_name === '···').length;
+        const warn = (mins !== null && mins >= 3) || pullDiscards > 0 || unread > 0;
+        return `<p id="syncInfo" style="color:${warn ? 'var(--warn, #E0A030)' : 'var(--muted)'};font-size:12.5px;margin:14px 4px 0;text-align:center">${t('Letzter Abgleich: {when}', { when })}${
+          pullDiscards > 0 ? `<br>${t('Empfangen, noch nicht übernommen: {n} Abgleiche', { n: pullDiscards })}` : ''}${
+          unread > 0 ? `<br>${t('{n} Einträge nicht lesbar (Verschlüsselung)', { n: unread })}` : ''}</p>`;
+      })()}
+      <p style="color:var(--muted);font-size:12.5px;margin:4px 4px 2px;text-align:center">Fairli ${APP_VERSION}</p>
     </div>`;
     sh.querySelector('#closeSettings').onclick = () => sh.close();
     const sn = sh.querySelector('#setName');
@@ -1055,12 +1067,21 @@
   //     also ist DIES der eine gemeinsame Uebernahme-Moment).
   const LS_CLAIM = () => 'haushalt.claim:' + FAMILY;
   async function claimIdentity(m) {
-    m.admin = true;                       // wer den blanken Link haelt, IST Admin
-    if (!m.url_slug) m.url_slug = uid() + uid();
+    // v4.61.0: NIE zu einem Slug navigieren, den der Server nicht kennt.
+    // Vorher schluckte ein catch{} den fehlgeschlagenen Upsert und leitete
+    // trotzdem um → Boot am toten Slug → «Link ungültig», Geraet ausgesperrt.
+    const slug = m.url_slug || uid() + uid();
+    const row = Object.assign({}, m, { admin: true, url_slug: slug });
+    try {
+      await upsert('members', [row]);     // direkt, nie push-Queue (Umleitung!)
+    } catch (e) {
+      toast(t('Gerade keine Verbindung — bitte später noch einmal versuchen'));
+      return;                             // Sheet bleibt offen, Geraet bleibt am Familien-Link
+    }
+    m.admin = true; m.url_slug = slug;    // erst nach Server-Bestaetigung lokal uebernehmen
     save();
-    try { await upsert('members', [m]); } catch {}   // direkt, nie push-Queue (Umleitung!)
     try { localStorage.setItem(LS_CLAIM(), '1'); } catch {}
-    location.href = routeUrl(FAMILY, m.url_slug);
+    location.href = routeUrl(FAMILY, slug);
   }
   let claimShown = false;
   function maybeOfferClaim() {
@@ -1096,6 +1117,9 @@
     sh.querySelector('#claimLater').onclick = dismiss;
     sh.querySelector('#claimSkip').onclick = dismiss;
     sh.querySelectorAll('[data-claim]').forEach(b => b.onclick = () => claimIdentity(memberById(b.dataset.claim)));
+    // v4.61.0: JEDES Schliessen (auch Backdrop/Wischen) zaehlt als «Später» —
+    // sonst nervt das Sheet bei jedem Besuch erneut.
+    sh.onclose = () => { try { localStorage.setItem(LS_CLAIM(), '1'); } catch {} };
     sh.showModal();
   }
 
@@ -1451,6 +1475,10 @@
   // Wache mit identischer Semantik (v4.47.6, Audit-Nachzug: die «dokumentierte
   // Ausnahme» war keine Notwendigkeit, nur Bequemlichkeit):
   let pendingFamName = null;   // { resolvedAt } — lokaler Name massgeblich bis Server-Bestaetigung   // "table:id" -> { row, resolvedAt }
+  // v4.61.0: Sichtbarkeit des Abgleichs — stilles Scheitern darf nie wieder
+  // wie Abwesenheit von Daten aussehen.
+  let lastSyncAt = 0;      // letzter GELUNGENER, UEBERNOMMENER Abgleich
+  let pullDiscards = 0;    // empfangene, aber (noch) nicht uebernommene Abgleiche in Folge
   async function pull() {
     if (!cfg) return;
     const pullStartedAt = Date.now();
@@ -1468,9 +1496,16 @@
       // fremde LOESCHUNGEN erscheinen erst beim naechsten Voll-Abgleich.
       const LCOLS = 'id,chore_id,chore_name,chore_note,member_id,member_name,logged_by,points,done_at,created_at,updated_at';
       const wmKey = 'haushalt.delta:' + FAMILY, fullKey = 'haushalt.full:' + FAMILY;
-      let wm = null, lastFull = 0;
-      try { wm = localStorage.getItem(wmKey); lastFull = +localStorage.getItem(fullKey) || 0; } catch {}
-      const useDelta = !!wm && (Date.now() - lastFull) < 24 * 3600e3 && state.log.length > 0;
+      const verKey = 'haushalt.pullver:' + FAMILY;   // v4.61.0: App-Version des letzten VOLL-Abgleichs
+      let wm = null, lastFull = 0, sameVer = false;
+      try {
+        wm = localStorage.getItem(wmKey); lastFull = +localStorage.getItem(fullKey) || 0;
+        sameVer = localStorage.getItem(verKey) === APP_VERSION;
+      } catch {}
+      // v4.61.0: nach JEDEM App-Update EIN Voll-Abgleich, Wasserzeichen ignoriert.
+      // Selbstheilung fuer Geraete, deren Wasserzeichen ein alter Client an
+      // verworfenen Zeilen vorbeigeschoben hat (das eingefrorene Wochenende).
+      const useDelta = sameVer && !!wm && (Date.now() - lastFull) < 24 * 3600e3 && state.log.length > 0;
       const logQ = useDelta
         ? `log?select=${LCOLS}&or=(created_at.gt.${encodeURIComponent(wm)},updated_at.gt.${encodeURIComponent(wm)})&order=done_at.desc&limit=300`
         : `log?select=${LCOLS}&order=done_at.desc&limit=300`;
@@ -1492,10 +1527,13 @@
         }
         return [...byId.values()].sort((a, b) => (a.done_at < b.done_at ? 1 : -1)).slice(0, 400);
       })() : logRows;
-      try {
-        if (newWm) localStorage.setItem(wmKey, newWm);
-        if (!useDelta) localStorage.setItem(fullKey, String(Date.now()));
-      } catch {}
+      // v4.61.0: Wasserzeichen und Voll-Marke werden NICHT mehr hier gesetzt,
+      // sondern erst NACH der Zustands-UEBERNAHME (hinter dem Stale-Guard).
+      // Vorher konnte ein verworfener Abgleich (Tipp waehrend des Pulls) das
+      // Wasserzeichen an nie uebernommenen Zeilen VORBEISCHIEBEN — die Zeilen
+      // wurden nie wieder angefragt: unsichtbar bis zum naechsten Voll-Abgleich,
+      // den dasselbe Rennen ebenfalls schlucken konnte. Live-Vorfall 19.–21.07.:
+      // Server-Eintraege anderer Familienmitglieder «verschwanden» kommentarlos.
       // Server sortiert nach dem SPALTENWERT — bei verschluesselten Familien
       // ist das Chiffrat (Kauderwelsch-Reihenfolge). Nach dem Entschluesseln
       // clientseitig alphabetisch sortieren, fuer alle Familien einheitlich.
@@ -1550,6 +1588,8 @@
       if (mutationSeq !== seqAtStart) {
         // Waehrend dieses pull wurde lokal geaendert → Snapshot ist veraltet.
         // Lokalen (optimistischen) Stand behalten; der naechste pull gleicht ab.
+        // Wasserzeichen wurde NICHT bewegt (v4.61.0) — die Zeilen kommen wieder.
+        pullDiscards++;
         syncOk = true; return;
       }
       {
@@ -1569,6 +1609,12 @@
         }
         else if (state.members.length) { showBadLink(); return; }
       }
+      // v4.61.0: ERST JETZT — Zustand ist uebernommen — duerfen die Marken wandern.
+      try {
+        if (newWm) localStorage.setItem(wmKey, newWm);
+        if (!useDelta) { localStorage.setItem(fullKey, String(Date.now())); localStorage.setItem(verKey, APP_VERSION); }
+      } catch {}
+      lastSyncAt = Date.now(); pullDiscards = 0;   // uebernommen = nichts mehr ausstehend
       syncOk = true;
       if (uiFingerprint() !== fpBefore) { save(); render(); }
       else { renderSyncDot(); maybeOfferClaim(); }   // v4.60.0: das Identitaets-Angebot

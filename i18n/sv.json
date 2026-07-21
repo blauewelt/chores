@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Städa upp: äldre ikoner kan heta «Haushalt» eller som ert hushåll — sök alla tre via Spotlight.",
   "Diagnose": "Diagnostik",
   "Später": "Senare",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Du får din personliga länk och förblir admin — varje post visar då vem som loggade den."
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Du får din personliga länk och förblir admin — varje post visar då vem som loggade den.",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "Ingen anslutning just nu — försök igen senare",
+  "noch nicht in dieser Sitzung": "inte ännu i denna session",
+  "gerade eben": "alldeles nyss",
+  "vor {n} Min.": "för {n} min sedan",
+  "Letzter Abgleich: {when}": "Senaste synkronisering: {when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "Mottagna, ännu inte tillämpade: {n} synkroniseringar",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} poster oläsliga (kryptering)"
 }

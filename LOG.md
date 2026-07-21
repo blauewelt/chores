@@ -1,3 +1,62 @@
+## 2026-07-21 — v4.61.0: VORFALL «Der eingefrorene Leser» — Wasserzeichen-Ratsche behoben, Identitäts-Sheet repariert, Abgleich sichtbar gemacht
+
+VORFALL (19.–21.07., Live): Einträge anderer Familienmitglieder nach So
+~19:00 MESZ erschienen auf dem betroffenen Gerät nicht mehr; eigene Einträge liefen
+weiter. Alle Daten lagen korrekt auf dem Server (Delta-Anfrage verifiziert
+liefert sie). Kein Datenverlust — ein Lese-Bug.
+
+URSACHE 1 — DIE WASSERZEICHEN-RATSCHE (seit v4.36.0 latent, reproduziert):
+pull() persistierte Delta-Wasserzeichen UND 24-h-Voll-Marke VOR dem
+Stale-Guard. Ein Tipp während eines laufenden Pulls verwarf den Snapshot
+(korrekt) — aber die Marken waren schon gewandert: die verworfenen Zeilen
+wurden NIE WIEDER angefragt. Unsichtbar bis zum Voll-Abgleich, den
+dasselbe Rennen ebenfalls schlucken UND dabei die 24-h-Frist neu starten
+konnte. syncOk blieb true → kein roter Punkt. Fix: Marken wandern erst
+NACH der Zustands-Übernahme. Regressionstest mit festgehaltener
+Log-Antwort + Tipp im Fenster.
+
+URSACHE 2 — IDENTITÄTS-SHEET (v4.60.0, heute):
+- claimIdentity schluckte gescheiterte Upserts (catch{}) und leitete
+  TROTZDEM zum neuen Slug um → Boot am toten Slug → «Link ungültig»,
+  Gerät ausgesperrt. Fix: erst Server-Bestätigung, dann Navigation;
+  bei Fehler ehrlicher Toast, Gerät bleibt am Familien-Link.
+- Die «Claim gesehen»-Marke fehlte im STANDARD-Test-Persona (nur
+  suppressOnboarding hatte sie): das modale Sheet blockierte 18
+  Bestandstests — exakt die Klasse Fehler, für die die Suite existiert.
+- Backdrop-Schließen zählt jetzt als «Später» (kein erneutes Nerven).
+
+DIAGNOSE-KORREKTUR (wichtig für die Zukunft): NULL updated_at auf
+Log-Zeilen ist BY DESIGN (log_touch ist BEFORE UPDATE; Inserts fängt das
+Delta über created_at). KEINE DB-Migration gelaufen; der angedachte
+Backfill updated_at:=created_at wäre falsch gewesen — er hätte jede alte
+Zeile für jeden Delta-Client als «frisch geändert» markiert.
+Aufgaben-Anlage: Server nimmt Inserts an (201, Vortag geprüft), die
+Anlage-Tests sind grün auf v4.57–v4.59 — kein nachweisbarer Defekt
+ausser dem heutigen Modal-Blocker; die Lücke seit Sa 17:04Z ist mit
+kleiner Nutzerbasis + Modal seit heute früh erklärbar.
+
+PROZESS, EHRLICH: Der Sandbox-Runner war kaputt — aber CI (tests.yml)
+lief bei JEDEM Push: grün bis v4.59, ROT beim v4.60-Push (09:55Z), und
+der Deploy ging trotzdem raus. Die «ungetestete Batch» war in Wahrheit
+nur v4.60 — und genau die eine Regression, die die Suite sehen konnte,
+hat sie gesehen. Neue stehende Regel in §11: ROTES CI = KEIN DEPLOY.
+
+SICHTBARKEIT (Versprechen aus dem Vorfall): Einstellungen zeigen jetzt
+«Letzter Abgleich: vor X Min.» plus Zähler für empfangene-aber-nicht-
+übernommene Abgleiche und unlesbare (Verschlüsselungs-)Zeilen. Stilles
+Scheitern darf nie wieder wie Abwesenheit von Daten aussehen.
+
+SELBSTHEILUNG: Nach jedem App-Update erzwingt der erste Pull einen
+Voll-Abgleich (Versions-Marke haushalt.pullver) — Geräte mit bereits
+vergifteter Ratsche (das betroffene Gerät) sehen ihre Einträge nach dem
+SW-Update auf haushalt-v155 sofort wieder.
+
+- 7 neue i18n-Schlüssel in allen 19 Sprachen (de = Schlüssel)
+- Tests: Chromium 97/97, WebKit 95 (+2 Skips), chromium-sw 1/1 — ALLE
+  Projekte grün VOR dem Deploy; 6 neue v4.61-Regressionstests
+  (Ratsche, Versions-Vollabgleich, Claim Erfolg/Fehler/Backdrop,
+  Abgleich-Anzeige)
+
 ## 2026-07-21 — v4.60.0: «Wer bist du?» für Bestands-Familien + als Abschluss der Verschlüsselungs-Migration
 
 - ⚠️ TESTSTAND DIESER VERSION (zuerst lesen): die Sandbox brach ab

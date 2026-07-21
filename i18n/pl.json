@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Porządki: starsze ikony mogą nazywać się „Haushalt” lub jak wasz dom — poszukajcie wszystkich trzech przez Spotlight.",
   "Diagnose": "Diagnostyka",
   "Später": "Później",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Dostajesz swój osobisty link i pozostajesz administratorem — każdy wpis pokazuje, kto go dodał."
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Dostajesz swój osobisty link i pozostajesz administratorem — każdy wpis pokazuje, kto go dodał.",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "Brak połączenia — spróbuj ponownie później",
+  "noch nicht in dieser Sitzung": "jeszcze nie w tej sesji",
+  "gerade eben": "przed chwilą",
+  "vor {n} Min.": "{n} min temu",
+  "Letzter Abgleich: {when}": "Ostatnia synchronizacja: {when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "Odebrane, jeszcze nie zastosowane: {n} synchronizacji",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} wpisów nieczytelnych (szyfrowanie)"
 }

@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Наведіть лад: старі значки можуть називатися «Haushalt» або як ваш дім — знайдіть усі три через Spotlight.",
   "Diagnose": "Діагностика",
   "Später": "Пізніше",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Ти отримуєш особисте посилання й лишаєшся адміном — у кожному записі видно, хто його вніс."
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Ти отримуєш особисте посилання й лишаєшся адміном — у кожному записі видно, хто його вніс.",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "Зараз немає з’єднання — спробуйте пізніше",
+  "noch nicht in dieser Sitzung": "ще не в цій сесії",
+  "gerade eben": "щойно",
+  "vor {n} Min.": "{n} хв тому",
+  "Letzter Abgleich: {when}": "Остання синхронізація: {when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "Отримано, ще не застосовано: {n} синхронізацій",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} записів не читаються (шифрування)"
 }

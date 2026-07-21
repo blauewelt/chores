@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "整理提示：旧图标可能叫「Haushalt」或你们家的名字——用聚焦搜索找出全部三个。",
   "Diagnose": "诊断",
   "Später": "稍后",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "你会获得个人链接并保持管理员身份——每条记录都会显示是谁记录的。"
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "你会获得个人链接并保持管理员身份——每条记录都会显示是谁记录的。",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "当前没有连接 — 请稍后重试",
+  "noch nicht in dieser Sitzung": "本次会话中尚未同步",
+  "gerade eben": "刚刚",
+  "vor {n} Min.": "{n} 分钟前",
+  "Letzter Abgleich: {when}": "上次同步：{when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "已接收、尚未应用：{n} 次同步",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} 条记录无法读取（加密）"
 }

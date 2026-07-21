@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "Pour faire du tri : d’anciennes icônes peuvent s’appeler « Haushalt » ou porter le nom de votre foyer — cherchez les trois via Spotlight.",
   "Diagnose": "Diagnostic",
   "Später": "Plus tard",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Tu reçois ton lien personnel et restes admin — chaque entrée indique alors qui l’a enregistrée."
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "Tu reçois ton lien personnel et restes admin — chaque entrée indique alors qui l’a enregistrée.",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "Pas de connexion pour le moment — veuillez réessayer plus tard",
+  "noch nicht in dieser Sitzung": "pas encore dans cette session",
+  "gerade eben": "à l’instant",
+  "vor {n} Min.": "il y a {n} min",
+  "Letzter Abgleich: {when}": "Dernière synchronisation : {when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "Reçus, pas encore appliqués : {n} synchronisations",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} entrées illisibles (chiffrement)"
 }

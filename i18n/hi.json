@@ -160,5 +160,12 @@
   "Zum Aufräumen: ältere Icons heißen evtl. «Haushalt» oder wie euer Haushalt — per Spotlight-Suche nach allen dreien suchen.": "सफ़ाई के लिए: पुराने आइकन «Haushalt» या आपके घर के नाम से हो सकते हैं — तीनों को Spotlight से खोजें।",
   "Diagnose": "निदान",
   "Später": "बाद में",
-  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "तुम्हें अपना निजी लिंक मिलता है और तुम एडमिन रहते हो — हर प्रविष्टि में दिखेगा कि किसने दर्ज की।"
+  "Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.": "तुम्हें अपना निजी लिंक मिलता है और तुम एडमिन रहते हो — हर प्रविष्टि में दिखेगा कि किसने दर्ज की।",
+  "Gerade keine Verbindung — bitte später noch einmal versuchen": "अभी कनेक्शन नहीं है — कृपया बाद में फिर कोशिश करें",
+  "noch nicht in dieser Sitzung": "इस सत्र में अभी नहीं",
+  "gerade eben": "अभी-अभी",
+  "vor {n} Min.": "{n} मिनट पहले",
+  "Letzter Abgleich: {when}": "अंतिम सिंक: {when}",
+  "Empfangen, noch nicht übernommen: {n} Abgleiche": "प्राप्त, अभी लागू नहीं: {n} सिंक",
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} प्रविष्टियाँ अपठनीय (एन्क्रिप्शन)"
 }
