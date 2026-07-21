@@ -381,6 +381,15 @@ onFail)` — 1 Retry, dann Wiederherstellung + ehrlicher Toast
 Krone, Zähler. **NIE eine Variable `t` nennen** (schattet i18n; Live-Bug
 Punkte-Tab leer).
 
+### Play-Store-TWA (vorbereitet 21.07.2026)
+twa/twa-manifest.json + twa/PLAY_STORE.md. assetlinks.json liegt im
+ROOT-Repo (blauewelt.github.io) — dort braucht es das .nojekyll, sonst
+404. Nach dem ersten Play-Upload: Googles App-Signing-Fingerprint als
+zweiten Array-Eintrag ergänzen. Store-Wortlaut: «einsehbar», nie «Open
+Source» (LICENSE!). Redraw-Grundsatz: Sheets bauen sich nur beim
+Öffnen; pull() fasst offene Dialoge nie an; Haustür baut sich genau
+einmal; Eingaben committen pro Tastendruck in den State.
+
 ### Einstiegsseite (v4.58.0)
 renderEntry() zeichnet die Haustür GENAU EINMAL — bei fremder Sprache
 erst nach loadDict() (Race mit 1,5-s-Deckel, offline deutsch); solange

@@ -1,3 +1,53 @@
+## 2026-07-21 — Schritt 3 vorbereitet: Play-Store-TWA komplett verpackt + Redraw-Bestandsaufnahme
+
+### Play Store (io.github.blauewelt.fairli)
+- Maintainer-Entscheid: GitHub-Herkunft bleibt (blauewelt.github.io) —
+  öffentlich einsehbarer Code als Vertrauensargument im Store-Text.
+- ERLEDIGT UND LIVE VERIFIZIERT:
+  · assetlinks.json am Origin-Root mit dem ECHTEN Fingerprint des neu
+    erzeugten Upload-Schlüssels (F5:A0:D3:27:…). Ein Platzhalter aus
+    früherer Arbeit wurde ersetzt. FALLE dokumentiert: GitHub Pages
+    (Jekyll) unterschlägt Punkt-Ordner — erst ein .nojekyll im
+    Root-Repo machte /.well-known/ abrufbar (vorher 404 trotz Commit).
+  · twa/twa-manifest.json: fertige Bubblewrap-Konfiguration — Farben =
+    App-Farben (v4.56.2), startUrl generisch /chores/ (zuletzt-benutzte
+    Route greift, v4.56.0), portrait, customtabs-Fallback.
+  · twa/PLAY_STORE.md: Build-Schritte, Play-Console-Ablauf inkl. des
+    KRITISCHEN Nachtrags (Play App Signing signiert um — Googles
+    App-Signing-Fingerprint muss nach dem ersten Upload als ZWEITER
+    Eintrag in assetlinks.json), Store-Texte de.
+  · Keystore PRIVAT übergeben (outputs, nie ins öffentliche Repo).
+- WORTWAHL bewusst «Quellcode öffentlich einsehbar», NICHT «Open
+  Source»: die LICENSE ist alle-Rechte-vorbehalten (19.07.) — «Open
+  Source» im Store wäre falsch. Im Dokument begründet.
+- OFFEN (braucht Play-Console-Zugang des Maintainers): bubblewrap
+  build (~15 min), Upload, Google-Fingerprint nachtragen.
+
+### Redraw-Bestandsaufnahme (Maintainer-Auftrag)
+Alle 24 innerHTML-Stellen gesichtet. Befund:
+- SHEETS (Einstellungen, Einladen, Aufgabe, Verlauf-Detail, …): werden
+  beim ÖFFNEN einmal gebaut; pull()/render() fasst offene Dialoge nie
+  an → kein Tipp-/Fokusverlust. Formulare tragen zusätzlich
+  dirty-Flags.
+- HAUSTÜR: seit v4.58.1 exakt ein Aufbau (Splash überbrückt).
+- PERSONEN-SHEET: Namens-Tippen committet pro Tastendruck in den State
+  (input-Event) — renderMemberRows() (nur bei expliziten Aktionen:
+  Admin/Betreut-Toggle, Hinzufügen, Löschen) verwirft also NIE Text.
+  Fokusverlust dabei ist praktisch bedeutungslos: jede auslösende
+  Aktion ist selbst ein Tipp, der den Fokus ohnehin nimmt.
+- HAUPTANSICHT (Kacheln/Verlauf/Punkte + Ich-bin-Chips): wird bei
+  JEDEM render() neu gebaut — auch beim 20-s-Auto-Pull und bei jedem
+  Such-Tastendruck. Keine Eingabefelder darin (Suchfeld lebt bewusst
+  AUSSERHALB von #list, v4.50.0) → kein Datenverlust. EINZIGER echter
+  Papierschnitt: pull() ruft render() BEDINGUNGSLOS — ändert der
+  Server nichts, wird die Liste trotzdem ersetzt; ein Tipp im selben
+  Moment kann auf die frisch ersetzte Kachel fallen (harmlos bei
+  gleicher Ordnung, daneben bei Umsortierung).
+- EMPFEHLUNG (nicht umgesetzt, bewusst): render() nach pull nur bei
+  tatsächlicher State-Änderung (billiger Vergleich der reconcile-
+  Ergebnisse). Kernsync-Eingriff — gehört in eine eigene Sitzung mit
+  vollem Testlauf, nicht ans Ende dieser.
+
 ## 2026-07-21 — v4.58.1: Haustür wird genau EINMAL gebaut — Splash überbrückt das Wörterbuch
 
 - MAINTAINER-VORGABE: kein Neuzeichnen der Einstiegsseite. Wenn das
