@@ -507,7 +507,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.58.0';
+  const APP_VERSION = '4.58.1';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1173,14 +1173,17 @@
         goto(p.family, p.slug);
       };
     }
-    renderEntry();
-    // Woerterbuch nachladen und neu zeichnen — ausser der Mensch tippt schon
-    // im Beitreten-Feld (dann wuerde der Neuaufbau die Eingabe verwerfen).
-    if (LANG !== 'de') loadDict(LANG).then(() => {
-      const j = document.getElementById('joinLink');
-      if (j && (j.value || document.activeElement === j)) return;
-      renderEntry();
-    });
+    // KEIN Neuzeichnen (Maintainer 21.07.): die Haustuer wird genau EINMAL
+    // gebaut — in der richtigen Sprache. Bis das Woerterbuch da ist, bleibt
+    // einfach der Boot-Splash stehen (er wird auf der Einstiegsseite ohnehin
+    // nie abgeraeumt, die Haustuer legt sich darueber). LS-Kopie loest in
+    // Millisekunden; ein frisches Geraet wartet hoechstens 1,5 s und faellt
+    // sonst auf Deutsch zurueck (offline besser als leer).
+    if (LANG === 'de') renderEntry();
+    else Promise.race([
+      loadDict(LANG),
+      new Promise(r => setTimeout(r, 1500)),
+    ]).then(renderEntry);
     return;
   }
 

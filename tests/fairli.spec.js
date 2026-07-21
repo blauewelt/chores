@@ -1649,8 +1649,11 @@ test.describe('Fairli', () => {
     await mockBackend(ctx);
     const page = await ctx.newPage();
     await page.goto(`${BASE}/`);
-    // Nach dem Wörterbuch-Nachladen: englische Haustür
+    // v4.58.1: die Haustür wird EINMAL gebaut, in der richtigen Sprache —
+    // solange sie fehlt, steht der Splash. Es darf also NIE ein deutscher
+    // Zwischenstand existieren.
     await expect(page.getByRole('button', { name: 'Create new household' })).toBeVisible();
+    expect(await page.getByRole('button', { name: 'Neuen Haushalt erstellen' }).count()).toBe(0);
     await expect(page.getByText('Household chores – shared fairly.')).toBeVisible();
     await expect(page.locator('summary', { hasText: 'Diagnostics' })).toBeVisible();
     // Tippen im Beitreten-Feld übersteht jeden Neuaufbau

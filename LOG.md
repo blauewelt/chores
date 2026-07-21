@@ -1,3 +1,26 @@
+## 2026-07-21 — v4.58.1: Haustür wird genau EINMAL gebaut — Splash überbrückt das Wörterbuch
+
+- MAINTAINER-VORGABE: kein Neuzeichnen der Einstiegsseite. Wenn das
+  Wörterbuch ~0,5 s braucht, lieber die Lade-Animation verlängern.
+- UMSETZUNG: die Haustür wird erst gebaut, wenn das Wörterbuch da ist
+  (Promise.race mit 1,5-s-Deckel; offline fällt sie auf Deutsch
+  zurück — besser als leer). Bis dahin steht der Boot-Splash: der wird
+  auf der Einstiegsseite ohnehin nie abgeräumt (der frühe return
+  überspringt seine Abbau-Logik), die Haustür legt sich einfach
+  darüber. Verlängerung gratis, kein neuer Mechanismus.
+- Der Eingabe-Schutz fürs Beitreten-Feld aus v4.58.0 entfällt —
+  ohne Neuzeichnen gibt es nichts mehr zu schützen.
+- GEMESSEN (Wörterbuch künstlich auf 600 ms gebremst): bei 300 ms nur
+  Splash, keine Haustür, kein deutscher Text; englische Haustür nach
+  ~1,1 s — ein deutscher Zwischenstand existiert zu KEINEM Zeitpunkt.
+  Test hält zusätzlich fest: nie beide Sprachvarianten im DOM.
+- Wiederholbesuche unverändert flott: die localStorage-Kopie des
+  Wörterbuchs löst in Millisekunden.
+- 89/89 Chromium. WebKit-Rückstand (v4.57.0–v4.58.1) besteht weiter
+  (Sandbox bricht WebKit-Läufe ab, s. v4.58.0) — beim nächsten
+  gesunden Zustand zuerst nachholen.
+- APP_VERSION 4.58.1, SW-Cache haushalt-v152
+
 ## 2026-07-21 — v4.58.0: Einstiegsseite als Haustür — übersetzt sich, Diagnose eingeklappt, App-Icon
 
 - SCHRITT 2 des Store-Plans (Maintainer): Store-Installationen starten

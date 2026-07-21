@@ -382,8 +382,10 @@ Krone, Zähler. **NIE eine Variable `t` nennen** (schattet i18n; Live-Bug
 Punkte-Tab leer).
 
 ### Einstiegsseite (v4.58.0)
-renderEntry() zeichnet die Haustür; nach loadDict() wird NEU gezeichnet,
-ausser #joinLink hat Text/Fokus (Eingabe nie verwerfen). Diagnose: im
+renderEntry() zeichnet die Haustür GENAU EINMAL — bei fremder Sprache
+erst nach loadDict() (Race mit 1,5-s-Deckel, offline deutsch); solange
+steht der Boot-Splash. NIE einen Neuzeichnen-Pfad einbauen
+(Maintainer-Vorgabe 21.07.). Diagnose: im
 Browser als <details> eingeklappt, bei IS_STANDALONE IMMER offen
 (Icon-Problem-Kontext). Warn-Kästchen «Veraltetes Fairli-Icon» nie
 abschwächen. Beim Übersetzen neuer Haustür-Texte: Schlüssel ×19.
