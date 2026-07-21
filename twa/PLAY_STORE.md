@@ -77,3 +77,22 @@ Die LICENSE im Repo ist bewusst «alle Rechte vorbehalten» (Entscheid
 angreifbar — «Quellcode öffentlich einsehbar» ist wahr und trägt
 denselben Vertrauensgedanken. Falls später eine OSI-Lizenz gewünscht
 ist: zuerst LICENSE ändern, dann den Store-Text.
+
+## Nachtrag 21.07.2026 — Build wurde bereits ausgeführt
+
+Der Build lief in der Claude-Sandbox durch; **fairli-play.aab**
+(signiert, für Play) und **fairli-test.apk** (signiert, für
+`adb install`) wurden privat übergeben. Falls lokal neu gebaut wird:
+
+- `bubblewrap update` erzeugt das Projekt neu mit compileSdk 36 —
+  danach die drei lokalen Anpassungen wiederholen: `versionName "1.0.0"`
+  (Bubblewrap liess ihn leer), `targetSdkVersion 35`, und bei
+  SDK-Probleme das Standard-Layout als sdk.dir (nicht den
+  cmdline-tools-Ordner; AGP findet Plattformen sonst nicht — kostete
+  hier vier Anläufe).
+- JDK: ein echtes JDK mit javac (17 empfohlen); ein reines JRE
+  scheitert an «does not provide JAVA_COMPILER».
+- androidx.browser aus dem Template verlangt compileSdk ≥ 36.
+- Signatur-Kette verifiziert: Zertifikat-SHA-256 des APK =
+  f5a0d327… = Fingerprint in assetlinks.json. Version 1.0.0 (Code 1),
+  Label «Fairli», targetSdk 35, compileSdk 36.
