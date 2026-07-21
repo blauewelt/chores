@@ -1,3 +1,54 @@
+## 2026-07-21 — v4.60.0: «Wer bist du?» für Bestands-Familien + als Abschluss der Verschlüsselungs-Migration
+
+- ⚠️ TESTSTAND DIESER VERSION (zuerst lesen): die Sandbox brach ab
+  Mitte der Sitzung JEDEN Playwright-Lauf ab — auch Einzeltests, die
+  Minuten zuvor grün waren. VERIFIZIERT nach letztem Code-Stand: der
+  neue Identitäts-Test (1/1, inkl. Später-Pfad, Betreuten-Ausschluss,
+  Admin-POST, Umleitung). NICHT gelaufen: die übrigen 90
+  Chromium-Tests und WebKit. NÄCHSTE SITZUNG BEGINNT ZWINGEND mit dem
+  vollen Doppel-Lauf (Chromium + WebKit-Rückstand v4.57.0–v4.60.0),
+  VOR jeder neuen Arbeit. Risikoeinschätzung: die querschneidende
+  Änderung (render-Hook) ist doppelt bewacht (claimShown +
+  Geräte-Marke); die Test-Persona setzt die Marke und stellt damit für
+  Alt-Tests exakt die Vor-Feature-Umgebung her.
+- FUNKTION (Maintainer-Auftrag, Punkte 1+2): EIN gemeinsamer
+  Übernahme-Mechanismus statt zweier Migrationsflüsse:
+  · maybeOfferClaim(): am BLANKEN Familien-Link erscheint einmal pro
+    Gerät die Karte «Wer bist du?» (Chips aller nicht-betreuten
+    Personen). Wahl → claimIdentity(): admin=true (wer den blanken
+    Link hält, IST Admin), Slug erzeugen falls nötig, direkter
+    awaited-Upsert (nie push-Queue — Umleitung!), Geräte-Marke,
+    Umleitung auf den persönlichen Link. «Später»/× setzt nur die
+    Marke — nie wieder nerven.
+  · Die Verschlüsselungs-Migration setzt vor ihrem Reload
+    sessionStorage fairli.claimAfterMig — dieselbe Karte öffnet sich
+    danach SOFORT. WICHTIGE KORREKTUR meiner Annahme: die heutige
+    Migration hält alle Links GÜLTIG (In-Place-Umschlüsselung, famc-
+    Hash) — es gibt gar keinen zweiten Link-Tausch-Moment. Damit ist
+    die Karte der eine gemeinsame Moment, exakt der Maintainer-Wunsch.
+- ZWEI ECHTE FUNDE beim Bauen:
+  (1) Die Karte feuerte vor dem ersten Pull und bot den lokalen
+      Saat-Zustand («Ich») an → Wache: erst nach syncOk===true UND
+      vorhandenem famName.
+  (2) Wechselwirkung mit v4.59.0: bei Wiederkehrern bringt der erste
+      Pull oft exakt den lokalen Stand → kein Redraw → das Angebot im
+      render() wäre verschluckt worden. Der Skip-Pfad ruft
+      maybeOfferClaim() jetzt direkt (idempotent, wächter-gesichert).
+- Betreute (assisted) stehen NIE zur Wahl — eine Katze ist niemandes
+  Identität.
+- DATEN-ARBEIT derselben Sitzung (vor dem Feature): famc-943… war
+  BEREITS mit Grabstein versehen (retired_families; mein POST prallte
+  korrekt an RLS ab, 401) — die Einträge vom 17.07. stammen von davor.
+  Die zwei betroffenen Link-Inhaber: Slugs cj9ymgafm6hd und
+  a2z03c0s08jz (Namen verschlüsselt, IDs f6ijwv9h/tio7okqk); der
+  Maintainer verschickt neue Links. Bestand: 23 Familien (+3
+  stillgelegt), 4 aktiv ≤30 Tage, 11 verschlüsselt, Slugs weit
+  verbreitet, Admin-Bits fast nirgends — genau die Lücke, die diese
+  Karte schliesst.
+- 2 Schlüssel ×19. Kein Recap-Update (Karte erklärt sich selbst beim
+  Erscheinen; Recap folgt mit der nächsten Sammel-Ära).
+- APP_VERSION 4.60.0, SW-Cache haushalt-v154
+
 ## 2026-07-21 — VORFALL behoben: Upload-Keystore lag in der öffentlichen Historie — Schlüssel rotiert
 
 - WAS PASSIERT IST: für den TWA-Build wurde der Keystore nach twa/

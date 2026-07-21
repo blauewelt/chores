@@ -65,6 +65,7 @@ async function suppressOnboarding(context) {
     try {
       localStorage.setItem('haushalt.onboard:' + fam + ':a', '1');
       localStorage.setItem('haushalt.onboard:' + fam + ':u', '1');
+      localStorage.setItem('haushalt.claim:' + fam, '1');   // v4.60.0: Identitäts-Angebot in Tests stumm
     } catch {}
   }, FAM);
 }
@@ -1685,6 +1686,41 @@ test.describe('Fairli', () => {
     await expect(page.locator('[data-probe="alive"]')).toHaveCount(0);   // Liste neu gebaut …
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     await expect(page.locator('.entry').first()).toBeVisible();          // … und die Neuigkeit ist da
+  });
+
+  test('Identität übernehmen (v4.60.0): blanker Link bietet «Wer bist du?» — Wahl macht Admin + persönlichen Link; «Später» merkt sich das Gerät', async ({ context, page }) => {
+    const posts = [];
+    await mockBackend(context, { memberRows: () => [
+      { id: 'm-chris', name: 'Timon', color: '#2FAE6A', family_id: FAM, url_slug: 'slugchris1', admin: false },
+      { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: false },
+      { id: 'm-cat', name: 'Tigi', color: '#B26500', family_id: FAM, url_slug: null, assisted: true },
+    ] });
+    await context.route(`${SB}/rest/v1/members*`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') { posts.push(req.postDataJSON()); return route.fulfill({ status: 201, body: '' }); }
+      return route.fallback();
+    });
+    await context.addInitScript(f => localStorage.removeItem('haushalt.claim:' + f), FAM);
+    await page.goto(`${BASE}/f/${FAM}`);
+    const sheet = page.locator('#claimSheet');
+    await expect(sheet).toBeVisible();
+    // Betreute stehen NICHT zur Wahl (eine Katze ist niemandes Identität)
+    await expect(sheet.locator('[data-claim]')).toHaveCount(2);
+    await expect(sheet.locator('button', { hasText: 'Tigi' })).toHaveCount(0);
+    // «Später»: schliesst und setzt die Geräte-Marke (initScript entfernt sie
+    // bei Navigationen — darum hier OHNE Reload prüfen, dass sie gesetzt wurde)
+    await sheet.locator('#claimSkip').click();
+    await expect(sheet).toBeHidden();
+    expect(await page.evaluate(f => localStorage.getItem('haushalt.claim:' + f), FAM)).toBe('1');
+    // Frisches Gerät: Wahl von Mira → Admin-POST + Umleitung auf ihren Link
+    await page.reload();
+    await expect(page.locator('#claimSheet')).toBeVisible();
+    await page.locator('[data-claim="m-mira"]').click();
+    await page.waitForURL(new RegExp(`/f/${FAM}/u/slugmira1`));
+    const saved = [].concat(posts.flat()).find(r => r.id === 'm-mira');
+    expect(saved.admin).toBe(true);
+    // Auf dem persönlichen Link erscheint die Karte nie
+    await expect(page.locator('#claimSheet')).toBeHidden();
   });
 
   test('Boot-Splash: Overlay räumt sich weg, Kopf-Logo erscheint, nichts blockiert (v4.39.0)', async ({ context, page }) => {

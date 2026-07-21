@@ -381,6 +381,16 @@ onFail)` — 1 Retry, dann Wiederherstellung + ehrlicher Toast
 Krone, Zähler. **NIE eine Variable `t` nennen** (schattet i18n; Live-Bug
 Punkte-Tab leer).
 
+### Identität übernehmen (v4.60.0)
+claimIdentity()/maybeOfferClaim(): EIN Mechanismus für Bestands-Link
+und Nach-Migration (sessionStorage fairli.claimAfterMig). Wachen: nur
+blanker Link, nur nach syncOk+famName, einmal pro Gerät
+(haushalt.claim:<fam>), nie über offenen Dialogen, Betreute nie zur
+Wahl. Der v4.59-Skip-Pfad MUSS maybeOfferClaim() rufen (sonst
+verschluckt der No-Diff-Pull das Angebot bei Wiederkehrern).
+Test-Persona setzt die Geräte-Marke — Claim-Tests entfernen sie per
+initScript.
+
 ### Geheimnisse & git (VORFALL 21.07.2026)
 NIE `git add -A`, nachdem ein Geheimnis (Keystore, Token, .env) in den
 Arbeitsbaum kopiert wurde — nur benannte Pfade, `git status` vor jedem

@@ -507,7 +507,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.59.0';
+  const APP_VERSION = '4.60.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1033,6 +1033,10 @@
         });
       } catch {}
       try { localStorage.setItem(LS_ENCV, '1'); } catch {}
+      // v4.60.0: nach dem Neuladen SOFORT die Identitaets-Karte oeffnen —
+      // die Migration ist der gemeinsame Uebernahme-Moment fuer Admin-Bit
+      // und persoenlichen Link (Links bleiben gueltig, kein zweiter Flow).
+      try { sessionStorage.setItem('fairli.claimAfterMig', '1'); } catch {}
       say(t('Fertig — App lädt neu.'));
       setTimeout(() => location.reload(), 900);
     } catch (e) {
@@ -1041,6 +1045,58 @@
       IS_ENC = FAMILY.startsWith('famx-'); ROWFAM = FAMILY; AESKEY = null;
       await CRYPTO_READY;
     }
+  }
+
+  // ---------- Identitaet uebernehmen (v4.60.0) ----------
+  // EIN Mechanismus fuer beide Wege zum persoenlichen Link:
+  // (a) Bestands-Familie am blanken Link (einmaliges Angebot pro Geraet),
+  // (b) direkt nach der Verschluesselungs-Migration (dieselbe Karte,
+  //     automatisch geoeffnet — Links bleiben bei der Migration ja gueltig,
+  //     also ist DIES der eine gemeinsame Uebernahme-Moment).
+  const LS_CLAIM = () => 'haushalt.claim:' + FAMILY;
+  async function claimIdentity(m) {
+    m.admin = true;                       // wer den blanken Link haelt, IST Admin
+    if (!m.url_slug) m.url_slug = uid() + uid();
+    save();
+    try { await upsert('members', [m]); } catch {}   // direkt, nie push-Queue (Umleitung!)
+    try { localStorage.setItem(LS_CLAIM(), '1'); } catch {}
+    location.href = routeUrl(FAMILY, m.url_slug);
+  }
+  let claimShown = false;
+  function maybeOfferClaim() {
+    if (claimShown || USER_SLUG || firstRunOpen || !FAMILY) return;
+    // Erst NACH einem gelungenen Abgleich anbieten — vorher steht u. U. nur
+    // der lokale Saat-Zustand («Ich») im Speicher, nicht die echte Familie.
+    if (syncOk !== true || !state.famName) return;
+    if (!state.members.length) return;
+    let after = false;
+    try { after = sessionStorage.getItem('fairli.claimAfterMig') === '1'; } catch {}
+    try { if (!after && localStorage.getItem(LS_CLAIM())) return; } catch {}
+    if (document.querySelector('dialog[open]')) return;
+    const candidates = state.members.filter(m => !m.assisted);
+    if (!candidates.length) return;
+    claimShown = true;
+    try { sessionStorage.removeItem('fairli.claimAfterMig'); } catch {}
+    let sh = document.getElementById('claimSheet');
+    if (!sh) { sh = document.createElement('dialog'); sh.id = 'claimSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"></div>
+        <h2>${t('Wer bist du?')}</h2>
+        <div class="slot end"><button class="x" id="claimLater" aria-label="${t('Schließen')}">×</button></div>
+      </div>
+      <p class="subnote" style="margin:0 0 12px">${t('Du bekommst deinen persönlichen Link und bleibst Admin — bei jedem Eintrag ist dann klar, wer ihn verbucht hat.')}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center">
+        ${candidates.map(m => `<button data-claim="${m.id}" style="border:none;border-radius:999px;padding:12px 20px;font-size:16px;font-weight:700;background:${esc(m.color || '#3A6EA5')};color:#0C1220;cursor:pointer">${esc(m.name || '—')}</button>`).join('')}
+      </div>
+      <button class="btn wide" id="claimSkip" style="margin-top:14px;background:none;border:none;color:var(--muted)">${t('Später')}</button>
+    </div>`;
+    const dismiss = () => { try { localStorage.setItem(LS_CLAIM(), '1'); } catch {} sh.close(); };
+    sh.querySelector('#claimLater').onclick = dismiss;
+    sh.querySelector('#claimSkip').onclick = dismiss;
+    sh.querySelectorAll('[data-claim]').forEach(b => b.onclick = () => claimIdentity(memberById(b.dataset.claim)));
+    sh.showModal();
   }
 
   const choreColor = id => {
@@ -1515,7 +1571,10 @@
       }
       syncOk = true;
       if (uiFingerprint() !== fpBefore) { save(); render(); }
-      else renderSyncDot();   // Punkt aktualisieren reicht — Liste unangetastet
+      else { renderSyncDot(); maybeOfferClaim(); }   // v4.60.0: das Identitaets-Angebot
+      // haengt am ERSTEN GELUNGENEN Pull — der bringt bei Wiederkehrern oft
+      // exakt den lokalen Stand (kein Redraw, v4.59.0) und darf das Angebot
+      // trotzdem nicht verschlucken.
       if (needBackfill) {
         try {
           await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/families?family_id=eq.' + encodeURIComponent(ROWFAM), {
@@ -1863,6 +1922,7 @@
     syncAdminClass();    // v4.55.0: Admin-Status kommt erst mit den Mitgliedern
     refreshPersonalManifest();   // v4.56.0: Symbolname = Name der Person
     maybeAutoSearch();   // v4.51.0: grosse Haushalte bekommen die Suche von selbst
+    maybeOfferClaim();   // v4.60.0: blanker Link → einmalig «Wer bist du?»
     const bar = document.getElementById('searchBar');
     if (bar) bar.hidden = !SEARCH_ON || view === 'scores';
     const fab = document.getElementById('openAdd');
