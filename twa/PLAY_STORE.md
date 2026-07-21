@@ -8,7 +8,7 @@ noch zu tun ist.
 
 - **Digital Asset Links**: `https://blauewelt.github.io/.well-known/assetlinks.json`
   ist live und nennt `io.github.blauewelt.fairli` mit dem Fingerprint des
-  Upload-Schlüssels (beginnt `F5:A0:D3:27:…`). Nötig war ein `.nojekyll`
+  Upload-Schlüssels (seit Rotation 21.07.: beginnt `09:11:99:33:…`; der F5-Schlüssel ist verbrannt). Nötig war ein `.nojekyll`
   im Root-Repo — Jekyll unterschlägt Punkt-Ordner (dokumentierte Falle).
 - **Upload-Keystore**: privat übergeben (NICHT im Repo — Repo ist
   öffentlich). Alias `fairli`, RSA 2048, gültig 25 Jahre.

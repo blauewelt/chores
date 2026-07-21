@@ -381,6 +381,13 @@ onFail)` — 1 Retry, dann Wiederherstellung + ehrlicher Toast
 Krone, Zähler. **NIE eine Variable `t` nennen** (schattet i18n; Live-Bug
 Punkte-Tab leer).
 
+### Geheimnisse & git (VORFALL 21.07.2026)
+NIE `git add -A`, nachdem ein Geheimnis (Keystore, Token, .env) in den
+Arbeitsbaum kopiert wurde — nur benannte Pfade, `git status` vor jedem
+Commit lesen. Prüfungen laufen VOR dem Commit, nie im selben
+Kommando danach. Der Upload-Keystore v1 ist verbrannt (lag öffentlich);
+gültig ist NUR v2 (Fingerprint beginnt 09:11:99:33).
+
 ### Play-Store-TWA (vorbereitet 21.07.2026)
 twa/twa-manifest.json + twa/PLAY_STORE.md. assetlinks.json liegt im
 ROOT-Repo (blauewelt.github.io) — dort braucht es das .nojekyll, sonst

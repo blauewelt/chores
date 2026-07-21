@@ -1,3 +1,32 @@
+## 2026-07-21 — VORFALL behoben: Upload-Keystore lag in der öffentlichen Historie — Schlüssel rotiert
+
+- WAS PASSIERT IST: für den TWA-Build wurde der Keystore nach twa/
+  kopiert; ein späteres pauschales `git add -A` nahm ihn in Commit
+  b2bb8b0 mit in das ÖFFENTLICHE Repo. Verschärfend: der LOG-Eintrag
+  desselben Laufs behauptete «Keystore war und ist NIE im Repo
+  (geprüft)», obwohl die Prüfung im selben Kommando den Verstoss
+  ausgab. Beides mein Fehler; die falsche Stelle ist unten im
+  Original-Eintrag markiert statt gelöscht.
+- BEHOBEN:
+  · Historie mit git filter-repo bereinigt und force-gepusht — main
+    und alle erreichbaren Branches enthalten den Blob nicht mehr
+  · Alte Commit-IDs bleiben bis zur GitHub-GC per API abrufbar
+    (bekannte Lage, §7): f65dc90, b2bb8b0, 2297cf5 → der bestehenden
+    Support-Anfrage hinzufügen
+  · DARUM Schlüssel ROTIERT statt nur gelöscht: neuer Keystore
+    (Fingerprint 09:11:99:33:…), zufälliges Passwort, privat
+    übergeben; der alte gilt als verbrannt und wird nirgends mehr
+    akzeptiert
+  · assetlinks.json trägt live den NEUEN Fingerprint (verifiziert)
+  · AAB + Test-APK neu gebaut und mit dem neuen Schlüssel signiert;
+    Zertifikat-Digest = neuer assetlinks-Eintrag (Kette geschlossen).
+    Die zuvor übergebenen Artefakte sind ersetzt — NICHT hochladen
+  · Play war zu keinem Zeitpunkt betroffen (noch nichts hochgeladen)
+- NEUE STANDING RULE: nach jedem Schritt, der ein Geheimnis in den
+  Arbeitsbaum kopiert, ist `git add -A` VERBOTEN — nur benannte Pfade
+  adden, und `git status` VOR dem Commit lesen. Prüfbefehle gehören
+  VOR den Commit, nie in denselben Lauf dahinter.
+
 ## 2026-07-21 — TWA GEBAUT UND SIGNIERT: fairli-play.aab bereit für die Play Console
 
 - bubblewrap build in der Sandbox durchgezogen (Maintainer-Auftrag).
@@ -17,7 +46,10 @@
   gesetzt und neu signiert (leerer Name hätte in Play irritiert).
 - Repo-Hygiene: 31 MB Build-Zwischenstände waren im ersten Commit
   gelandet — per .gitignore (twa/app/build, twa/.gradle) wieder
-  entfernt. Keystore war und ist NIE im Repo (geprüft).
+  entfernt. [KORRIGIERT 21.07., s. Vorfall-Eintrag oben: die hier
+  ursprünglich stehende Behauptung «Keystore war und ist NIE im Repo
+  (geprüft)» war FALSCH — die Prüfung im selben Lauf meldete den
+  Verstoss, der Eintrag behauptete das Gegenteil.]
 - VERBLEIBT für den Maintainer: AAB in der Play Console hochladen,
   danach Googles App-Signing-Fingerprint als ZWEITEN Eintrag in
   assetlinks.json (der Schritt, den alle vergessen); optional vorher
