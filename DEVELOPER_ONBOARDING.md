@@ -381,6 +381,15 @@ onFail)` — 1 Retry, dann Wiederherstellung + ehrlicher Toast
 Krone, Zähler. **NIE eine Variable `t` nennen** (schattet i18n; Live-Bug
 Punkte-Tab leer).
 
+### Ersteinrichtung (v4.57.0)
+Nach dem Formular fragt «Wer bist du?» (Chips der eingetragenen Namen).
+claim(): admin=true NUR fuer die Gewaehlte, Slug erzeugen, upsert
+DIREKT awaiten (nie push-Queue — Umleitung!), sessionStorage
+`fairli.creatorOb`, dann Umleitung auf den persoenlichen Link;
+maybeOnboard() liest das Flag und oeffnet das Onboarding als Ersteller.
+Solo: keine Frage. Beim Anlegen ist NIEMAND admin — nie wieder «erste
+Zeile = Admin» einbauen.
+
 ### Manifest & Installation (v4.56.0)
 Persönliche Links haben ein eigenes Manifest unter
 `/chores/manifest.json?f=…&u=…&n=…` (gleiche Herkunft, NIE data:).

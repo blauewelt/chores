@@ -148,5 +148,7 @@
   "Nur Admins können das ändern": "Alleen beheerders kunnen dat wijzigen",
   "Mindestens eine Person muss Admin bleiben": "Minstens één persoon moet beheerder blijven",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Nog niemand is beheerder. Stel er minstens één in bij «Personen».",
-  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Beheer: {names}. Bewaar minstens één beheerderslink — zonder die kan het huishouden niet meer beheerd worden."
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Beheer: {names}. Bewaar minstens één beheerderslink — zonder die kan het huishouden niet meer beheerd worden.",
+  "Wer bist du?": "Wie ben jij?",
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Je wordt beheerder en gebruikt vanaf nu je persoonlijke link."
 }

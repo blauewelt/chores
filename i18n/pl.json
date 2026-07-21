@@ -148,5 +148,7 @@
   "Nur Admins können das ändern": "Tylko administratorzy mogą to zmienić",
   "Mindestens eine Person muss Admin bleiben": "Przynajmniej jedna osoba musi pozostać administratorem",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Nikt nie jest jeszcze administratorem. Ustaw co najmniej jedną osobę w „Osoby”.",
-  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Administracja: {names}. Zapiszcie co najmniej jeden link administratora — bez niego nie da się zarządzać domem."
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Administracja: {names}. Zapiszcie co najmniej jeden link administratora — bez niego nie da się zarządzać domem.",
+  "Wer bist du?": "Kim jesteś?",
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Zostajesz administratorem i od teraz używasz swojego osobistego linku."
 }

@@ -148,5 +148,7 @@
   "Nur Admins können das ändern": "只有管理员可以更改",
   "Mindestens eine Person muss Admin bleiben": "至少要保留一名管理员",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "还没有管理员。请在「成员」中至少设置一位。",
-  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "管理员：{names}。请至少收藏一个管理员链接——否则将无法管理这个家。"
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "管理员：{names}。请至少收藏一个管理员链接——否则将无法管理这个家。",
+  "Wer bist du?": "你是谁？",
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "你将成为管理员，从现在起使用你的个人链接。"
 }

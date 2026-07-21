@@ -507,7 +507,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.56.2';
+  const APP_VERSION = '4.57.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1524,9 +1524,11 @@
       const names = document.getElementById('frMembers').value.split('\n').map(s => s.trim()).filter(Boolean);
       const seed = document.getElementById('frSeed').checked;
       state.famName = name;
-      // v4.55.0: die erste Person ist Admin — sonst startet ein Haushalt ohne
-      // jede admin-berechtigte Person (der blanke Link bliebe die einzige Tuer).
-      state.members = (names.length ? names : ['Ich']).map((n, i) => ({ id: uid(), name: n, color: palette[i % palette.length], admin: i === 0 }));
+      // v4.57.0: NIEMAND ist beim Anlegen Admin — gleich fragt «Wer bist du?»,
+      // und GENAU DIESE Person wird Admin und bekommt ihren persoenlichen
+      // Link. Vorher wurde stillschweigend die erste Zeile Admin — falsch,
+      // sobald der Ersteller sich nicht zuerst eintraegt.
+      state.members = (names.length ? names : ['Ich']).map((n, i) => ({ id: uid(), name: n, color: palette[i % palette.length], admin: false }));
       state.chores = seed ? SEED.map(([n, p]) => ({ id: uid(), name: n, points: p })) : [];
       state.log = [];
       save();
@@ -1535,10 +1537,25 @@
         await upsert('members', state.members);
         if (state.chores.length) await upsert('chores', state.chores);
       } catch {}
-      firstRunOpen = false;
-      try { localStorage.setItem(OB_KEY, '1'); } catch {}   // Schritt 1 kommt jetzt explizit
-      d.remove(); render();
-      openOnboardSheet(true);   // Schritt 1: Link sichern → «Weiter» → Einladen-Sheet
+      // «Wer bist du?» — die Antwort macht Admin UND Identitaet in einem Tipp.
+      const claim = async (m) => {
+        m.admin = true;
+        if (!m.url_slug) m.url_slug = uid() + uid();
+        save();
+        // DIREKT awaiten, nicht ueber die push-Queue: gleich wird umgeleitet,
+        // und eine sterbende Queue liesse Slug+Admin nur lokal existieren.
+        try { await upsert('members', [m]); } catch {}
+        try { sessionStorage.setItem('fairli.creatorOb', '1'); } catch {}   // Onboarding als ERSTELLER zeigen
+        firstRunOpen = false;
+        location.href = routeUrl(FAMILY, m.url_slug);
+      };
+      if (state.members.length === 1) { await claim(state.members[0]); return; }
+      d.innerHTML = `<h2 style="font-family:var(--display);margin:0">${t('Wer bist du?')}</h2>
+        <p style="color:var(--muted);max-width:300px;margin:0">${t('Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.')}</p>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:340px">
+          ${state.members.map((m, i) => `<button data-who="${i}" style="border:none;border-radius:999px;padding:12px 20px;font-size:16px;font-weight:700;background:${m.color};color:#0C1220;cursor:pointer">${esc(m.name)}</button>`).join('')}
+        </div>`;
+      d.querySelectorAll('[data-who]').forEach(b => b.onclick = () => claim(state.members[+b.dataset.who]));
     };
   }
 
@@ -2678,6 +2695,12 @@
     try { if (localStorage.getItem(OB_KEY)) return; } catch {}
     if (document.querySelector('dialog[open]')) return;     // nie ueber andere Sheets legen
     onboardShown = true;
+    // v4.57.0: kommt der Besuch direkt aus der Ersteinrichtung (Umleitung auf
+    // den persoenlichen Link), laeuft das Onboarding als ERSTELLER weiter —
+    // «Weiter: Mitglieder einladen» statt «Los geht's».
+    let creator = false;
+    try { creator = sessionStorage.getItem('fairli.creatorOb') === '1'; sessionStorage.removeItem('fairli.creatorOb'); } catch {}
+    if (creator) { openOnboardSheet(true); return; }
     openOnboardSheet(false);
   }
   function wireShInstall(btn) {

@@ -148,5 +148,7 @@
   "Nur Admins können das ändern": "Only admins can change that",
   "Mindestens eine Person muss Admin bleiben": "At least one person must stay admin",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Nobody is admin yet. Set at least one person as admin under \"People\".",
-  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Bookmark at least one admin link — without it the household can no longer be managed."
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Bookmark at least one admin link — without it the household can no longer be managed.",
+  "Wer bist du?": "Who are you?",
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "You become admin and use your personal link from now on."
 }

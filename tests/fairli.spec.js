@@ -1567,6 +1567,79 @@ test.describe('Fairli', () => {
     expect(man.body.icons.every(i => /^https?:\/\//.test(i.src))).toBe(true);
   });
 
+  test('Ersteinrichtung (v4.57.0): «Wer bist du?» — Gewählte wird Admin, Ersteller landet auf IHREM persönlichen Link', async ({ context, page }) => {
+    const FAMN = 'neufam-xyz98765';
+    const store = { members: [], chores: [], families: [], log: [] };
+    await context.route(`${SB}/rest/v1/**`, r => {
+      const req = r.request();
+      const table = ['members', 'chores', 'families', 'log', 'retired_families'].find(x => req.url().includes('/' + x)) || 'log';
+      if (table === 'retired_families') return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+      if (req.method() === 'POST') {
+        [].concat(req.postDataJSON()).forEach(x => {
+          const i = store[table].findIndex(y => y.id === x.id || (table === 'families' && y.family_id === x.family_id));
+          if (i >= 0) store[table][i] = { ...store[table][i], ...x }; else store[table].push(x);
+        });
+        return r.fulfill({ status: 201, body: '' });
+      }
+      if (req.method() === 'GET') return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(store[table] || []) });
+      return r.fulfill({ status: 204, body: '' });
+    });
+    await page.goto(`${BASE}/f/${FAMN}`);
+    await page.locator('#frName').fill('Fanti WG');
+    await page.locator('#frMembers').fill('Anna\nBen\nCarla');
+    await page.locator('#frSeed').uncheck();
+    await page.locator('#frGo').click();
+    // Der Zwischenschritt fragt, wer man ist — NIEMAND ist bis dahin Admin
+    await expect(page.getByRole('heading', { name: 'Wer bist du?' })).toBeVisible();
+    expect(store.members.every(m => !m.admin)).toBe(true);
+    // Die Erstellerin ist CARLA (dritte Zeile!) — genau der Fall, in dem die
+    // alte Regel «erste Zeile = Admin» stillschweigend falsch lag
+    await page.getByRole('button', { name: 'Carla' }).click();
+    // Landet auf Carlas persönlichem Link …
+    await page.waitForURL(new RegExp(`/f/${FAMN}/u/[a-z0-9]{4,}`));
+    const carla = store.members.find(m => m.name === 'Carla');
+    expect(carla.admin).toBe(true);
+    expect(page.url()).toContain('/u/' + carla.url_slug);
+    // … die anderen sind KEINE Admins
+    expect(store.members.filter(m => m.admin)).toHaveLength(1);
+    // Onboarding läuft als ERSTELLER weiter: sichern → Mitglieder einladen
+    await expect(page.locator('#onboardSheet h2')).toHaveText('Zugriff sichern');
+    await expect(page.locator('#obNext')).toHaveText('Weiter: Mitglieder einladen');
+    await page.locator('#obNext').click();
+    await expect(page.locator('#shareSheet')).toBeVisible();
+    await expect(page.locator('#shareSheet .savenote')).toContainText('Admin: Carla');
+    // Als Admin darf sie sofort für alle eintragen (Chips frei)
+    await page.locator('#shareSheet .x').click();
+    await expect(page.locator('.iam .chip')).toHaveCount(3);
+  });
+
+  test('Ersteinrichtung solo (v4.57.0): keine Frage — Person wird Admin und landet direkt auf ihrem Link', async ({ context, page }) => {
+    const FAMN = 'neufam-solo7777';
+    const store = { members: [], chores: [], families: [], log: [] };
+    await context.route(`${SB}/rest/v1/**`, r => {
+      const req = r.request();
+      const table = ['members', 'chores', 'families', 'log', 'retired_families'].find(x => req.url().includes('/' + x)) || 'log';
+      if (table === 'retired_families') return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+      if (req.method() === 'POST') {
+        [].concat(req.postDataJSON()).forEach(x => {
+          const i = store[table].findIndex(y => y.id === x.id || (table === 'families' && y.family_id === x.family_id));
+          if (i >= 0) store[table][i] = { ...store[table][i], ...x }; else store[table].push(x);
+        });
+        return r.fulfill({ status: 201, body: '' });
+      }
+      if (req.method() === 'GET') return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(store[table] || []) });
+      return r.fulfill({ status: 204, body: '' });
+    });
+    await page.goto(`${BASE}/f/${FAMN}`);
+    await page.locator('#frMembers').fill('Mira');
+    await page.locator('#frSeed').uncheck();
+    await page.locator('#frGo').click();
+    await page.waitForURL(new RegExp(`/f/${FAMN}/u/[a-z0-9]{4,}`));
+    expect(store.members).toHaveLength(1);
+    expect(store.members[0].admin).toBe(true);
+    await expect(page.locator('#onboardSheet h2')).toHaveText('Zugriff sichern');
+  });
+
   test('Boot-Splash: Overlay räumt sich weg, Kopf-Logo erscheint, nichts blockiert (v4.39.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);

@@ -148,5 +148,7 @@
   "Nur Admins können das ändern": "관리자만 변경할 수 있어요",
   "Mindestens eine Person muss Admin bleiben": "최소 한 명은 관리자로 남아야 해요",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "아직 관리자가 없어요. 「사람」에서 최소 한 명을 지정하세요.",
-  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "관리자: {names}. 관리자 링크를 최소 하나는 저장하세요 — 없으면 집을 관리할 수 없어요."
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "관리자: {names}. 관리자 링크를 최소 하나는 저장하세요 — 없으면 집을 관리할 수 없어요.",
+  "Wer bist du?": "당신은 누구인가요?",
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "당신이 관리자가 되고 이제부터 개인 링크를 사용해요."
 }

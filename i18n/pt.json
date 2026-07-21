@@ -148,5 +148,7 @@
   "Nur Admins können das ändern": "Só os administradores podem alterar isso",
   "Mindestens eine Person muss Admin bleiben": "Pelo menos uma pessoa tem de continuar administradora",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Ainda ninguém é administrador. Definam pelo menos uma pessoa em «Pessoas».",
-  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Administração: {names}. Guardem pelo menos um link de administrador — sem ele não é possível gerir a casa."
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Administração: {names}. Guardem pelo menos um link de administrador — sem ele não é possível gerir a casa.",
+  "Wer bist du?": "Quem és tu?",
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Tornas-te administrador e passas a usar o teu link pessoal."
 }

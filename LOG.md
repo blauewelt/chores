@@ -1,3 +1,46 @@
+## 2026-07-21 — v4.57.0: Ersteinrichtung fragt «Wer bist du?» — Antwort wird Admin und landet auf dem eigenen Link
+
+- DESIGN (Maintainer-Freigabe, bewusst OHNE Ausweich-Option «richte nur
+  ein» — einfach halten): nach «Los geht's» erscheinen die eingetragenen
+  Namen als Chips unter der Frage «Wer bist du?». Ein Tipp macht GENAU
+  DIESE Person zum Admin, erzeugt ihren Slug und leitet den Ersteller
+  auf IHREN persoenlichen Link um. Identitaet und Rechte in einem Tipp.
+- BEHOBENE FEHLER DES ALTEN FLOWS:
+  · «erste Zeile = Admin» war ein stiller Fehlgriff, sobald sich der
+    Ersteller nicht zuerst eintrug (Test: Carla als dritte Zeile)
+  · der Ersteller arbeitete dauerhaft anonym auf dem blanken
+    Familien-Link — logged_by blieb fuer ihn immer leer. Jetzt traegt
+    schon der erste Eintrag seine Identitaet
+  · der blanke Familien-Link taucht fuer NEUE Haushalte nirgends mehr
+    auf (Bestand behaelt ihn, v4.55.0)
+- SOLO-Haushalt: keine Frage — die eine Person wird Admin und landet
+  direkt auf ihrem Link (der bestehende famx-Test durchlaeuft diesen
+  Weg jetzt transparent mit)
+- TECHNIK: Mitglieder starten mit admin:false; claim() setzt admin,
+  erzeugt den Slug, upsertet DIREKT (awaited, nicht ueber die
+  push-Queue — die stirbt bei der Umleitung) und setzt
+  sessionStorage «fairli.creatorOb», damit maybeOnboard auf der
+  Zielseite das Onboarding als ERSTELLER fortfuehrt («Weiter:
+  Mitglieder einladen» statt «Los geht's»)
+- TESTS (2 neue, Chromium): Drei-Personen-Fall — vor der Wahl ist
+  NIEMAND Admin, nach Wahl von Carla ist genau sie Admin, URL traegt
+  ihren Slug, Onboarding laeuft als Ersteller, Einladen-Hinweis nennt
+  sie, Chips frei; Solo-Fall ohne Frage
+- EMULATOR (echter Erstbesuch, reagierender Fake-Server): Chooser mit
+  drei Chips, 0 Admins vor der Wahl, Umleitung auf Carlas Link,
+  Onboarding + Einladen korrekt, Eintrag fuer Ben traegt
+  member=Ben/logged_by=Carla, App-Neustart landet wieder auf ihrem
+  Link. Harnisch-Fehlgriff dokumentiert: erster Kachel-Klick traf die
+  Einmalig-Kachel (oeffnet Sheet, verbucht nicht) — kein App-Fehler
+- EHRLICHE EINSCHRAENKUNG: die WebKit-Suite konnte in dieser Sitzung
+  nicht durchlaufen (Sandbox brach lange Laeufe ab). Chromium 88/88
+  inkl. der neuen Tests und des famx-Solo-Wegs; die Aenderung ist
+  engine-neutral (Template-Chips, sessionStorage, location.href).
+  WebKit-Lauf beim naechsten Deploy nachholen
+- 2 Schluessel ×19. Kein Recap-Abschnitt: betrifft nur BRANDNEUE
+  Haushalte, Bestandsnutzer sehen den Flow nie
+- APP_VERSION 4.57.0, SW-Cache haushalt-v150
+
 ## 2026-07-20 — v4.56.2: dunkler Start-Bildschirm statt weissem Blitz
 
 - MAINTAINER-BEFUND mit Screenshot: beim Start blitzt ein weisser

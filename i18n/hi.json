@@ -148,5 +148,7 @@
   "Nur Admins können das ändern": "इसे केवल एडमिन बदल सकते हैं",
   "Mindestens eine Person muss Admin bleiben": "कम से कम एक व्यक्ति एडमिन रहना चाहिए",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "अभी कोई एडमिन नहीं है। «लोग» में कम से कम एक व्यक्ति चुनें।",
-  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "एडमिन: {names}। कम से कम एक एडमिन लिंक सहेजें — उसके बिना घर प्रबंधित नहीं होगा।"
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "एडमिन: {names}। कम से कम एक एडमिन लिंक सहेजें — उसके बिना घर प्रबंधित नहीं होगा।",
+  "Wer bist du?": "तुम कौन हो?",
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "तुम एडमिन बन जाते हो और अब से अपना निजी लिंक इस्तेमाल करते हो।"
 }

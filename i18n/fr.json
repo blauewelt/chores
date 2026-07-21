@@ -148,5 +148,7 @@
   "Nur Admins können das ändern": "Seuls les admins peuvent modifier cela",
   "Mindestens eine Person muss Admin bleiben": "Au moins une personne doit rester admin",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Personne n’est encore admin. Désignez au moins une personne dans « Personnes ».",
-  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin : {names}. Mettez au moins un lien admin en favori — sans lui, le foyer ne peut plus être géré."
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin : {names}. Mettez au moins un lien admin en favori — sans lui, le foyer ne peut plus être géré.",
+  "Wer bist du?": "Qui es-tu ?",
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Tu deviens admin et utilises désormais ton lien personnel."
 }

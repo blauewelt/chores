@@ -148,5 +148,7 @@
   "Nur Admins können das ändern": "Змінювати це можуть лише адміни",
   "Mindestens eine Person muss Admin bleiben": "Принаймні одна людина має лишитися адміном",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Ще немає адміна. Призначте принаймні одного в розділі «Люди».",
-  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Адмін: {names}. Збережіть принаймні одне адмін-посилання — без нього домом не керувати."
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Адмін: {names}. Збережіть принаймні одне адмін-посилання — без нього домом не керувати.",
+  "Wer bist du?": "Хто ти?",
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Ти стаєш адміном і відтепер користуєшся своїм особистим посиланням."
 }

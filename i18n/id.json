@@ -148,5 +148,7 @@
   "Nur Admins können das ändern": "Hanya admin yang bisa mengubahnya",
   "Mindestens eine Person muss Admin bleiben": "Setidaknya satu orang harus tetap admin",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Belum ada admin. Tetapkan minimal satu orang di «Orang».",
-  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Simpan setidaknya satu tautan admin — tanpanya rumah tidak bisa dikelola."
+  "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Simpan setidaknya satu tautan admin — tanpanya rumah tidak bisa dikelola.",
+  "Wer bist du?": "Kamu siapa?",
+  "Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.": "Kamu menjadi admin dan mulai sekarang memakai tautan pribadimu."
 }
