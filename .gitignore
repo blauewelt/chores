@@ -3,3 +3,4 @@ test-results/
 playwright-report/
 twa/app/build/
 twa/.gradle/
+twa/build/
