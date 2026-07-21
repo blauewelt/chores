@@ -1,3 +1,29 @@
+## 2026-07-21 — TWA GEBAUT UND SIGNIERT: fairli-play.aab bereit für die Play Console
+
+- bubblewrap build in der Sandbox durchgezogen (Maintainer-Auftrag).
+  Ergebnis privat übergeben: fairli-play.aab (signiert, 1,3 MB) und
+  fairli-test.apk (signiert, für adb install). Zertifikat-SHA-256 des
+  Artefakts = f5a0d327… = EXAKT der Fingerprint in assetlinks.json —
+  Kette geschlossen, die Link-Übernahme wird greifen.
+- Paket io.github.blauewelt.fairli, Version 1.0.0 (Code 1), Label
+  «Fairli», targetSdk 35 (Play-konform), compileSdk 36.
+- VIER STOLPERSTEINE, alle in twa/PLAY_STORE.md dokumentiert:
+  (1) AGP findet Plattformen nur im STANDARD-SDK-Layout — der
+  cmdline-tools-Ordner als sdk.dir kostete vier Fehlanläufe inkl.
+  vergeblicher package.xml-Chirurgie; (2) androidx.browser des
+  Templates verlangt compileSdk ≥ 36; (3) das System-Java war ein
+  JRE ohne javac («does not provide JAVA_COMPILER») → JDK 17
+  installiert; (4) Bubblewrap liess versionName LEER — auf «1.0.0»
+  gesetzt und neu signiert (leerer Name hätte in Play irritiert).
+- Repo-Hygiene: 31 MB Build-Zwischenstände waren im ersten Commit
+  gelandet — per .gitignore (twa/app/build, twa/.gradle) wieder
+  entfernt. Keystore war und ist NIE im Repo (geprüft).
+- VERBLEIBT für den Maintainer: AAB in der Play Console hochladen,
+  danach Googles App-Signing-Fingerprint als ZWEITEN Eintrag in
+  assetlinks.json (der Schritt, den alle vergessen); optional vorher
+  fairli-test.apk per adb aufs Pixel — Erwartung: KEINE Browser-Leiste,
+  dunkler Start, App landet im Haushalt.
+
 ## 2026-07-21 — v4.59.0: Pull ohne Neuigkeiten zeichnet nicht mehr neu
 
 - Umsetzung der Empfehlung aus der Redraw-Bestandsaufnahme
