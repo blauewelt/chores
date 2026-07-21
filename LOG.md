@@ -1,3 +1,23 @@
+## 2026-07-21 — v4.59.0: Pull ohne Neuigkeiten zeichnet nicht mehr neu
+
+- Umsetzung der Empfehlung aus der Redraw-Bestandsaufnahme
+  (Maintainer-Auftrag): pull() nimmt vor dem Abgleich einen
+  Fingerabdruck des sichtbaren Zustands (members, chores, log,
+  famName, RETENTION, me als JSON) und zeichnet nur neu, wenn er sich
+  danach unterscheidet. Unverändert → nur renderSyncDot(); save()
+  entfällt dann ebenfalls (nichts zu speichern).
+- WIRKUNG: der 20-s-Auto-Pull ersetzt die Kachelliste nicht mehr
+  grundlos — ein Tipp im Pull-Moment landet nie mehr auf einer frisch
+  getauschten Kachel. Ordnung-Aenderungen und alle echten Neuigkeiten
+  zeichnen selbstverstaendlich weiterhin.
+- BEWUSST im Fingerabdruck: me (Chip-Auswahl) — der Snap-back-Pfad
+  (v4.49.0) aendert me im Pull und MUSS rendern.
+- TEST (DOM-Knoten-Probe): markierter Kachel-Knoten ueberlebt einen
+  Pull ohne Server-Neuigkeit identisch; bringt der Mock danach eine
+  neue Log-Zeile, wird neu gebaut und der Verlauf zeigt sie.
+- 90/90 Chromium. WebKit-Rueckstand besteht (Sandbox, s. v4.58.0).
+- APP_VERSION 4.59.0, SW-Cache haushalt-v153
+
 ## 2026-07-21 — Schritt 3 vorbereitet: Play-Store-TWA komplett verpackt + Redraw-Bestandsaufnahme
 
 ### Play Store (io.github.blauewelt.fairli)

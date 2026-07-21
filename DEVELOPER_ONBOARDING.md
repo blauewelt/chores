@@ -387,7 +387,9 @@ ROOT-Repo (blauewelt.github.io) — dort braucht es das .nojekyll, sonst
 404. Nach dem ersten Play-Upload: Googles App-Signing-Fingerprint als
 zweiten Array-Eintrag ergänzen. Store-Wortlaut: «einsehbar», nie «Open
 Source» (LICENSE!). Redraw-Grundsatz: Sheets bauen sich nur beim
-Öffnen; pull() fasst offene Dialoge nie an; Haustür baut sich genau
+Öffnen; pull() fasst offene Dialoge nie an und zeichnet seit v4.59.0
+NUR bei tatsächlicher Änderung (Zustands-Fingerabdruck — `me` gehört
+hinein, sonst bricht der Snap-back v4.49.0); Haustür baut sich genau
 einmal; Eingaben committen pro Tastendruck in den State.
 
 ### Einstiegsseite (v4.58.0)

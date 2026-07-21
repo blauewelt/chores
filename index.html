@@ -507,7 +507,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.58.1';
+  const APP_VERSION = '4.59.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1399,6 +1399,12 @@
     if (!cfg) return;
     const pullStartedAt = Date.now();
     const seqAtStart = mutationSeq;
+    // v4.59.0: Fingerabdruck des sichtbaren Zustands VOR dem Abgleich.
+    // Bringt der Server nichts Neues, wird NICHT neu gezeichnet — vorher
+    // ersetzte jeder 20-s-Pull die Kachelliste, und ein Tipp im selben
+    // Moment konnte auf die frisch getauschte Kachel fallen.
+    const uiFingerprint = () => JSON.stringify([state.members, state.chores, state.log, state.famName, RETENTION, me]);
+    const fpBefore = uiFingerprint();
     try {
       // Egress-Diaet (v4.36.0): schlanke Spalten; Log per DELTA, wenn ein
       // Wasserzeichen existiert und der letzte VOLL-Abgleich < 24 h her ist.
@@ -1507,7 +1513,9 @@
         }
         else if (state.members.length) { showBadLink(); return; }
       }
-      syncOk = true; save(); render();
+      syncOk = true;
+      if (uiFingerprint() !== fpBefore) { save(); render(); }
+      else renderSyncDot();   // Punkt aktualisieren reicht — Liste unangetastet
       if (needBackfill) {
         try {
           await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/families?family_id=eq.' + encodeURIComponent(ROWFAM), {

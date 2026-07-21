@@ -1666,6 +1666,27 @@ test.describe('Fairli', () => {
     await ctx.close();
   });
 
+  test('Pull ohne Neuigkeiten zeichnet NICHT neu — mit Neuigkeiten sehr wohl (v4.59.0)', async ({ context, page }) => {
+    let extra = false;
+    await mockBackend(context, { logRows: () => extra
+      ? [ ...LOG, { id: 'l-neu', chore_id: 'c-1', chore_name: 'Müll rausbringen', member_id: 'm-mira', member_name: 'Mira', points: 1, done_at: new Date().toISOString(), family_id: FAM } ]
+      : LOG });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore', { hasText: 'Müll rausbringen' })).toBeVisible();
+    // DOM-Knoten markieren — überlebt er den Pull, wurde nicht neu gebaut
+    await page.locator('.chore', { hasText: 'Müll rausbringen' }).evaluate(el => el.dataset.probe = 'alive');
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));   // löst pull() aus
+    await page.waitForTimeout(800);
+    await expect(page.locator('[data-probe="alive"]')).toHaveCount(1);   // identischer Knoten: kein Redraw
+    // Jetzt bringt der Server etwas Neues → Redraw MUSS passieren
+    extra = true;
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await page.waitForTimeout(800);
+    await expect(page.locator('[data-probe="alive"]')).toHaveCount(0);   // Liste neu gebaut …
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('.entry').first()).toBeVisible();          // … und die Neuigkeit ist da
+  });
+
   test('Boot-Splash: Overlay räumt sich weg, Kopf-Logo erscheint, nichts blockiert (v4.39.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);
