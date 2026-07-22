@@ -167,5 +167,11 @@
   "vor {n} Min.": "há {n} min",
   "Letzter Abgleich: {when}": "Última sincronização: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "Recebidas, ainda não aplicadas: {n} sincronizações",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} entradas ilegíveis (criptografia)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} entradas ilegíveis (criptografia)",
+  "Papierkorb": "Lixeira",
+  "Wiederherstellen": "Restaurar",
+  "Papierkorb ist leer": "A lixeira está vazia",
+  "Gelöscht von {name}": "Excluído por {name}",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Itens na lixeira são removidos permanentemente após {n} dias",
+  "Wiederhergestellt": "Restaurado"
 }

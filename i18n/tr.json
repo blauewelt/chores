@@ -167,5 +167,11 @@
   "vor {n} Min.": "{n} dk önce",
   "Letzter Abgleich: {when}": "Son eşitleme: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "Alındı, henüz uygulanmadı: {n} eşitleme",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} kayıt okunamıyor (şifreleme)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} kayıt okunamıyor (şifreleme)",
+  "Papierkorb": "Çöp kutusu",
+  "Wiederherstellen": "Geri yükle",
+  "Papierkorb ist leer": "Çöp kutusu boş",
+  "Gelöscht von {name}": "{name} tarafından silindi",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Çöp kutusundaki öğeler {n} gün sonra kalıcı olarak kaldırılır",
+  "Wiederhergestellt": "Geri yüklendi"
 }

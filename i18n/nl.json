@@ -167,5 +167,11 @@
   "vor {n} Min.": "{n} min geleden",
   "Letzter Abgleich: {when}": "Laatste synchronisatie: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "Ontvangen, nog niet toegepast: {n} synchronisaties",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} items onleesbaar (versleuteling)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} items onleesbaar (versleuteling)",
+  "Papierkorb": "Prullenbak",
+  "Wiederherstellen": "Herstellen",
+  "Papierkorb ist leer": "De prullenbak is leeg",
+  "Gelöscht von {name}": "Verwijderd door {name}",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Items in de prullenbak worden na {n} dagen definitief verwijderd",
+  "Wiederhergestellt": "Hersteld"
 }

@@ -167,5 +167,11 @@
   "vor {n} Min.": "il y a {n} min",
   "Letzter Abgleich: {when}": "Dernière synchronisation : {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "Reçus, pas encore appliqués : {n} synchronisations",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} entrées illisibles (chiffrement)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} entrées illisibles (chiffrement)",
+  "Papierkorb": "Corbeille",
+  "Wiederherstellen": "Restaurer",
+  "Papierkorb ist leer": "La corbeille est vide",
+  "Gelöscht von {name}": "Supprimé par {name}",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Les éléments de la corbeille sont définitivement supprimés après {n} jours",
+  "Wiederhergestellt": "Restauré"
 }

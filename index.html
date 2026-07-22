@@ -514,7 +514,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.62.0';
+  const APP_VERSION = '4.63.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -787,6 +787,53 @@
     sh.showModal();
   }
 
+  // ---------- Papierkorb (v4.63.0) ----------
+  // Sichtbarkeit = Bearbeitungsrechte (v4.55-Modell): Admins sehen alles,
+  // persoenliche Links die eigenen (+ betreuten) Eintraege.
+  function trashVisible() {
+    return state.log.filter(e => e.deleted_at && canEditLog(e))
+      .sort((a, b) => (a.deleted_at < b.deleted_at ? 1 : -1));
+  }
+  function openTrashSheet() {
+    let sh = document.getElementById('trashSheet');
+    if (!sh) { sh = document.createElement('dialog'); sh.id = 'trashSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
+    const rows = trashVisible();
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"></div>
+        <h2>${t('Papierkorb')}</h2>
+        <div class="slot end"><button class="x" id="closeTrash" aria-label="${t('Schließen')}">×</button></div>
+      </div>
+      ${rows.length ? rows.map(e => {
+        const m = memberById(e.member_id);
+        const del = memberById(e.deleted_by);
+        const d = new Date(e.done_at);
+        const dd = new Date(e.deleted_at);
+        return `<div class="entry" data-tid="${e.id}">
+          <span class="dot" style="background:${esc(m ? m.color : '#C2CCC5')}"></span>
+          <span class="what"><b>${esc(e.member_name)}</b> · ${esc(e.chore_name)}
+            <div class="when">${d.toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' })} ${d.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' })}
+              · ${del ? t('Gelöscht von {name}', { name: del.name }) : t('Gelöscht')} ${dd.toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' })}</div>
+          </span>
+          <button class="btn ghost" data-restore="${e.id}" style="flex:none;padding:8px 12px;font-size:14px">${t('Wiederherstellen')}</button>
+        </div>`;
+      }).join('') : `<p style="color:var(--muted);text-align:center;margin:22px 8px">${t('Papierkorb ist leer')}</p>`}
+      <p style="color:var(--muted);font-size:12.5px;margin:14px 4px 2px;text-align:center">${t('Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt', { n: TRASH_DAYS })}</p>
+    </div>`;
+    sh.querySelector('#closeTrash').onclick = () => sh.close();
+    sh.querySelectorAll('[data-restore]').forEach(b => b.onclick = () => {
+      const e = state.log.find(x => x.id === b.dataset.restore);
+      if (!e || !canEditLog(e)) return;
+      e.deleted_at = null; e.deleted_by = null;     // explizites null — der Upsert setzt die Spalten zurueck
+      upsertRemote('log', [e]);
+      save(); render();
+      toast(t('Wiederhergestellt'));
+      openTrashSheet();                             // Sheet mit frischer Liste neu aufbauen
+    });
+    sh.showModal();
+  }
+
   // ---------- Einstellungen (v4.31.0) ----------
   function openSettingsSheet() {
     let sh = document.getElementById('settingsSheet');
@@ -809,6 +856,8 @@
         <span class="seticon">↕️</span><span class="setlabel">${t('Sortierung')}</span><span class="setval">${t(SORT === 'alpha' ? 'Alphabetisch' : SORT === 'usage' ? 'Nach Nutzung' : 'Nach Erstellung')}</span><span class="chev">›</span></button>
       ${!isAdmin() ? '' : `<button class="menuitem setrow" id="setRetention" style="border-radius:12px">
         <span class="seticon">🗓️</span><span class="setlabel">${t('Verlauf aufbewahren')}</span><span class="setval">${RETENTION ? t('{n} Tage', { n: RETENTION }) : t('Unbegrenzt')}</span><span class="chev">›</span></button>`}
+      <button class="menuitem setrow" id="setTrash" style="border-radius:12px">
+        <span class="seticon">🗑️</span><span class="setlabel">${t('Papierkorb')}</span><span class="setval">${trashVisible().length || ''}</span><span class="chev">›</span></button>
       <button class="menuitem setrow" id="setSearch" style="border-radius:12px">
         <span class="seticon">🔎</span><span class="setlabel">${t('Suche')}</span><span class="setval">${t(SEARCH_ON ? 'An' : 'Aus')}</span></button>
       <button class="menuitem setrow" id="setMaxPts" style="border-radius:12px">
@@ -832,6 +881,7 @@
       <p style="color:var(--muted);font-size:12.5px;margin:4px 4px 2px;text-align:center">Fairli ${APP_VERSION}</p>
     </div>`;
     sh.querySelector('#closeSettings').onclick = () => sh.close();
+    sh.querySelector('#setTrash').onclick = () => { sh.close(); openTrashSheet(); };
     const sn = sh.querySelector('#setName');
     if (sn) sn.onclick = () => { sh.close(); openRenameSheet(); };
     const smn = sh.querySelector('#setMyName');
@@ -1501,7 +1551,7 @@
       // Wasserzeichen existiert und der letzte VOLL-Abgleich < 24 h her ist.
       // Delta sieht neue UND (dank updated_at-Trigger) geaenderte Zeilen;
       // fremde LOESCHUNGEN erscheinen erst beim naechsten Voll-Abgleich.
-      const LCOLS = 'id,chore_id,chore_name,chore_note,member_id,member_name,logged_by,points,done_at,created_at,updated_at';
+      const LCOLS = 'id,chore_id,chore_name,chore_note,member_id,member_name,logged_by,points,done_at,created_at,updated_at,deleted_at,deleted_by';
       const wmKey = 'haushalt.delta:' + FAMILY, fullKey = 'haushalt.full:' + FAMILY;
       const verKey = 'haushalt.pullver:' + FAMILY;   // v4.61.0: App-Version des letzten VOLL-Abgleichs
       let wm = null, lastFull = 0, sameVer = false;
@@ -1817,6 +1867,7 @@
     const t = {};
     state.members.forEach(m => t[m.id] = { pts: 0, n: 0 });
     state.log.forEach(e => {
+      if (e.deleted_at) return;                     // Papierkorb zaehlt nicht (v4.63.0)
       if (e.done_at >= since && t[e.member_id]) { t[e.member_id].pts += e.points; t[e.member_id].n++; }
     });
     return t;
@@ -1865,7 +1916,19 @@
     const cut = retentionCutoff();
     if (!cut) return [];
     return state.log.filter(e => {
+      if (e.deleted_at) return false;               // Grabsteine haben ihre eigene 30-Tage-Uhr
       const ts = Date.parse(e.done_at || e.created_at || '');
+      return Number.isFinite(ts) && ts < cut;
+    });
+  };
+  // Papierkorb (v4.63.0): 30 Tage nach deleted_at wird endgueltig entfernt —
+  // gleicher Pfad wie die Aufbewahrung: NUR am Admin-Link, deleteRemote.
+  const TRASH_DAYS = 30;
+  const trashEntries = () => state.log.filter(e => e.deleted_at);
+  const trashExpired = () => {
+    const cut = Date.now() - TRASH_DAYS * 86400e3;
+    return trashEntries().filter(e => {
+      const ts = Date.parse(e.deleted_at);
       return Number.isFinite(ts) && ts < cut;
     });
   };
@@ -1874,8 +1937,8 @@
   // Wiederholung bei Fehlschlag).
   let purgeRunning = false;
   async function purgeExpired() {
-    if (purgeRunning || !isAdmin() || !RETENTION) return;
-    const due = expiredEntries();
+    if (purgeRunning || !isAdmin()) return;
+    const due = (RETENTION ? expiredEntries() : []).concat(trashExpired());
     if (!due.length) return;
     purgeRunning = true;
     try {
@@ -2069,7 +2132,7 @@
       // Folge («Einkaufen ×3») → EINE Zeile mit Summenpunkten. So braucht es
       // keine Gross/Klein-Kachel-Varianten — dreimal tippen genuegt.
       const groups = [];
-      for (const e of state.log.filter(e => matches(e.chore_name, e.chore_note, e.member_name))) {
+      for (const e of state.log.filter(e => !e.deleted_at && matches(e.chore_name, e.chore_note, e.member_name))) {
         // Serien enden an der Tagesgrenze (sonst zaehlt «×N» unter «Heute»
         // stillschweigend gestrige Eintraege mit)
         const key = e.member_id + '|' + (e.chore_id || 'n:' + e.chore_name) + '|' + new Date(e.done_at).toDateString();
@@ -2268,12 +2331,21 @@
   function commitPendingUndo() {
     if (!pendingUndo) return;
     clearTimeout(pendingUndo.timer);
-    for (const e of pendingUndo.entries) deleteRemote('log', e.id, () => {
-      if (!state.log.some(x => x.id === e.id)) {
-        state.log.push(e); state.log.sort((a, b) => (a.done_at < b.done_at ? 1 : -1)); save(); render();
-      }
-    });
+    // v4.63.0: Loeschen ist ein GRABSTEIN, kein DELETE mehr. Der Grabstein
+    // reist ueber log_touch/updated_at im Delta binnen 20 s zu allen
+    // Geraeten (vorher: bis 24 h Geister-Eintraege auf fremden Geraeten).
+    // upsertRemote liefert Pull-Schutz (Overlay) und Wiederholung gratis.
+    const when = new Date().toISOString();
+    const who = (slugSelf() || {}).id || null;
+    for (const e of pendingUndo.entries) {
+      e.deleted_at = when; e.deleted_by = who;
+      pendingDeletes.delete('log:' + e.id);         // Zeile lebt wieder — als Grabstein
+      if (!state.log.some(x => x.id === e.id)) state.log.push(e);
+    }
+    state.log.sort((a, b) => (a.done_at < b.done_at ? 1 : -1));
+    upsertRemote('log', pendingUndo.entries);
     pendingUndo = null;
+    save();
   }
   function deleteLogEntries(ids) {
     commitPendingUndo();                       // nur EIN offenes Fenster

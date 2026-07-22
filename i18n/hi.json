@@ -167,5 +167,11 @@
   "vor {n} Min.": "{n} मिनट पहले",
   "Letzter Abgleich: {when}": "अंतिम सिंक: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "प्राप्त, अभी लागू नहीं: {n} सिंक",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} प्रविष्टियाँ अपठनीय (एन्क्रिप्शन)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} प्रविष्टियाँ अपठनीय (एन्क्रिप्शन)",
+  "Papierkorb": "कचरा पेटी",
+  "Wiederherstellen": "पुनर्स्थापित करें",
+  "Papierkorb ist leer": "कचरा पेटी खाली है",
+  "Gelöscht von {name}": "{name} द्वारा हटाया गया",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "कचरा पेटी की प्रविष्टियाँ {n} दिनों बाद स्थायी रूप से हट जाती हैं",
+  "Wiederhergestellt": "पुनर्स्थापित"
 }

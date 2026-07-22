@@ -167,5 +167,11 @@
   "vor {n} Min.": "{n} 分钟前",
   "Letzter Abgleich: {when}": "上次同步：{when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "已接收、尚未应用：{n} 次同步",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} 条记录无法读取（加密）"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} 条记录无法读取（加密）",
+  "Papierkorb": "回收站",
+  "Wiederherstellen": "恢复",
+  "Papierkorb ist leer": "回收站是空的",
+  "Gelöscht von {name}": "由{name}删除",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "回收站中的条目将在{n}天后永久删除",
+  "Wiederhergestellt": "已恢复"
 }

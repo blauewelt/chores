@@ -1,3 +1,36 @@
+## 2026-07-21 — v4.63.0: Papierkorb — Löschen ist ein Grabstein, keine 24-h-Geister mehr
+
+DESIGN (Maintainer-Freigabe: 30 Tage / v4.55-Rechtemodell / Einstellungen):
+Löschen eines Verlauf-Eintrags schreibt deleted_at + deleted_by (Member-ID,
+nie ein Name — famx-tauglich) statt eines DELETE. Der Clou: der bestehende
+log_touch-Trigger stempelt updated_at, der Grabstein reist also im normalen
+Delta binnen 20 s zu ALLEN Geräten. Damit ist nebenbei ein echter
+Sync-Riss geschlossen: harte Löschungen waren für fremde Geräte bis zu
+24 h unsichtbar (Delta sieht nur Neues/Geändertes; pendingDeletes schirmt
+nur das löschende Gerät).
+
+- Migration 20260721210000_log_trash.sql (additiv, idempotent) via
+  db-migrate-Workflow VOR dem Client-Deploy angewandt und per REST-Probe
+  verifiziert (LCOLS selektiert die neuen Spalten — Reihenfolge zwingend).
+- Undo-Fenster (5 s) unverändert; erst der Commit setzt den Grabstein und
+  schickt ihn per upsertRemote (Pull-Overlay + Wiederholung gratis).
+- Verlauf, Punkte und Aufbewahrungs-Purge ignorieren Grabsteine;
+  Grabsteine haben ihre EIGENE 30-Tage-Uhr und werden am Admin-Link über
+  den bestehenden Purge-Pfad endgültig entfernt.
+- Papierkorb-Sheet in den Einstellungen (Maintainer wechselte von
+  «unten im Verlauf» zu Einstellungen vor Baubeginn): Liste mit Wer/Was/
+  Wann + «Gelöscht von …», Wiederherstellen = deleted_at:null (reist
+  denselben Weg zurück). Sichtbarkeit/Restore = canEditLog: Admins alles,
+  persönliche Links eigene (+ betreute) Einträge.
+- 6 neue i18n-Schlüssel in 19 Sprachen.
+- 6 neue Tests: Grabstein-Protokoll (nie DELETE), Delta-Propagation auf
+  Fremdgerät, Wiederherstellen inkl. Punkte-Rückkehr, Rechte am
+  persönlichen Link, Punkte ignorieren Grabsteine, 30-Tage-Ablauf.
+- Bestandstest v4.24.0 (Undo/DELETE-Fenster) auf den Grabstein-Vertrag
+  angepasst: gleiche Absicherung (im Fenster geht NICHTS raus, Undo rein
+  lokal), Commit ist jetzt der Grabstein-Upsert, DELETE ist verboten.
+- APP_VERSION 4.63.0, SW-Cache haushalt-v158
+
 ## 2026-07-21 — v4.62.0: Personenwahl klebt oben — Chips + Tabs als ein Block
 
 - Maintainer-Wunsch: die Personen-Chips («Ich bin …») bleiben wie

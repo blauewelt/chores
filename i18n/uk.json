@@ -167,5 +167,11 @@
   "vor {n} Min.": "{n} хв тому",
   "Letzter Abgleich: {when}": "Остання синхронізація: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "Отримано, ще не застосовано: {n} синхронізацій",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} записів не читаються (шифрування)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} записів не читаються (шифрування)",
+  "Papierkorb": "Кошик",
+  "Wiederherstellen": "Відновити",
+  "Papierkorb ist leer": "Кошик порожній",
+  "Gelöscht von {name}": "Видалено: {name}",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Записи в кошику остаточно видаляються через {n} днів",
+  "Wiederhergestellt": "Відновлено"
 }

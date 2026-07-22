@@ -167,5 +167,11 @@
   "vor {n} Min.": "för {n} min sedan",
   "Letzter Abgleich: {when}": "Senaste synkronisering: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "Mottagna, ännu inte tillämpade: {n} synkroniseringar",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} poster oläsliga (kryptering)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} poster oläsliga (kryptering)",
+  "Papierkorb": "Papperskorg",
+  "Wiederherstellen": "Återställ",
+  "Papierkorb ist leer": "Papperskorgen är tom",
+  "Gelöscht von {name}": "Raderad av {name}",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Objekt i papperskorgen tas bort permanent efter {n} dagar",
+  "Wiederhergestellt": "Återställd"
 }

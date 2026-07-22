@@ -167,5 +167,11 @@
   "vor {n} Min.": "for {n} min siden",
   "Letzter Abgleich: {when}": "Seneste synkronisering: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "Modtaget, endnu ikke anvendt: {n} synkroniseringer",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} poster ulæselige (kryptering)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} poster ulæselige (kryptering)",
+  "Papierkorb": "Papirkurv",
+  "Wiederherstellen": "Gendan",
+  "Papierkorb ist leer": "Papirkurven er tom",
+  "Gelöscht von {name}": "Slettet af {name}",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Elementer i papirkurven fjernes permanent efter {n} dage",
+  "Wiederhergestellt": "Gendannet"
 }

@@ -167,5 +167,11 @@
   "vor {n} Min.": "acum {n} min",
   "Letzter Abgleich: {when}": "Ultima sincronizare: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "Primite, încă neaplicate: {n} sincronizări",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} intrări ilizibile (criptare)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} intrări ilizibile (criptare)",
+  "Papierkorb": "Coș de gunoi",
+  "Wiederherstellen": "Restaurează",
+  "Papierkorb ist leer": "Coșul este gol",
+  "Gelöscht von {name}": "Șters de {name}",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Elementele din coș sunt eliminate definitiv după {n} zile",
+  "Wiederhergestellt": "Restaurat"
 }

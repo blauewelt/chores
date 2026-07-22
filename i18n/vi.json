@@ -167,5 +167,11 @@
   "vor {n} Min.": "{n} phút trước",
   "Letzter Abgleich: {when}": "Đồng bộ lần cuối: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "Đã nhận, chưa áp dụng: {n} lần đồng bộ",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} mục không đọc được (mã hóa)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} mục không đọc được (mã hóa)",
+  "Papierkorb": "Thùng rác",
+  "Wiederherstellen": "Khôi phục",
+  "Papierkorb ist leer": "Thùng rác trống",
+  "Gelöscht von {name}": "Đã xóa bởi {name}",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Các mục trong thùng rác sẽ bị xóa vĩnh viễn sau {n} ngày",
+  "Wiederhergestellt": "Đã khôi phục"
 }

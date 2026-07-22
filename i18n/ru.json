@@ -167,5 +167,11 @@
   "vor {n} Min.": "{n} мин назад",
   "Letzter Abgleich: {when}": "Последняя синхронизация: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "Получено, ещё не применено: {n} синхронизаций",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} записей не читаются (шифрование)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} записей не читаются (шифрование)",
+  "Papierkorb": "Корзина",
+  "Wiederherstellen": "Восстановить",
+  "Papierkorb ist leer": "Корзина пуста",
+  "Gelöscht von {name}": "Удалено: {name}",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Записи в корзине удаляются навсегда через {n} дней",
+  "Wiederhergestellt": "Восстановлено"
 }

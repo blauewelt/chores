@@ -167,5 +167,11 @@
   "vor {n} Min.": "{n}分前",
   "Letzter Abgleich: {when}": "最終同期: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "受信済み・未反映: {n}件の同期",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n}件のエントリが読み取れません（暗号化）"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n}件のエントリが読み取れません（暗号化）",
+  "Papierkorb": "ゴミ箱",
+  "Wiederherstellen": "復元",
+  "Papierkorb ist leer": "ゴミ箱は空です",
+  "Gelöscht von {name}": "{name}が削除",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "ゴミ箱の項目は{n}日後に完全に削除されます",
+  "Wiederhergestellt": "復元しました"
 }

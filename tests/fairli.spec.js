@@ -368,33 +368,43 @@ test.describe('Fairli', () => {
     await expect(page.locator('#saveAndRecord')).toBeHidden();
   });
 
-  test('Verlauf-Löschen: Undo stellt wieder her, DELETE erst nach dem Fenster (v4.24.0)', async ({ context, page }) => {
+  test('Verlauf-Löschen: Undo stellt wieder her, Commit erst nach dem Fenster — als GRABSTEIN, nie DELETE (v4.24.0/v4.63.0)', async ({ context, page }) => {
     test.setTimeout(30000);   // enthaelt bewusst das volle 5s-Undo-Fenster
-    let deletes = 0;
+    let deletes = 0, tombstones = 0;
     await mockBackend(context);
-    await context.route(`${SB}/rest/v1/log**`, r =>
-      r.request().method() === 'DELETE' ? (deletes++, r.fulfill({ status: 204, body: '' })) : r.fallback());
+    await context.route(`${SB}/rest/v1/log**`, r => {
+      const req = r.request();
+      if (req.method() === 'DELETE') { deletes++; return r.fulfill({ status: 204, body: '' }); }
+      if (req.method() === 'POST') {
+        const rows = JSON.parse(req.postData() || '[]');
+        if ((Array.isArray(rows) ? rows : [rows]).some(x => x.deleted_at)) tombstones++;
+        return r.fulfill({ status: 204, body: '' });
+      }
+      return r.fallback();
+    });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     const entry = page.locator('.entry', { hasText: 'Müll rausbringen' });
     await entry.click();
     await page.locator('#logSheet #delLog').click();
     await expect(page.locator('.entry')).toHaveCount(0);            // lokal sofort weg
-    // Undo im Fenster: rein lokal, KEIN DELETE ging raus
+    // Undo im Fenster: rein lokal, NICHTS ging raus
     await page.locator('#toast .tact', { hasText: 'Rückgängig' }).click();
     await expect(page.locator('.entry', { hasText: 'Müll rausbringen' })).toHaveCount(1);
     expect(deletes).toBe(0);
+    expect(tombstones).toBe(0);
     // Pull darf die wiederhergestellte Zeile nicht fressen (pendingDeletes bereinigt)
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
     await page.waitForTimeout(400);
     await expect(page.locator('.entry', { hasText: 'Müll rausbringen' })).toHaveCount(1);
-    // Zweiter Löschvorgang, KEIN Undo → DELETE nach Ablauf des Fensters
+    // Zweiter Löschvorgang, KEIN Undo → GRABSTEIN nach Ablauf des Fensters
     await entry.click();
     await page.locator('#logSheet #delLog').click();
     await expect(page.locator('.entry')).toHaveCount(0);
-    expect(deletes).toBe(0);                                        // noch im Fenster
+    expect(tombstones).toBe(0);                                     // noch im Fenster
     await page.waitForTimeout(5300);
-    expect(deletes).toBeGreaterThan(0);                             // jetzt committet
+    expect(tombstones).toBeGreaterThan(0);                          // jetzt committet
+    expect(deletes).toBe(0);                                        // v4.63.0: NIE als DELETE
   });
 
   test('Kachel-Kunst: Prompt zeigt das genannte Ding, nicht «household chore» (v4.26.0)', async ({ context, page }) => {
@@ -2515,6 +2525,151 @@ test.describe('Fairli', () => {
     await expect(page.locator('.chip').first()).toBeVisible();
     // Chips bleiben BEDIENBAR: Tipp auf einen Chip waehlt die Person
     await page.locator('.chip', { hasText: 'Mira' }).click();
+  });
+
+  // ---------- v4.63.0: Papierkorb — Löschen ist ein Grabstein ----------
+
+  test('Löschen sendet GRABSTEIN-Upsert (deleted_at), niemals DELETE — Eintrag wandert in den Papierkorb (v4.63.0)', async ({ context, page }) => {
+    let sawDelete = false, tombstone = null;
+    await mockBackend(context);
+    await context.route(`${SB}/rest/v1/log**`, route => {
+      const req = route.request();
+      if (req.method() === 'DELETE') { sawDelete = true; return route.fulfill({ status: 204, body: '' }); }
+      if (req.method() === 'POST') {
+        const rows = JSON.parse(req.postData() || '[]');
+        const t = (Array.isArray(rows) ? rows : [rows]).find(r => r.deleted_at);
+        if (t) tombstone = t;
+        return route.fulfill({ status: 204, body: '' });
+      }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('#list .entry').first().click();          // Bearbeiten-Sheet
+    await page.locator('#delLog').click();                       // Löschen (Undo-Fenster 5 s)
+    await expect(page.locator('#list .entry')).toHaveCount(0);   // lokal sofort weg
+    await page.waitForTimeout(5600);                             // Fenster verstreicht → Commit
+    expect(sawDelete).toBe(false);
+    expect(tombstone).not.toBeNull();
+    expect(tombstone.deleted_at).toBeTruthy();
+    // Papierkorb in den Einstellungen zaehlt und listet den Eintrag
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setTrash .setval')).toHaveText('1');
+    await page.locator('#setTrash').click();
+    await expect(page.locator('#trashSheet .entry')).toHaveCount(1);
+    await expect(page.locator('#trashSheet')).toContainText('Mira');
+  });
+
+  test('Grabstein vom Server entfernt den Eintrag auf ANDEREN Geräten im Delta — keine 24-h-Geister mehr (v4.63.0)', async ({ context, page }) => {
+    // Gerät B hat den Eintrag lokal; ein Delta-Pull bringt denselben Eintrag
+    // als Grabstein (anderes Gerät hat gelöscht) → Verlauf zeigt ihn nicht mehr.
+    const ROW = { id: 'l-1', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
+      member_id: 'm-mira', member_name: 'Mira', points: 2,
+      done_at: '2026-07-21T10:00:00+00:00', created_at: '2026-07-21T10:00:01+00:00',
+      updated_at: null, deleted_at: null, deleted_by: null, family_id: FAM };
+    const TOMB = Object.assign({}, ROW, { deleted_at: '2026-07-21T12:00:00+00:00',
+      deleted_by: 'm-chris', updated_at: '2026-07-21T12:00:00.5+00:00' });
+    await mockBackend(context, { logRows: () => [TOMB] });
+    await context.addInitScript(({ fam, row, ver }) => {
+      localStorage.setItem('haushalt.onboard:' + fam + ':a', '1');
+      localStorage.setItem('haushalt.onboard:' + fam + ':u', '1');
+      localStorage.setItem('haushalt.claim:' + fam, '1');
+      localStorage.setItem('haushalt.v2:' + fam, JSON.stringify({
+        members: [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6' }],
+        chores: [], log: [row], famName: 'Testhaushalt' }));
+      localStorage.setItem('haushalt.delta:' + fam, '2026-07-21T11:00:00+00:00');
+      localStorage.setItem('haushalt.full:' + fam, String(Date.now() - 3600e3));
+      localStorage.setItem('haushalt.pullver:' + fam, ver);
+    }, { fam: FAM, row: ROW, ver: APP_VERSION });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('#list')).not.toContainText('Müll rausbringen');
+    // und er liegt im Papierkorb, mit Loeschendem
+    await page.locator('#openSettings').click();
+    await page.locator('#setTrash').click();
+    await expect(page.locator('#trashSheet .entry')).toHaveCount(1);
+  });
+
+  test('Papierkorb: Wiederherstellen setzt deleted_at=null zurück, Eintrag kehrt in Verlauf und Punkte zurück (v4.63.0)', async ({ context, page }) => {
+    let restored = null;
+    const TOMB = { id: 'l-1', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
+      member_id: 'm-mira', member_name: 'Mira', points: 2,
+      done_at: new Date().toISOString(), created_at: new Date().toISOString(),
+      updated_at: null, deleted_at: new Date().toISOString(), deleted_by: 'm-chris', family_id: FAM };
+    await mockBackend(context, { logRows: () => [TOMB] });
+    await context.route(`${SB}/rest/v1/log**`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') {
+        const rows = JSON.parse(req.postData() || '[]');
+        const r = (Array.isArray(rows) ? rows : [rows])[0];
+        if (r && r.deleted_at === null) restored = r;
+        return route.fulfill({ status: 204, body: '' });
+      }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('#list')).not.toContainText('Müll rausbringen');
+    await page.locator('#openSettings').click();
+    await page.locator('#setTrash').click();
+    await page.locator('#trashSheet [data-restore]').click();
+    await page.evaluate(() => document.getElementById('trashSheet').close());
+    expect(restored).not.toBeNull();
+    expect(restored.deleted_at).toBeNull();
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('#list')).toContainText('Müll rausbringen');
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('#list')).toContainText('Mira');
+  });
+
+  test('Papierkorb-Rechte: persönlicher Nicht-Admin-Link sieht nur EIGENE gelöschte Einträge (v4.63.0)', async ({ context, page }) => {
+    const mk = (id, mid, mname) => ({ id, chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
+      member_id: mid, member_name: mname, points: 2,
+      done_at: new Date().toISOString(), created_at: new Date().toISOString(),
+      updated_at: null, deleted_at: new Date().toISOString(), deleted_by: mid, family_id: FAM });
+    await mockBackend(context, { logRows: () => [mk('l-mine', 'm-mira', 'Mira'), mk('l-other', 'm-chris', 'Timon')] });
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);            // Miras persönlicher Link (kein Admin)
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setTrash .setval')).toHaveText('1');
+    await page.locator('#setTrash').click();
+    await expect(page.locator('#trashSheet .entry')).toHaveCount(1);
+    await expect(page.locator('#trashSheet')).toContainText('Mira');
+    await expect(page.locator('#trashSheet')).not.toContainText('Timon');
+  });
+
+  test('Punkte ignorieren Grabsteine (v4.63.0)', async ({ context, page }) => {
+    const live = { id: 'l-live', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
+      member_id: 'm-mira', member_name: 'Mira', points: 2,
+      done_at: new Date().toISOString(), created_at: new Date().toISOString(), family_id: FAM };
+    const dead = Object.assign({}, live, { id: 'l-dead', points: 90, deleted_at: new Date().toISOString() });
+    await mockBackend(context, { logRows: () => [live, dead] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('#list .score .num').first()).toHaveText('2');   // nicht 92
+  });
+
+  test('Papierkorb-Ablauf: Grabstein älter als 30 Tage wird am Admin-Link endgültig entfernt (v4.63.0)', async ({ context, page }) => {
+    let deleted = [];
+    const old = { id: 'l-old', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
+      member_id: 'm-mira', member_name: 'Mira', points: 2,
+      done_at: '2026-06-01T10:00:00+00:00', created_at: '2026-06-01T10:00:00+00:00',
+      deleted_at: new Date(Date.now() - 31 * 86400e3).toISOString(), deleted_by: null, family_id: FAM };
+    const fresh = Object.assign({}, old, { id: 'l-fresh', deleted_at: new Date(Date.now() - 2 * 86400e3).toISOString() });
+    await mockBackend(context, { logRows: () => [old, fresh] });
+    await context.route(`${SB}/rest/v1/log**`, route => {
+      const req = route.request();
+      if (req.method() === 'DELETE') {
+        deleted.push(new URL(req.url()).search);
+        return route.fulfill({ status: 204, body: '' });
+      }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);                        // Familien-Link = Admin
+    await page.waitForTimeout(1200);                            // purge läuft nach dem Pull
+    expect(deleted.some(q => q.includes('l-old'))).toBe(true);
+    expect(deleted.some(q => q.includes('l-fresh'))).toBe(false);
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setTrash .setval')).toHaveText('1');   // nur der frische bleibt
   });
 
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {

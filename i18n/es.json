@@ -167,5 +167,11 @@
   "vor {n} Min.": "hace {n} min",
   "Letzter Abgleich: {when}": "Última sincronización: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "Recibidas, aún no aplicadas: {n} sincronizaciones",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} entradas ilegibles (cifrado)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} entradas ilegibles (cifrado)",
+  "Papierkorb": "Papelera",
+  "Wiederherstellen": "Restaurar",
+  "Papierkorb ist leer": "La papelera está vacía",
+  "Gelöscht von {name}": "Eliminado por {name}",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Los elementos de la papelera se eliminan definitivamente tras {n} días",
+  "Wiederhergestellt": "Restaurado"
 }

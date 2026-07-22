@@ -167,5 +167,11 @@
   "vor {n} Min.": "{n} min fa",
   "Letzter Abgleich: {when}": "Ultima sincronizzazione: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "Ricevute, non ancora applicate: {n} sincronizzazioni",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} voci illeggibili (crittografia)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} voci illeggibili (crittografia)",
+  "Papierkorb": "Cestino",
+  "Wiederherstellen": "Ripristina",
+  "Papierkorb ist leer": "Il cestino è vuoto",
+  "Gelöscht von {name}": "Eliminato da {name}",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Gli elementi nel cestino vengono rimossi definitivamente dopo {n} giorni",
+  "Wiederhergestellt": "Ripristinato"
 }

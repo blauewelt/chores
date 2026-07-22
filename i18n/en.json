@@ -167,5 +167,11 @@
   "vor {n} Min.": "{n} min ago",
   "Letzter Abgleich: {when}": "Last sync: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "Received, not yet applied: {n} syncs",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} entries unreadable (encryption)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} entries unreadable (encryption)",
+  "Papierkorb": "Trash",
+  "Wiederherstellen": "Restore",
+  "Papierkorb ist leer": "Trash is empty",
+  "Gelöscht von {name}": "Deleted by {name}",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Items in the trash are permanently removed after {n} days",
+  "Wiederhergestellt": "Restored"
 }

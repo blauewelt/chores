@@ -167,5 +167,11 @@
   "vor {n} Min.": "{n}분 전",
   "Letzter Abgleich: {when}": "마지막 동기화: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "수신됨, 아직 미적용: 동기화 {n}회",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "읽을 수 없는 항목 {n}개 (암호화)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "읽을 수 없는 항목 {n}개 (암호화)",
+  "Papierkorb": "휴지통",
+  "Wiederherstellen": "복원",
+  "Papierkorb ist leer": "휴지통이 비어 있습니다",
+  "Gelöscht von {name}": "{name}님이 삭제함",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "휴지통의 항목은 {n}일 후 영구 삭제됩니다",
+  "Wiederhergestellt": "복원됨"
 }

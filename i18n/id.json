@@ -167,5 +167,11 @@
   "vor {n} Min.": "{n} mnt lalu",
   "Letzter Abgleich: {when}": "Sinkronisasi terakhir: {when}",
   "Empfangen, noch nicht übernommen: {n} Abgleiche": "Diterima, belum diterapkan: {n} sinkronisasi",
-  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} entri tidak terbaca (enkripsi)"
+  "{n} Einträge nicht lesbar (Verschlüsselung)": "{n} entri tidak terbaca (enkripsi)",
+  "Papierkorb": "Tempat sampah",
+  "Wiederherstellen": "Pulihkan",
+  "Papierkorb ist leer": "Tempat sampah kosong",
+  "Gelöscht von {name}": "Dihapus oleh {name}",
+  "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Item di tempat sampah dihapus permanen setelah {n} hari",
+  "Wiederhergestellt": "Dipulihkan"
 }
