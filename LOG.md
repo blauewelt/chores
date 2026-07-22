@@ -18,6 +18,12 @@
 - Test-Härtung: die zwei v4.61.0-Tests hatten '4.61.0' hartkodiert und
   brachen beim Patch-Bump — Versionsnummer kommt jetzt zur Laufzeit aus
   index.html (Suite blockierte den Deploy korrekt: Regel funktioniert)
+- NACHDEPLOY-VORFALL (Minuten spaeter behoben): deploy.mjs las ALLE
+  Dateien als utf8 — die drei PNGs kamen als zerstoerte Bytefolgen an
+  (0x89 → U+FFFD, 27 KB → 48 KB) und waren kurz kaputt live. Script
+  kann jetzt Binaerdateien (base64-Blob-API); PNGs korrekt nachdeployt.
+  Lehre: deploy.mjs war nur je mit Text benutzt worden — v4.37.1 hatte
+  Icons noch per git push deployt.
 - APP_VERSION 4.61.1, SW-Cache haushalt-v156
 
 ## 2026-07-21 — v4.61.0: VORFALL «Der eingefrorene Leser» — Wasserzeichen-Ratsche behoben, Identitäts-Sheet repariert, Abgleich sichtbar gemacht

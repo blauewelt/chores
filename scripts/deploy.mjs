@@ -21,11 +21,21 @@ const api = async (path, method = 'GET', body) => {
 const ref = await api(`git/ref/heads/${BRANCH}`);
 const baseCommit = ref.object.sha;
 const baseTree = (await api(`git/commits/${baseCommit}`)).tree.sha;
-const tree = await api('git/trees', 'POST', {
-  base_tree: baseTree,
-  tree: files.map(p => ({ path: p, mode: '100644', type: 'blob',
-    content: readFileSync(p, 'utf8') })),
-});
+// Binaerdateien (PNG etc.) MUESSEN als base64-Blob hochgeladen werden —
+// readFileSync(utf8) zerstoert sie (0x89 → U+FFFD; Live-Vorfall v4.61.1:
+// drei Icon-PNGs kaputt deployt). Textdateien weiter inline im Tree.
+const BINARY = /\.(png|jpg|jpeg|gif|webp|ico|woff2?|ttf|aab|apk|zip|pdf)$/i;
+const entries = [];
+for (const p of files) {
+  if (BINARY.test(p)) {
+    const blob = await api('git/blobs', 'POST', {
+      content: readFileSync(p).toString('base64'), encoding: 'base64' });
+    entries.push({ path: p, mode: '100644', type: 'blob', sha: blob.sha });
+  } else {
+    entries.push({ path: p, mode: '100644', type: 'blob', content: readFileSync(p, 'utf8') });
+  }
+}
+const tree = await api('git/trees', 'POST', { base_tree: baseTree, tree: entries });
 const commit = await api('git/commits', 'POST', { message, tree: tree.sha, parents: [baseCommit] });
 await api(`git/refs/heads/${BRANCH}`, 'PATCH', { sha: commit.sha });
 console.log(`deployed ${files.length} Dateien atomar: ${commit.sha.slice(0, 8)} "${message}"`);
