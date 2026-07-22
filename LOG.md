@@ -1,3 +1,19 @@
+## 2026-07-21 — Store-Runde: TWA-Eingaben auf das Violett-Icon nachgezogen
+
+- twa/twa-manifest.json: iconUrl/maskableIconUrl auf ?v=48 — der
+  NAECHSTE bubblewrap-Build backt das aktuelle Icon (Violett-Kachel)
+  in die Launcher-Icons. twa/store_icon.png (Play-Eintrag, 512 RGBA)
+  aus dem neuen icon-512.png regeneriert.
+- KONSEQUENZ fuer das bereits privat uebergebene AAB (1.0.0, rotierter
+  Schluessel): es traegt noch die Launcher-Icons der Vor-Violett-
+  Fassung. Da in Play noch NICHTS hochgeladen ist, ist ein Rebuild vor
+  dem Erst-Upload sauberer als ein 1.0.1 hinterher. Der Rebuild
+  braucht den privaten Keystore (nicht in der Sandbox) — Weg A:
+  Maintainer baut lokal nach twa/PLAY_STORE.md (~15 min); Weg B:
+  Keystore erneut privat in die Sitzung geben, Build hier (git add -A
+  bleibt verboten, benannte Pfade only).
+- Kein Versions-/SW-Bump: reine Store-Eingaben, App unveraendert.
+
 ## 2026-07-21 — v4.61.1: App-Icon — untere rechte Kachel jetzt Violett
 
 - Icon-Iteration (Maintainer-Runde): untere rechte Kachel im exakt
