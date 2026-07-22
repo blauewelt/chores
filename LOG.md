@@ -1,3 +1,25 @@
+## 2026-07-21 — v4.61.1: App-Icon — untere rechte Kachel jetzt Violett
+
+- Icon-Iteration (Maintainer-Runde): untere rechte Kachel im exakt
+  gleichen Violett-Verlauf wie die zuvor begutachtete Variante
+  (Werte pixelgenau aus der freigegebenen Fassung uebernommen,
+  Position getauscht); uebrige drei Kacheln, Dach und Hintergrund
+  unveraendert (Original-Pixel).
+- Arbeitsweg dokumentiert: Pollinations fuer die praezise
+  Kachel-Geometrie erneut ungeeignet (wie v4.37.1) — Aenderung als
+  Pixel-Operation direkt auf den Original-PNGs (Hue-Relokation mit
+  Kanten-Maske); erster Wurf beschnitt die Kachel oben/unten um 5 px
+  (Rand-Sampling-Fehler), behoben durch Remapping ueber die
+  VERMESSENEN Kachelkanten in x UND y.
+- icon-192.png, icon-512.png, icon-512-maskable.png ersetzt;
+  Cache-Buster ?v=47→48 (index.html, 404.html, manifest.json)
+- Hinweis: TWA/Play-Store-Icon (twa/store_icon.png) ist davon
+  getrennt — Angleichung gehoert in die naechste Store-Runde.
+- Test-Härtung: die zwei v4.61.0-Tests hatten '4.61.0' hartkodiert und
+  brachen beim Patch-Bump — Versionsnummer kommt jetzt zur Laufzeit aus
+  index.html (Suite blockierte den Deploy korrekt: Regel funktioniert)
+- APP_VERSION 4.61.1, SW-Cache haushalt-v156
+
 ## 2026-07-21 — v4.61.0: VORFALL «Der eingefrorene Leser» — Wasserzeichen-Ratsche behoben, Identitäts-Sheet repariert, Abgleich sichtbar gemacht
 
 VORFALL (19.–21.07., Live): Einträge anderer Familienmitglieder nach So

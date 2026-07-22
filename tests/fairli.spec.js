@@ -8,6 +8,10 @@ import { dirname, join } from 'path';
 const __i18nDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'i18n');
 
 const FAM = 'testfam-abc123';
+// Live-App-Version aus index.html — Tests duerfen NIE eine Versionsnummer
+// hartkodieren (v4.61.1: '4.61.0' im Selbstheilungs-Test brach beim Patch-Bump)
+const APP_VERSION = /APP_VERSION = '([^']+)'/.exec(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'index.html'), 'utf8'))[1];
 const BASE = '/chores';
 const SB = 'https://uggipomhmnnmiqpbpxcc.supabase.co';
 
@@ -2362,7 +2366,7 @@ test.describe('Fairli', () => {
       const body = u.pathname.includes('/members') ? MEMBERS : u.pathname.includes('/chores') ? CHORES : u.pathname.includes('/families') ? FAMILIES : [];
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
     });
-    await context.addInitScript(fam => {
+    await context.addInitScript(({ fam, ver }) => {
       localStorage.setItem('haushalt.onboard:' + fam + ':a', '1');
       localStorage.setItem('haushalt.onboard:' + fam + ':u', '1');
       localStorage.setItem('haushalt.claim:' + fam, '1');
@@ -2374,10 +2378,11 @@ test.describe('Fairli', () => {
         famName: 'Testhaushalt' }));
       localStorage.setItem('haushalt.delta:' + fam, '2026-07-19T17:00:00+00:00');
       localStorage.setItem('haushalt.full:' + fam, String(Date.now() - 3600e3));
-      // v4.61.0: Versions-Marke setzen, sonst erzwingt der Versionswechsel den
-      // Voll-Abgleich und der Delta-Pfad (den dieser Test prüft) läuft nie
-      localStorage.setItem('haushalt.pullver:' + fam, '4.61.0');
-    }, FAM);
+      // Versions-Marke = LIVE-Version setzen, sonst erzwingt der
+      // Versionswechsel den Voll-Abgleich und der Delta-Pfad (den dieser
+      // Test prüft) läuft nie
+      localStorage.setItem('haushalt.pullver:' + fam, ver);
+    }, { fam: FAM, ver: APP_VERSION });
     let release; holdLog = new Promise(r => release = r);
     await page.goto(`${BASE}/f/${FAM}`);
     await page.waitForTimeout(900);                       // Pull läuft, Log-Antwort hängt
@@ -2418,7 +2423,7 @@ test.describe('Fairli', () => {
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     await expect(page.locator('#list')).toContainText('Mira');     // Voll-Abgleich hat sie geholt
     const ver = await page.evaluate(fam => localStorage.getItem('haushalt.pullver:' + fam), FAM);
-    expect(ver).toBe('4.61.0');                                    // Marke fortgeschrieben
+    expect(ver).toBe(APP_VERSION);                                 // Marke fortgeschrieben
   });
 
   test('Identität übernehmen: Angebot am blanken Link, Erfolg → persönlicher Link mit Admin (v4.61.0)', async ({ context, page }) => {

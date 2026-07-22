@@ -34,8 +34,8 @@
 <meta name="apple-mobile-web-app-title" content="Fairli">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#141A17">
-<link rel="apple-touch-icon" href="/chores/icon-192.png?v=47">
-<link rel="icon" href="/chores/icon-192.png?v=47" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="/chores/icon-192.png?v=48">
+<link rel="icon" href="/chores/icon-192.png?v=48" sizes="192x192" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
@@ -350,10 +350,10 @@
 </style>
 </head>
 <body>
-<div id="splash" aria-hidden="true"><img src="/chores/icon-192.png?v=47" alt="" width="104" height="104"></div>
+<div id="splash" aria-hidden="true"><img src="/chores/icon-192.png?v=48" alt="" width="104" height="104"></div>
 <header id="apphead">
   <div class="hrow">
-    <img id="headLogo" src="/chores/icon-192.png?v=47" alt="" width="38" height="38" aria-hidden="true">
+    <img id="headLogo" src="/chores/icon-192.png?v=48" alt="" width="38" height="38" aria-hidden="true">
     <h1 id="famTitle">&nbsp;</h1>
   </div>
   <div class="headbtns">
@@ -507,7 +507,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.61.0';
+  const APP_VERSION = '4.61.1';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1210,7 +1210,7 @@
     // dem i18n-Boot und blieb fuer alle Welt deutsch.
     function renderEntry() {
       d.innerHTML = `
-      <img src="/chores/icon-192.png?v=47" alt="" width="72" height="72" style="border-radius:18px">
+      <img src="/chores/icon-192.png?v=48" alt="" width="72" height="72" style="border-radius:18px">
       <h1 style="font-family:var(--display);font-weight:800;font-size:34px;margin:0 0 4px;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Fairli</h1>
       <p style="color:var(--muted);max-width:300px;margin:0 0 8px">${t('Aufgaben im Haushalt – fair verteilt.')}</p>
       ${last && last.family ? `<button id="resume" style="${btn};background:var(--accent);color:#0C1220">${t('Zu meinem Haushalt')}</button>` : ''}
