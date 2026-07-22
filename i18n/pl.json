@@ -173,5 +173,9 @@
   "Papierkorb ist leer": "Kosz jest pusty",
   "Gelöscht von {name}": "Usunięte przez {name}",
   "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Elementy w koszu są trwale usuwane po {n} dniach",
-  "Wiederhergestellt": "Przywrócono"
+  "Wiederhergestellt": "Przywrócono",
+  "Verlauf von {name} anzeigen": "Pokaż historię {name}",
+  "Nur {name}": "Tylko {name}",
+  "Filter entfernen": "Usuń filtr",
+  "Für {name} ist hier noch nichts eingetragen.": "Dla {name} nic jeszcze nie zapisano."
 }

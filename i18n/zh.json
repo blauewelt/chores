@@ -173,5 +173,9 @@
   "Papierkorb ist leer": "回收站是空的",
   "Gelöscht von {name}": "由{name}删除",
   "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "回收站中的条目将在{n}天后永久删除",
-  "Wiederhergestellt": "已恢复"
+  "Wiederhergestellt": "已恢复",
+  "Verlauf von {name} anzeigen": "查看{name}的记录",
+  "Nur {name}": "仅{name}",
+  "Filter entfernen": "移除筛选",
+  "Für {name} ist hier noch nichts eingetragen.": "还没有{name}的记录。"
 }

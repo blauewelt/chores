@@ -173,5 +173,9 @@
   "Papierkorb ist leer": "ゴミ箱は空です",
   "Gelöscht von {name}": "{name}が削除",
   "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "ゴミ箱の項目は{n}日後に完全に削除されます",
-  "Wiederhergestellt": "復元しました"
+  "Wiederhergestellt": "復元しました",
+  "Verlauf von {name} anzeigen": "{name}の履歴を表示",
+  "Nur {name}": "{name}のみ",
+  "Filter entfernen": "フィルターを解除",
+  "Für {name} ist hier noch nichts eingetragen.": "{name}の記録はまだありません。"
 }

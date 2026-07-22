@@ -173,5 +173,9 @@
   "Papierkorb ist leer": "Papperskorgen är tom",
   "Gelöscht von {name}": "Raderad av {name}",
   "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Objekt i papperskorgen tas bort permanent efter {n} dagar",
-  "Wiederhergestellt": "Återställd"
+  "Wiederhergestellt": "Återställd",
+  "Verlauf von {name} anzeigen": "Visa {name}s historik",
+  "Nur {name}": "Endast {name}",
+  "Filter entfernen": "Ta bort filter",
+  "Für {name} ist hier noch nichts eingetragen.": "Inget har registrerats för {name} ännu."
 }

@@ -173,5 +173,9 @@
   "Papierkorb ist leer": "Trash is empty",
   "Gelöscht von {name}": "Deleted by {name}",
   "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Items in the trash are permanently removed after {n} days",
-  "Wiederhergestellt": "Restored"
+  "Wiederhergestellt": "Restored",
+  "Verlauf von {name} anzeigen": "Show {name}’s history",
+  "Nur {name}": "Only {name}",
+  "Filter entfernen": "Remove filter",
+  "Für {name} ist hier noch nichts eingetragen.": "Nothing has been logged for {name} yet."
 }

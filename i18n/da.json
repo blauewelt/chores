@@ -173,5 +173,9 @@
   "Papierkorb ist leer": "Papirkurven er tom",
   "Gelöscht von {name}": "Slettet af {name}",
   "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Elementer i papirkurven fjernes permanent efter {n} dage",
-  "Wiederhergestellt": "Gendannet"
+  "Wiederhergestellt": "Gendannet",
+  "Verlauf von {name} anzeigen": "Vis {name}s historik",
+  "Nur {name}": "Kun {name}",
+  "Filter entfernen": "Fjern filter",
+  "Für {name} ist hier noch nichts eingetragen.": "Der er endnu intet registreret for {name}."
 }

@@ -2672,6 +2672,48 @@ test.describe('Fairli', () => {
     await expect(page.locator('#setTrash .setval')).toHaveText('1');   // nur der frische bleibt
   });
 
+  // ---------- v4.64.0: Verlauf nach Person filtern ----------
+
+  test('Punkte-Karte antippen öffnet den Verlauf GEFILTERT auf die Person, Pill zeigt und löst den Filter (v4.64.0)', async ({ context, page }) => {
+    const mk = (id, mid, mname, chore) => ({ id, chore_id: null, chore_name: chore, chore_note: '',
+      member_id: mid, member_name: mname, points: 2,
+      done_at: new Date(Date.now() - Math.random() * 5 * 3600e3).toISOString(),
+      created_at: new Date().toISOString(), family_id: FAM });
+    await mockBackend(context, { logRows: () => [
+      mk('l-1', 'm-mira', 'Mira', 'Staubsaugen'),
+      mk('l-2', 'm-chris', 'Timon', 'Kochen'),
+      mk('l-3', 'm-mira', 'Mira', 'Einkaufen'),
+    ] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await page.locator('.score[data-mid="m-mira"]').click();
+    // Verlauf-Tab ist aktiv, nur Miras Einträge sichtbar
+    await expect(page.getByRole('tab', { name: 'Verlauf' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#list')).toContainText('Staubsaugen');
+    await expect(page.locator('#list')).toContainText('Einkaufen');
+    await expect(page.locator('#list')).not.toContainText('Kochen');
+    // Pill zeigt den Filter und löst ihn
+    await expect(page.locator('.filterpill')).toContainText('Mira');
+    await page.locator('#clearLogFilter').click();
+    await expect(page.locator('.filterpill')).toHaveCount(0);
+    await expect(page.locator('#list')).toContainText('Kochen');
+  });
+
+  test('Personen-Filter: leerer Verlauf zeigt personenbezogene Leermeldung; Tab-Wechsel behält den Filter sichtbar (v4.64.0)', async ({ context, page }) => {
+    const only = { id: 'l-1', chore_id: null, chore_name: 'Kochen', chore_note: '',
+      member_id: 'm-chris', member_name: 'Timon', points: 2,
+      done_at: new Date().toISOString(), created_at: new Date().toISOString(), family_id: FAM };
+    await mockBackend(context, { logRows: () => [only] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await page.locator('.score[data-mid="m-mira"]').click();      // Mira hat nichts
+    await expect(page.locator('#list .empty')).toContainText('Mira');
+    // Wechsel weg und zurück: Filter besteht, ist aber durch die Pill offensichtlich
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('.filterpill')).toContainText('Mira');
+  });
+
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);

@@ -173,5 +173,9 @@
   "Papierkorb ist leer": "Tempat sampah kosong",
   "Gelöscht von {name}": "Dihapus oleh {name}",
   "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Item di tempat sampah dihapus permanen setelah {n} hari",
-  "Wiederhergestellt": "Dipulihkan"
+  "Wiederhergestellt": "Dipulihkan",
+  "Verlauf von {name} anzeigen": "Tampilkan riwayat {name}",
+  "Nur {name}": "Hanya {name}",
+  "Filter entfernen": "Hapus filter",
+  "Für {name} ist hier noch nichts eingetragen.": "Belum ada catatan untuk {name}."
 }

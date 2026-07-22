@@ -173,5 +173,9 @@
   "Papierkorb ist leer": "De prullenbak is leeg",
   "Gelöscht von {name}": "Verwijderd door {name}",
   "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Items in de prullenbak worden na {n} dagen definitief verwijderd",
-  "Wiederhergestellt": "Hersteld"
+  "Wiederhergestellt": "Hersteld",
+  "Verlauf von {name} anzeigen": "Geschiedenis van {name} tonen",
+  "Nur {name}": "Alleen {name}",
+  "Filter entfernen": "Filter verwijderen",
+  "Für {name} ist hier noch nichts eingetragen.": "Er is nog niets vastgelegd voor {name}."
 }

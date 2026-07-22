@@ -151,6 +151,13 @@
   .score .dot{width:32px; height:32px; border-radius:50%; display:grid; place-items:center; color:#10140F; font-weight:800; font-size:15px; flex:0 0 32px}
   .score .name{font-weight:700; font-size:18px; flex:1}
   .score .num{font-family:var(--display); font-weight:800; font-size:34px}
+  .score[data-mid]{cursor:pointer}
+  .filterpill{display:inline-flex; align-items:center; gap:8px; margin:2px 0 10px;
+    padding:7px 12px; border-radius:999px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink); font-size:14px; font-weight:600; cursor:pointer}
+  .filterpill .dot{width:18px; height:18px; border-radius:50%; display:inline-flex;
+    align-items:center; justify-content:center; font-size:11px; color:#10140F}
+  .filterpill .fx{color:var(--muted); font-size:16px; margin-left:2px}
   .score .bar{height:10px; border-radius:999px; background:#252F29; margin-top:10px; overflow:hidden}
   .score .bar i{display:block; height:100%; border-radius:999px}
   .score .sub{font-size:14px; color:var(--muted); margin-top:6px}
@@ -514,7 +521,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.63.0';
+  const APP_VERSION = '4.64.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1380,6 +1387,10 @@
     : (localStorage.getItem(LS_ME) || null);
   let view = 'chores';
   let period = 'week';
+  // v4.64.0: Verlauf nach Person filtern — gesetzt durch Tipp auf eine
+  // Punkte-Karte, sichtbar als Pill im Verlauf, dort auch wieder loesbar.
+  // Bewusst NICHT persistiert: ein Filter ist Sitzungs-Sichtzustand.
+  let LOGFILTER = null;
   let syncOk = null;
 
   const save = () => localStorage.setItem(LS_STATE, JSON.stringify(state));
@@ -2118,7 +2129,8 @@
           <button data-p="all" aria-pressed="${period === 'all'}">${t('Gesamt')}</button>
         </div>` +
         ranked.map((m, i) => `
-          <div class="score">
+          <div class="score" data-mid="${m.id}" role="button" tabindex="0"
+               aria-label="${esc(t('Verlauf von {name} anzeigen', { name: m.name }))}">
             <div class="top">
               <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>
               <span class="name">${esc(m.name)}${i === 0 && tot[m.id].pts > 0 ? ' 👑' : ''}</span>
@@ -2132,7 +2144,10 @@
       // Folge («Einkaufen ×3») → EINE Zeile mit Summenpunkten. So braucht es
       // keine Gross/Klein-Kachel-Varianten — dreimal tippen genuegt.
       const groups = [];
-      for (const e of state.log.filter(e => !e.deleted_at && matches(e.chore_name, e.chore_note, e.member_name))) {
+      if (LOGFILTER && !memberById(LOGFILTER)) LOGFILTER = null;
+      for (const e of state.log.filter(e => !e.deleted_at
+          && (!LOGFILTER || e.member_id === LOGFILTER)
+          && matches(e.chore_name, e.chore_note, e.member_name))) {
         // Serien enden an der Tagesgrenze (sonst zaehlt «×N» unter «Heute»
         // stillschweigend gestrige Eintraege mit)
         const key = e.member_id + '|' + (e.chore_id || 'n:' + e.chore_name) + '|' + new Date(e.done_at).toDateString();
@@ -2149,7 +2164,11 @@
         return d.toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' });
       };
       let lastDay = null;
-      listEl.innerHTML = groups.length
+      const fm = LOGFILTER ? memberById(LOGFILTER) : null;
+      const pill = fm ? `<button class="filterpill" id="clearLogFilter" aria-label="${esc(t('Filter entfernen'))}">
+          <span class="dot" style="background:${esc(fm.color)}">${esc(initial(fm.name))}</span>${esc(t('Nur {name}', { name: fm.name }))}<span class="fx">×</span>
+        </button>` : '';
+      listEl.innerHTML = pill + (groups.length
         ? groups.map(g => {
             const e = g.entries[0];                    // neuester der Serie
             const n = g.entries.length;
@@ -2177,7 +2196,9 @@
           }).join('')
         : QUERY.trim()
           ? `<div class="empty"><b>${t('Nichts gefunden')}</b>${t('Kein Eintrag passt zu «{q}».', { q: QUERY.trim() })}</div>`
-          : `<div class="empty"><b>${t('Noch nichts erledigt')}</b>${t('Jede gedrückte Aufgabe landet hier.')}</div>`;
+          : fm
+            ? `<div class="empty"><b>${t('Noch nichts erledigt')}</b>${t('Für {name} ist hier noch nichts eingetragen.', { name: fm.name })}</div>`
+            : `<div class="empty"><b>${t('Noch nichts erledigt')}</b>${t('Jede gedrückte Aufgabe landet hier.')}</div>`);
     }
   }
 
@@ -2256,7 +2277,25 @@
   syncAdminClass();
 
   let pressLock = false;
+  function openFilteredLog(mid) {
+    LOGFILTER = mid;
+    view = 'log'; invalidateOrder();
+    document.querySelectorAll('.tab').forEach(b =>
+      b.setAttribute('aria-selected', String(b.dataset.view === 'log')));
+    render();
+  }
+  // Tastatur: die Punkte-Karten sind role=button/tabindex=0 — Enter/Leertaste
+  // muessen sie ausloesen (divs feuern kein click aus der Tastatur).
+  document.getElementById('list').addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const sc = e.target.closest('.score[data-mid]');
+    if (sc) { e.preventDefault(); openFilteredLog(sc.dataset.mid); }
+  });
   listEl.addEventListener('click', e => {
+    // Punkte-Karte → gefilterter Verlauf (v4.64.0)
+    const sc = e.target.closest('.score[data-mid]');
+    if (sc) { openFilteredLog(sc.dataset.mid); return; }
+    if (e.target.closest('#clearLogFilter')) { LOGFILTER = null; render(); return; }
     // Punkte-Periode
     const p = e.target.closest('[data-p]');
     if (p) { period = p.dataset.p; render(); return; }

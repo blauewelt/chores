@@ -173,5 +173,9 @@
   "Papierkorb ist leer": "Корзина пуста",
   "Gelöscht von {name}": "Удалено: {name}",
   "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Записи в корзине удаляются навсегда через {n} дней",
-  "Wiederhergestellt": "Восстановлено"
+  "Wiederhergestellt": "Восстановлено",
+  "Verlauf von {name} anzeigen": "Показать историю {name}",
+  "Nur {name}": "Только {name}",
+  "Filter entfernen": "Убрать фильтр",
+  "Für {name} ist hier noch nichts eingetragen.": "Для {name} пока ничего не записано."
 }

@@ -173,5 +173,9 @@
   "Papierkorb ist leer": "A lixeira está vazia",
   "Gelöscht von {name}": "Excluído por {name}",
   "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Itens na lixeira são removidos permanentemente após {n} dias",
-  "Wiederhergestellt": "Restaurado"
+  "Wiederhergestellt": "Restaurado",
+  "Verlauf von {name} anzeigen": "Mostrar o histórico de {name}",
+  "Nur {name}": "Só {name}",
+  "Filter entfernen": "Remover filtro",
+  "Für {name} ist hier noch nichts eingetragen.": "Ainda não há nada registrado para {name}."
 }

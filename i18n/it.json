@@ -173,5 +173,9 @@
   "Papierkorb ist leer": "Il cestino è vuoto",
   "Gelöscht von {name}": "Eliminato da {name}",
   "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Gli elementi nel cestino vengono rimossi definitivamente dopo {n} giorni",
-  "Wiederhergestellt": "Ripristinato"
+  "Wiederhergestellt": "Ripristinato",
+  "Verlauf von {name} anzeigen": "Mostra la cronologia di {name}",
+  "Nur {name}": "Solo {name}",
+  "Filter entfernen": "Rimuovi filtro",
+  "Für {name} ist hier noch nichts eingetragen.": "Non c’è ancora nulla registrato per {name}."
 }

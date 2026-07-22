@@ -173,5 +173,9 @@
   "Papierkorb ist leer": "휴지통이 비어 있습니다",
   "Gelöscht von {name}": "{name}님이 삭제함",
   "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "휴지통의 항목은 {n}일 후 영구 삭제됩니다",
-  "Wiederhergestellt": "복원됨"
+  "Wiederhergestellt": "복원됨",
+  "Verlauf von {name} anzeigen": "{name}의 기록 보기",
+  "Nur {name}": "{name}만",
+  "Filter entfernen": "필터 제거",
+  "Für {name} ist hier noch nichts eingetragen.": "{name}의 기록이 아직 없습니다."
 }

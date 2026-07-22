@@ -173,5 +173,9 @@
   "Papierkorb ist leer": "Кошик порожній",
   "Gelöscht von {name}": "Видалено: {name}",
   "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Записи в кошику остаточно видаляються через {n} днів",
-  "Wiederhergestellt": "Відновлено"
+  "Wiederhergestellt": "Відновлено",
+  "Verlauf von {name} anzeigen": "Показати історію {name}",
+  "Nur {name}": "Лише {name}",
+  "Filter entfernen": "Прибрати фільтр",
+  "Für {name} ist hier noch nichts eingetragen.": "Для {name} ще нічого не записано."
 }

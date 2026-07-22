@@ -173,5 +173,9 @@
   "Papierkorb ist leer": "La papelera está vacía",
   "Gelöscht von {name}": "Eliminado por {name}",
   "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Los elementos de la papelera se eliminan definitivamente tras {n} días",
-  "Wiederhergestellt": "Restaurado"
+  "Wiederhergestellt": "Restaurado",
+  "Verlauf von {name} anzeigen": "Mostrar el historial de {name}",
+  "Nur {name}": "Solo {name}",
+  "Filter entfernen": "Quitar filtro",
+  "Für {name} ist hier noch nichts eingetragen.": "Aún no hay nada registrado para {name}."
 }

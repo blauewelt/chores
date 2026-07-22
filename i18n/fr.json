@@ -173,5 +173,9 @@
   "Papierkorb ist leer": "La corbeille est vide",
   "Gelöscht von {name}": "Supprimé par {name}",
   "Einträge im Papierkorb werden nach {n} Tagen endgültig entfernt": "Les éléments de la corbeille sont définitivement supprimés après {n} jours",
-  "Wiederhergestellt": "Restauré"
+  "Wiederhergestellt": "Restauré",
+  "Verlauf von {name} anzeigen": "Afficher l’historique de {name}",
+  "Nur {name}": "Seulement {name}",
+  "Filter entfernen": "Retirer le filtre",
+  "Für {name} ist hier noch nichts eingetragen.": "Rien n’a encore été enregistré pour {name}."
 }

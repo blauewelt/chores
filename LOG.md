@@ -1,3 +1,22 @@
+## 2026-07-22 — v4.64.0: Verlauf nach Person filtern — Punkte-Karten sind Tap-Ziele
+
+- Maintainer-Wunsch: vom Punkte-Tab aus in den Verlauf EINER Person
+  springen. Jede Punkte-Karte ist jetzt ein Tap-Ziel (role=button,
+  tabindex, Enter/Leertaste ausdruecklich behandelt — divs feuern kein
+  Tastatur-click) und oeffnet den Verlauf gefiltert auf die Person.
+- Filter sichtbar als Pill («Nur Mira ×») ueber der Liste, dort auch
+  wieder loesbar; kombiniert sich mit der Suche; Grabsteine bleiben
+  ausgeschlossen. Bewusst NICHT persistiert (Sitzungs-Sichtzustand),
+  ueberlebt aber Tab-Wechsel — die Pill macht das offensichtlich.
+- Leerer gefilterter Verlauf sagt WER gemeint ist («Fuer Mira ist hier
+  noch nichts eingetragen») statt der generischen Leermeldung.
+- Verschwindet das gefilterte Mitglied (Reconcile), loest sich der
+  Filter selbst.
+- 4 neue i18n-Schluessel in 19 Sprachen; 2 neue Tests (Filtern +
+  Loesen ueber die Pill; personenbezogene Leermeldung + Filter
+  ueberlebt Tab-Wechsel sichtbar).
+- APP_VERSION 4.64.0, SW-Cache haushalt-v159
+
 ## 2026-07-21 — v4.63.0: Papierkorb — Löschen ist ein Grabstein, keine 24-h-Geister mehr
 
 DESIGN (Maintainer-Freigabe: 30 Tage / v4.55-Rechtemodell / Einstellungen):
