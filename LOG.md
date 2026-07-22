@@ -1,3 +1,23 @@
+## 2026-07-21 — v4.62.0: Personenwahl klebt oben — Chips + Tabs als ein Block
+
+- Maintainer-Wunsch: die Personen-Chips («Ich bin …») bleiben wie
+  Aufgaben/Punkte/Verlauf beim Scrollen erreichbar. Umsetzung: EIN
+  gemeinsamer sticky-Wrapper #topbar um Chips + Tabs statt zweier
+  sticky-Elemente — die Chip-Zeile kann umbrechen (variable Hoehe),
+  ein top-Offset fuer die Tabs waere fragil. Der Tabs-Auslauf-Verlauf
+  (::after) haengt jetzt am Wrapper-Boden, gleiche Optik.
+- z-Index gesichtet: Kebab-Menues im Verlauf (z 5, spaeter im DOM),
+  FAB (20), Toast (50), Splash (60) — keine Kollisionen.
+- TEST inkl. Negativ-Probe: 60 Tages-Eintraege, ans Ende gescrollt →
+  Chips und Tabs im Viewport UND bedienbar; mit position:relative
+  statt sticky faellt der Test (verifiziert). Erste Fassung des Tests
+  scheiterte lehrreich: 60 identische Stunden-Eintraege buendelten zu
+  einer zu kurzen Seite (Serien-Rendering) — Fixture diversifiziert.
+- Bestandstest v4.42.0 («Tabs kleben bei 0») auf den neuen Vertrag
+  angepasst: die klebende Leiste ist jetzt der Block #topbar; Kopf-
+  scrollt-weg, Deckend-bei-0 und Tabs-unter-Chips bleiben gesichert.
+- APP_VERSION 4.62.0, SW-Cache haushalt-v157
+
 ## 2026-07-21 — Store-Runde: TWA-Eingaben auf das Violett-Icon nachgezogen
 
 - twa/twa-manifest.json: iconUrl/maskableIconUrl auf ?v=48 — der

@@ -642,10 +642,14 @@ test.describe('Fairli', () => {
     expect(head.y + head.height).toBeLessThanOrEqual(1);
     const fs1 = await page.locator('#famTitle').evaluate(el => parseFloat(getComputedStyle(el).fontSize));
     expect(Math.abs(fs1 - fs0)).toBeLessThan(0.01);
-    // Tabs kleben bei 0 und sind DECKEND (Kacheln laufen nicht in die Pills)
+    // v4.62.0: die klebende Leiste ist jetzt der BLOCK Chips+Tabs (#topbar).
+    // Er klebt bei 0 und ist DECKEND; die Tabs sitzen direkt unter den Chips.
+    const bar = await page.locator('#topbar').boundingBox();
+    expect(Math.abs(bar.y)).toBeLessThanOrEqual(1);
     const tabs = await page.locator('.tabs').boundingBox();
-    expect(Math.abs(tabs.y)).toBeLessThanOrEqual(1);
-    const bg = await page.locator('.tabs').evaluate(el => getComputedStyle(el).backgroundColor);
+    expect(tabs.y).toBeGreaterThanOrEqual(bar.y);
+    expect(tabs.y + tabs.height).toBeLessThanOrEqual(bar.y + bar.height + 1);
+    const bg = await page.locator('#topbar').evaluate(el => getComputedStyle(el).backgroundColor);
     expect(bg).not.toMatch(/rgba\(.*,\s*0\)/);   // kein transparenter Hintergrund
   });
 
@@ -2486,6 +2490,31 @@ test.describe('Fairli', () => {
     await page.reload();
     await page.waitForTimeout(900);
     await expect(page.locator('#claimSheet')).toBeHidden();        // Marke gesetzt, Ruhe
+  });
+
+  test('Personen-Chips kleben oben: nach Scrollen bleiben Auswahl UND Tabs erreichbar (v4.62.0)', async ({ context, page }) => {
+    // Viele Log-Zeilen erzwingen eine lange Seite; nach Scroll ans Ende
+    // muessen Chips (Personenwahl) und Tabs im Viewport bleiben.
+    const many = Array.from({ length: 60 }, (_, i) => ({
+      id: 'l-' + i, chore_id: null, chore_name: 'Aufgabe ' + i, chore_note: '',
+      member_id: i % 2 ? 'm-mira' : 'm-chris', member_name: i % 2 ? 'Mira' : 'Timon', points: 2,
+      done_at: new Date(Date.now() - i * 26 * 3600e3).toISOString(),   // ~1 Eintrag/Tag, 60 Tages-Koepfe
+      created_at: new Date(Date.now() - i * 26 * 3600e3).toISOString(), family_id: FAM }));
+    await mockBackend(context, { logRows: () => many });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('#list .entry').first()).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(250);
+    const iam = await page.locator('#iamRow').boundingBox();
+    const tabs = await page.locator('.tabs').boundingBox();
+    expect(iam).not.toBeNull();
+    expect(iam.y).toBeGreaterThanOrEqual(0);        // im Viewport, oben
+    expect(iam.y).toBeLessThan(120);
+    expect(tabs.y).toBeGreaterThanOrEqual(iam.y);   // Tabs direkt darunter
+    await expect(page.locator('.chip').first()).toBeVisible();
+    // Chips bleiben BEDIENBAR: Tipp auf einen Chip waehlt die Person
+    await page.locator('.chip', { hasText: 'Mira' }).click();
   });
 
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {
