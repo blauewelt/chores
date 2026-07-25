@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "Pokaż historię {name}",
   "Nur {name}": "Tylko {name}",
   "Filter entfernen": "Usuń filtr",
-  "Für {name} ist hier noch nichts eingetragen.": "Dla {name} nic jeszcze nie zapisano."
+  "Für {name} ist hier noch nichts eingetragen.": "Dla {name} nic jeszcze nie zapisano.",
+  "Nur {name} · diese Woche": "Tylko {name} · w tym tygodniu",
+  "1 Eintrag · {p} Punkte": "1 wpis · {p} pkt",
+  "{n} Einträge · {p} Punkte": "{n} wpisów · {p} pkt",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "Wczytano {n} z {total} wpisów · {p} z {ptotal} pkt",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "W tym tygodniu nie ma jeszcze wpisów dla {name}."
 }

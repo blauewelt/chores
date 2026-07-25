@@ -1,3 +1,32 @@
+## 2026-07-25 — v4.66.0: Summen-Banner im Verlauf + Wochen-Sprung von der Punkte-Karte
+
+Maintainer-Wunsch (Nachklapp zum Fenster-Vorfall v4.65.0): die Verlaufs-
+Punkte waren nie nachrechenbar («Not sure which tasks these are»), und der
+Sprung von der Wochen-Ansicht landete im GESAMTEN Verlauf der Person.
+
+- Summen-Banner: über der Verlaufs-Liste steht jetzt «{n} Einträge ·
+  {p} Punkte» — summiert werden exakt die ANGEZEIGTEN Einträge (Personen-
+  Filter, Wochen-Einschränkung, Suche; Grabsteine ausgenommen). Damit ist
+  jede Scoreboard-Zahl im Verlauf mit einem Blick verifizierbar.
+- EHRLICHKEITS-REGEL im Banner: fehlen ältere Zeilen (300er-Fenster),
+  obwohl weder Woche noch Suche eingrenzen, nennt der Banner beide
+  Wahrheiten — «{n} von {total} Einträgen geladen · {p} von {ptotal}
+  Punkten» (Vergleich gegen die Server-Summen aus log_totals). Die
+  Fenster-Summe geht nie wieder stumm als «alles» durch; genau diese
+  stille Lücke hat den Vorfall vom 22.07. tagelang unsichtbar gemacht.
+- Wochen-Sprung: Tipp auf eine Punkte-Karte in der WOCHEN-Ansicht öffnet
+  den Verlauf jetzt auf Person UND diese Woche beschränkt; die Pill sagt
+  es («Nur Mira · diese Woche ×»). Aus der Gesamt-Ansicht bleibt es beim
+  reinen Personen-Filter. Gespeichert wird ein BOOL, geprüft wird live
+  gegen weekStart() — die Pill verspricht «diese Woche», nicht die Woche
+  des Antippens. Pill lösen entfernt Person + Woche zusammen.
+- Leermeldung kennt die Woche («Für Mira ist diese Woche noch nichts
+  eingetragen.»).
+- 5 neue i18n-Schlüssel in 19 Sprachen; 3 neue Tests (Banner folgt
+  Filter + Suche; Wochen-Sprung inkl. Pill-Lösen und Gesamt-Kontrast;
+  Ehrlichkeits-Banner bei fehlenden älteren Zeilen).
+- APP_VERSION 4.66.0, SW-Cache haushalt-v161
+
 ## 2026-07-22 — v4.65.0: VORFALL «Schrumpfende Gesamt-Punkte» — Summen kommen jetzt vom Server
 
 VORFALL (betroffene Familie, Screenshots 12:01 vs 15:03): die Gesamt-Punkte eines Mitglieds

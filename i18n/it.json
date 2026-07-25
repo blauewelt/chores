@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "Mostra la cronologia di {name}",
   "Nur {name}": "Solo {name}",
   "Filter entfernen": "Rimuovi filtro",
-  "Für {name} ist hier noch nichts eingetragen.": "Non c’è ancora nulla registrato per {name}."
+  "Für {name} ist hier noch nichts eingetragen.": "Non c’è ancora nulla registrato per {name}.",
+  "Nur {name} · diese Woche": "Solo {name} · questa settimana",
+  "1 Eintrag · {p} Punkte": "1 voce · {p} punti",
+  "{n} Einträge · {p} Punkte": "{n} voci · {p} punti",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} voci su {total} caricate · {p} punti su {ptotal}",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Questa settimana non c’è ancora nulla per {name}."
 }

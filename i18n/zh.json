@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "查看{name}的记录",
   "Nur {name}": "仅{name}",
   "Filter entfernen": "移除筛选",
-  "Für {name} ist hier noch nichts eingetragen.": "还没有{name}的记录。"
+  "Für {name} ist hier noch nichts eingetragen.": "还没有{name}的记录。",
+  "Nur {name} · diese Woche": "仅 {name} · 本周",
+  "1 Eintrag · {p} Punkte": "1 条记录 · {p} 分",
+  "{n} Einträge · {p} Punkte": "{n} 条记录 · {p} 分",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "已加载 {n}/{total} 条记录 · {p}/{ptotal} 分",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "本周还没有 {name} 的记录。"
 }

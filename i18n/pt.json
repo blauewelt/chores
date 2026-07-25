@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "Mostrar o histórico de {name}",
   "Nur {name}": "Só {name}",
   "Filter entfernen": "Remover filtro",
-  "Für {name} ist hier noch nichts eingetragen.": "Ainda não há nada registrado para {name}."
+  "Für {name} ist hier noch nichts eingetragen.": "Ainda não há nada registrado para {name}.",
+  "Nur {name} · diese Woche": "Só {name} · esta semana",
+  "1 Eintrag · {p} Punkte": "1 registo · {p} pontos",
+  "{n} Einträge · {p} Punkte": "{n} registos · {p} pontos",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} de {total} registos carregados · {p} de {ptotal} pontos",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Esta semana ainda não há nada registado para {name}."
 }

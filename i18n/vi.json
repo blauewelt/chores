@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "Xem lịch sử của {name}",
   "Nur {name}": "Chỉ {name}",
   "Filter entfernen": "Bỏ bộ lọc",
-  "Für {name} ist hier noch nichts eingetragen.": "Chưa có gì được ghi cho {name}."
+  "Für {name} ist hier noch nichts eingetragen.": "Chưa có gì được ghi cho {name}.",
+  "Nur {name} · diese Woche": "Chỉ {name} · tuần này",
+  "1 Eintrag · {p} Punkte": "1 mục · {p} điểm",
+  "{n} Einträge · {p} Punkte": "{n} mục · {p} điểm",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "Đã tải {n}/{total} mục · {p}/{ptotal} điểm",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Tuần này chưa có ghi nhận nào cho {name}."
 }

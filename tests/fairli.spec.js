@@ -2787,6 +2787,93 @@ test.describe('Fairli', () => {
     expect(final).toBe(after - 2);                                    // Grabstein senkt Gesamt sofort
   });
 
+  // ---------- v4.66.0: Summen-Banner im Verlauf + Wochen-Filter von der Punkte-Karte ----------
+
+  test('Verlauf-Banner summiert die ANGEZEIGTEN Einträge — folgt Personen-Filter und Suche (v4.66.0)', async ({ context, page }) => {
+    const mk = (id, mid, mname, chore, pts, hoursAgo) => ({ id, chore_id: null, chore_name: chore,
+      chore_note: '', member_id: mid, member_name: mname, points: pts,
+      done_at: new Date(Date.now() - hoursAgo * 3600e3).toISOString(),
+      created_at: new Date().toISOString(), family_id: FAM });
+    await mockBackend(context, { logRows: () => [
+      mk('l-1', 'm-mira', 'Mira', 'Staubsaugen', 3, 1),
+      mk('l-2', 'm-chris', 'Timon', 'Kochen', 2, 2),
+      mk('l-3', 'm-mira', 'Mira', 'Einkaufen', 1, 3),
+    ] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('#logSum')).toHaveText('3 Einträge · 6 Punkte');
+    // Personen-Filter (Gesamt-Ansicht → KEINE Wochen-Einschränkung)
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await page.locator('[data-p="all"]').click();
+    await page.locator('.score[data-mid="m-mira"]').click();
+    await expect(page.locator('#logSum')).toHaveText('2 Einträge · 4 Punkte');
+    await expect(page.locator('.filterpill')).not.toContainText('Woche');
+    // Suche grenzt weiter ein — der Banner folgt
+    await page.locator('#openSettings').click();
+    await page.locator('#setSearch').click();
+    await page.locator('#searchInput').fill('staub');
+    await expect(page.locator('#logSum')).toHaveText('1 Eintrag · 3 Punkte');
+    // Nichts gefunden → kein Banner (die Leermeldung spricht für sich)
+    await page.locator('#searchInput').fill('zzz');
+    await expect(page.locator('#logSum')).toHaveCount(0);
+  });
+
+  test('Punkte-Karte in der WOCHEN-Ansicht öffnet den Verlauf auf Person UND Woche beschränkt (v4.66.0)', async ({ context, page }) => {
+    const mk = (id, mid, mname, chore, pts, daysAgo) => ({ id, chore_id: null, chore_name: chore,
+      chore_note: '', member_id: mid, member_name: mname, points: pts,
+      done_at: new Date(Date.now() - daysAgo * 86400e3).toISOString(),
+      created_at: new Date().toISOString(), family_id: FAM });
+    await mockBackend(context, { logRows: () => [
+      mk('l-1', 'm-mira', 'Mira', 'Staubsaugen', 2, 0),      // heute → in der Woche
+      mk('l-2', 'm-mira', 'Mira', 'Fenster putzen', 5, 9),   // 9 Tage alt → sicher davor
+      mk('l-3', 'm-chris', 'Timon', 'Kochen', 2, 0),
+    ] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();  // Standard: «Diese Woche»
+    await page.locator('.score[data-mid="m-mira"]').click();
+    // Nur Miras DIESWÖCHIGER Eintrag; die Pill sagt es
+    await expect(page.locator('.filterpill')).toContainText('Mira');
+    await expect(page.locator('.filterpill')).toContainText('Woche');
+    await expect(page.locator('#list')).toContainText('Staubsaugen');
+    await expect(page.locator('#list')).not.toContainText('Fenster putzen');
+    await expect(page.locator('#list')).not.toContainText('Kochen');
+    await expect(page.locator('#logSum')).toHaveText('1 Eintrag · 2 Punkte');
+    // Pill lösen → Woche UND Person fallen zusammen weg
+    await page.locator('#clearLogFilter').click();
+    await expect(page.locator('.filterpill')).toHaveCount(0);
+    await expect(page.locator('#list')).toContainText('Fenster putzen');
+    await expect(page.locator('#list')).toContainText('Kochen');
+    // Aus der GESAMT-Ansicht getippt: Filter ohne Wochen-Einschränkung
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await page.locator('[data-p="all"]').click();
+    await page.locator('.score[data-mid="m-mira"]').click();
+    await expect(page.locator('.filterpill')).toContainText('Mira');
+    await expect(page.locator('.filterpill')).not.toContainText('Woche');
+    await expect(page.locator('#list')).toContainText('Fenster putzen');
+  });
+
+  test('Verlauf-Banner sagt ehrlich, wenn ältere Zeilen fehlen — Fenster-Summe geht nie stumm als Gesamt durch (v4.66.0)', async ({ context, page }) => {
+    // Nachbau des 22.07.-Vorfalls aus Verlaufs-Sicht: das Fenster hält 2
+    // Einträge einer Person, die Server-Summen kennen 128. Der Banner nennt
+    // beide Zahlen, statt 2 als «alles» zu verkaufen.
+    const mk = (id, mid, mname, pts, hoursAgo) => ({ id, chore_id: null, chore_name: 'Müll rausbringen',
+      chore_note: '', member_id: mid, member_name: mname, points: pts,
+      done_at: new Date(Date.now() - hoursAgo * 3600e3).toISOString(),
+      created_at: new Date().toISOString(), family_id: FAM });
+    await mockBackend(context, { logRows: () => [
+      mk('l-1', 'm-mira', 'Mira', 2, 1), mk('l-2', 'm-mira', 'Mira', 1, 2),
+    ] });
+    await context.route(`${SB}/rest/v1/log_totals**`, route =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+        { member_id: 'm-mira', pts: 155, n: 128 },
+      ]) }));
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await page.locator('[data-p="all"]').click();
+    await page.locator('.score[data-mid="m-mira"]').click();
+    await expect(page.locator('#logSum')).toHaveText('2 von 128 Einträgen geladen · 3 von 155 Punkten');
+  });
+
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);

@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "{name}의 기록 보기",
   "Nur {name}": "{name}만",
   "Filter entfernen": "필터 제거",
-  "Für {name} ist hier noch nichts eingetragen.": "{name}의 기록이 아직 없습니다."
+  "Für {name} ist hier noch nichts eingetragen.": "{name}의 기록이 아직 없습니다.",
+  "Nur {name} · diese Woche": "{name}만 · 이번 주",
+  "1 Eintrag · {p} Punkte": "1개 항목 · {p}점",
+  "{n} Einträge · {p} Punkte": "{n}개 항목 · {p}점",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{total}개 중 {n}개 항목 불러옴 · {ptotal}점 중 {p}점",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "이번 주 {name}의 기록이 아직 없습니다."
 }

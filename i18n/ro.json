@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "Afișează istoricul lui {name}",
   "Nur {name}": "Doar {name}",
   "Filter entfernen": "Elimină filtrul",
-  "Für {name} ist hier noch nichts eingetragen.": "Încă nu s-a înregistrat nimic pentru {name}."
+  "Für {name} ist hier noch nichts eingetragen.": "Încă nu s-a înregistrat nimic pentru {name}.",
+  "Nur {name} · diese Woche": "Doar {name} · săptămâna aceasta",
+  "1 Eintrag · {p} Punkte": "1 intrare · {p} puncte",
+  "{n} Einträge · {p} Punkte": "{n} intrări · {p} puncte",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} din {total} intrări încărcate · {p} din {ptotal} puncte",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Săptămâna aceasta nu există încă nimic pentru {name}."
 }

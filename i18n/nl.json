@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "Geschiedenis van {name} tonen",
   "Nur {name}": "Alleen {name}",
   "Filter entfernen": "Filter verwijderen",
-  "Für {name} ist hier noch nichts eingetragen.": "Er is nog niets vastgelegd voor {name}."
+  "Für {name} ist hier noch nichts eingetragen.": "Er is nog niets vastgelegd voor {name}.",
+  "Nur {name} · diese Woche": "Alleen {name} · deze week",
+  "1 Eintrag · {p} Punkte": "1 item · {p} punten",
+  "{n} Einträge · {p} Punkte": "{n} items · {p} punten",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} van {total} items geladen · {p} van {ptotal} punten",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Voor {name} is deze week nog niets geregistreerd."
 }

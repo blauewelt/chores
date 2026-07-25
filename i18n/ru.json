@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "Показать историю {name}",
   "Nur {name}": "Только {name}",
   "Filter entfernen": "Убрать фильтр",
-  "Für {name} ist hier noch nichts eingetragen.": "Для {name} пока ничего не записано."
+  "Für {name} ist hier noch nichts eingetragen.": "Для {name} пока ничего не записано.",
+  "Nur {name} · diese Woche": "Только {name} · эта неделя",
+  "1 Eintrag · {p} Punkte": "1 запись · {p} очк.",
+  "{n} Einträge · {p} Punkte": "{n} записей · {p} очк.",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "Загружено {n} из {total} записей · {p} из {ptotal} очк.",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "На этой неделе у {name} пока нет записей."
 }

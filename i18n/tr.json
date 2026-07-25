@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "{name} geçmişini göster",
   "Nur {name}": "Yalnızca {name}",
   "Filter entfernen": "Filtreyi kaldır",
-  "Für {name} ist hier noch nichts eingetragen.": "{name} için henüz bir kayıt yok."
+  "Für {name} ist hier noch nichts eingetragen.": "{name} için henüz bir kayıt yok.",
+  "Nur {name} · diese Woche": "Yalnızca {name} · bu hafta",
+  "1 Eintrag · {p} Punkte": "1 kayıt · {p} puan",
+  "{n} Einträge · {p} Punkte": "{n} kayıt · {p} puan",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{total} kayıttan {n} tanesi yüklendi · {ptotal} puandan {p}",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Bu hafta {name} için henüz kayıt yok."
 }

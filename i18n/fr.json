@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "Afficher l’historique de {name}",
   "Nur {name}": "Seulement {name}",
   "Filter entfernen": "Retirer le filtre",
-  "Für {name} ist hier noch nichts eingetragen.": "Rien n’a encore été enregistré pour {name}."
+  "Für {name} ist hier noch nichts eingetragen.": "Rien n’a encore été enregistré pour {name}.",
+  "Nur {name} · diese Woche": "Seulement {name} · cette semaine",
+  "1 Eintrag · {p} Punkte": "1 entrée · {p} points",
+  "{n} Einträge · {p} Punkte": "{n} entrées · {p} points",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} entrées sur {total} chargées · {p} points sur {ptotal}",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Rien n’a encore été enregistré pour {name} cette semaine."
 }

@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "Vis {name}s historik",
   "Nur {name}": "Kun {name}",
   "Filter entfernen": "Fjern filter",
-  "Für {name} ist hier noch nichts eingetragen.": "Der er endnu intet registreret for {name}."
+  "Für {name} ist hier noch nichts eingetragen.": "Der er endnu intet registreret for {name}.",
+  "Nur {name} · diese Woche": "Kun {name} · denne uge",
+  "1 Eintrag · {p} Punkte": "1 post · {p} point",
+  "{n} Einträge · {p} Punkte": "{n} poster · {p} point",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} af {total} poster indlæst · {p} af {ptotal} point",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Der er endnu ikke registreret noget for {name} i denne uge."
 }

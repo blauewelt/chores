@@ -158,6 +158,7 @@
   .filterpill .dot{width:18px; height:18px; border-radius:50%; display:inline-flex;
     align-items:center; justify-content:center; font-size:11px; color:#10140F}
   .filterpill .fx{color:var(--muted); font-size:16px; margin-left:2px}
+  .logsum{color:var(--muted); font-size:14px; margin:0 4px 10px}
   .score .bar{height:10px; border-radius:999px; background:#252F29; margin-top:10px; overflow:hidden}
   .score .bar i{display:block; height:100%; border-radius:999px}
   .score .sub{font-size:14px; color:var(--muted); margin-top:6px}
@@ -521,7 +522,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.65.0';
+  const APP_VERSION = '4.66.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1396,6 +1397,12 @@
   // Punkte-Karte, sichtbar als Pill im Verlauf, dort auch wieder loesbar.
   // Bewusst NICHT persistiert: ein Filter ist Sitzungs-Sichtzustand.
   let LOGFILTER = null;
+  // v4.66.0: kommt der Tipp von der WOCHEN-Ansicht des Punkte-Tabs, gilt der
+  // Filter zusaetzlich nur fuer diese Woche. Als BOOL gespeichert und beim
+  // Rendern live gegen weekStart() geprueft — die Pill verspricht «diese
+  // Woche», nicht «die Woche des Antippens». Haengt am Personen-Filter und
+  // faellt mit ihm.
+  let LOGWEEK = false;
   let syncOk = null;
 
   const save = () => localStorage.setItem(LS_STATE, JSON.stringify(state));
@@ -2173,10 +2180,13 @@
       // Folge («Einkaufen ×3») → EINE Zeile mit Summenpunkten. So braucht es
       // keine Gross/Klein-Kachel-Varianten — dreimal tippen genuegt.
       const groups = [];
-      if (LOGFILTER && !memberById(LOGFILTER)) LOGFILTER = null;
-      for (const e of state.log.filter(e => !e.deleted_at
+      if (LOGFILTER && !memberById(LOGFILTER)) { LOGFILTER = null; LOGWEEK = false; }
+      const wkSince = LOGFILTER && LOGWEEK ? weekStart() : '';
+      const shown = state.log.filter(e => !e.deleted_at
           && (!LOGFILTER || e.member_id === LOGFILTER)
-          && matches(e.chore_name, e.chore_note, e.member_name))) {
+          && (!wkSince || e.done_at >= wkSince)
+          && matches(e.chore_name, e.chore_note, e.member_name));
+      for (const e of shown) {
         // Serien enden an der Tagesgrenze (sonst zaehlt «×N» unter «Heute»
         // stillschweigend gestrige Eintraege mit)
         const key = e.member_id + '|' + (e.chore_id || 'n:' + e.chore_name) + '|' + new Date(e.done_at).toDateString();
@@ -2195,9 +2205,26 @@
       let lastDay = null;
       const fm = LOGFILTER ? memberById(LOGFILTER) : null;
       const pill = fm ? `<button class="filterpill" id="clearLogFilter" aria-label="${esc(t('Filter entfernen'))}">
-          <span class="dot" style="background:${esc(fm.color)}">${esc(initial(fm.name))}</span>${esc(t('Nur {name}', { name: fm.name }))}<span class="fx">×</span>
+          <span class="dot" style="background:${esc(fm.color)}">${esc(initial(fm.name))}</span>${esc(t(LOGWEEK ? 'Nur {name} · diese Woche' : 'Nur {name}', { name: fm.name }))}<span class="fx">×</span>
         </button>` : '';
-      listEl.innerHTML = pill + (groups.length
+      // Summen-Banner (v4.66.0): summiert die ANGEZEIGTEN Eintraege (Person,
+      // Woche, Suche, ohne Grabsteine). Fehlen aeltere Zeilen (300er-Fenster,
+      // Vorfall 22.07.), obwohl kein Wochen-/Suchfilter eingrenzt, sagt der
+      // Banner das ehrlich dazu — die Server-Summen (log_totals) liefern die
+      // Wahrheit, statt dass die Fenster-Summe stumm als Gesamt durchgeht.
+      const sumP = shown.reduce((s, e) => s + (e.points || 0), 0);
+      let sumTxt = t(shown.length === 1 ? '1 Eintrag · {p} Punkte' : '{n} Einträge · {p} Punkte',
+        { n: shown.length, p: sumP });
+      if (!wkSince && !QUERY.trim() && state.totalsAll) {
+        const tv = LOGFILTER
+          ? state.totalsAll[LOGFILTER]
+          : Object.values(state.totalsAll).reduce((a, v) => ({ pts: a.pts + v.pts, n: a.n + v.n }), { pts: 0, n: 0 });
+        if (tv && tv.n > shown.length)
+          sumTxt = t('{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten',
+            { n: shown.length, total: tv.n, p: sumP, ptotal: tv.pts });
+      }
+      const banner = shown.length ? `<div class="logsum" id="logSum">${esc(sumTxt)}</div>` : '';
+      listEl.innerHTML = pill + banner + (groups.length
         ? groups.map(g => {
             const e = g.entries[0];                    // neuester der Serie
             const n = g.entries.length;
@@ -2226,7 +2253,7 @@
         : QUERY.trim()
           ? `<div class="empty"><b>${t('Nichts gefunden')}</b>${t('Kein Eintrag passt zu «{q}».', { q: QUERY.trim() })}</div>`
           : fm
-            ? `<div class="empty"><b>${t('Noch nichts erledigt')}</b>${t('Für {name} ist hier noch nichts eingetragen.', { name: fm.name })}</div>`
+            ? `<div class="empty"><b>${t('Noch nichts erledigt')}</b>${t(LOGWEEK ? 'Für {name} ist diese Woche noch nichts eingetragen.' : 'Für {name} ist hier noch nichts eingetragen.', { name: fm.name })}</div>`
             : `<div class="empty"><b>${t('Noch nichts erledigt')}</b>${t('Jede gedrückte Aufgabe landet hier.')}</div>`);
     }
   }
@@ -2308,6 +2335,7 @@
   let pressLock = false;
   function openFilteredLog(mid) {
     LOGFILTER = mid;
+    LOGWEEK = (period === 'week');   // Wochen-Ansicht → Verlauf nur diese Woche (v4.66.0)
     view = 'log'; invalidateOrder();
     document.querySelectorAll('.tab').forEach(b =>
       b.setAttribute('aria-selected', String(b.dataset.view === 'log')));
@@ -2324,7 +2352,7 @@
     // Punkte-Karte → gefilterter Verlauf (v4.64.0)
     const sc = e.target.closest('.score[data-mid]');
     if (sc) { openFilteredLog(sc.dataset.mid); return; }
-    if (e.target.closest('#clearLogFilter')) { LOGFILTER = null; render(); return; }
+    if (e.target.closest('#clearLogFilter')) { LOGFILTER = null; LOGWEEK = false; render(); return; }
     // Punkte-Periode
     const p = e.target.closest('[data-p]');
     if (p) { period = p.dataset.p; render(); return; }

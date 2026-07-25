@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "Show {name}’s history",
   "Nur {name}": "Only {name}",
   "Filter entfernen": "Remove filter",
-  "Für {name} ist hier noch nichts eingetragen.": "Nothing has been logged for {name} yet."
+  "Für {name} ist hier noch nichts eingetragen.": "Nothing has been logged for {name} yet.",
+  "Nur {name} · diese Woche": "Only {name} · this week",
+  "1 Eintrag · {p} Punkte": "1 entry · {p} points",
+  "{n} Einträge · {p} Punkte": "{n} entries · {p} points",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} of {total} entries loaded · {p} of {ptotal} points",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Nothing has been logged for {name} this week yet."
 }

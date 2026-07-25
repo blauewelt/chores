@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "{name}の履歴を表示",
   "Nur {name}": "{name}のみ",
   "Filter entfernen": "フィルターを解除",
-  "Für {name} ist hier noch nichts eingetragen.": "{name}の記録はまだありません。"
+  "Für {name} ist hier noch nichts eingetragen.": "{name}の記録はまだありません。",
+  "Nur {name} · diese Woche": "{name}のみ · 今週",
+  "1 Eintrag · {p} Punkte": "1件 · {p}ポイント",
+  "{n} Einträge · {p} Punkte": "{n}件 · {p}ポイント",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{total}件中{n}件を読み込み · {ptotal}ポイント中{p}ポイント",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "今週の{name}の記録はまだありません。"
 }

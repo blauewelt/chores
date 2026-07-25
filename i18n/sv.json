@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "Visa {name}s historik",
   "Nur {name}": "Endast {name}",
   "Filter entfernen": "Ta bort filter",
-  "Für {name} ist hier noch nichts eingetragen.": "Inget har registrerats för {name} ännu."
+  "Für {name} ist hier noch nichts eingetragen.": "Inget har registrerats för {name} ännu.",
+  "Nur {name} · diese Woche": "Endast {name} · denna vecka",
+  "1 Eintrag · {p} Punkte": "1 post · {p} poäng",
+  "{n} Einträge · {p} Punkte": "{n} poster · {p} poäng",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} av {total} poster inlästa · {p} av {ptotal} poäng",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Inget har registrerats för {name} denna vecka ännu."
 }

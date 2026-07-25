@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "Показати історію {name}",
   "Nur {name}": "Лише {name}",
   "Filter entfernen": "Прибрати фільтр",
-  "Für {name} ist hier noch nichts eingetragen.": "Для {name} ще нічого не записано."
+  "Für {name} ist hier noch nichts eingetragen.": "Для {name} ще нічого не записано.",
+  "Nur {name} · diese Woche": "Лише {name} · цього тижня",
+  "1 Eintrag · {p} Punkte": "1 запис · {p} бал.",
+  "{n} Einträge · {p} Punkte": "{n} записів · {p} бал.",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "Завантажено {n} з {total} записів · {p} з {ptotal} бал.",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Цього тижня для {name} ще нічого не записано."
 }

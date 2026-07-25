@@ -177,5 +177,10 @@
   "Verlauf von {name} anzeigen": "{name} का इतिहास दिखाएँ",
   "Nur {name}": "केवल {name}",
   "Filter entfernen": "फ़िल्टर हटाएँ",
-  "Für {name} ist hier noch nichts eingetragen.": "{name} के लिए अभी कुछ दर्ज नहीं है।"
+  "Für {name} ist hier noch nichts eingetragen.": "{name} के लिए अभी कुछ दर्ज नहीं है।",
+  "Nur {name} · diese Woche": "केवल {name} · इस सप्ताह",
+  "1 Eintrag · {p} Punkte": "1 प्रविष्टि · {p} अंक",
+  "{n} Einträge · {p} Punkte": "{n} प्रविष्टियाँ · {p} अंक",
+  "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{total} में से {n} प्रविष्टियाँ लोड हुईं · {ptotal} में से {p} अंक",
+  "Für {name} ist diese Woche noch nichts eingetragen.": "इस सप्ताह {name} के लिए अभी कुछ दर्ज नहीं है।"
 }
