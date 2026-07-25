@@ -1,4 +1,4 @@
--- Gesamt-Punkte SERVERSEITIG (v4.65.0). Vorfall 22.07.: Rossi WG
+-- Gesamt-Punkte SERVERSEITIG (v4.65.0). Vorfall 22.07.: die betroffene Familie
 -- ueberschritt 353 Log-Zeilen — der Client holt aber nur die neuesten 300
 -- (Egress-Diaet v4.36) und rechnete «Gesamt» AUS DIESEM FENSTER. Folge:
 -- Alltime-Punkte SINKEN scheinbar, sobald alte Eintraege aus dem Fenster

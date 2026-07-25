@@ -60,7 +60,19 @@ async function mockBackend(context, { logRows = () => LOG, memberRows = null } =
     if (famEq && famEq !== FAM) {
       return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
     }
+    // v4.65.0: log_totals VOR /log pruefen (Praefix-Falle) — die Sicht
+    // liefert Server-Summen ueber ALLE Zeilen; im Mock aus logRows berechnet,
+    // damit Bestandstests ihre Punktzahlen behalten.
     const body =
+      url.includes('/rest/v1/log_totals') ? (() => {
+        const agg = {};
+        for (const e of logRows()) {
+          if (e.deleted_at) continue;
+          const a = agg[e.member_id] || (agg[e.member_id] = { member_id: e.member_id, pts: 0, n: 0 });
+          a.pts += e.points || 0; a.n++;
+        }
+        return Object.values(agg);
+      })() :
       url.includes('/rest/v1/members') ? (memberRows ? memberRows() : MEMBERS) :
       url.includes('/rest/v1/chores')  ? CHORES :
       url.includes('/rest/v1/log')     ? logRows() :
@@ -484,7 +496,7 @@ test.describe('Fairli', () => {
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     await expect(page.locator('.entry')).toHaveCount(2);              // row1 (Cache) + row2 (Delta)
     expect(logQueries.some(u => u.includes('or=') && u.includes('created_at.gt.'))).toBe(true);
-    expect(logQueries.filter(u => !u.includes('or=')).length).toBe(1); // nur EIN Vollabgleich
+    expect(logQueries.filter(u => u.includes('/log?') && !u.includes('or=')).length).toBe(1); // nur EIN Vollabgleich (log_totals zaehlt nicht)
   });
 
   test('Backfill: migrierte Familie ohne write_key_hash bekommt ihn per PATCH (v4.36.0)', async ({ context, page }) => {
@@ -2712,6 +2724,67 @@ test.describe('Fairli', () => {
     await page.getByRole('tab', { name: 'Aufgaben' }).click();
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     await expect(page.locator('.filterpill')).toContainText('Mira');
+  });
+
+  // ---------- v4.65.0: Gesamt-Punkte vom Server (Fenster-Vorfall 22.07.) ----------
+
+  test('Gesamt kommt vom SERVER: Punkte sinken nicht mehr, wenn alte Einträge aus dem 300er-Fenster fallen (v4.65.0)', async ({ context, page }) => {
+    // Nachbau des Live-Vorfalls: Familie hat >300 Einträge; der Client
+    // bekommt nur die neuesten 300 — die wahren Summen liefert log_totals.
+    const win = Array.from({ length: 40 }, (_, i) => ({
+      id: 'l-' + i, chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
+      member_id: i % 2 ? 'm-mira' : 'm-chris', member_name: i % 2 ? 'Mira' : 'Timon', points: 1,
+      done_at: new Date(Date.now() - i * 3600e3).toISOString(),
+      created_at: new Date(Date.now() - i * 3600e3).toISOString(), family_id: FAM }));
+    await mockBackend(context, { logRows: () => win });   // «Fenster»: 20/20 Punkte
+    await context.route(`${SB}/rest/v1/log_totals**`, route =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+        { member_id: 'm-mira', pts: 163, n: 128 },        // WAHRE Summen inkl. der
+        { member_id: 'm-chris', pts: 165, n: 137 },       // aus dem Fenster gefallenen
+      ]) }));
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await page.locator('[data-p="all"]').click();
+    await expect(page.locator('.score', { hasText: 'Mira' })).toContainText('163');
+    await expect(page.locator('.score', { hasText: 'Mira' })).toContainText('128 Aufgaben');
+    await expect(page.locator('.score', { hasText: 'Timon' })).toContainText('165');
+    // «Diese Woche» bleibt Fensterrechnung (Woche liegt im Fenster)
+    await page.locator('[data-p="week"]').click();
+    await expect(page.locator('.score', { hasText: 'Mira' })).toContainText('20');
+  });
+
+  test('Gesamt-Fallback: liefert log_totals einen Fehler, rechnet der Client wie bisher aus dem Fenster — nie Nullen (v4.65.0)', async ({ context, page }) => {
+    await mockBackend(context);
+    await context.route(`${SB}/rest/v1/log_totals**`, route => route.fulfill({ status: 500, body: 'kaputt' }));
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await page.locator('[data-p="all"]').click();
+    await expect(page.locator('.score .num').first()).not.toHaveText('0');
+  });
+
+  test('Gesamt zieht sofort mit: Eintragen erhöht, Löschen (nach Undo-Fenster) senkt — ohne auf den Pull zu warten (v4.65.0)', async ({ context, page }) => {
+    test.setTimeout(30000);
+    await mockBackend(context);
+    await context.route(`${SB}/rest/v1/log**`, route => {
+      const m = route.request().method();
+      if (m === 'POST' || m === 'PATCH' || m === 'DELETE') return route.fulfill({ status: 204, body: '' });
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(700);
+    const num = () => page.locator('.score', { hasText: 'Mira' }).locator('.num').innerText();
+    await page.locator('.chip', { hasText: 'Mira' }).click();
+    await page.locator('button.chore[data-cid="c-1"]').click();       // +2 Punkte
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await page.locator('[data-p="all"]').click();
+    const after = parseInt(await num(), 10);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('#list .entry').first().click();
+    await page.locator('#delLog').click();
+    await page.waitForTimeout(5600);                                  // Undo-Fenster verstreicht
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    const final = parseInt(await num(), 10);
+    expect(final).toBe(after - 2);                                    // Grabstein senkt Gesamt sofort
   });
 
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {

@@ -521,7 +521,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.64.0';
+  const APP_VERSION = '4.65.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -833,6 +833,7 @@
       const e = state.log.find(x => x.id === b.dataset.restore);
       if (!e || !canEditLog(e)) return;
       e.deleted_at = null; e.deleted_by = null;     // explizites null — der Upsert setzt die Spalten zurueck
+      bumpTotals(e.member_id, e.points || 0, 1);       // Gesamt sofort mitziehen (v4.65.0)
       upsertRemote('log', [e]);
       save(); render();
       toast(t('Wiederhergestellt'));
@@ -1332,7 +1333,11 @@
   }
 
   // ---------- State ----------
-  let state = { members: [], chores: [], log: [], famName: '' };
+  let state = { members: [], chores: [], log: [], famName: '', totalsAll: null };
+  // totalsAll (v4.65.0): serverseitige Gesamt-Summen je member_id aus der
+  // Sicht log_totals — der Client-Fensterausschnitt (300/400 Zeilen) darf
+  // NIE wieder als «Gesamt» verkauft werden (Vorfall 22.07.: sinkende
+  // Alltime-Punkte, sobald eine Familie das Fenster ueberschreitet).
   try { state = JSON.parse(localStorage.getItem(LS_STATE)) || state; } catch {}
   // einmalige Übernahme der Personen aus v1
   if (!state.members.length) {
@@ -1555,7 +1560,7 @@
     // Bringt der Server nichts Neues, wird NICHT neu gezeichnet — vorher
     // ersetzte jeder 20-s-Pull die Kachelliste, und ein Tipp im selben
     // Moment konnte auf die frisch getauschte Kachel fallen.
-    const uiFingerprint = () => JSON.stringify([state.members, state.chores, state.log, state.famName, RETENTION, me]);
+    const uiFingerprint = () => JSON.stringify([state.members, state.chores, state.log, state.famName, state.totalsAll, RETENTION, me]);
     const fpBefore = uiFingerprint();
     try {
       // Egress-Diaet (v4.36.0): schlanke Spalten; Log per DELTA, wenn ein
@@ -1577,11 +1582,12 @@
       const logQ = useDelta
         ? `log?select=${LCOLS}&or=(created_at.gt.${encodeURIComponent(wm)},updated_at.gt.${encodeURIComponent(wm)})&order=done_at.desc&limit=300`
         : `log?select=${LCOLS}&order=done_at.desc&limit=300`;
-      const [members, chores, logRows, fam] = await Promise.all([
+      const [members, chores, logRows, fam, totalRows] = await Promise.all([
         sb('members?select=id,name,color,url_slug,assisted,admin&order=name'),
         sb('chores?select=id,name,points,note,art,created_at&order=points.desc,name'),
         sb(logQ),
-        sb('families?select=*')
+        sb('families?select=*'),
+        sb('log_totals?select=member_id,pts,n').catch(() => null)   // Sicht fehlt/offline → Fenster-Fallback
       ]);
       // Wasserzeichen: nur SERVER-Zeit verwenden (Client-Uhren luegen)
       let newWm = wm;
@@ -1676,6 +1682,11 @@
           if (!me || !allow || !allow.has(me)) me = lm.id;
         }
         else if (state.members.length) { showBadLink(); return; }
+      }
+      if (Array.isArray(totalRows)) {
+        const ta = {};
+        for (const r of totalRows) ta[r.member_id] = { pts: r.pts || 0, n: r.n || 0 };
+        state.totalsAll = ta;
       }
       // v4.61.0: ERST JETZT — Zustand ist uebernommen — duerfen die Marken wandern.
       try {
@@ -1874,14 +1885,32 @@
     return d.toISOString();
   }
   function totals() {
-    const since = period === 'week' ? weekStart() : '';
     const t = {};
     state.members.forEach(m => t[m.id] = { pts: 0, n: 0 });
+    if (period !== 'week' && state.totalsAll) {
+      // «Gesamt» kommt vom SERVER (log_totals): ueber ALLE Zeilen, nicht
+      // ueber den 300/400-Fensterausschnitt (Vorfall 22.07.). Lokale
+      // Sofort-Anpassungen (recordEntry/Papierkorb) halten totalsAll
+      // zwischen zwei Pulls aktuell.
+      for (const [mid, v] of Object.entries(state.totalsAll))
+        if (t[mid]) t[mid] = { pts: v.pts, n: v.n };
+      return t;
+    }
+    // «Diese Woche» (und Fallback ohne Server-Summen): Fensterrechnung —
+    // eine Woche liegt praktisch immer innerhalb des Fensters.
+    const since = period === 'week' ? weekStart() : '';
     state.log.forEach(e => {
       if (e.deleted_at) return;                     // Papierkorb zaehlt nicht (v4.63.0)
       if (e.done_at >= since && t[e.member_id]) { t[e.member_id].pts += e.points; t[e.member_id].n++; }
     });
     return t;
+  }
+  // Sofort-Anpassung der Server-Summen zwischen zwei Pulls (v4.65.0):
+  // +1 beim Eintragen, − beim Grabstein, + beim Wiederherstellen.
+  function bumpTotals(mid, dPts, dN) {
+    if (!state.totalsAll) return;
+    const v = state.totalsAll[mid] || (state.totalsAll[mid] = { pts: 0, n: 0 });
+    v.pts += dPts; v.n += dN;
   }
 
   // ---------- Rendering ----------
@@ -2378,6 +2407,7 @@
     const who = (slugSelf() || {}).id || null;
     for (const e of pendingUndo.entries) {
       e.deleted_at = when; e.deleted_by = who;
+      bumpTotals(e.member_id, -(e.points || 0), -1);   // Gesamt sofort mitziehen (v4.65.0)
       pendingDeletes.delete('log:' + e.id);         // Zeile lebt wieder — als Grabstein
       if (!state.log.some(x => x.id === e.id)) state.log.push(e);
     }
@@ -2538,6 +2568,7 @@
       points: choreLike.points, done_at: new Date().toISOString()
     };
     state.log.unshift(entry);
+    bumpTotals(entry.member_id, entry.points || 0, 1);   // Gesamt sofort mitziehen (v4.65.0)
     try { if (navigator.vibrate) navigator.vibrate(12); } catch {}
     toast(t('+{p} für {name}', { p: choreLike.points, name: m.name }));
     createRemote('log', entry);

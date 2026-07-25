@@ -1,3 +1,50 @@
+## 2026-07-22 — v4.65.0: VORFALL «Schrumpfende Gesamt-Punkte» — Summen kommen jetzt vom Server
+
+VORFALL (betroffene Familie, Screenshots 12:01 vs 15:03): die Gesamt-Punkte eines Mitglieds
+SANKEN von 163 auf 155, ohne dass irgendjemand etwas löschte. Forensik
+gegen den Live-Server: die Familie hat 353 Log-Zeilen — der Client holt
+aber nur die neuesten 300 (Egress-Diät v4.36, Delta-Deckel 400) und
+rechnete «Gesamt» AUS DIESEM FENSTER. Sobald eine Familie das Fenster
+überschreitet, fallen die ältesten Einträge heraus und die Alltime-
+Summen der früh Aktiven sinken scheinbar. Wahre Summen (Server):
+Mitglied A 193/160, Mitglied B 188/147 — Fenster zeigte 164/136 bzw. 158/123.
+Ehrlich vermerkt: der Versions-Voll-Abgleich aus v4.61 (Selbstheilung)
+stutzt Geräte von bis zu 400 auf 300 Zeilen und machte die Drops an
+Update-Tagen SICHTBAR; die Zerfalls-Mechanik selbst ist v4.36-alt und
+wurde erst jetzt erreicht.
+
+FIX: Aggregation gehört dorthin, wo ALLE Zeilen liegen.
+- Sicht log_totals (Migration 20260722160000, security_invoker, Grant
+  wie Tabellen): sum(points)/count je family_id+member_id, Grabsteine
+  ausgenommen. points/member_id sind auch in famx Klartext — keine
+  Entschlüsselung nötig. VOR dem Client-Deploy angewandt und live gegen
+  die betroffene Familie verifiziert (193/188/… = Wahrheit).
+- pull() lädt die Summen bei JEDEM Abgleich mit (eine Zeile pro Person);
+  Übernahme hinter dem Stale-Guard, Fingerprint kennt totalsAll.
+- totals(): «Gesamt» aus state.totalsAll; «Diese Woche» bleibt bewusst
+  Fensterrechnung (eine Woche liegt praktisch immer im Fenster).
+  Fallback ohne Server-Summen (offline/Fehler): Fensterrechnung wie
+  bisher — nie Nullen.
+- Sofort-Gefühl bleibt: bumpTotals() zieht Gesamt beim Eintragen,
+  Grabstein-Commit und Wiederherstellen lokal sofort mit; der nächste
+  Pull korrigiert (bekannte 20-s-Latenz bei Punkte-EDITs vermerkt).
+- Test-Harnisch: mockBackend bedient log_totals (VOR dem /log-Präfix —
+  Präfix-Falle) aus seinen logRows, damit Bestandstests ihre Zahlen
+  behalten. 3 neue Tests: Fenster-Vorfall nachgebaut (Server-Summen
+  schlagen Fenster), 500-Fallback ohne Nullen, Sofort-Anpassung bei
+  Eintrag + Löschung.
+- Verlauf zeigt weiterhin die neuesten ~300–400 Einträge (Feed);
+  «ältere laden» wäre eine eigene Runde, falls gewünscht.
+- NEBENBEFUND beim Deploy: ein Force-Push von anderer Stelle (Commit
+  «fables_corner.txt ist umgezogen», 25.07. 12:11, stale Clone) hatte
+  den bereits gepushten Migrations-Commit von main verdraengt — die
+  Sicht war in der DB laengst angewandt, die Datei wird hier erneut
+  eingecheckt (jetzt in anonymisierter Fassung; der verdraengte Commit
+  trug den Familiennamen in der Message und ist damit aus der Historie).
+  Regel bleibt: NIE force-pushen ohne vorheriges Pull — deploy.mjs
+  selbst kann nicht klobbern (kein force am Ref-Update).
+- APP_VERSION 4.65.0, SW-Cache haushalt-v160
+
 ## 2026-07-22 — v4.64.0: Verlauf nach Person filtern — Punkte-Karten sind Tap-Ziele
 
 - Maintainer-Wunsch: vom Punkte-Tab aus in den Verlauf EINER Person
