@@ -1,3 +1,27 @@
+## 2026-07-26 — v4.69.3: Live-Beweis am Server (Ziel speichert, auch verschluesselt) + Wiederholung nach Fehlschlag
+
+- Maintainer-Meldung «speichert weiter nicht» + Hypothese Schema-Drift
+  (Beta-Familie vs. Rest). Befund: NEIN — Schema und Krypto-Pfad sind
+  unschuldig. End-to-End-Beweis gegen den ECHTEN Server: frischer
+  famx-Haushalt (famx-e2e-…, Zeilen bleiben gem. Ops-Regel stehen),
+  Onboarding durchlaufen, Ziel 7 im Pro-Person-Sheet gespeichert →
+  POST 200 mit goal im (verschluesselten) Payload, Serverzeile goal=7.
+  encRow ist Copy-and-encrypt ohne Feld-Whitelist — goal laeuft durch.
+- Wahrscheinlichste Ursache am Geraet: VERALTETER Service-Worker
+  (≤4.69.1): dort fehlte die PGRST102-Wache UND Marken wurden nie
+  geleert — EIN formfremdes Mitglied vergiftete jeden weiteren Save der
+  Sitzung. Bitte pruefen: Einstellungen → Fairli 4.69.3, sonst App
+  vollstaendig schliessen und neu oeffnen (SW-Zyklus).
+- Haertung (§11a «kein Weg verliert etwas»): scheitert der Personen-
+  Push, kommen die Marken persistiert ZURUECK — die naechste Speichern-
+  Geste oder der naechste Boot wiederholt den Upsert automatisch,
+  statt die Aenderung nur lokal weiterleben zu lassen. upsertRemote
+  kann dafuer onFail (Muster von deleteRemote uebernommen).
+- Ehrlichkeits-Test erweitert: Fehlschlag → Toast + Marke bleibt;
+  Server gesund → naechstes Speichern schickt dieselbe Person, Marke
+  geleert. Suite 123 gruen.
+- APP_VERSION 4.69.3, SW-Cache haushalt-v168
+
 ## 2026-07-26 — v4.69.2: Der «musste zweimal speichern»-Fehler — gefunden, reproduziert, dreifach abgedichtet
 
 URSACHE (mit 400er reproduziert): PostgREST verlangt in EINEM Batch

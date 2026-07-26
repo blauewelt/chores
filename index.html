@@ -546,7 +546,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.69.2';
+  const APP_VERSION = '4.69.3';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1906,7 +1906,7 @@
   // Schreibung (Overlay in reconcile), bis der Server sie nachweislich hat.
   // row wird als LEBENDE Referenz gehalten — spaetere lokale Edits derselben
   // Zeile bleiben dadurch automatisch die massgebliche Fassung.
-  function upsertRemote(table, rows) {
+  function upsertRemote(table, rows, onFail) {
     if (!rows.length) return;
     const keys = rows.map(r => {
       const k = table + ':' + r.id;
@@ -1917,7 +1917,7 @@
       const now = Date.now();
       for (const k of keys) { const e = pendingCreates.get(k); if (e) e.resolvedAt = now; }
       return res;
-    }));
+    }).catch(err => { if (onFail) try { onFail(); } catch {} throw err; }));
   }
   function reconcile(table, rows, pullStartedAt) {
     // Bestaetigte Schreibungen (vom Server vor Pull-Start verarbeitet) vergessen
@@ -3377,7 +3377,13 @@
     // Pull-Schutz — vorher schluckte ein Pull mit Vor-Commit-Snapshot die
     // neue Person bzw. setzte Umbenennungen zurueck (Maintainer-Live-Bugs).
     const ms = state.members.filter(m => changedMembers.has(m.id) && m.name.trim() !== '');
-    upsertRemote('members', ms);
+    // v4.69.3: scheitert der Push, kommen die Marken ZURUECK (persistiert) —
+    // der naechste Sync/Boot versucht es erneut, statt die Aenderung nur
+    // lokal weiterleben zu lassen, bis jemand dieselbe Person wieder anfasst.
+    upsertRemote('members', ms, () => {
+      for (const m of ms) changedMembers.add(m.id);
+      try { localStorage.setItem(LS_PENDMEMB, JSON.stringify([...changedMembers])); } catch {}
+    });
     // Marken erst NACH der Uebergabe loeschen (v4.69.2): doppelte Aufrufe
     // (Knopf + onclose-Netz) werden so zu No-ops statt Doppel-POSTs.
     for (const m of ms) changedMembers.delete(m.id);

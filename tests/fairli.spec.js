@@ -3203,14 +3203,19 @@ test.describe('Fairli', () => {
     await expect(page.locator('.prow[data-pid="m-mira"] .assistbadge', { hasText: '🎯7' })).toBeVisible();
   });
 
-  test('Scheitert der Personen-Upsert, sagt die App es («Sync fehlgeschlagen») statt zu schweigen (v4.69.2)', async ({ context, page }) => {
+  test('Scheitert der Personen-Upsert, sagt es die App — und die Marke bleibt für den nächsten Versuch (v4.69.2/.3)', async ({ context, page }) => {
     await mockBackend(context, {
       famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
       memberRows: () => [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', goal: null }] });
+    let fail = true; const oks = [];
     await context.route(`${SB}/rest/v1/members**`, route => {
       const req = route.request();
-      if (req.method() === 'POST') return route.fulfill({ status: 400,
-        contentType: 'application/json', body: '{"code":"PGRST102","message":"All object keys must match"}' });
+      if (req.method() === 'POST') {
+        if (fail) return route.fulfill({ status: 400,
+          contentType: 'application/json', body: '{"code":"PGRST102","message":"All object keys must match"}' });
+        oks.push([].concat(JSON.parse(req.postData() || '[]')));
+        return route.fulfill({ status: 201, body: '' });
+      }
       return route.fallback();
     });
     await page.goto(`${BASE}/f/${FAM}`);
@@ -3220,6 +3225,17 @@ test.describe('Fairli', () => {
     await page.locator('#psGoal').fill('9');
     await page.locator('#psDone').click();
     await expect(page.locator('#toast')).toContainText('Sync fehlgeschlagen');
+    // v4.69.3: die Marke kommt nach dem Scheitern ZURUECK (persistiert) —
+    // eine spaetere Speichern-Geste versucht dieselbe Person erneut
+    await expect.poll(() => page.evaluate(fam =>
+      JSON.parse(localStorage.getItem('haushalt.pendmemb:' + fam) || '[]'), FAM)).toContain('m-mira');
+    fail = false;                                        // Server wieder gesund
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await openPerson(page, 'm-mira');
+    await page.locator('#psDone').click();               // nichts neu editiert — die alte Marke reicht
+    await expect.poll(() => oks.flat().some(r => r.id === 'm-mira' && r.goal === 9)).toBe(true);
+    await expect.poll(() => page.evaluate(fam =>
+      JSON.parse(localStorage.getItem('haushalt.pendmemb:' + fam) || '[]'), FAM)).not.toContain('m-mira');
   });
 
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {
