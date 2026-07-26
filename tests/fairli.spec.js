@@ -68,7 +68,8 @@ async function mockBackend(context, { logRows = () => LOG, memberRows = null, fa
         const agg = {};
         for (const e of logRows()) {
           if (e.deleted_at) continue;
-          const a = agg[e.member_id] || (agg[e.member_id] = { member_id: e.member_id, pts: 0, n: 0 });
+          const a = agg[e.member_id] || (agg[e.member_id] = { member_id: e.member_id, pts: 0, n: 0, first_done: null });
+          if (!a.first_done || e.done_at < a.first_done) a.first_done = e.done_at;
           a.pts += e.points || 0; a.n++;
         }
         return Object.values(agg);
@@ -2981,6 +2982,24 @@ test.describe('Fairli', () => {
     await page.getByRole('tab', { name: 'Punkte' }).click();
     await expect(page.locator('.score .sub').first()).toContainText('erledigt');
     await expect(page.locator('#list')).not.toContainText('%');
+  });
+
+  test('Beta: «Gesamt» zeigt Ø Punkte/Woche als Messlatte fürs Wochenziel — ohne Beta nicht (v4.68.0)', async ({ context, page }) => {
+    const mk = (id, off, pts) => ({ id, chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
+      member_id: 'm-mira', member_name: 'Mira', points: pts,
+      done_at: new Date(Date.now() - off).toISOString(), created_at: new Date(Date.now() - off).toISOString(), family_id: FAM });
+    // Ersteintrag vor ~4 Wochen, 20 Punkte gesamt → Ø 5/Woche
+    const rows = [mk('l-a', 28 * 86400e3 - 3600e3, 8), mk('l-b', 14 * 86400e3, 6), mk('l-c', 3600e3, 6)];
+    await mockBackend(context, {
+      famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      memberRows: () => [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', goal: null }],
+      logRows: () => rows });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await page.locator('[data-p="all"]').click();
+    await expect(page.locator('.score .sub').first()).toContainText('Ø 5/Woche');
+    await page.locator('[data-p="week"]').click();
+    await expect(page.locator('.score .sub').first()).not.toContainText('Ø');   // Woche: keine Ø-Zeile
   });
 
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {

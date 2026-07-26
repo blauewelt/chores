@@ -187,5 +187,6 @@
   "Punkte pro Woche · leer = kein Ziel": "Point pr. uge · tom = intet mål",
   "{pts} von {goal} Punkten · {pct} %": "{pts} af {goal} point · {pct} %",
   "Beta: Wochenziel": "Beta: ugemål",
-  "Beta beendet": "Beta afsluttet"
+  "Beta beendet": "Beta afsluttet",
+  "Ø {n}/Woche": "Ø {n}/uge"
 }

@@ -187,5 +187,6 @@
   "Punkte pro Woche · leer = kein Ziel": "週あたりのポイント · 空欄 = 目標なし",
   "{pts} von {goal} Punkten · {pct} %": "{goal}ポイント中{pts} · {pct}%",
   "Beta: Wochenziel": "ベータ: 週の目標",
-  "Beta beendet": "ベータを終了しました"
+  "Beta beendet": "ベータを終了しました",
+  "Ø {n}/Woche": "週Ø {n}"
 }

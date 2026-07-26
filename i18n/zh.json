@@ -187,5 +187,6 @@
   "Punkte pro Woche · leer = kein Ziel": "每周积分 · 留空 = 无目标",
   "{pts} von {goal} Punkten · {pct} %": "{goal}分中的{pts}分 · {pct}%",
   "Beta: Wochenziel": "测试版：每周目标",
-  "Beta beendet": "测试版已结束"
+  "Beta beendet": "测试版已结束",
+  "Ø {n}/Woche": "每周Ø {n}"
 }

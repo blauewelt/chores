@@ -187,5 +187,6 @@
   "Punkte pro Woche · leer = kein Ziel": "Punten per week · leeg = geen doel",
   "{pts} von {goal} Punkten · {pct} %": "{pts} van {goal} punten · {pct} %",
   "Beta: Wochenziel": "Bèta: weekdoel",
-  "Beta beendet": "Bèta beëindigd"
+  "Beta beendet": "Bèta beëindigd",
+  "Ø {n}/Woche": "Ø {n}/week"
 }

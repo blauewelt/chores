@@ -187,5 +187,6 @@
   "Punkte pro Woche · leer = kein Ziel": "Puncte pe săptămână · gol = fără obiectiv",
   "{pts} von {goal} Punkten · {pct} %": "{pts} din {goal} puncte · {pct} %",
   "Beta: Wochenziel": "Beta: obiectiv săptămânal",
-  "Beta beendet": "Beta încheiată"
+  "Beta beendet": "Beta încheiată",
+  "Ø {n}/Woche": "Ø {n}/săpt."
 }

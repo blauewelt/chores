@@ -187,5 +187,6 @@
   "Punkte pro Woche · leer = kein Ziel": "Punti a settimana · vuoto = nessun obiettivo",
   "{pts} von {goal} Punkten · {pct} %": "{pts} di {goal} punti · {pct} %",
   "Beta: Wochenziel": "Beta: obiettivo settimanale",
-  "Beta beendet": "Beta terminata"
+  "Beta beendet": "Beta terminata",
+  "Ø {n}/Woche": "Ø {n}/settimana"
 }

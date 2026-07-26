@@ -187,5 +187,6 @@
   "Punkte pro Woche · leer = kein Ziel": "Điểm mỗi tuần · để trống = không có mục tiêu",
   "{pts} von {goal} Punkten · {pct} %": "{pts} trên {goal} điểm · {pct} %",
   "Beta: Wochenziel": "Beta: mục tiêu tuần",
-  "Beta beendet": "Đã kết thúc beta"
+  "Beta beendet": "Đã kết thúc beta",
+  "Ø {n}/Woche": "Ø {n}/tuần"
 }

@@ -187,5 +187,6 @@
   "Punkte pro Woche · leer = kein Ziel": "주당 포인트 · 비워두면 목표 없음",
   "{pts} von {goal} Punkten · {pct} %": "{goal}점 중 {pts}점 · {pct}%",
   "Beta: Wochenziel": "베타: 주간 목표",
-  "Beta beendet": "베타 종료됨"
+  "Beta beendet": "베타 종료됨",
+  "Ø {n}/Woche": "주 Ø {n}"
 }

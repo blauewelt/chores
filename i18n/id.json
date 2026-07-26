@@ -187,5 +187,6 @@
   "Punkte pro Woche · leer = kein Ziel": "Poin per minggu · kosong = tanpa target",
   "{pts} von {goal} Punkten · {pct} %": "{pts} dari {goal} poin · {pct} %",
   "Beta: Wochenziel": "Beta: target mingguan",
-  "Beta beendet": "Beta diakhiri"
+  "Beta beendet": "Beta diakhiri",
+  "Ø {n}/Woche": "Ø {n}/minggu"
 }

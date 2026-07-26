@@ -187,5 +187,6 @@
   "Punkte pro Woche · leer = kein Ziel": "Очки в неделю · пусто = без цели",
   "{pts} von {goal} Punkten · {pct} %": "{pts} из {goal} очков · {pct} %",
   "Beta: Wochenziel": "Бета: цель на неделю",
-  "Beta beendet": "Бета завершена"
+  "Beta beendet": "Бета завершена",
+  "Ø {n}/Woche": "Ø {n}/нед."
 }

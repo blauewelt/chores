@@ -1,3 +1,24 @@
+## 2026-07-26 — v4.68.0: Ø Punkte/Woche in «Gesamt» (Beta) — die Messlatte fuers Wochenziel
+
+- Maintainer-Idee: Wochenziele setzt man leichter, wenn man sieht, was
+  eine Person BISHER pro Woche geschafft hat. Umsetzung: «Gesamt»-Karten
+  zeigen (nur Beta-Haushalten) «· Ø N/Woche» — Gesamtpunkte geteilt
+  durch Wochen seit dem ERSTEN Eintrag (mindestens 1 Woche).
+- Der Ersteintrag kommt als first_done aus der Server-Sicht log_totals
+  (create or replace, additiv — der v4.65-Client selektiert explizit und
+  bleibt unberuehrt): das Client-Fenster kennt den Ersteintrag nicht,
+  dieselbe 300-Zeilen-Falle wie beim Gesamt-Vorfall vom 22.07.
+- Nur in «Gesamt», nicht in «Diese Woche» (dort regiert das Ziel);
+  bumpTotals setzt first beim allerersten lokalen Eintrag einer neuen
+  Person. Mock-Harness rechnet first_done aus logRows.
+- Nebenprodukt dieser Runde: Vorschau des Pro-Person-Sheets (Task-Sheet-
+  Stil: Name/Farbe, Wochenziel mit Ø-Zeile, erklaerte Admin/📵-Schalter,
+  Link teilen, Löschen) an den Maintainer — Umbau folgt nach Freigabe
+  als eigene Runde.
+- 1 neuer i18n-Schluessel in 19 Sprachen; 1 neuer Test (Ø in Gesamt,
+  nicht in Woche; Beta-AUS-Garantie erneut gruen).
+- APP_VERSION 4.68.0, SW-Cache haushalt-v164
+
 ## 2026-07-26 — v4.67.1: Wochenziel-Eingabefeld sieht aus wie die App (nicht wie 1998)
 
 - Maintainer-Befund: das Zahlenfeld wirkte «very dated». Ursache: die

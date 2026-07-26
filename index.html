@@ -527,7 +527,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.67.1';
+  const APP_VERSION = '4.68.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1616,7 +1616,7 @@
         sb('chores?select=id,name,points,note,art,created_at&order=points.desc,name'),
         sb(logQ),
         sb('families?select=*'),
-        sb('log_totals?select=member_id,pts,n').catch(() => null)   // Sicht fehlt/offline → Fenster-Fallback
+        sb('log_totals?select=member_id,pts,n,first_done').catch(() => null)   // Sicht fehlt/offline → Fenster-Fallback
       ]);
       // Wasserzeichen: nur SERVER-Zeit verwenden (Client-Uhren luegen)
       let newWm = wm;
@@ -1715,7 +1715,7 @@
       }
       if (Array.isArray(totalRows)) {
         const ta = {};
-        for (const r of totalRows) ta[r.member_id] = { pts: r.pts || 0, n: r.n || 0 };
+        for (const r of totalRows) ta[r.member_id] = { pts: r.pts || 0, n: r.n || 0, first: r.first_done || null };
         state.totalsAll = ta;
       }
       // v4.61.0: ERST JETZT — Zustand ist uebernommen — duerfen die Marken wandern.
@@ -1941,6 +1941,7 @@
     if (!state.totalsAll) return;
     const v = state.totalsAll[mid] || (state.totalsAll[mid] = { pts: 0, n: 0 });
     v.pts += dPts; v.n += dN;
+    if (!v.first && dN > 0) v.first = new Date().toISOString();   // erster Eintrag ueberhaupt (v4.68.0)
   }
 
   // ---------- Rendering ----------
@@ -2213,7 +2214,17 @@
               : Math.round(tot[m.id].pts / max * 100)}%; background:${esc(m.color)}"></i></div>
             <div class="sub">${goalOf(m)
               ? t('{pts} von {goal} Punkten · {pct} %', { pts: tot[m.id].pts, goal: goalOf(m), pct: Math.round(tot[m.id].pts / goalOf(m) * 100) })
-              : t(tot[m.id].n === 1 ? '{n} Aufgabe erledigt' : '{n} Aufgaben erledigt', { n: tot[m.id].n })}</div>
+              : t(tot[m.id].n === 1 ? '{n} Aufgabe erledigt' : '{n} Aufgaben erledigt', { n: tot[m.id].n })
+            }${(() => {
+              // v4.68.0 (Beta): Ø Punkte/Woche in «Gesamt» — die Messlatte fuers
+              // Wochenziel. Braucht den ECHTEN Ersteintrag (first_done aus der
+              // Server-Sicht); das Client-Fenster kennt ihn nicht.
+              if (!BETA || period === 'week') return '';
+              const v = state.totalsAll && state.totalsAll[m.id];
+              if (!v || !v.first || !v.pts) return '';
+              const weeks = Math.max(1, (Date.now() - Date.parse(v.first)) / 604800000);
+              return ` · ${t('Ø {n}/Woche', { n: Math.round(v.pts / weeks) })}`;
+            })()}</div>
           </div>`).join('');
     } else {
       // Serien buendeln: dieselbe Person tippt dieselbe Aufgabe mehrmals in

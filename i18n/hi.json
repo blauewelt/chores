@@ -187,5 +187,6 @@
   "Punkte pro Woche · leer = kein Ziel": "अंक प्रति सप्ताह · खाली = कोई लक्ष्य नहीं",
   "{pts} von {goal} Punkten · {pct} %": "{goal} में से {pts} अंक · {pct} %",
   "Beta: Wochenziel": "बीटा: साप्ताहिक लक्ष्य",
-  "Beta beendet": "बीटा समाप्त"
+  "Beta beendet": "बीटा समाप्त",
+  "Ø {n}/Woche": "Ø {n}/सप्ताह"
 }

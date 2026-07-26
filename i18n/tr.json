@@ -187,5 +187,6 @@
   "Punkte pro Woche · leer = kein Ziel": "Haftalık puan · boş = hedef yok",
   "{pts} von {goal} Punkten · {pct} %": "{goal} puandan {pts} · %{pct}",
   "Beta: Wochenziel": "Beta: haftalık hedef",
-  "Beta beendet": "Beta sona erdi"
+  "Beta beendet": "Beta sona erdi",
+  "Ø {n}/Woche": "Haftalık Ø {n}"
 }
