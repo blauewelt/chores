@@ -1,3 +1,17 @@
+## 2026-07-26 — v4.70.1 (SW haushalt-v171): Ziel-Karte zeigt nur noch die Prozentzahl gross
+
+- Maintainer-Entscheid nach der visuellen Abnahme von v4.70.0: die kleine
+  Punkte-Nebenzahl im Kopf faellt weg. Sie wiederholte, was zwei Zeilen
+  tiefer ohnehin steht («36» neben «36 von 30 Punkten»), und bei 0 Punkten
+  las sich «0 0 %» wie ein Fehler. Jetzt gilt: EINE Leitzahl je Karte, und
+  das ist das Ranking-Kriterium; die Punkte nennt die Unterzeile genau
+  einmal.
+- Nur Markup/CSS der Ziel-Karte (`.score .pts` entfaellt, Regel entfernt) —
+  Balken-Geometrie, Sortierung, Sync und alles OHNE Ziel unveraendert.
+- Test nachgezogen und geschaerft: er nagelt jetzt die Abwesenheit fest
+  (`.score .pts` = 0 Treffer, Kopfzeile enthaelt die Punktzahl NICHT),
+  nicht nur die Anwesenheit der Prozentzahl.
+
 ## 2026-07-26 — v4.70.0 (SW haushalt-v170): Ziel-Balken mit Kopfraum, Zielerreichung als Leitzahl
 
 - Maintainer-Befund an der Live-Rangliste: der Ziel-Balken endete bei

@@ -152,9 +152,8 @@
   .score .name{font-weight:700; font-size:18px; flex:1; min-width:0}
   .score .num{font-family:var(--display); font-weight:800; font-size:34px; flex:none}
   /* Ziel-Karte (Beta): die Zielerreichung ist das Ranking-Kriterium und steht
-     deshalb an der Stelle der grossen Zahl; die Punkte ruecken daneben. */
-  .score .pts{font-family:var(--display); font-weight:800; font-size:20px;
-    color:var(--muted); flex:none; margin-right:-3px}
+     deshalb ALLEIN an der Stelle der grossen Zahl (v4.70.1); die Punkte nennt
+     die Unterzeile. Kein .score .pts — das waere Doppelung im selben Kaertchen. */
   .score .num small{font-size:.58em; font-weight:700; margin-left:1px; opacity:.75}
   .score .num.hit{color:#E8B931}
   .score[data-mid]{cursor:pointer}
@@ -564,7 +563,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.70.0';
+  const APP_VERSION = '4.70.1';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2294,13 +2293,12 @@
               <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>
               <span class="name">${esc(m.name)}${i === 0 && tot[m.id].pts > 0 ? ' 👑' : ''}</span>
               ${g
-                // Mit Ziel entscheidet die ZIELERREICHUNG die Rangliste — also
-                // steht sie gross, die Punkte daneben als Nebenzahl. Ohne Ziel
-                // bleibt alles wie bisher (alle anderen Haushalte, «Gesamt»).
-                // Bei 0 Punkten entfaellt die Nebenzahl — «0 0 %» las sich wie ein Fehler,
-                // und die Unterzeile nennt den Stand ohnehin («0 von 15 Punkten»).
-                ? `${pts ? `<span class="pts">${pts}</span>` : ''}<span class="num pct${pct >= 100 ? ' hit' : ''}"
-                     >${pct}<small>%</small></span>`
+                // Mit Ziel entscheidet die ZIELERREICHUNG die Rangliste — sie ALLEIN
+                // steht deshalb gross. Die Punkte stehen genau einmal in der Karte,
+                // naemlich in der Unterzeile («36 von 30 Punkten»): eine Nebenzahl
+                // im Kopf wiederholte sie nur (v4.70.1). Ohne Ziel bleibt alles wie
+                // bisher — Punkte gross (alle anderen Haushalte, «Gesamt»).
+                ? `<span class="num pct${pct >= 100 ? ' hit' : ''}">${pct}<small>%</small></span>`
                 : `<span class="num">${pts}</span>`}
             </div>
             ${g ? goalBar(pct, m.color)

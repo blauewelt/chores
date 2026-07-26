@@ -381,12 +381,14 @@ onFail)` — 1 Retry, dann Wiederherstellung + ehrlicher Toast
 Krone, Zähler. **NIE eine Variable `t` nennen** (schattet i18n; Live-Bug
 Punkte-Tab leer).
 
-**Ziel-Karte (Beta, v4.70.0) — die Leitzahl ist das Ranking-Kriterium.**
-Mit Wochenziel reiht die App nach ZIELERREICHUNG (v4.67.0); also steht
-die Prozentzahl an der Stelle der grossen Zahl (`.num.pct`, ab 100 %
-goldig `#E8B931` wie die Ziellinie im Wochen-Chart), die Punkte daneben
-als Nebenzahl (`.pts`, entfällt bei 0), die Unterzeile nennt «X von Y
-Punkten». Der Balken hat KOPFRAUM: 100 % des Ziels liegen bei
+**Ziel-Karte (Beta, v4.70.0/.1) — EINE Leitzahl, und das ist das
+Ranking-Kriterium.** Mit Wochenziel reiht die App nach ZIELERREICHUNG
+(v4.67.0); also steht die Prozentzahl ALLEIN an der Stelle der grossen
+Zahl (`.num.pct`, ab 100 % goldig `#E8B931` wie die Ziellinie im
+Wochen-Chart), die Punkte nennt nur die Unterzeile («X von Y Punkten»).
+v4.70.0 hatte sie zusätzlich als Nebenzahl im Kopf — das wiederholte die
+Unterzeile und ist seit v4.70.1 weg (bei 0 Punkten las sich «0 0 %»
+ausserdem wie ein Fehler). Der Balken hat KOPFRAUM: 100 % des Ziels liegen bei
 `GOALW = 80 %` der Breite mit einem Strich (`u.tick`) darauf, die
 Übererfüllung füllt gestreift (`b.over`) den Rest, ab `CAPPCT = 125 %`
 ist er voll und die Spitze (`.capped`) sagt «geht weiter». Vorher endete

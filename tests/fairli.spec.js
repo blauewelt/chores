@@ -3005,10 +3005,9 @@ test.describe('Fairli', () => {
     await page.getByRole('tab', { name: 'Punkte' }).click();
     await expect(page.locator('.score .name').first()).toContainText('Mira');
     await expect(page.locator('.score .name').first()).toContainText('👑');
-    // seit v4.70.0 steht die Zielerreichung als GROSSE Zahl (Ranking-Kriterium),
-    // die Punkte daneben; die Unterzeile nennt nur noch Punkte von Ziel
+    // seit v4.70.0 steht die Zielerreichung als GROSSE Zahl (Ranking-Kriterium);
+    // die Punkte nennt seit v4.70.1 NUR noch die Unterzeile
     await expect(page.locator('.score .num.pct').first()).toContainText('75');
-    await expect(page.locator('.score .pts').first()).toHaveText('6');
     await expect(page.locator('.score .sub').first()).toContainText('6 von 8 Punkten');
     await expect(page.locator('.score').nth(1)).toContainText('erledigt');   // Timon unverändert
   });
@@ -3117,7 +3116,7 @@ test.describe('Fairli', () => {
     expect(g120.fill + g120.over).toBeLessThan(g200.fill + g200.over);
   });
 
-  test('Zielerreichung ist die grosse Zahl, Punkte die Nebenzahl — ab 100 % goldig (v4.70.0)', async ({ context, page }) => {
+  test('Zielerreichung ist die EINZIGE grosse Zahl — Punkte nur in der Unterzeile (v4.70.1)', async ({ context, page }) => {
     await goalFixture(context, [
       { id: 'm-a', name: 'Mira', goal: 30, pts: 36 },    // 120 % — erreicht
       { id: 'm-b', name: 'Timon', goal: 15, pts: 5 },    //  33 % — offen
@@ -3127,18 +3126,18 @@ test.describe('Fairli', () => {
     await page.getByRole('tab', { name: 'Punkte' }).click();
     const card = mid => page.locator(`.score[data-mid="${mid}"]`);
     await expect(card('m-a').locator('.num.pct')).toHaveText('120%');
-    await expect(card('m-a').locator('.pts')).toHaveText('36');
     await expect(card('m-a').locator('.sub')).toHaveText('36 von 30 Punkten');
     await expect(card('m-b').locator('.num.pct')).toHaveText('33%');
-    await expect(card('m-b').locator('.pts')).toHaveText('5');
-    // Bei 0 Punkten faellt die Nebenzahl weg («0 0 %» sah aus wie ein Fehler)
+    await expect(card('m-b').locator('.sub')).toHaveText('5 von 15 Punkten');
     await expect(card('m-c').locator('.num.pct')).toHaveText('0%');
-    await expect(card('m-c').locator('.pts')).toHaveCount(0);
     await expect(card('m-c').locator('.sub')).toHaveText('0 von 20 Punkten');
-    // Die grosse Zahl ist auch wirklich die grosse: Prozent > Punkte
-    const size = loc => loc.evaluate(el => parseFloat(getComputedStyle(el).fontSize));
-    expect(await size(card('m-a').locator('.num.pct')))
-      .toBeGreaterThan(await size(card('m-a').locator('.pts')));
+    // v4.70.1: KEINE Nebenzahl im Kopf — die Punkte stehen genau EINMAL je Karte.
+    // (v4.70.0 hatte sie daneben; «36 … 36 von 30» war Doppelung, «0 0 %» las
+    // sich wie ein Fehler.)
+    await expect(page.locator('.score .pts')).toHaveCount(0);
+    await expect(card('m-a').locator('.top')).toContainText('120%');
+    await expect(card('m-a').locator('.top')).not.toContainText('36');   // Punkte NUR unten
+    await expect(card('m-b').locator('.top')).not.toContainText('5 ');
     // Erreicht/nicht erreicht ist auf einen Blick unterscheidbar (nicht NUR Farbe:
     // die Zahl selbst und der Strich im Balken tragen die Information)
     await expect(card('m-a').locator('.num.pct')).toHaveClass(/hit/);
