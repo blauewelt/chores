@@ -1,3 +1,25 @@
+## 2026-07-26 — v4.69.1: Tastatur verdeckt den Speichern-Knopf nicht mehr; Sheet speichert SELBST; Luft
+
+- TASTATUR (Live-Screenshot des Maintainers): die Bildschirmtastatur lag
+  ueber dem Knopf. interactive-widget=resizes-content und dvh waren
+  laengst gesetzt — die INSTALLIERTE App ignoriert beides zuverlaessig
+  genug, um den Fix zu brauchen. Jetzt misst visualViewport die
+  Tastaturhoehe (--kb auf :root); Sheets sind unten verankert
+  (margin-bottom:var(--kb)) und die max-Hoehe rechnet die Tastatur mit
+  ein. Schwelle 40 px gegen Zitter-Resizes (URL-Leiste).
+- SPEICHERN STATT FERTIG (Maintainer: «usual gesture to save changes»):
+  der Knopf heisst Speichern und SPEICHERT — jedes Verlassen des
+  Pro-Person-Sheets (Knopf, ×, Backdrop/Wischen) synchronisiert die
+  geaenderten Personen sofort (syncChangedMembers, aus finishMembers
+  extrahiert; Namenlose werden nicht gesynct, die Liste raeumt sie beim
+  Schliessen auf). Vorher speicherte erst das Listen-Speichern — ein
+  Sheet-Schliessen + Liste-per-Reopen haette Aenderungen verlieren
+  koennen (changedMembers.clear beim Oeffnen).
+- Admin-Test auf Mehr-POST-Semantik umgestellt (letzter Stand je Person
+  zaehlt). Grosszuegigere Abstaende im Sheet (Zeilen, Huefte um die
+  Grafik, Knopf-Abstand).
+- APP_VERSION 4.69.1, SW-Cache haushalt-v166
+
 ## 2026-07-26 — v4.69.0: Pro-Person-Sheet mit Wochen-Balken — das ⋯-Menü geht in Rente
 
 FREIGEGEBEN nach Vorschau (Maintainer: «Nice preview, let's go ahead» +

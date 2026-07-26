@@ -231,7 +231,13 @@
   .fab:active{transform:scale(.92); background:var(--accent-press)}
 
   dialog{border:none; border-radius:20px 20px 0 0; padding:0; width:100%; max-width:560px;
-    margin:auto auto 0; background:var(--card); color:var(--ink)}
+    margin:auto auto 0; background:var(--card); color:var(--ink);
+    /* --kb: Hoehe der Bildschirmtastatur (visualViewport-Messung) — hebt das
+       Sheet an, damit Eingabefeld UND Speichern-Knopf sichtbar bleiben.
+       interactive-widget=resizes-content greift in der installierten App
+       nicht zuverlaessig (Live-Fund 26.07., Screenshot: Tastatur ueber dem
+       Knopf), darum die JS-Messung als belastbarer Weg. */
+    margin-bottom:var(--kb, 0px)}
   dialog::backdrop{background:rgba(0,0,0,.55)}
   /* Sheets GLEITEN von unten herein statt aufzupoppen (v4.42.1); die globale
      reduced-motion-Regel (unten) schaltet das automatisch ab */
@@ -239,7 +245,7 @@
   dialog[open]::backdrop{animation:backdropIn .28s ease}
   @keyframes sheetIn{from{transform:translateY(100%)}}
   @keyframes backdropIn{from{background:rgba(0,0,0,0)}}
-  .sheet{padding:20px 20px calc(20px + env(safe-area-inset-bottom));max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}
+  .sheet{padding:20px 20px calc(20px + env(safe-area-inset-bottom));max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px - var(--kb, 0px));overflow-y:auto;overscroll-behavior:contain}
   .sheet h2{font-family:var(--display); font-weight:700; font-size:20px; margin:0 0 14px}
   .field{margin-bottom:14px}
   .field label{display:block; font-size:13px; font-weight:600; color:var(--muted); margin-bottom:5px}
@@ -302,13 +308,14 @@
   .prow .swatch{width:26px; height:26px; border-radius:8px; flex:none}
   .prow .pname{flex:1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .prow .chev{color:var(--muted)}
+  .psrow{padding-top:14px; padding-bottom:14px; margin-bottom:4px}
   .psrow small{color:var(--muted); font-weight:400}
-  .pshint{color:var(--muted); font-size:12.5px; margin:0 0 10px 2px}
-  .wkchart{position:relative; display:flex; align-items:flex-end; gap:5px; height:64px; margin:8px 2px 2px}
+  .pshint{color:var(--muted); font-size:12.5px; line-height:1.5; margin:0 0 16px 2px}
+  .wkchart{position:relative; display:flex; align-items:flex-end; gap:5px; height:64px; margin:10px 2px 2px}
   .wkchart i{flex:1; background:var(--accent); opacity:.5; border-radius:4px 4px 0 0; min-height:3px}
   .wkchart i.cur{opacity:1}
   .wkgoal{position:absolute; left:0; right:0; height:0; border-top:2px dashed #E8B931}
-  .wklbl{display:flex; justify-content:space-between; color:var(--muted); font-size:11px; margin:2px 2px 12px}
+  .wklbl{display:flex; justify-content:space-between; color:var(--muted); font-size:11px; margin:2px 2px 20px}
   .goallbl{color:var(--muted); font-size:14px; flex:none}
   input.goalinp{flex:none; width:84px; text-align:center; appearance:textfield; -moz-appearance:textfield}
   .goalinp::-webkit-outer-spin-button, .goalinp::-webkit-inner-spin-button{-webkit-appearance:none; margin:0}
@@ -539,7 +546,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.69.0';
+  const APP_VERSION = '4.69.1';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2840,7 +2847,7 @@
     if (!sh) {
       sh = document.createElement('dialog'); sh.id = 'personSheet';
       document.body.appendChild(sh);
-      enableBackdropClose(sh, () => { sh.close(); renderMemberRows(); });
+      enableBackdropClose(sh, () => { sh.close(); renderMemberRows(); syncChangedMembers(); });
     }
     const v = state.totalsAll && state.totalsAll[mid];
     const avg = (BETA && v && v.first && v.pts)
@@ -2857,7 +2864,7 @@
         <div class="slot"></div><h2>${t('Person')}</h2>
         <div class="slot end"><button type="button" class="x" id="psClose" aria-label="${esc(t('Schließen'))}">×</button></div>
       </div>
-      <div class="mrow" style="margin:4px 0 14px">
+      <div class="mrow" style="margin:6px 0 20px">
         <input type="color" id="psColor" value="${esc(m.color)}" aria-label="Farbe">
         <input type="text" id="psName" maxlength="30" aria-label="Name">
       </div>
@@ -2876,10 +2883,10 @@
       <button type="button" class="menuitem setrow psrow" id="psDel" style="color:var(--red)">
         <span class="seticon">🗑️</span><span class="setlabel">${t('Person löschen')}</span>
       </button>
-      <button type="button" class="btn primary wide" id="psDone" style="margin-top:14px">${t('Fertig')}</button>
+      <button type="button" class="btn primary wide" id="psDone" style="margin-top:22px">${t('Speichern')}</button>
     </div>`;
     sh.querySelector('#psName').value = m.name;
-    const done = () => { sh.close(); renderMemberRows(); };
+    const done = () => { sh.close(); renderMemberRows(); syncChangedMembers(); };
     sh.querySelector('#psClose').onclick = done;
     sh.querySelector('#psDone').onclick = done;
     sh.querySelector('#psName').addEventListener('input', e => {
@@ -3326,23 +3333,37 @@
     const ps = document.getElementById('personSheet');
     if (ps) { const n = ps.querySelector('#psName'); if (n) n.focus(); }
   });
+  function syncChangedMembers() {
+    // upsertRemote (v4.46.1): verschluesselt + Write-Key (v4.46.0) UND
+    // Pull-Schutz — vorher schluckte ein Pull mit Vor-Commit-Snapshot die
+    // neue Person bzw. setzte Umbenennungen zurueck (Maintainer-Live-Bugs).
+    const ms = state.members.filter(m => changedMembers.has(m.id) && m.name.trim() !== '');
+    upsertRemote('members', ms);
+    if (ms.length) toast(t('Gespeichert'));   // «unklar, ob es speichert» (Maintainer) — jetzt sagt es das
+  }
   function finishMembers() {
     state.members = state.members.filter(m => m.name.trim() !== '');
     if (!state.members.length) state.members = [{ id: uid(), name: 'Ich', color: palette[0] }];
     save(); memberSheet.close(); render();
-    // geänderte/neue Personen synchronisieren (upsert)
-    const ms = state.members.filter(m => changedMembers.has(m.id));
-    // upsertRemote (v4.46.1): verschluesselt + Write-Key (v4.46.0) UND
-    // Pull-Schutz — vorher schluckte ein Pull mit Vor-Commit-Snapshot die
-    // neue Person bzw. setzte Umbenennungen zurueck (Maintainer-Live-Bugs).
-    upsertRemote('members', ms);
-    if (ms.length) toast(t('Gespeichert'));   // «unklar, ob es speichert» (Maintainer) — jetzt sagt es das
+    syncChangedMembers();
   }
   document.getElementById('closeMembers').addEventListener('click', finishMembers);   // × oben
   document.getElementById('doneMembers').addEventListener('click', finishMembers);    // Speichern unten
 
   // ---------- Sheets einheitlich schliessen: Backdrop-Tipp (Esc ist nativ) ----------
   // Klick auf den Dialog SELBST = Backdrop (der Inhalt liegt in .sheet).
+  // Bildschirmtastatur messen (v4.69.1): --kb = wie viel der Tastatur das
+  // sichtbare Fenster unten abschneidet. dvh/interactive-widget reichen in
+  // der installierten App nicht — visualViewport sagt die Wahrheit.
+  if (window.visualViewport) {
+    const vvAdjust = () => {
+      const kb = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
+      document.documentElement.style.setProperty('--kb', (kb > 40 ? kb : 0) + 'px');
+    };
+    window.visualViewport.addEventListener('resize', vvAdjust);
+    window.visualViewport.addEventListener('scroll', vvAdjust);
+  }
+
   function enableBackdropClose(dlg, onClose, guard) {
     const doClose = onClose || (() => dlg.close());
     dlg.addEventListener('click', e => {

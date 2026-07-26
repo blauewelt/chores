@@ -1151,8 +1151,10 @@ test.describe('Fairli', () => {
     await expect(page.locator('#psAssist .setval')).toHaveText('An');
     await page.locator('#psDone').click();
     await expect(page.locator('.prow[data-pid="m-chris"] .assistbadge', { hasText: '📵' })).toBeVisible();   // sofort sichtbar
-    await page.locator('#doneMembers').click();
+    // v4.69.1: «Speichern» im Pro-Person-Sheet speichert SELBST — der POST
+    // kommt, BEVOR die Liste geschlossen wird
     await expect.poll(() => posts.length).toBeGreaterThan(0);
+    await page.locator('#doneMembers').click();
     const saved = [].concat(posts[0]).find(r => r.id === 'm-chris');
     expect(saved.assisted).toBe(true);
     // Erneutes Öffnen: Badge in der Zeile, Schalter im Sheet auf An (Zustand hält)
@@ -1548,9 +1550,12 @@ test.describe('Fairli', () => {
     await expect(timonRow.locator('.assistbadge', { hasText: '🔑' })).toHaveCount(0);
     await page.locator('#doneMembers').click();
     await expect.poll(() => posts.length).toBeGreaterThan(0);
-    const saved = [].concat(posts[0]);
-    expect(saved.find(r => r.id === 'm-mira').admin).toBe(true);
-    expect(saved.find(r => r.id === 'm-chris').admin).toBe(false);
+    // v4.69.1: jedes Sheet-Schliessen speichert selbst — die Aenderungen
+    // kommen ueber MEHRERE POSTs verteilt; es zaehlt der LETZTE Stand je Person
+    const all = posts.flat();
+    const last = id => [...all].reverse().find(r => r.id === id);
+    expect(last('m-mira').admin).toBe(true);
+    expect(last('m-chris').admin).toBe(false);
   });
 
   test('Manifest-Regel (v4.56.0): nie auf iOS — auf Android/Desktop in BEIDEN Kontexten', async ({ context, page, browserName }) => {
