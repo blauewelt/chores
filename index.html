@@ -546,7 +546,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.69.1';
+  const APP_VERSION = '4.69.2';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -696,6 +696,7 @@
   // Frueher: EIN Schluessel pro Familie — den sich Admin-Ansicht und persoenliche
   // Links TEILTEN. Ein Besuch auf einem fremden persoenlichen Link stempelte damit dessen «Ich bin»
   // auch in die Admin-Ansicht. Jetzt: nur der Admin-Kontext merkt sich eine Wahl.
+  const LS_PENDMEMB = 'haushalt.pendmemb:' + FAMILY;   // v4.69.2: unsynchronisierte Personen-Aenderungen (IDs) ueberleben Reload
   const LS_ME_OLD = 'haushalt.me:' + FAMILY;
   const LS_ME     = 'haushalt.me:' + FAMILY + ':admin';
   const CHORE_COLORS = ['#52C08A','#E8B931','#5FA8E8','#E8746A','#B585E8',
@@ -1577,15 +1578,28 @@
     if (!rows.length) return;
     await CRYPTO_READY;
     rows = famRows(await Promise.all(rows.map(r => encRow(table, r))));
-    const r = await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/' + famScope(table), {
-      method: 'POST',
-      headers: Object.assign({ apikey: cfg.key, Authorization: 'Bearer ' + cfg.key,
-        'Content-Type': 'application/json',
-        Prefer: 'resolution=merge-duplicates,return=minimal' },
-        WRITEKEY ? { 'x-fairli-key': WRITEKEY } : {}),
-      body: JSON.stringify(rows)
-    });
-    if (!r.ok) throw new Error('upsert ' + table + ' → ' + r.status);
+    // PGRST102-Wache (Live-Vorfall 26.07.): PostgREST verlangt in EINEM
+    // Batch IDENTISCHE Schluesselmengen. Lokale Zeilen driften aber
+    // natuerlich (frisch angelegt = 3 Schluessel, gepullt = alle Spalten) —
+    // EINE abweichende Zeile liess den ganzen Batch mit 400 platzen
+    // («Sync fehlgeschlagen», Wochenziel kam nie an). Darum: nach
+    // Schluessel-Signatur gruppieren, ein Request je Gruppe.
+    const groups = new Map();
+    for (const r of rows) {
+      const sig = Object.keys(r).sort().join(',');
+      (groups.get(sig) || groups.set(sig, []).get(sig)).push(r);
+    }
+    for (const batch of groups.values()) {
+      const r = await fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/' + famScope(table), {
+        method: 'POST',
+        headers: Object.assign({ apikey: cfg.key, Authorization: 'Bearer ' + cfg.key,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates,return=minimal' },
+          WRITEKEY ? { 'x-fairli-key': WRITEKEY } : {}),
+        body: JSON.stringify(batch)
+      });
+      if (!r.ok) throw new Error('upsert ' + table + ' → ' + r.status);
+    }
   }
 
   // Alle Zustaende der Abgleich-Schicht VOR pull() deklarieren (pull liest sie).
@@ -2823,6 +2837,27 @@
   // ---------- Personen-Sheet ----------
   const memberSheet = document.getElementById('memberSheet');
   const changedMembers = new Set();
+  // v4.69.2: Aenderungs-Marken PERSISTIEREN — ein Reload (SW-Update!) mitten
+  // im Bearbeiten darf keine Aenderung verlieren. Beim Start werden offene
+  // Marken erneut dem Sync uebergeben (upsertRemote ist idempotent).
+  const markChanged = m => {
+    changedMembers.add(m.id);
+    try { localStorage.setItem(LS_PENDMEMB, JSON.stringify([...changedMembers])); } catch {}
+  };
+  // Boot-Nachzug: Marken der letzten Sitzung (Reload/SW-Update mitten im
+  // Bearbeiten) erneut dem Sync uebergeben, sobald cfg/Krypto stehen.
+  try {
+    const pend = JSON.parse(localStorage.getItem(LS_PENDMEMB) || '[]');
+    if (pend.length) {
+      for (const id of pend) changedMembers.add(id);
+      // SOFORT synchron nachziehen — nicht verzoegert: upsertRemote setzt
+      // pendingCreates, und dieser Schutzschild muss stehen, BEVOR der erste
+      // Pull reconciled. Sonst ueberschreibt der Boot-Pull die lokale
+      // Aenderung mit dem alten Serverstand, und der Nachzug schickt genau
+      // diesen zurueck (im Debug-Harness live vorgefuehrt: goal 7 → null).
+      syncChangedMembers();
+    }
+  } catch {}
   function renderMemberRows() {
     const wrap = document.getElementById('memberRows');
     wrap.innerHTML = state.members.map(m =>
@@ -2848,6 +2883,9 @@
       sh = document.createElement('dialog'); sh.id = 'personSheet';
       document.body.appendChild(sh);
       enableBackdropClose(sh, () => { sh.close(); renderMemberRows(); syncChangedMembers(); });
+      // Esc (und jedes programmatische close) speichert AUCH — onclose als
+      // Netz; dank Marken-Loeschung in syncChangedMembers idempotent.
+      sh.addEventListener('close', () => { renderMemberRows(); syncChangedMembers(); });
     }
     const v = state.totalsAll && state.totalsAll[mid];
     const avg = (BETA && v && v.first && v.pts)
@@ -2890,10 +2928,10 @@
     sh.querySelector('#psClose').onclick = done;
     sh.querySelector('#psDone').onclick = done;
     sh.querySelector('#psName').addEventListener('input', e => {
-      m.name = e.target.value; changedMembers.add(m.id); save();
+      m.name = e.target.value; markChanged(m); save();
     });
     sh.querySelector('#psColor').addEventListener('input', e => {
-      m.color = e.target.value; changedMembers.add(m.id); save();
+      m.color = e.target.value; markChanged(m); save();
     });
     const setVal = (id, on) => {
       const el = sh.querySelector('#' + id + ' .setval');
@@ -2902,10 +2940,10 @@
     sh.querySelector('#psAdmin').onclick = () => {
       if (!isAdmin()) { toast(t('Nur Admins können das ändern')); return; }
       if (m.admin && adminMembers().length <= 1) { toast(t('Mindestens eine Person muss Admin bleiben')); return; }
-      m.admin = !m.admin; changedMembers.add(m.id); save(); setVal('psAdmin', m.admin);
+      m.admin = !m.admin; markChanged(m); save(); setVal('psAdmin', m.admin);
     };
     sh.querySelector('#psAssist').onclick = () => {
-      m.assisted = !m.assisted; changedMembers.add(m.id); save(); setVal('psAssist', m.assisted);
+      m.assisted = !m.assisted; markChanged(m); save(); setVal('psAssist', m.assisted);
     };
     sh.querySelector('#psShare').onclick = () =>
       shareLink(userLink(m), t('Link für {name}', { name: m.name || '—' }),
@@ -2938,7 +2976,7 @@
       g.addEventListener('input', e => {
         const n = parseInt(e.target.value, 10);
         m.goal = Number.isFinite(n) && n > 0 ? Math.min(999, n) : null;
-        changedMembers.add(m.id); save(); render(); drawChart(m.goal || 0);
+        markChanged(m); save(); render(); drawChart(m.goal || 0);
       });
       // Wochen-Balken: Summen je Woche vom SERVER (log_weekly) — das
       // Client-Fenster reicht bei aktiven Familien nur ~2 Wochen zurueck.
@@ -2991,7 +3029,8 @@
   const _shareTop = document.getElementById('openShareTop');
   if (_shareTop) _shareTop.addEventListener('click', () => openShareSheet(''));
   document.getElementById('openMembers').addEventListener('click', () => {
-    changedMembers.clear(); renderMemberRows();
+    renderMemberRows();   // v4.69.2: Marken NICHT mehr leeren — ungesyncte
+                          // Aenderungen waren sonst verloren (Verlustpfad)
     let fl = document.getElementById('famLink');
     if (!fl) {
       fl = document.createElement('button');
@@ -3327,7 +3366,7 @@
   });
   document.getElementById('addMember').addEventListener('click', () => {
     const m = { id: uid(), name: '', color: palette[state.members.length % palette.length] };
-    state.members.push(m); changedMembers.add(m.id);
+    state.members.push(m); markChanged(m);
     save(); renderMemberRows();
     openPersonSheet(m.id);                       // direkt benennen (v4.69.0)
     const ps = document.getElementById('personSheet');
@@ -3339,6 +3378,12 @@
     // neue Person bzw. setzte Umbenennungen zurueck (Maintainer-Live-Bugs).
     const ms = state.members.filter(m => changedMembers.has(m.id) && m.name.trim() !== '');
     upsertRemote('members', ms);
+    // Marken erst NACH der Uebergabe loeschen (v4.69.2): doppelte Aufrufe
+    // (Knopf + onclose-Netz) werden so zu No-ops statt Doppel-POSTs.
+    for (const m of ms) changedMembers.delete(m.id);
+    try { changedMembers.size
+      ? localStorage.setItem(LS_PENDMEMB, JSON.stringify([...changedMembers]))
+      : localStorage.removeItem(LS_PENDMEMB); } catch {}
     if (ms.length) toast(t('Gespeichert'));   // «unklar, ob es speichert» (Maintainer) — jetzt sagt es das
   }
   function finishMembers() {

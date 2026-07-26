@@ -1,3 +1,37 @@
+## 2026-07-26 — v4.69.2: Der «musste zweimal speichern»-Fehler — gefunden, reproduziert, dreifach abgedichtet
+
+URSACHE (mit 400er reproduziert): PostgREST verlangt in EINEM Batch
+IDENTISCHE Schluesselmengen (PGRST102 «All object keys must match»).
+Lokale Personen-Zeilen driften aber natuerlich — frisch angelegt hat 3
+Schluessel, gepullt alle Spalten. EINE abweichende Zeile (hier: die
+betreute Person mit Alt-Form) liess JEDEN Batch platzen, in dem sie
+mitfuhr: «Sync fehlgeschlagen», das Wochenziel dieser Person kam nie an,
+und pendingCreates hielt die lokalen Werte am Leben — es SAH gespeichert
+aus. Drei Symptome, ein Mechanismus.
+
+- FIX 1 (Mechanismus): upsert() gruppiert Zeilen nach Schluessel-
+  Signatur und sendet je Gruppe einen Request — fuer ALLE Tabellen;
+  PGRST102 ist damit konstruktionsbedingt unmoeglich.
+- FIX 2 (Verlustfestigkeit): Aenderungs-Marken persistieren
+  (LS_PENDMEMB) und werden beim Boot SYNCHRON nachgezogen — synchron,
+  weil der pendingCreates-Schild stehen muss, BEVOR der erste Pull
+  reconciled (Debug-Harness fuehrte das Rennen live vor: goal 7 → null
+  zurueckgeschickt). Der Marken-Kahlschlag beim Oeffnen der Liste
+  (changedMembers.clear) ist entfernt — er war ein realer Verlustpfad.
+- FIX 3 (Exit-Pfade): Esc/programmatisches close speichert jetzt auch
+  (close-Event als Netz); syncChangedMembers loescht Marken nach der
+  Uebergabe und ist damit idempotent — Knopf + Netz ergeben EINEN POST.
+- Stehende Regeln in DEVELOPER_ONBOARDING §11a festgeschrieben
+  (Maintainer-Auftrag): Speichern speichert / kein Exit verliert /
+  Reload verliert nicht; Tastatur-Regel (visualViewport, nicht
+  interactive-widget); PGRST102-Wache.
+- 3 neue Tests: Signatur-Gruppierung (heterogene Batches → getrennte,
+  einheitliche Requests), Esc speichert genau EINMAL, Reload mitten im
+  Bearbeiten verliert nichts. 121 gruen.
+- Hinweis an die Familie: das verlorene 7er-Wochenziel der betreuten
+  Person einmal NEU eintragen — der alte Stand lebte nur im Geraetespeicher.
+- APP_VERSION 4.69.2, SW-Cache haushalt-v167
+
 ## 2026-07-26 — v4.69.1: Tastatur verdeckt den Speichern-Knopf nicht mehr; Sheet speichert SELBST; Luft
 
 - TASTATUR (Live-Screenshot des Maintainers): die Bildschirmtastatur lag

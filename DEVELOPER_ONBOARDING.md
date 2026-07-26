@@ -750,6 +750,47 @@ Animations-GEFÜHL zeigen Screenshots nicht — das bleibt Geräte-Test
   Ground Truth schlägt Inferenz — wechselnde Theorien bei gleichem
   Symptom sind Erzählung, nicht Debugging.
 
+## 11a. Stehende UI-/Sync-Regeln (Maintainer-Auftrag 26.07.2026)
+
+Diese drei Regeln gelten fuer JEDE kuenftige Aenderung; sie stammen aus
+Live-Vorfaellen (Wochenziel «musste zweimal gespeichert werden»,
+«Sync fehlgeschlagen», Tastatur ueber dem Speichern-Knopf).
+
+**A. Speichern heisst speichern — und kein Weg hinaus verliert etwas.**
+- Ein Knopf mit der Aufschrift «Speichern» persistiert UND synchronisiert
+  selbst; er verlaesst sich nie auf einen spaeteren Knopf anderswo.
+- JEDER Exit-Pfad eines Sheets mit Eingaben synchronisiert: Knopf, ×,
+  Backdrop-Tipp, Runterwischen UND Esc (dialog-close-Event als Netz;
+  Sync-Funktionen muessen dafuer idempotent sein — Marken nach Uebergabe
+  an die Queue loeschen, sonst Doppel-POSTs).
+- Ungesyncte Aenderungen ueberleben einen Reload (SW-Updates!): Marken
+  persistieren (LS_PENDMEMB-Muster) und werden beim Boot SYNCHRON erneut
+  uebergeben — synchron, damit der pendingCreates-Schild steht, BEVOR der
+  erste Pull reconciled (sonst ueberschreibt der Boot-Pull die Aenderung
+  und der Nachzug schickt den alten Stand zurueck).
+- Marken-Sets niemals «zur Sicherheit» leeren (der alte
+  changedMembers.clear() beim Oeffnen war ein realer Verlustpfad).
+
+**B. Bildschirmtastatur: jedes Sheet bleibt mit offener Tastatur bedienbar.**
+- Verlass dich NICHT auf interactive-widget=resizes-content oder dvh —
+  die installierte App (PWA/TWA) ignoriert beides in der Praxis.
+- Massgeblich ist die visualViewport-Messung: --kb auf :root, Sheets sind
+  unten verankert (margin-bottom:var(--kb)) und rechnen --kb in ihre
+  max-Hoehe ein. Schwelle ~40 px gegen URL-Leisten-Zittern.
+- Bei neuen Sheets mit Eingabefeldern: mit offener Tastatur testen
+  (Screenshot vom Geraet zaehlt als Beleg).
+
+**C. Batch-Upserts: PostgREST verlangt IDENTISCHE Schluesselmengen.**
+- PGRST102 («All object keys must match»): EINE Zeile mit abweichenden
+  Schluesseln laesst den GANZEN Batch mit 400 platzen — lokale Zeilen
+  driften aber natuerlich (frisch angelegt = 3 Schluessel, gepullt =
+  alle Spalten). upsert() gruppiert deshalb nach Schluessel-Signatur und
+  sendet je Gruppe einen Request. Diese Wache nicht entfernen; neue
+  Schreibpfade nutzen upsert()/upsertRemote statt roher fetches.
+- Verwandte stehende Regeln: neue Spalten VOR dem Client migrieren
+  (LCOLS-Reihenfolge), und Views in ALTEN Migrationsdateien nachziehen,
+  wenn spaetere sie erweitern (Replay-Regel, §Migrationen).
+
 ## 12. Bekannte offene Punkte / Vertagt
 
 - **Pro-Mitglied-Rechte serverseitig:** die v4.38.0-Rechte sind

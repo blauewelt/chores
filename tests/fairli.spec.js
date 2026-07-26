@@ -3074,6 +3074,95 @@ test.describe('Fairli', () => {
     await page.locator('#psDone').click();
   });
 
+  test('PGRST102-Wache: ungleiche Schlüsselmengen werden in getrennten Batches gesendet (v4.69.2)', async ({ context, page }) => {
+    const reqs = [];
+    await mockBackend(context, {
+      famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      memberRows: () => [
+        { id: 'm-chris', name: 'Timon', color: '#2FAE6A', family_id: FAM, url_slug: 'slugchris1', admin: true, assisted: false, goal: null },
+        { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: false, assisted: false, goal: null },
+      ] });
+    await context.route(`${SB}/rest/v1/members**`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') {
+        const rows = [].concat(JSON.parse(req.postData() || '[]'));
+        reqs.push(rows);
+        // wie PostgREST: heterogene Schluesselmengen -> 400 PGRST102
+        const sigs = new Set(rows.map(r => Object.keys(r).sort().join(',')));
+        if (sigs.size > 1) return route.fulfill({ status: 400, body: '{"code":"PGRST102"}' });
+        return route.fulfill({ status: 201, body: '' });
+      }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(600);
+    // frisch angelegte Person (3 Schluessel) UND bearbeitete gepullte Person
+    // (volle Spalten) in derselben Sitzung aendern
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await page.locator('#addMember').click();
+    await expect(page.locator('#personSheet')).toBeVisible();
+    await page.locator('#psName').fill('Nova');
+    await page.locator('#psDone').click();
+    await openPerson(page, 'm-mira');
+    await page.locator('#psGoal').fill('8');
+    await page.locator('#psDone').click();
+    await expect.poll(() => reqs.flat().some(r => r.name === 'Nova')).toBe(true);
+    await expect.poll(() => reqs.flat().some(r => r.id === 'm-mira' && r.goal === 8)).toBe(true);
+    // JEDER Request hatte eine EINHEITLICHE Schluesselmenge (kein 400 noetig)
+    for (const rows of reqs) {
+      const sigs = new Set(rows.map(r => Object.keys(r).sort().join(',')));
+      expect(sigs.size).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test('Esc speichert auch: Ziel setzen, Escape drücken — der POST kommt trotzdem, genau EINMAL (v4.69.2)', async ({ context, page }) => {
+    const posts = [];
+    await mockBackend(context, {
+      famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      memberRows: () => [
+        { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', goal: null },
+        { id: 'm-noel', name: 'Noel', color: '#888888', family_id: FAM, url_slug: 'slugnoel1', goal: null },
+      ] });
+    await context.route(`${SB}/rest/v1/members**`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') { posts.push([].concat(JSON.parse(req.postData() || '[]'))); return route.fulfill({ status: 201, body: '' }); }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(600);
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await openPerson(page, 'm-mira');
+    await page.locator('#psGoal').fill('9');
+    await page.keyboard.press('Escape');
+    await expect.poll(() => posts.flat().filter(r => r.id === 'm-mira').length).toBe(1);
+    // und der Knopf-Weg erzeugt trotz onclose-Netz KEINEN Doppel-POST
+    await openPerson(page, 'm-noel');
+    await page.locator('#psGoal').fill('4');
+    await page.locator('#psDone').click();
+    await page.waitForTimeout(500);
+    expect(posts.flat().filter(r => r.id === 'm-noel').length).toBe(1);
+  });
+
+  test('Reload mitten im Bearbeiten verliert nichts: Marke überlebt, Boot synchronisiert nach (v4.69.2)', async ({ context, page }) => {
+    const posts = [];
+    await mockBackend(context, {
+      famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      memberRows: () => [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', goal: null }] });
+    await context.route(`${SB}/rest/v1/members**`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') { posts.push([].concat(JSON.parse(req.postData() || '[]'))); return route.fulfill({ status: 201, body: '' }); }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(600);
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await openPerson(page, 'm-mira');
+    await page.locator('#psGoal').fill('7');
+    await page.waitForTimeout(150);
+    await page.reload();                                   // Sheet NIE geschlossen — wie ein SW-Update
+    await expect.poll(() => posts.flat().some(r => r.id === 'm-mira' && r.goal === 7), { timeout: 6000 }).toBe(true);
+  });
+
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);
