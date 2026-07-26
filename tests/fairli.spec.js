@@ -216,7 +216,7 @@ test.describe('Fairli', () => {
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('html')).not.toHaveClass(/userlink/);
     const adminMe = await page.evaluate(fam => localStorage.getItem('haushalt.me:' + fam + ':admin'), FAM);
-    expect(adminMe).toBeNull();   // Janas Besuch hat die Admin-Identitaet NICHT gesetzt
+    expect(adminMe).toBeNull();   // der Besuch der zweiten Person hat die Admin-Identitaet NICHT gesetzt
   });
 
   test('Verlauf: Löschen bleibt gelöscht, auch wenn ein Pull die Zeile zurückbringt (Bug v4.17.0)', async ({ context, page }) => {
@@ -256,7 +256,7 @@ test.describe('Fairli', () => {
     await expect(page.locator('html')).toHaveClass(/userlink/);
   });
 
-  test('Hash allein rettet die Route (Query + sessionStorage weg — Mikas Befund)', async ({ context, page }) => {
+  test('Hash allein rettet die Route (Query + sessionStorage weg — Live-Befund Kind-Telefon)', async ({ context, page }) => {
     await mockBackend(context);
     // Exakt der beobachtete Zustand: index.html ohne ?r, ohne Handoff —
     // aber MIT Hash (Kanal 3). Muss in der verriegelten Sicht landen.
@@ -271,7 +271,7 @@ test.describe('Fairli', () => {
     // navigator.standalone = das iOS-Signal, das die Diagnose prueft
     // (CDP-display-mode-Emulation greift im Headless-Shell nicht — gelernt)
     await page.addInitScript(() => Object.defineProperty(navigator, 'standalone', { get: () => true }));
-    // Frisches Geraet, Icon mit eingebackener index.html — exakt Mikas Zustand
+    // Frisches Geraet, Icon mit eingebackener index.html — exakt der Kind-Telefon-Zustand
     await page.goto(`${BASE}/index.html`);
     // v4.19.4: veraltetes Icon wird BENANNT, Haushalt-Erstellen ist demontiert,
     // der Einladungs-Link ist die Primaeraktion
@@ -343,12 +343,12 @@ test.describe('Fairli', () => {
   test('Verlauf: Serien gebündelt (×N, Summenpunkte), Serie löschbar (v4.23.0)', async ({ context, page }) => {
     const serie = [1,2,3].map(i => ({ id: 'l-s'+i, chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: 'nur Restmüll',
       member_id: 'm-mira', member_name: 'Mira', points: 2, done_at: `2026-07-10T10:0${4-i}:00Z`, family_id: FAM }));
-    const chrisRow = { id: 'l-c', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null,
+    const timonRow = { id: 'l-c', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null,
       member_id: 'm-chris', member_name: 'Timon', points: 2, done_at: '2026-07-10T09:00:00Z', family_id: FAM };
-    await mockBackend(context, { logRows: () => [...serie, chrisRow] });
+    await mockBackend(context, { logRows: () => [...serie, timonRow] });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
-    await expect(page.locator('.entry')).toHaveCount(2);            // Janas Serie + Timon
+    await expect(page.locator('.entry')).toHaveCount(2);            // Miras Serie + Timon
     const g = page.locator('.entry', { hasText: 'Mira' });
     await expect(g.locator('.xn')).toHaveText('×3');
     await expect(g.locator('.pts')).toHaveText('+6');               // Summe statt Einzelpunkte
@@ -886,7 +886,7 @@ test.describe('Fairli', () => {
 
   test('Install-Kette KOMPLETT: Empfänger eines geteilten Links sieht den Banner, «Jetzt installieren» feuert das native Prompt (v4.44.1)', async ({ context, page }) => {
     await mockBackend(context);
-    // Empfänger-Perspektive: persönlicher Link (Janas geteilter Link)
+    // Empfänger-Perspektive: persönlicher Link (Miras geteilter Link)
     await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
     // 1) Banner ist da — auch am persönlichen Link
     await expect(page.locator('#installBar')).toBeVisible();
@@ -1876,7 +1876,7 @@ test.describe('Fairli', () => {
   });
 
   test('Personen-Chips brechen um — niemand wird seitlich abgeschnitten (v4.34.3)', async ({ context, page }) => {
-    await mockBackend(context, { memberRows: () => ['Alessandra','Bartholomäus','Christiane','Dominique','Emmanuelle','Friedrich'].map((n, i) =>
+    await mockBackend(context, { memberRows: () => ['Alessandra','Bartholomäus','Marianne','Dominique','Emmanuelle','Friedrich'].map((n, i) =>
       ({ id: 'm-' + i, family_id: FAM, name: n, color: '#B9A2E8' })) });
     await page.setViewportSize({ width: 393, height: 800 });
     await page.goto(`${BASE}/f/${FAM}`);
@@ -2033,8 +2033,8 @@ test.describe('Fairli', () => {
       return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(data[table] || []) });
     });
     await page.addInitScript(fam => {
-      if (sessionStorage.getItem('cristina-injected')) return;    // nur Boot 1 praeparieren
-      sessionStorage.setItem('cristina-injected', '1');
+      if (sessionStorage.getItem('boot1-injected')) return;    // nur Boot 1 praeparieren
+      sessionStorage.setItem('boot1-injected', '1');
       localStorage.setItem('haushalt.encv:' + fam, '0');          // verpasste Migration
       localStorage.setItem('haushalt.v2:' + fam, JSON.stringify({ // Mittwoch-Cache
         famName: 'Fanti WG',

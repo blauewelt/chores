@@ -28,7 +28,7 @@ if (!(/iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === '
     try { sessionStorage.setItem('fairli.handoff', rest); } catch (e) {}
     // Drei Kanaele: ?r= (Query), sessionStorage, UND Hash. Fragmente werden
     // von iOS Link Tracking Protection nie angefasst (nur Query-Parameter),
-    // nie an Server gesendet und ueberleben jede Navigation. Mikas Retest
+    // nie an Server gesendet und ueberleben jede Navigation. der Kind-Retest
     // kam mit leerer Query UND leerem sessionStorage an — der Hash haette
     // ueberlebt.
     target += '?r=' + encodeURIComponent(rest) + '#' + rest;

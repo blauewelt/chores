@@ -106,7 +106,7 @@ WebAPK-Minting. Frequenz: vor Releases, nicht nightly.
   bleibt der naechste Tier-2-Ausbau. Gelernt: CDP-display-mode-Emulation
   greift im Headless-Shell nicht; das navigator-Signal ist das richtige
   Testobjekt (es ist, was die App prueft).
-- Diagnostischer Wert sofort eingelöst: die Kette, an der Mikas Telefon
+- Diagnostischer Wert sofort eingelöst: die Kette, an der das Kind-Telefon
   scheitert, funktioniert auf sauberen Geräten beider Plattformen —
   stützt die Stale-Icon-Hypothese.
 
@@ -120,14 +120,14 @@ tippt die Springboard-Icons per `idb ui tap` (Suche per AXLabel,
 `scripts/idb-find-tap.py`, defensiv geparst, wischt bei Bedarf weiter) und
 prueft per Screenshot-OCR:
 - **S3a «FairliOK»** (persoenliche E2E-URL): erwartet Mitglieder-Sicht.
-- **S3b «FairliStale»** (blanke index.html — Mikas Falle): erwartet
+- **S3b «FairliStale»** (blanke index.html — die Kind-Telefon-Falle): erwartet
   Einstiegsseite; Modus-Diagnose per OCR ist Bonus (10.5px evtl. zu klein).
 Getestet wird die LAUNCH-Semantik installierter Icons (URL eingebacken,
 FullScreen).
 
 **Status: S3a + S3b GRÜN (Lauf 3, 11.07.).** S3a-Screenshot zeigt die
 Mitglieder-Sicht OHNE Safari-URL-Zeile ⇒ FullScreen/standalone wirkt.
-S3b reproduziert Mikas Stale-Icon-Falle nightly auf echtem iOS.
+S3b reproduziert die Kind-Telefon-Stale-Icon-Falle nightly auf echtem iOS.
 Runner-Drift-Lektionen (14.07., erster Nightly-Ausfall): (0) Das
 macOS-Runner-Image wandert unter uns — Symptome: frisch gebootete Sims
 zeigen jetzt einen LOCK SCREEN (grosse Uhr im describe-all = das Signal;

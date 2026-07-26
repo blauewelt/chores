@@ -1327,7 +1327,7 @@ Alle 24 innerHTML-Stellen gesichtet. Befund:
   persönlich — Umzugs-Entscheid beim Maintainer, Wache nimmt die Datei
   aus)
 - Schritt 3: Anonymisierungs-Wache in check-discipline.mjs — Namen,
-  Ortsbezüge und Link-ID-Muster (fam|famc|famx|rossi-…{10,}) mit
+  Ortsbezüge und Link-ID-Muster (fam|famc|famx|Altpräfix-…{10,}) mit
   expliziter Whitelist der vier Test-Artefakte; gegen geplantes Token
   rot verifiziert. Heute zweimal bewiesen, dass guter Wille nicht
   reicht (Adress-String im Test kam von der KI-Session selbst)
@@ -2048,7 +2048,7 @@ Alle 24 innerHTML-Stellen gesichtet. Befund:
 
 ## 2026-07-17 — v4.34.1: Android-Tastatur überdeckt Sheets nicht mehr; Fanti-Migration LIVE VERIFIZIERT
 
-- ROSSI-WG-MIGRATION (Maintainer, 17.07. 02:42) end-to-end verifiziert:
+- ALTFAMILIEN-MIGRATION (Maintainer, 17.07. 02:42) end-to-end verifiziert:
   Alt-Zeilen 0/0/0, famc-Kopie 5/33/276 (33 = 34 minus die bewusst
   geloeschte Haus-kühlen-Zombie-Kachel — Buchhaltung exakt), Werte
   enc1:-Chiffrat, Wegweiser gesetzt, Grabstein 00:40 UTC, Klartext-
@@ -2626,7 +2626,7 @@ Verwirrung:
 
 ## 2026-07-12 — v4.19.4: Stale-Icon-Hypothese BESTAETIGT + Einstiegsseite heilt
 
-- Mikas Diagnose-Foto zeigt «Modus: standalone (Homescreen-Icon!)» —
+- des Kindes Diagnose-Foto zeigt «Modus: standalone (Homescreen-Icon!)» —
   Hypothese bestaetigt: Er startete ueber ein veraltetes Homescreen-Icon
   mit eingebackener index.html, kein Link/Scan war beteiligt. Das
   «URL-Stripping»-Raetsel war nie eines
@@ -2643,7 +2643,7 @@ Verwirrung:
 
 ## 2026-07-11 — v4.19.3: Diagnose zeigt Startmodus (Verdacht: veraltetes Icon)
 
-- Mikas zweiter Fehlschlag lieferte den entscheidenden Hinweis:
+- des Kindes zweiter Fehlschlag lieferte den entscheidenden Hinweis:
   «Von: (kein Referrer)» + blanke index.html + kein Hash. Haette der Scan
   den 404-Handoff durchlaufen, waere der Referrer gesetzt (same-origin
   location.replace). Kein Referrer = DIREKTE Navigation zu index.html —
@@ -2658,9 +2658,9 @@ Verwirrung:
 - Regressionstest erweitert (Einstiegsseite zeigt Modus-Zeile); 10/10 gruen
 - APP_VERSION → 4.19.3, SW cache → haushalt-v72
 
-## 2026-07-11 — v4.19.2: Dritter Handoff-Kanal (Hash) nach Mikas Retest
+## 2026-07-11 — v4.19.2: Dritter Handoff-Kanal (Hash) nach des Kindes Retest
 
-- Mikas Retest-Diagnose (Screenshot): «Geoeffnet: …/chores/index.html» —
+- des Kindes Retest-Diagnose (Screenshot): «Geoeffnet: …/chores/index.html» —
   KEIN ?r, KEIN Hash, und auch der sessionStorage-Kanal war leer. Beide
   bisherigen Kanaele wurden auf dem Weg Scan → Safari → App geleert;
   Ursache noch unbekannt (Referrer fehlte in der Diagnose)
@@ -2672,7 +2672,7 @@ Verwirrung:
   («Von: …») — verraet beim naechsten Fehlschlag, ob 404.html ueberhaupt
   lief
 - 2 neue Regressionstests (10 gesamt): Redirect traegt alle drei Kanaele;
-  Hash allein rettet die Route (exakt Mikas beobachteter Zustand)
+  Hash allein rettet die Route (exakt des Kindes beobachteter Zustand)
 - APP_VERSION → 4.19.2, SW cache → haushalt-v71
 
 ## 2026-07-11 — Dev: Tier-1-Testsuite (Playwright + CI)
@@ -2764,7 +2764,7 @@ Fixes:
 - BUG: `LS_ME` war EIN Schluessel pro Familie (`haushalt.me:<fam>`), den sich
   die Admin-Ansicht und ALLE persoenlichen Links auf demselben Geraet teilten.
   pull() schrieb im Personen-Modus die erkannte Person hinein → nach dem
-  Oeffnen von Janas Link zeigte auch der Admin-Link «Ich bin: Mira».
+  Oeffnen von des zweiten Kindes Link zeigte auch der Admin-Link «Ich bin: Mira».
   Nicht der Shortcut war schuld, sondern der geteilte Schluessel
 - Fix:
   * Admin-Kontext bekommt einen eigenen Schluessel (`…:admin`)
@@ -2773,7 +2773,7 @@ Fixes:
   * Einmalige Heilung: der alte Schluessel wird nur uebernommen, wenn das
     Geraet nie einen persoenlichen Link geoeffnet hat (dann kann er nicht
     verunreinigt sein); danach wird er geloescht
-- Auf betroffenen Geraeten (z. B. dem Pixel, das Janas Link geoeffnet hatte)
+- Auf betroffenen Geraeten (z. B. dem Pixel, das des zweiten Kindes Link geoeffnet hatte)
   ist «Ich bin» in der Admin-Ansicht einmalig leer → einmal die eigene Person
   antippen, danach bleibt sie
 - APP_VERSION → 4.18.1, SW cache → haushalt-v66

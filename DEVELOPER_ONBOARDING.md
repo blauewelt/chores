@@ -187,7 +187,7 @@ das darf die installierte Admin-App nicht kapern).
 ### Verschlüsselung (v4.30/v4.31, GDPR)
 
 Versions-Schnitt per Link-Präfix:
-- `fam-`/`rossi-` = Klartext, für immer (Alt-Clients nicht aussperrbar).
+- `fam-`/Altpräfix (Familienname, hier ungenannt) = Klartext, für immer (Alt-Clients nicht aussperrbar).
 - `famx-` = verschlüsselt ab Geburt. DB-Schlüssel =
   `'famx-'+SHA-256(Geheimnis)[:48]`.
 - `famc-` = migrierte Alt-Familie: GLEICHE URL, Zeilen unter
