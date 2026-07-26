@@ -296,6 +296,10 @@
   .mrow{display:flex; gap:8px; align-items:center; margin-bottom:8px}
   .mrow input[type=text]{flex:1; padding:10px 12px; font-size:16px; border:1px solid var(--line); border-radius:10px; background:#161D19; color:var(--ink)}
   .mrow input[type=color]{width:42px; height:42px; border:none; background:none; padding:0; cursor:pointer}
+  .goalrow{align-items:center; gap:10px; flex-wrap:wrap}
+  .goallbl{color:var(--muted); font-size:14px; flex:none}
+  .goalrow input.goalinp{flex:none; width:78px; text-align:center}
+  .goalhint{color:var(--muted); font-size:12.5px; flex:1 1 100%}
   .mrow .menupop{top:auto; bottom:100%; margin:0 0 4px}
   /* Kein Platz nach oben (erste Zeilen, seit v4.55.0 vier Eintraege)?
      Dann nach UNTEN aufklappen — sonst liegt das Menue ausserhalb des Sheets. */
@@ -522,7 +526,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.66.0';
+  const APP_VERSION = '4.67.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -887,10 +891,19 @@
           pullDiscards > 0 ? `<br>${t('Empfangen, noch nicht übernommen: {n} Abgleiche', { n: pullDiscards })}` : ''}${
           unread > 0 ? `<br>${t('{n} Einträge nicht lesbar (Verschlüsselung)', { n: unread })}` : ''}</p>`;
       })()}
+      ${!BETA ? '' : `<button class="menuitem setrow" id="setBetaOff" style="border-radius:12px">
+        <span class="seticon">🧪</span><span class="setlabel">${t('Beta: Wochenziel')}</span><span class="setval">${t('An')}</span><span class="chev">›</span></button>`}
       <p style="color:var(--muted);font-size:12.5px;margin:4px 4px 2px;text-align:center">Fairli ${APP_VERSION}</p>
     </div>`;
     sh.querySelector('#closeSettings').onclick = () => sh.close();
     sh.querySelector('#setTrash').onclick = () => { sh.close(); openTrashSheet(); };
+    const bo = sh.querySelector('#setBetaOff');       // v4.67.0: Selbst-Ausstieg aus der Beta
+    if (bo) bo.onclick = async () => {
+      if (!isAdmin()) { toast(t('Nur Admins können das ändern')); return; }
+      BETA = false;
+      try { await sb('families', 'PATCH', { beta: false }); } catch { BETA = true; toast(t('Gerade keine Verbindung — bitte später noch einmal versuchen')); return; }
+      sh.close(); render(); toast(t('Beta beendet'));
+    };
     const sn = sh.querySelector('#setName');
     if (sn) sn.onclick = () => { sh.close(); openRenameSheet(); };
     const smn = sh.querySelector('#setMyName');
@@ -1621,6 +1634,7 @@
       members.sort((a, b) => String(a.name).localeCompare(String(b.name), LOCALE, { sensitivity: 'base' }));
       {
         RETENTION = (fam[0] && fam[0].retention_days) || null;   // v4.52.0
+        BETA = !!(fam[0] && fam[0].beta);                         // v4.67.0
         const srvName = (fam[0] && fam[0].name) || '';
         if (!pendingFamName) state.famName = srvName;
         else if (pendingFamName.resolvedAt && pendingFamName.resolvedAt < pullStartedAt) {
@@ -1957,7 +1971,13 @@
   // Pro HAUSHALT (nicht pro Geraet — sonst loescht Geraet A, was Geraet B
   // behalten will). Standard: unbegrenzt. Betrifft AUSSCHLIESSLICH log.
   const RETENTION_CHOICES = [null, 30, 90];
-  let RETENTION = null;                 // aus families.retention_days
+  let RETENTION = null;
+  // v4.67.0: Feature-Schalter PRO HAUSHALT (families.beta). Nur so sehen alle
+  // Geraete einer Familie dasselbe — auch Kind-Telefone und assistierte
+  // Personen, ohne geheime Geste. Fuer alle anderen Haushalte ist der neue
+  // Code inert: BETA=false blendet die Bedienung aus, und ohne gesetztes Ziel
+  // rendert die Punkte-Ansicht ohnehin unveraendert.
+  let BETA = false;                 // aus families.retention_days
   const retentionCutoff = () => RETENTION ? Date.now() - RETENTION * 86400e3 : null;
   const expiredEntries = () => {
     const cut = retentionCutoff();
@@ -2158,7 +2178,14 @@
       // (Live-Bug v4.27–v4.31: «t is not a function», Punkte-Tab leer)
       const tot = totals();
       const max = Math.max(1, ...Object.values(tot).map(x => x.pts));
-      const ranked = state.members.slice().sort((a, b) => tot[b.id].pts - tot[a.id].pts);
+      // v4.67.0 (Beta): Wochenziel. Wer ein Ziel hat, wird nach ZIELERREICHUNG
+      // gereiht — so kann ein Kind mit 6/8 vor Erwachsenen mit mehr Punkten
+      // stehen. Nur in «Diese Woche»: «Gesamt» bleibt das absolute Register.
+      // Ohne Ziele (alle anderen Haushalte) ist die Sortierung identisch zu vorher.
+      const goalOf = m => (BETA && period === 'week' && m.goal) || 0;
+      const quota = m => goalOf(m) ? tot[m.id].pts / goalOf(m) : -1;
+      const ranked = state.members.slice().sort((a, b) =>
+        quota(b) - quota(a) || tot[b.id].pts - tot[a.id].pts);
       listEl.innerHTML =
         `<div class="period">
           <button data-p="week" aria-pressed="${period === 'week'}">${t('Diese Woche')}</button>
@@ -2172,8 +2199,12 @@
               <span class="name">${esc(m.name)}${i === 0 && tot[m.id].pts > 0 ? ' 👑' : ''}</span>
               <span class="num">${tot[m.id].pts}</span>
             </div>
-            <div class="bar"><i style="width:${Math.round(tot[m.id].pts / max * 100)}%; background:${esc(m.color)}"></i></div>
-            <div class="sub">${t(tot[m.id].n === 1 ? '{n} Aufgabe erledigt' : '{n} Aufgaben erledigt', { n: tot[m.id].n })}</div>
+            <div class="bar"><i style="width:${goalOf(m)
+              ? Math.min(100, Math.round(tot[m.id].pts / goalOf(m) * 100))
+              : Math.round(tot[m.id].pts / max * 100)}%; background:${esc(m.color)}"></i></div>
+            <div class="sub">${goalOf(m)
+              ? t('{pts} von {goal} Punkten · {pct} %', { pts: tot[m.id].pts, goal: goalOf(m), pct: Math.round(tot[m.id].pts / goalOf(m) * 100) })
+              : t(tot[m.id].n === 1 ? '{n} Aufgabe erledigt' : '{n} Aufgaben erledigt', { n: tot[m.id].n })}</div>
           </div>`).join('');
     } else {
       // Serien buendeln: dieselbe Person tippt dieselbe Aufgabe mehrmals in
@@ -2753,6 +2784,7 @@
   // ---------- Personen-Sheet ----------
   const memberSheet = document.getElementById('memberSheet');
   const changedMembers = new Set();
+  const goalOpen = new Set();        // v4.67.0: welche Zielfelder sind aufgeklappt (nur Sitzung)
   function renderMemberRows() {
     const wrap = document.getElementById('memberRows');
     wrap.innerHTML = state.members.map(m =>
@@ -2761,17 +2793,25 @@
         <input type="text" maxlength="30" aria-label="Name">
         ${m.admin ? `<span class="assistbadge" title="${t('Admin')}">🔑</span>` : ''}
         ${m.assisted ? `<span class="assistbadge" title="${t('Ohne eigenes Telefon')}">📵</span>` : ''}
+        ${BETA && m.goal ? `<span class="assistbadge" title="${t('Wochenziel')}">🎯${m.goal}</span>` : ''}
         <div class="entmenu">
           <button class="kebab" data-mmenu="${m.id}" aria-label="Optionen">⋯</button>
           <div class="menupop" id="mmenu-${m.id}" hidden>
             <button class="menuitem" data-mshare="${m.id}">${t('Link teilen')}</button>
             <button class="menuitem" data-madmin="${m.id}">${m.admin ? '✓ ' : ''}🔑 ${t('Admin')}</button>
             <button class="menuitem" data-massist="${m.id}">${m.assisted ? '✓ ' : ''}📵 ${t('Ohne eigenes Telefon')}</button>
+            ${BETA ? `<button class="menuitem" data-mgoal="${m.id}">${m.goal ? '✓ ' : ''}🎯 ${t('Wochenziel')}</button>` : ''}
             <button class="menuitem danger" data-mdel="${m.id}">${t('Löschen')}</button>
           </div>
         </div>
-      </div>`).join('');
-    wrap.querySelectorAll('.mrow').forEach((r, i) => r.querySelector('input[type=text]').value = state.members[i].name);
+      </div>
+      ${BETA && (m.goal || goalOpen.has(m.id)) ? `<div class="mrow goalrow" data-gid="${m.id}" style="margin:-2px 0 10px 50px">
+        <label class="goallbl" for="goal-${m.id}">🎯 ${t('Wochenziel')}</label>
+        <input type="number" id="goal-${m.id}" class="goalinp" inputmode="numeric" min="1" max="999"
+          value="${m.goal || ''}" placeholder="—" aria-label="${esc(t('Wochenziel'))}">
+        <span class="goalhint">${t('Punkte pro Woche · leer = kein Ziel')}</span>
+      </div>` : ''}`).join('');
+    wrap.querySelectorAll('.mrow[data-mid]').forEach((r, i) => r.querySelector('input[type=text]').value = state.members[i].name);
   }
   // «Was ist neu»-Hinweis: einmal pro Version, nur fuer Wiederkehrer
   (() => {
@@ -2816,6 +2856,14 @@
     memberSheet.showModal();
   });
   document.getElementById('memberRows').addEventListener('input', e => {
+    const grow = e.target.closest('.goalrow');          // v4.67.0
+    if (grow) {
+      const m = memberById(grow.dataset.gid); if (!m) return;
+      const v = parseInt(e.target.value, 10);
+      m.goal = Number.isFinite(v) && v > 0 ? Math.min(999, v) : null;   // leer/0 = kein Ziel
+      changedMembers.add(m.id); save(); render();       // Punkte-Ansicht zieht sofort mit
+      return;
+    }
     const row = e.target.closest('.mrow'); if (!row) return;
     const m = memberById(row.dataset.mid); if (!m) return;
     if (e.target.type === 'text') m.name = e.target.value;
@@ -3178,6 +3226,15 @@
     if (as_) {
       const m = memberById(as_.dataset.massist);
       if (m) { m.assisted = !m.assisted; changedMembers.add(m.id); save(); renderMemberRows(); }
+      document.querySelectorAll('.menupop').forEach(p => p.hidden = true);
+      return;
+    }
+    // v4.67.0 (Beta): Wochenziel-Feld auf-/zuklappen. Zuklappen loescht ein
+    // gesetztes Ziel NICHT — dafuer das Feld leeren (dann verschwindet es).
+    const gl = e.target.closest('[data-mgoal]');
+    if (gl) {
+      const m = memberById(gl.dataset.mgoal);
+      if (m) { goalOpen.has(m.id) && !m.goal ? goalOpen.delete(m.id) : goalOpen.add(m.id); renderMemberRows(); }
       document.querySelectorAll('.menupop').forEach(p => p.hidden = true);
       return;
     }

@@ -127,7 +127,7 @@
   "Ohne eigenes Telefon": "Sin teléfono propio",
   "Suche": "Búsqueda",
   "Suchen": "Buscar",
-  "An": "Activada",
+  "An": "Activado",
   "Nichts gefunden": "Sin resultados",
   "Keine Aufgabe passt zu «{q}».": "Ninguna tarea coincide con «{q}».",
   "Kein Eintrag passt zu «{q}».": "Ninguna entrada coincide con «{q}».",
@@ -182,5 +182,10 @@
   "1 Eintrag · {p} Punkte": "1 entrada · {p} puntos",
   "{n} Einträge · {p} Punkte": "{n} entradas · {p} puntos",
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} de {total} entradas cargadas · {p} de {ptotal} puntos",
-  "Für {name} ist diese Woche noch nichts eingetragen.": "Esta semana aún no hay nada registrado para {name}."
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Esta semana aún no hay nada registrado para {name}.",
+  "Wochenziel": "Meta semanal",
+  "Punkte pro Woche · leer = kein Ziel": "Puntos por semana · vacío = sin meta",
+  "{pts} von {goal} Punkten · {pct} %": "{pts} de {goal} puntos · {pct} %",
+  "Beta: Wochenziel": "Beta: meta semanal",
+  "Beta beendet": "Beta finalizada"
 }

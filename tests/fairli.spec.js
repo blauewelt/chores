@@ -25,7 +25,7 @@ const LOG = [{ id: 'l-1', chore_id: 'c-1', chore_name: 'Müll rausbringen', chor
 const FAMILIES = [{ family_id: FAM, name: 'Testhaushalt' }];
 
 // Mock all Supabase REST + block third-party fetches (fonts, tile art).
-async function mockBackend(context, { logRows = () => LOG, memberRows = null } = {}) {
+async function mockBackend(context, { logRows = () => LOG, memberRows = null, famRows = null } = {}) {
   // Standard-Persona: WIEDERKEHRER — das Onboarding «Zugriff sichern»
   // (v4.45.0, modal!) gilt als gesehen, sonst blockierte es jeden Test.
   // Onboarding-Tests entfernen die Marke gezielt.
@@ -76,7 +76,7 @@ async function mockBackend(context, { logRows = () => LOG, memberRows = null } =
       url.includes('/rest/v1/members') ? (memberRows ? memberRows() : MEMBERS) :
       url.includes('/rest/v1/chores')  ? CHORES :
       url.includes('/rest/v1/log')     ? logRows() :
-      url.includes('/rest/v1/families') ? FAMILIES : [];
+      url.includes('/rest/v1/families') ? (famRows ? famRows() : FAMILIES) : [];
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
   });
 }
@@ -2872,6 +2872,112 @@ test.describe('Fairli', () => {
     await page.locator('[data-p="all"]').click();
     await page.locator('.score[data-mid="m-mira"]').click();
     await expect(page.locator('#logSum')).toHaveText('2 von 128 Einträgen geladen · 3 von 155 Punkten');
+  });
+
+  // ---------- v4.67.0: Wochenziel als Beta (families.beta) ----------
+
+  test('OHNE Beta ist ALLES unverändert: kein 🎯 im Personen-Sheet, keine Ziel-Sortierung (v4.67.0)', async ({ context, page }) => {
+    // Die Zusage an alle anderen Haushalte: der neue Code ist inert.
+    await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }],
+      memberRows: () => [
+        { id: 'm-chris', name: 'Timon', color: '#2FAE6A', family_id: FAM, url_slug: 'slugchris1', admin: true, goal: null },
+        { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', goal: 8 },  // Ziel in den Daten …
+      ] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(700);
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await expect(page.locator('#memberSheet')).toBeVisible();
+    await expect(page.locator('#memberSheet .assistbadge', { hasText: '🎯' })).toHaveCount(0);
+    await expect(page.locator('#memberSheet .goalrow')).toHaveCount(0);
+    await page.evaluate(() => document.getElementById('memberSheet').close());
+    // … ändert ohne Beta NICHTS an der Punkte-Ansicht: Sortierung nach Punkten
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('.score .sub').first()).toContainText('erledigt');
+    await expect(page.locator('#list')).not.toContainText('%');
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setBetaOff')).toHaveCount(0);        // kein Beta-Hinweis
+  });
+
+  test('MIT Beta: Ziel setzen im Personen-Sheet, Kind führt die Wochen-Rangliste an (v4.67.0)', async ({ context, page }) => {
+    let saved = null;
+    const now = new Date().toISOString();
+    const mk = (id, mid, name, pts) => ({ id, chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
+      member_id: mid, member_name: name, points: pts, done_at: now, created_at: now, family_id: FAM });
+    await mockBackend(context, {
+      famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      memberRows: () => [
+        { id: 'm-chris', name: 'Timon', color: '#2FAE6A', family_id: FAM, url_slug: 'slugchris1', admin: true, goal: null },
+        { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', goal: null },
+      ],
+      logRows: () => [mk('l-1', 'm-chris', 'Timon', 12), mk('l-2', 'm-mira', 'Mira', 6)] });
+    await context.route(`${SB}/rest/v1/members**`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') {
+        const rows = JSON.parse(req.postData() || '[]');
+        const g = (Array.isArray(rows) ? rows : [rows]).find(r => r.goal);
+        if (g) saved = g;
+        return route.fulfill({ status: 204, body: '' });
+      }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(700);
+    // Ohne Ziel: Timon (12) führt
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('.score .name').first()).toContainText('Timon');
+    // Ziel 8 für Mira setzen
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await page.locator('[data-mmenu="m-mira"]').click();
+    await page.locator('[data-mgoal="m-mira"]').click();
+    await expect(page.locator('.goalrow[data-gid="m-mira"]')).toBeVisible();
+    await page.locator('#goal-m-mira').fill('8');
+    await page.locator('#doneMembers').click();
+    await page.waitForTimeout(400);
+    expect(saved).not.toBeNull();
+    expect(saved.goal).toBe(8);
+    // Jetzt führt Mira mit 6/8 = 75 % vor Timon (12 Punkte, kein Ziel)
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('.score .name').first()).toContainText('Mira');
+    await expect(page.locator('.score .name').first()).toContainText('👑');
+    await expect(page.locator('.score .sub').first()).toContainText('75');
+    await expect(page.locator('.score').nth(1)).toContainText('erledigt');   // Timon unverändert
+  });
+
+  test('Beta: «Gesamt» bleibt das absolute Register — Ziele wirken nur in «Diese Woche» (v4.67.0)', async ({ context, page }) => {
+    const now = new Date().toISOString();
+    const mk = (id, mid, name, pts) => ({ id, chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
+      member_id: mid, member_name: name, points: pts, done_at: now, created_at: now, family_id: FAM });
+    await mockBackend(context, {
+      famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      memberRows: () => [
+        { id: 'm-chris', name: 'Timon', color: '#2FAE6A', family_id: FAM, url_slug: 'slugchris1', admin: true, goal: null },
+        { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', goal: 8 },
+      ],
+      logRows: () => [mk('l-1', 'm-chris', 'Timon', 12), mk('l-2', 'm-mira', 'Mira', 6)] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('.score .name').first()).toContainText('Mira');      // Woche: Ziel gewinnt
+    await page.locator('[data-p="all"]').click();
+    await page.waitForTimeout(300);
+    await expect(page.locator('.score .name').first()).toContainText('Timon');     // Gesamt: Punkte zählen
+    await expect(page.locator('#list')).not.toContainText('%');
+  });
+
+  test('Beta: Ziel leeren entfernt es wieder, Karte rendert wie vorher (v4.67.0)', async ({ context, page }) => {
+    await mockBackend(context, {
+      famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      memberRows: () => [
+        { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', goal: 8 },
+      ] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(700);
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await expect(page.locator('.goalrow[data-gid="m-mira"]')).toBeVisible();   // Ziel vorhanden → Feld offen
+    await page.locator('#goal-m-mira').fill('');
+    await page.evaluate(() => document.getElementById('memberSheet').close());
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('.score .sub').first()).toContainText('erledigt');
+    await expect(page.locator('#list')).not.toContainText('%');
   });
 
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {

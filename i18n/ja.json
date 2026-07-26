@@ -145,7 +145,7 @@
   "Eingetragen von einem entfernten Mitglied": "削除されたメンバーが記録",
   "Eingetragen über den Familien-Link": "家族リンクから記録",
   "Admin": "管理者",
-  "Nur Admins können das ändern": "変更できるのは管理者だけです",
+  "Nur Admins können das ändern": "変更できるのは管理者のみです",
   "Mindestens eine Person muss Admin bleiben": "少なくとも一人は管理者である必要があります",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "まだ管理者がいません。「メンバー」で少なくとも一人を設定してください。",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "管理者：{names}。管理者リンクを少なくとも一つ保存してください — ないと家の管理ができなくなります。",
@@ -182,5 +182,10 @@
   "1 Eintrag · {p} Punkte": "1件 · {p}ポイント",
   "{n} Einträge · {p} Punkte": "{n}件 · {p}ポイント",
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{total}件中{n}件を読み込み · {ptotal}ポイント中{p}ポイント",
-  "Für {name} ist diese Woche noch nichts eingetragen.": "今週の{name}の記録はまだありません。"
+  "Für {name} ist diese Woche noch nichts eingetragen.": "今週の{name}の記録はまだありません。",
+  "Wochenziel": "週の目標",
+  "Punkte pro Woche · leer = kein Ziel": "週あたりのポイント · 空欄 = 目標なし",
+  "{pts} von {goal} Punkten · {pct} %": "{goal}ポイント中{pts} · {pct}%",
+  "Beta: Wochenziel": "ベータ: 週の目標",
+  "Beta beendet": "ベータを終了しました"
 }

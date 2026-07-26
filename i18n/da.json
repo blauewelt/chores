@@ -145,7 +145,7 @@
   "Eingetragen von einem entfernten Mitglied": "Registreret af et fjernet medlem",
   "Eingetragen über den Familien-Link": "Registreret via familielinket",
   "Admin": "Admin",
-  "Nur Admins können das ändern": "Kun admins kan ændre det",
+  "Nur Admins können das ändern": "Kun administratorer kan ændre dette",
   "Mindestens eine Person muss Admin bleiben": "Mindst én person skal forblive admin",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Ingen er admin endnu. Vælg mindst én person under »Personer«.",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Gem mindst ét adminlink som bogmærke — uden det kan husstanden ikke administreres.",
@@ -182,5 +182,10 @@
   "1 Eintrag · {p} Punkte": "1 post · {p} point",
   "{n} Einträge · {p} Punkte": "{n} poster · {p} point",
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} af {total} poster indlæst · {p} af {ptotal} point",
-  "Für {name} ist diese Woche noch nichts eingetragen.": "Der er endnu ikke registreret noget for {name} i denne uge."
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Der er endnu ikke registreret noget for {name} i denne uge.",
+  "Wochenziel": "Ugemål",
+  "Punkte pro Woche · leer = kein Ziel": "Point pr. uge · tom = intet mål",
+  "{pts} von {goal} Punkten · {pct} %": "{pts} af {goal} point · {pct} %",
+  "Beta: Wochenziel": "Beta: ugemål",
+  "Beta beendet": "Beta afsluttet"
 }

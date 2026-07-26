@@ -145,7 +145,7 @@
   "Eingetragen von einem entfernten Mitglied": "Dicatat oleh anggota yang dihapus",
   "Eingetragen über den Familien-Link": "Dicatat melalui tautan keluarga",
   "Admin": "Admin",
-  "Nur Admins können das ändern": "Hanya admin yang bisa mengubahnya",
+  "Nur Admins können das ändern": "Hanya admin yang dapat mengubah ini",
   "Mindestens eine Person muss Admin bleiben": "Setidaknya satu orang harus tetap admin",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Belum ada admin. Tetapkan minimal satu orang di «Orang».",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Simpan setidaknya satu tautan admin — tanpanya rumah tidak bisa dikelola.",
@@ -182,5 +182,10 @@
   "1 Eintrag · {p} Punkte": "1 entri · {p} poin",
   "{n} Einträge · {p} Punkte": "{n} entri · {p} poin",
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} dari {total} entri dimuat · {p} dari {ptotal} poin",
-  "Für {name} ist diese Woche noch nichts eingetragen.": "Belum ada catatan untuk {name} minggu ini."
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Belum ada catatan untuk {name} minggu ini.",
+  "Wochenziel": "Target mingguan",
+  "Punkte pro Woche · leer = kein Ziel": "Poin per minggu · kosong = tanpa target",
+  "{pts} von {goal} Punkten · {pct} %": "{pts} dari {goal} poin · {pct} %",
+  "Beta: Wochenziel": "Beta: target mingguan",
+  "Beta beendet": "Beta diakhiri"
 }

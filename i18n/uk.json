@@ -145,7 +145,7 @@
   "Eingetragen von einem entfernten Mitglied": "Записано вилученим учасником",
   "Eingetragen über den Familien-Link": "Записано через сімейне посилання",
   "Admin": "Адмін",
-  "Nur Admins können das ändern": "Змінювати це можуть лише адміни",
+  "Nur Admins können das ändern": "Змінювати це можуть лише адміністратори",
   "Mindestens eine Person muss Admin bleiben": "Принаймні одна людина має лишитися адміном",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Ще немає адміна. Призначте принаймні одного в розділі «Люди».",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Адмін: {names}. Збережіть принаймні одне адмін-посилання — без нього домом не керувати.",
@@ -182,5 +182,10 @@
   "1 Eintrag · {p} Punkte": "1 запис · {p} бал.",
   "{n} Einträge · {p} Punkte": "{n} записів · {p} бал.",
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "Завантажено {n} з {total} записів · {p} з {ptotal} бал.",
-  "Für {name} ist diese Woche noch nichts eingetragen.": "Цього тижня для {name} ще нічого не записано."
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Цього тижня для {name} ще нічого не записано.",
+  "Wochenziel": "Ціль на тиждень",
+  "Punkte pro Woche · leer = kein Ziel": "Очки на тиждень · порожньо = без цілі",
+  "{pts} von {goal} Punkten · {pct} %": "{pts} з {goal} очок · {pct} %",
+  "Beta: Wochenziel": "Бета: ціль на тиждень",
+  "Beta beendet": "Бета завершена"
 }

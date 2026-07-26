@@ -182,5 +182,10 @@
   "1 Eintrag · {p} Punkte": "1 प्रविष्टि · {p} अंक",
   "{n} Einträge · {p} Punkte": "{n} प्रविष्टियाँ · {p} अंक",
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{total} में से {n} प्रविष्टियाँ लोड हुईं · {ptotal} में से {p} अंक",
-  "Für {name} ist diese Woche noch nichts eingetragen.": "इस सप्ताह {name} के लिए अभी कुछ दर्ज नहीं है।"
+  "Für {name} ist diese Woche noch nichts eingetragen.": "इस सप्ताह {name} के लिए अभी कुछ दर्ज नहीं है।",
+  "Wochenziel": "साप्ताहिक लक्ष्य",
+  "Punkte pro Woche · leer = kein Ziel": "अंक प्रति सप्ताह · खाली = कोई लक्ष्य नहीं",
+  "{pts} von {goal} Punkten · {pct} %": "{goal} में से {pts} अंक · {pct} %",
+  "Beta: Wochenziel": "बीटा: साप्ताहिक लक्ष्य",
+  "Beta beendet": "बीटा समाप्त"
 }

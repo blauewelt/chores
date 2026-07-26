@@ -145,7 +145,7 @@
   "Eingetragen von einem entfernten Mitglied": "Được ghi bởi thành viên đã xoá",
   "Eingetragen über den Familien-Link": "Được ghi qua liên kết gia đình",
   "Admin": "Quản trị",
-  "Nur Admins können das ändern": "Chỉ quản trị viên mới đổi được",
+  "Nur Admins können das ändern": "Chỉ quản trị viên mới có thể thay đổi",
   "Mindestens eine Person muss Admin bleiben": "Ít nhất một người phải là quản trị viên",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Chưa có quản trị viên. Hãy đặt ít nhất một người trong «Thành viên».",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Quản trị: {names}. Hãy lưu ít nhất một liên kết quản trị — thiếu nó sẽ không quản lý được nhà.",
@@ -182,5 +182,10 @@
   "1 Eintrag · {p} Punkte": "1 mục · {p} điểm",
   "{n} Einträge · {p} Punkte": "{n} mục · {p} điểm",
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "Đã tải {n}/{total} mục · {p}/{ptotal} điểm",
-  "Für {name} ist diese Woche noch nichts eingetragen.": "Tuần này chưa có ghi nhận nào cho {name}."
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Tuần này chưa có ghi nhận nào cho {name}.",
+  "Wochenziel": "Mục tiêu tuần",
+  "Punkte pro Woche · leer = kein Ziel": "Điểm mỗi tuần · để trống = không có mục tiêu",
+  "{pts} von {goal} Punkten · {pct} %": "{pts} trên {goal} điểm · {pct} %",
+  "Beta: Wochenziel": "Beta: mục tiêu tuần",
+  "Beta beendet": "Đã kết thúc beta"
 }

@@ -1,3 +1,42 @@
+## 2026-07-26 — v4.67.0: Wochenziel als BETA — pro Haushalt schaltbar, fuer alle anderen inert
+
+MAINTAINER-WUNSCH: Wochenziel ausprobieren, ohne dass sich fuer irgendeine
+andere Familie etwas aendert. Umsetzung als Feature-Schalter PRO HAUSHALT
+(families.beta) statt als zweite Deployment-Umgebung — bewusste Wahl:
+
+- EINE Codebasis, EINE Testsuite, ein Deploy. Ein «/beta/»-Zweig waere
+  divergiert (eigener SW-Cache, eigener Migrationsstand), und die
+  installierte PWA/TWA haengt ohnehin an der Produktions-URL: die Familie
+  haette die Beta auf dem Homescreen gar nicht sehen koennen.
+- Der Schalter haengt am HAUSHALT, nicht am Geraet: alle Telefone der
+  Familie (auch Kind- und assistierte Geraete) sehen dasselbe, ohne dass
+  jemand eine geheime Geste kennen muss. families?select=* holt ihn
+  ohne weitere Client-Aenderung.
+- Preis, ehrlich benannt: der Beta-Code liegt auch bei allen anderen
+  Haushalten im Bundle — inert, aber vorhanden. Genau dagegen steht der
+  erste neue Test (Beta AUS ⇒ kein 🎯, keine Ziel-Sortierung, kein %).
+
+FUNKTION (nur bei beta=true):
+- Personen-Sheet: ⋯-Menue je Person → «🎯 Wochenziel» klappt ein Zahlenfeld
+  auf (leer = kein Ziel). Gesetzte Ziele zeigt ein 🎯N-Abzeichen; das Feld
+  ist bei vorhandenem Ziel automatisch offen. Admin-gated wie die uebrigen
+  Personen-Aenderungen, syncht als normales members-Feld.
+- Punkte/«Diese Woche»: wer ein Ziel hat, wird nach ZIELERREICHUNG gereiht
+  (Balken und Untertitel «6 von 8 Punkten · 75 %»), Personen ohne Ziel
+  folgen darunter nach Punkten wie bisher. Ein Kind mit 6/8 steht damit
+  vor Erwachsenen mit mehr absoluten Punkten — das war der ganze Zweck.
+- «Gesamt» bleibt unberuehrt das absolute Register (v4.65.0-Serversummen).
+- Einstellungen zeigen Beta-Haushalten «🧪 Beta: Wochenziel · An» mit
+  Selbst-Ausstieg (PATCH families.beta=false). Nicht-Beta-Haushalte sehen
+  die Zeile nie — Einstieg nur ueber die Datenbank.
+
+- Migration 20260726010000_beta_goal.sql (additiv, nullbar: families.beta,
+  members.goal) VOR dem Client-Deploy angewandt und per REST-Probe geprueft.
+- 7 neue i18n-Schluessel in 19 Sprachen; famRows-Hook in der Testharness.
+- 4 neue Tests: Beta AUS aendert nichts / Ziel setzen + Kind fuehrt /
+  Gesamt bleibt absolut / Ziel leeren entfernt es wieder.
+- APP_VERSION 4.67.0, SW-Cache haushalt-v162
+
 ## 2026-07-25 — v4.66.0: Summen-Banner im Verlauf + Wochen-Sprung von der Punkte-Karte
 
 Maintainer-Wunsch (Nachklapp zum Fenster-Vorfall v4.65.0): die Verlaufs-

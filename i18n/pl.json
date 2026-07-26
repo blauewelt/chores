@@ -182,5 +182,10 @@
   "1 Eintrag · {p} Punkte": "1 wpis · {p} pkt",
   "{n} Einträge · {p} Punkte": "{n} wpisów · {p} pkt",
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "Wczytano {n} z {total} wpisów · {p} z {ptotal} pkt",
-  "Für {name} ist diese Woche noch nichts eingetragen.": "W tym tygodniu nie ma jeszcze wpisów dla {name}."
+  "Für {name} ist diese Woche noch nichts eingetragen.": "W tym tygodniu nie ma jeszcze wpisów dla {name}.",
+  "Wochenziel": "Cel tygodniowy",
+  "Punkte pro Woche · leer = kein Ziel": "Punkty na tydzień · puste = brak celu",
+  "{pts} von {goal} Punkten · {pct} %": "{pts} z {goal} punktów · {pct} %",
+  "Beta: Wochenziel": "Beta: cel tygodniowy",
+  "Beta beendet": "Beta zakończona"
 }

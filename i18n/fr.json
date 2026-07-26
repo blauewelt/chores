@@ -127,7 +127,7 @@
   "Ohne eigenes Telefon": "Sans téléphone à soi",
   "Suche": "Recherche",
   "Suchen": "Rechercher",
-  "An": "Activée",
+  "An": "Activé",
   "Nichts gefunden": "Rien trouvé",
   "Keine Aufgabe passt zu «{q}».": "Aucune tâche ne correspond à « {q} ».",
   "Kein Eintrag passt zu «{q}».": "Aucune entrée ne correspond à « {q} ».",
@@ -145,7 +145,7 @@
   "Eingetragen von einem entfernten Mitglied": "Enregistré par un membre supprimé",
   "Eingetragen über den Familien-Link": "Enregistré via le lien familial",
   "Admin": "Admin",
-  "Nur Admins können das ändern": "Seuls les admins peuvent modifier cela",
+  "Nur Admins können das ändern": "Seuls les administrateurs peuvent modifier cela",
   "Mindestens eine Person muss Admin bleiben": "Au moins une personne doit rester admin",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Personne n’est encore admin. Désignez au moins une personne dans « Personnes ».",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin : {names}. Mettez au moins un lien admin en favori — sans lui, le foyer ne peut plus être géré.",
@@ -182,5 +182,10 @@
   "1 Eintrag · {p} Punkte": "1 entrée · {p} points",
   "{n} Einträge · {p} Punkte": "{n} entrées · {p} points",
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} entrées sur {total} chargées · {p} points sur {ptotal}",
-  "Für {name} ist diese Woche noch nichts eingetragen.": "Rien n’a encore été enregistré pour {name} cette semaine."
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Rien n’a encore été enregistré pour {name} cette semaine.",
+  "Wochenziel": "Objectif hebdo",
+  "Punkte pro Woche · leer = kein Ziel": "Points par semaine · vide = aucun objectif",
+  "{pts} von {goal} Punkten · {pct} %": "{pts} sur {goal} points · {pct} %",
+  "Beta: Wochenziel": "Bêta : objectif hebdo",
+  "Beta beendet": "Bêta terminée"
 }

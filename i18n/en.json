@@ -145,7 +145,7 @@
   "Eingetragen von einem entfernten Mitglied": "Logged by a removed member",
   "Eingetragen über den Familien-Link": "Logged via the family link",
   "Admin": "Admin",
-  "Nur Admins können das ändern": "Only admins can change that",
+  "Nur Admins können das ändern": "Only admins can change this",
   "Mindestens eine Person muss Admin bleiben": "At least one person must stay admin",
   "Noch ist niemand Admin. Legt in «Personen» mindestens eine Person als Admin fest.": "Nobody is admin yet. Set at least one person as admin under \"People\".",
   "Admin: {names}. Sichert mindestens einen Admin-Link als Lesezeichen — ohne ihn lässt sich der Haushalt nicht mehr verwalten.": "Admin: {names}. Bookmark at least one admin link — without it the household can no longer be managed.",
@@ -182,5 +182,10 @@
   "1 Eintrag · {p} Punkte": "1 entry · {p} points",
   "{n} Einträge · {p} Punkte": "{n} entries · {p} points",
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} of {total} entries loaded · {p} of {ptotal} points",
-  "Für {name} ist diese Woche noch nichts eingetragen.": "Nothing has been logged for {name} this week yet."
+  "Für {name} ist diese Woche noch nichts eingetragen.": "Nothing has been logged for {name} this week yet.",
+  "Wochenziel": "Weekly goal",
+  "Punkte pro Woche · leer = kein Ziel": "Points per week · empty = no goal",
+  "{pts} von {goal} Punkten · {pct} %": "{pts} of {goal} points · {pct} %",
+  "Beta: Wochenziel": "Beta: weekly goal",
+  "Beta beendet": "Beta ended"
 }
