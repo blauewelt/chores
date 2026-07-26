@@ -33,6 +33,16 @@ async function openPerson(page, mid) {
   await page.evaluate(id => document.querySelector(`.prow[data-pid="${id}"]`).click(), mid);
   await expect(page.locator('#personSheet')).toBeVisible();
 }
+// Externe Hosts hart abbrechen. Pflicht in JEDEM Test — auch in denen mit
+// eigenem Routing (stehende Regel, §10). Hintergrund v4.70.0: in Sandboxen
+// mit Egress-Proxy ANTWORTET ein Font-Request nicht, er HAENGT — dann feuert
+// das load-Event nie und waitForURL laeuft ins Timeout. Zwei Ersteinrichtungs-
+// Tests hatten die Aborts nicht und waren genau dort unreproduzierbar rot.
+async function blockExternal(context) {
+  await context.route('**://fonts.googleapis.com/**', r => r.abort());
+  await context.route('**://fonts.gstatic.com/**', r => r.abort());
+  await context.route('**://gen.pollinations.ai/**', r => r.abort());
+}
 async function mockBackend(context, { logRows = () => LOG, memberRows = null, famRows = null } = {}) {
   // Standard-Persona: WIEDERKEHRER — das Onboarding «Zugriff sichern»
   // (v4.45.0, modal!) gilt als gesehen, sonst blockierte es jeden Test.
@@ -52,9 +62,7 @@ async function mockBackend(context, { logRows = () => LOG, memberRows = null, fa
       }
     } catch {}
   }, FAM);
-  await context.route('**://fonts.googleapis.com/**', r => r.abort());
-  await context.route('**://fonts.gstatic.com/**', r => r.abort());
-  await context.route('**://gen.pollinations.ai/**', r => r.abort());
+  await blockExternal(context);
   await context.route(`${SB}/rest/v1/**`, route => {
     const req = route.request();
     const url = req.url();
@@ -1676,6 +1684,7 @@ test.describe('Fairli', () => {
       if (req.method() === 'GET') return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(store[table] || []) });
       return r.fulfill({ status: 204, body: '' });
     });
+    await blockExternal(context);
     await page.goto(`${BASE}/f/${FAMN}`);
     await page.locator('#frName').fill('Fanti WG');
     await page.locator('#frMembers').fill('Anna\nBen\nCarla');
@@ -1722,6 +1731,7 @@ test.describe('Fairli', () => {
       if (req.method() === 'GET') return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(store[table] || []) });
       return r.fulfill({ status: 204, body: '' });
     });
+    await blockExternal(context);
     await page.goto(`${BASE}/f/${FAMN}`);
     await page.locator('#frMembers').fill('Mira');
     await page.locator('#frSeed').uncheck();
@@ -2995,7 +3005,11 @@ test.describe('Fairli', () => {
     await page.getByRole('tab', { name: 'Punkte' }).click();
     await expect(page.locator('.score .name').first()).toContainText('Mira');
     await expect(page.locator('.score .name').first()).toContainText('👑');
-    await expect(page.locator('.score .sub').first()).toContainText('75');
+    // seit v4.70.0 steht die Zielerreichung als GROSSE Zahl (Ranking-Kriterium),
+    // die Punkte daneben; die Unterzeile nennt nur noch Punkte von Ziel
+    await expect(page.locator('.score .num.pct').first()).toContainText('75');
+    await expect(page.locator('.score .pts').first()).toHaveText('6');
+    await expect(page.locator('.score .sub').first()).toContainText('6 von 8 Punkten');
     await expect(page.locator('.score').nth(1)).toContainText('erledigt');   // Timon unverändert
   });
 
@@ -3037,6 +3051,116 @@ test.describe('Fairli', () => {
     await page.getByRole('tab', { name: 'Punkte' }).click();
     await expect(page.locator('.score .sub').first()).toContainText('erledigt');
     await expect(page.locator('#list')).not.toContainText('%');
+  });
+
+  // ---------- v4.70.0: Ziel-Balken mit Kopfraum + prominente Zielerreichung ----------
+
+  const goalFixture = async (context, rows) => {
+    const now = new Date().toISOString();
+    const M = (id, name, goal) => ({ id, name, color: '#3E6BD6', family_id: FAM,
+      url_slug: 'slug' + name.toLowerCase(), goal });
+    const L = (id, mid, name, pts) => ({ id, chore_id: 'c-1', chore_name: 'Müll rausbringen',
+      chore_note: '', member_id: mid, member_name: name, points: pts,
+      done_at: now, created_at: now, family_id: FAM });
+    await mockBackend(context, {
+      famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      memberRows: () => rows.map(r => M(r.id, r.name, r.goal)),
+      logRows: () => rows.filter(r => r.pts).map(r => L('l-' + r.id, r.id, r.name, r.pts)) });
+  };
+  // Balken-Geometrie in PROZENT der Balkenbreite — misst gerendert, nicht den
+  // style-String: nur so faellt auf, wenn CSS die Rechnung wieder einfaengt.
+  const barGeo = (page, mid) => page.evaluate(id => {
+    const bar = document.querySelector(`.score[data-mid="${id}"] .bar`);
+    const r = bar.getBoundingClientRect(), pc = x => x / r.width * 100;
+    const over = bar.querySelector('b.over'), tick = bar.querySelector('u.tick');
+    return {
+      fill: pc(bar.querySelector('i').getBoundingClientRect().width),
+      over: over ? pc(over.getBoundingClientRect().width) : 0,
+      tick: tick ? pc(tick.getBoundingClientRect().left - r.left) : null,
+      capped: bar.classList.contains('capped'),
+    };
+  }, mid);
+  const near = (a, b) => expect(Math.abs(a - b)).toBeLessThan(1.5);
+
+  test('Ziel-Balken hat Kopfraum: 100 % liegen bei 80 % Breite, Übererfüllung füllt den Rest (v4.70.0)', async ({ context, page }) => {
+    // Vorher endete der Balken bei 100 %: 100 %, 120 % und 300 % sahen
+    // IDENTISCH aus — ausgerechnet die Zahl, die die Rangliste entscheidet.
+    await goalFixture(context, [
+      { id: 'm-a', name: 'Mira', goal: 10, pts: 0 },     //   0 %
+      { id: 'm-b', name: 'Timon', goal: 10, pts: 5 },    //  50 %
+      { id: 'm-c', name: 'Noel', goal: 10, pts: 10 },    // 100 % → exakt auf der Marke
+      { id: 'm-d', name: 'Carla', goal: 10, pts: 12 },   // 120 % → Kopfraum angebrochen
+      { id: 'm-e', name: 'Anna', goal: 10, pts: 20 },    // 200 % → voll, gekappt
+    ]);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('.score')).toHaveCount(5);
+
+    const g0 = await barGeo(page, 'm-a');
+    near(g0.fill, 0); near(g0.tick, 80); expect(g0.over).toBe(0);
+    const g50 = await barGeo(page, 'm-b');
+    near(g50.fill, 40); near(g50.tick, 80); expect(g50.over).toBe(0);
+    // Auf der Marke: Balken endet GENAU am Strich, Kopfraum noch unberührt
+    const g100 = await barGeo(page, 'm-c');
+    near(g100.fill, 80); near(g100.tick, 80); expect(g100.over).toBe(0);
+    expect(g100.capped).toBe(false);
+    // Darüber: sichtbar mehr als am Strich, aber noch nicht am Anschlag
+    const g120 = await barGeo(page, 'm-d');
+    near(g120.fill, 80); near(g120.over, 16); near(g120.fill + g120.over, 96);
+    expect(g120.capped).toBe(false);
+    // Weit darüber: Balken voll, Kappen-Spitze sagt «geht weiter»
+    const g200 = await barGeo(page, 'm-e');
+    near(g200.fill + g200.over, 100);
+    expect(g200.capped).toBe(true);
+    // Monoton: mehr Zielerreichung = mehr Farbe. Genau das fehlte vorher.
+    expect(g100.fill + g100.over).toBeLessThan(g120.fill + g120.over);
+    expect(g120.fill + g120.over).toBeLessThan(g200.fill + g200.over);
+  });
+
+  test('Zielerreichung ist die grosse Zahl, Punkte die Nebenzahl — ab 100 % goldig (v4.70.0)', async ({ context, page }) => {
+    await goalFixture(context, [
+      { id: 'm-a', name: 'Mira', goal: 30, pts: 36 },    // 120 % — erreicht
+      { id: 'm-b', name: 'Timon', goal: 15, pts: 5 },    //  33 % — offen
+      { id: 'm-c', name: 'Noel', goal: 20, pts: 0 },     //   0 % — noch nichts
+    ]);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    const card = mid => page.locator(`.score[data-mid="${mid}"]`);
+    await expect(card('m-a').locator('.num.pct')).toHaveText('120%');
+    await expect(card('m-a').locator('.pts')).toHaveText('36');
+    await expect(card('m-a').locator('.sub')).toHaveText('36 von 30 Punkten');
+    await expect(card('m-b').locator('.num.pct')).toHaveText('33%');
+    await expect(card('m-b').locator('.pts')).toHaveText('5');
+    // Bei 0 Punkten faellt die Nebenzahl weg («0 0 %» sah aus wie ein Fehler)
+    await expect(card('m-c').locator('.num.pct')).toHaveText('0%');
+    await expect(card('m-c').locator('.pts')).toHaveCount(0);
+    await expect(card('m-c').locator('.sub')).toHaveText('0 von 20 Punkten');
+    // Die grosse Zahl ist auch wirklich die grosse: Prozent > Punkte
+    const size = loc => loc.evaluate(el => parseFloat(getComputedStyle(el).fontSize));
+    expect(await size(card('m-a').locator('.num.pct')))
+      .toBeGreaterThan(await size(card('m-a').locator('.pts')));
+    // Erreicht/nicht erreicht ist auf einen Blick unterscheidbar (nicht NUR Farbe:
+    // die Zahl selbst und der Strich im Balken tragen die Information)
+    await expect(card('m-a').locator('.num.pct')).toHaveClass(/hit/);
+    await expect(card('m-b').locator('.num.pct')).not.toHaveClass(/hit/);
+  });
+
+  test('Ohne Ziel bleibt die Punkte-Karte unverändert: Punkte gross, kein Strich, kein Prozent (v4.70.0)', async ({ context, page }) => {
+    // Die Zusage an alle anderen Haushalte gilt auch fuer das neue Layout.
+    await goalFixture(context, [
+      { id: 'm-a', name: 'Mira', goal: null, pts: 12 },
+      { id: 'm-b', name: 'Timon', goal: null, pts: 4 },
+    ]);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('.score .num').first()).toHaveText('12');
+    await expect(page.locator('.score .pts')).toHaveCount(0);
+    await expect(page.locator('.score .bar u.tick')).toHaveCount(0);
+    await expect(page.locator('.score .bar.goal')).toHaveCount(0);
+    await expect(page.locator('#list')).not.toContainText('%');
+    // relativer Balken wie bisher: der Beste fuellt ganz
+    near((await barGeo(page, 'm-a')).fill, 100);
+    near((await barGeo(page, 'm-b')).fill, 33);
   });
 
   test('Beta: «Gesamt» zeigt Ø Punkte/Woche als Messlatte fürs Wochenziel — ohne Beta nicht (v4.68.0)', async ({ context, page }) => {

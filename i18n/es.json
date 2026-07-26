@@ -185,6 +185,7 @@
   "Für {name} ist diese Woche noch nichts eingetragen.": "Esta semana aún no hay nada registrado para {name}.",
   "Wochenziel": "Meta semanal",
   "Punkte pro Woche · leer = kein Ziel": "Puntos por semana · vacío = sin meta",
+  "{pts} von {goal} Punkten": "{pts} de {goal} puntos",
   "{pts} von {goal} Punkten · {pct} %": "{pts} de {goal} puntos · {pct} %",
   "Beta: Wochenziel": "Beta: meta semanal",
   "Beta beendet": "Beta finalizada",

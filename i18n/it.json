@@ -185,6 +185,7 @@
   "Für {name} ist diese Woche noch nichts eingetragen.": "Questa settimana non c’è ancora nulla per {name}.",
   "Wochenziel": "Obiettivo settimanale",
   "Punkte pro Woche · leer = kein Ziel": "Punti a settimana · vuoto = nessun obiettivo",
+  "{pts} von {goal} Punkten": "{pts} di {goal} punti",
   "{pts} von {goal} Punkten · {pct} %": "{pts} di {goal} punti · {pct} %",
   "Beta: Wochenziel": "Beta: obiettivo settimanale",
   "Beta beendet": "Beta terminata",

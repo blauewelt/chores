@@ -185,6 +185,7 @@
   "Für {name} ist diese Woche noch nichts eingetragen.": "Der er endnu ikke registreret noget for {name} i denne uge.",
   "Wochenziel": "Ugemål",
   "Punkte pro Woche · leer = kein Ziel": "Point pr. uge · tom = intet mål",
+  "{pts} von {goal} Punkten": "{pts} af {goal} point",
   "{pts} von {goal} Punkten · {pct} %": "{pts} af {goal} point · {pct} %",
   "Beta: Wochenziel": "Beta: ugemål",
   "Beta beendet": "Beta afsluttet",

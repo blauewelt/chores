@@ -149,8 +149,14 @@
     box-shadow:var(--shadow); padding:14px; margin-bottom:8px}
   .score .top{display:flex; align-items:center; gap:11px}
   .score .dot{width:32px; height:32px; border-radius:50%; display:grid; place-items:center; color:#10140F; font-weight:800; font-size:15px; flex:0 0 32px}
-  .score .name{font-weight:700; font-size:18px; flex:1}
-  .score .num{font-family:var(--display); font-weight:800; font-size:34px}
+  .score .name{font-weight:700; font-size:18px; flex:1; min-width:0}
+  .score .num{font-family:var(--display); font-weight:800; font-size:34px; flex:none}
+  /* Ziel-Karte (Beta): die Zielerreichung ist das Ranking-Kriterium und steht
+     deshalb an der Stelle der grossen Zahl; die Punkte ruecken daneben. */
+  .score .pts{font-family:var(--display); font-weight:800; font-size:20px;
+    color:var(--muted); flex:none; margin-right:-3px}
+  .score .num small{font-size:.58em; font-weight:700; margin-left:1px; opacity:.75}
+  .score .num.hit{color:#E8B931}
   .score[data-mid]{cursor:pointer}
   .filterpill{display:inline-flex; align-items:center; gap:8px; margin:2px 0 10px;
     padding:7px 12px; border-radius:999px; border:1px solid var(--line);
@@ -161,6 +167,18 @@
   .logsum{color:var(--muted); font-size:14px; margin:0 4px 10px}
   .score .bar{height:10px; border-radius:999px; background:#252F29; margin-top:10px; overflow:hidden}
   .score .bar i{display:block; height:100%; border-radius:999px}
+  /* Ziel-Balken: 100 % des Ziels bei 80 % Breite (--goalw), Rest = Kopfraum.
+     overflow sichtbar, damit die Ziel-Marke oben/unten ueberstehen darf. */
+  .score .bar.goal{position:relative; overflow:visible; margin-top:14px}
+  .score .bar.plus i{border-radius:999px 0 0 999px}
+  .score .bar .over{position:absolute; top:0; bottom:0; border-radius:0 999px 999px 0;
+    background-image:repeating-linear-gradient(115deg,
+      rgba(255,255,255,.45) 0 4px, rgba(255,255,255,0) 4px 9px)}
+  .score .bar .tick{position:absolute; top:-4px; bottom:-4px; width:2px; margin-left:-1px;
+    background:var(--ink); border-radius:1px; box-shadow:0 0 0 2px var(--card)}
+  /* Ueber 125 % ist der Balken voll — die Spitze sagt «geht noch weiter». */
+  .score .bar.capped::after{content:''; position:absolute; right:-1px; top:-2px; bottom:-2px;
+    width:7px; clip-path:polygon(0 0, 100% 50%, 0 100%); background:var(--ink); opacity:.85}
   .score .sub{font-size:14px; color:var(--muted); margin-top:6px}
   .period{display:flex; gap:6px; margin:4px 4px 12px}
   .period button{border:1px solid var(--line); background:var(--card); border-radius:999px;
@@ -546,7 +564,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.69.4';
+  const APP_VERSION = '4.70.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2244,24 +2262,51 @@
       const quota = m => goalOf(m) ? tot[m.id].pts / goalOf(m) : -1;
       const ranked = state.members.slice().sort((a, b) =>
         quota(b) - quota(a) || tot[b.id].pts - tot[a.id].pts);
+      // v4.70.0 (Beta): Der Ziel-Balken hat KOPFRAUM. 100 % des Ziels liegen
+      // bei GOALW = 80 % der Balkenbreite, markiert durch einen Strich; der
+      // Rest ist die Uebererfuellung. Vorher endete der Balken bei 100 % —
+      // 100 %, 120 % und 300 % sahen identisch aus, obwohl genau diese
+      // Zahl die Rangliste entscheidet. Ab 125 % ist der Balken voll: dann
+      // sagt es die Kappen-Spitze (».«), die Wahrheit steht in der Zahl.
+      const GOALW = 80, CAPPCT = Math.round(100 * 100 / GOALW);   // 125
+      const round1 = x => Math.round(x * 10) / 10;
+      const goalBar = (pct, color) => {
+        const base = Math.min(GOALW, Math.max(0, pct) * GOALW / 100);
+        const over = Math.max(0, Math.min(100 - GOALW, (pct - 100) * GOALW / 100));
+        return `<div class="bar goal${over ? ' plus' : ''}${pct > CAPPCT ? ' capped' : ''}">
+            <i style="width:${round1(base)}%; background:${esc(color)}"></i>
+            ${over ? `<b class="over" style="left:${GOALW}%; width:${round1(over)}%; background-color:${esc(color)}"></b>` : ''}
+            <u class="tick" style="left:${GOALW}%"></u>
+          </div>`;
+      };
       listEl.innerHTML =
         `<div class="period">
           <button data-p="week" aria-pressed="${period === 'week'}">${t('Diese Woche')}</button>
           <button data-p="all" aria-pressed="${period === 'all'}">${t('Gesamt')}</button>
         </div>` +
-        ranked.map((m, i) => `
+        ranked.map((m, i) => {
+          const g = goalOf(m), pts = tot[m.id].pts;
+          const pct = g ? Math.round(pts / g * 100) : 0;
+          return `
           <div class="score" data-mid="${m.id}" role="button" tabindex="0"
                aria-label="${esc(t('Verlauf von {name} anzeigen', { name: m.name }))}">
             <div class="top">
               <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>
               <span class="name">${esc(m.name)}${i === 0 && tot[m.id].pts > 0 ? ' 👑' : ''}</span>
-              <span class="num">${tot[m.id].pts}</span>
+              ${g
+                // Mit Ziel entscheidet die ZIELERREICHUNG die Rangliste — also
+                // steht sie gross, die Punkte daneben als Nebenzahl. Ohne Ziel
+                // bleibt alles wie bisher (alle anderen Haushalte, «Gesamt»).
+                // Bei 0 Punkten entfaellt die Nebenzahl — «0 0 %» las sich wie ein Fehler,
+                // und die Unterzeile nennt den Stand ohnehin («0 von 15 Punkten»).
+                ? `${pts ? `<span class="pts">${pts}</span>` : ''}<span class="num pct${pct >= 100 ? ' hit' : ''}"
+                     >${pct}<small>%</small></span>`
+                : `<span class="num">${pts}</span>`}
             </div>
-            <div class="bar"><i style="width:${goalOf(m)
-              ? Math.min(100, Math.round(tot[m.id].pts / goalOf(m) * 100))
-              : Math.round(tot[m.id].pts / max * 100)}%; background:${esc(m.color)}"></i></div>
-            <div class="sub">${goalOf(m)
-              ? t('{pts} von {goal} Punkten · {pct} %', { pts: tot[m.id].pts, goal: goalOf(m), pct: Math.round(tot[m.id].pts / goalOf(m) * 100) })
+            ${g ? goalBar(pct, m.color)
+                : `<div class="bar"><i style="width:${Math.round(pts / max * 100)}%; background:${esc(m.color)}"></i></div>`}
+            <div class="sub">${g
+              ? t('{pts} von {goal} Punkten', { pts, goal: g })
               : t(tot[m.id].n === 1 ? '{n} Aufgabe erledigt' : '{n} Aufgaben erledigt', { n: tot[m.id].n })
             }${(() => {
               // v4.68.0 (Beta): Ø Punkte/Woche in «Gesamt» — die Messlatte fuers
@@ -2273,7 +2318,7 @@
               const weeks = Math.max(1, (Date.now() - Date.parse(v.first)) / 604800000);
               return ` · ${t('Ø {n}/Woche', { n: Math.round(v.pts / weeks) })}`;
             })()}</div>
-          </div>`).join('');
+          </div>`; }).join('');
     } else {
       // Serien buendeln: dieselbe Person tippt dieselbe Aufgabe mehrmals in
       // Folge («Einkaufen ×3») → EINE Zeile mit Summenpunkten. So braucht es

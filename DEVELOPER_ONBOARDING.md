@@ -381,6 +381,22 @@ onFail)` — 1 Retry, dann Wiederherstellung + ehrlicher Toast
 Krone, Zähler. **NIE eine Variable `t` nennen** (schattet i18n; Live-Bug
 Punkte-Tab leer).
 
+**Ziel-Karte (Beta, v4.70.0) — die Leitzahl ist das Ranking-Kriterium.**
+Mit Wochenziel reiht die App nach ZIELERREICHUNG (v4.67.0); also steht
+die Prozentzahl an der Stelle der grossen Zahl (`.num.pct`, ab 100 %
+goldig `#E8B931` wie die Ziellinie im Wochen-Chart), die Punkte daneben
+als Nebenzahl (`.pts`, entfällt bei 0), die Unterzeile nennt «X von Y
+Punkten». Der Balken hat KOPFRAUM: 100 % des Ziels liegen bei
+`GOALW = 80 %` der Breite mit einem Strich (`u.tick`) darauf, die
+Übererfüllung füllt gestreift (`b.over`) den Rest, ab `CAPPCT = 125 %`
+ist er voll und die Spitze (`.capped`) sagt «geht weiter». Vorher endete
+der Balken bei 100 % — 100 %, 120 % und 300 % sahen identisch aus.
+**Stehende Regel:** ein Balken, der eine überschreitbare Grösse zeigt,
+braucht Kopfraum und eine Marke; sonst verschweigt er genau die
+Information, für die er da ist. Erreicht/offen darf NIE nur an der Farbe
+hängen (Zahl und Strich tragen es mit). Ohne Ziel ist die Karte
+unverändert — dafür gibt es einen eigenen Test.
+
 ### Identität übernehmen (v4.60.0)
 claimIdentity()/maybeOfferClaim(): EIN Mechanismus für Bestands-Link
 und Nach-Migration (sessionStorage fairli.claimAfterMig). Wachen: nur
@@ -652,6 +668,15 @@ Marken (zündet nie) und einen Mock-Teilstring-Fehler
 NEWS_VERSION-Regel: IMMER = Version des Recap-Releases selbst.
 
 ### Suite-Ausgabe & Selbst-Router (Pflicht)
+**Externe Hosts abbrechen — auch bei eigenem Routing (v4.70.0).**
+`blockExternal(context)` (fonts.googleapis, fonts.gstatic,
+gen.pollinations) steckt in `mockBackend`, muss aber in JEDEM Test mit
+eigenen Routen separat gerufen werden. In Sandboxen mit Egress-Proxy
+ANTWORTET ein Font-Request nicht, er HAENGT: das load-Event feuert nie
+und `waitForURL` laeuft ins Timeout — ein Rot, das auf CI-Runnern nicht
+auftritt und deshalb wie ein Phantom aussieht. Zwei
+Ersteinrichtungs-Tests hingen genau daran.
+
 Suite-Ergebnisse NIE mit tail-N kuerzen — «X failed» steht OBERHALB der
 «passed»-Zeile und faellt sonst weg (so blieben zwei echte Bruecke
 unbemerkt, v4.46.2). Muster: `grep -E "failed|skipped|passed"` auf die

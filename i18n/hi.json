@@ -185,6 +185,7 @@
   "Für {name} ist diese Woche noch nichts eingetragen.": "इस सप्ताह {name} के लिए अभी कुछ दर्ज नहीं है।",
   "Wochenziel": "साप्ताहिक लक्ष्य",
   "Punkte pro Woche · leer = kein Ziel": "अंक प्रति सप्ताह · खाली = कोई लक्ष्य नहीं",
+  "{pts} von {goal} Punkten": "{goal} में से {pts} अंक",
   "{pts} von {goal} Punkten · {pct} %": "{goal} में से {pts} अंक · {pct} %",
   "Beta: Wochenziel": "बीटा: साप्ताहिक लक्ष्य",
   "Beta beendet": "बीटा समाप्त",

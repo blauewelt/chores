@@ -1,3 +1,37 @@
+## 2026-07-26 — v4.70.0 (SW haushalt-v170): Ziel-Balken mit Kopfraum, Zielerreichung als Leitzahl
+
+- Maintainer-Befund an der Live-Rangliste: der Ziel-Balken endete bei
+  100 %. 100 %, 120 % und 300 % sahen damit IDENTISCH aus — ausgerechnet
+  die Zahl, die seit v4.67.0 die Reihenfolge entscheidet, war die
+  einzige, die der Balken nicht zeigen konnte. Und die Zielerreichung
+  stand klein in der Unterzeile, waehrend die grosse Zahl die Punkte
+  zeigte (= NICHT das Ranking-Kriterium).
+- Balken: 100 % des Ziels liegen jetzt bei GOALW = 80 % der Breite,
+  markiert durch einen Strich (u.tick, steht oben/unten ueber). Der Rest
+  ist Kopfraum: die Uebererfuellung fuellt ihn als gestreiftes Segment
+  (b.over) in der Personenfarbe. Ab 125 % ist der Balken voll — dann sagt
+  es die Kappen-Spitze (.capped), die Wahrheit steht in der Zahl.
+  Regressionstest misst die GERENDERTE Geometrie (0/50/100/120/200 %)
+  inkl. Monotonie; Negativkontrolle gefahren (GOALW=100 → rot).
+- Karte: die Zielerreichung ist die grosse Zahl (var(--display), ab 100 %
+  goldig wie die Ziellinie im Wochen-Chart), die Punkte stehen als
+  Nebenzahl daneben, die Unterzeile nennt nur noch «X von Y Punkten»
+  (neuer i18n-Schluessel, 19 Sprachen aus dem alten abgeleitet). Bei
+  0 Punkten entfaellt die Nebenzahl — «0 0 %» las sich wie ein Fehler.
+  Erreicht/offen haengt NICHT nur an der Farbe: Zahl und Balkenstrich
+  tragen dieselbe Information.
+- OHNE Ziel ist die Karte unveraendert (alle anderen Haushalte, «Gesamt»,
+  Beta aus): Punkte gross, relativer Balken, kein Strich, kein Prozent —
+  eigener Test, der genau das festnagelt.
+- Visuelle Abnahme in beiden Geraete-Projekten (Pixel 7 + iPhone 14),
+  DE und EN, inkl. Randzustaenden: 0 %, 400 %, Ziel 100 bei 1 Punkt,
+  sehr langer Name (umbricht, Zahlen bleiben buendig).
+- Test-Hygiene nebenbei: blockExternal() ist jetzt eine Funktion, und die
+  beiden Ersteinrichtungs-Tests mit EIGENEM Routing nutzen sie. Ohne
+  Aborts ANTWORTET ein Font-Request in Sandboxen mit Egress-Proxy nicht,
+  er HAENGT — das load-Event feuert nie, waitForURL laeuft ins Timeout.
+  Genau die stehende Regel aus §10, die dort fehlte.
+
 ## 2026-07-26 — v4.69.4: Das «verlorene» Wochenziel war nie weg — goal fehlte in der Pull-Spaltenliste
 
 - Maintainer-Befund (praezise Reihenfolge: Admin-Ziel 30 weg, zweites

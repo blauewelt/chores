@@ -185,6 +185,7 @@
   "Für {name} ist diese Woche noch nichts eingetragen.": "Inget har registrerats för {name} denna vecka ännu.",
   "Wochenziel": "Veckomål",
   "Punkte pro Woche · leer = kein Ziel": "Poäng per vecka · tomt = inget mål",
+  "{pts} von {goal} Punkten": "{pts} av {goal} poäng",
   "{pts} von {goal} Punkten · {pct} %": "{pts} av {goal} poäng · {pct} %",
   "Beta: Wochenziel": "Beta: veckomål",
   "Beta beendet": "Beta avslutad",

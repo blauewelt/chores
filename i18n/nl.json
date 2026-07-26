@@ -185,6 +185,7 @@
   "Für {name} ist diese Woche noch nichts eingetragen.": "Voor {name} is deze week nog niets geregistreerd.",
   "Wochenziel": "Weekdoel",
   "Punkte pro Woche · leer = kein Ziel": "Punten per week · leeg = geen doel",
+  "{pts} von {goal} Punkten": "{pts} van {goal} punten",
   "{pts} von {goal} Punkten · {pct} %": "{pts} van {goal} punten · {pct} %",
   "Beta: Wochenziel": "Bèta: weekdoel",
   "Beta beendet": "Bèta beëindigd",

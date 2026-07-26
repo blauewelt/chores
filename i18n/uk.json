@@ -185,6 +185,7 @@
   "Für {name} ist diese Woche noch nichts eingetragen.": "Цього тижня для {name} ще нічого не записано.",
   "Wochenziel": "Ціль на тиждень",
   "Punkte pro Woche · leer = kein Ziel": "Очки на тиждень · порожньо = без цілі",
+  "{pts} von {goal} Punkten": "{pts} з {goal} очок",
   "{pts} von {goal} Punkten · {pct} %": "{pts} з {goal} очок · {pct} %",
   "Beta: Wochenziel": "Бета: ціль на тиждень",
   "Beta beendet": "Бета завершена",

@@ -185,6 +185,7 @@
   "Für {name} ist diese Woche noch nichts eingetragen.": "Belum ada catatan untuk {name} minggu ini.",
   "Wochenziel": "Target mingguan",
   "Punkte pro Woche · leer = kein Ziel": "Poin per minggu · kosong = tanpa target",
+  "{pts} von {goal} Punkten": "{pts} dari {goal} poin",
   "{pts} von {goal} Punkten · {pct} %": "{pts} dari {goal} poin · {pct} %",
   "Beta: Wochenziel": "Beta: target mingguan",
   "Beta beendet": "Beta diakhiri",

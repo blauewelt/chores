@@ -185,6 +185,7 @@
   "Für {name} ist diese Woche noch nichts eingetragen.": "Tuần này chưa có ghi nhận nào cho {name}.",
   "Wochenziel": "Mục tiêu tuần",
   "Punkte pro Woche · leer = kein Ziel": "Điểm mỗi tuần · để trống = không có mục tiêu",
+  "{pts} von {goal} Punkten": "{pts} trên {goal} điểm",
   "{pts} von {goal} Punkten · {pct} %": "{pts} trên {goal} điểm · {pct} %",
   "Beta: Wochenziel": "Beta: mục tiêu tuần",
   "Beta beendet": "Đã kết thúc beta",

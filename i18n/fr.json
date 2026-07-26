@@ -185,6 +185,7 @@
   "Für {name} ist diese Woche noch nichts eingetragen.": "Rien n’a encore été enregistré pour {name} cette semaine.",
   "Wochenziel": "Objectif hebdo",
   "Punkte pro Woche · leer = kein Ziel": "Points par semaine · vide = aucun objectif",
+  "{pts} von {goal} Punkten": "{pts} sur {goal} points",
   "{pts} von {goal} Punkten · {pct} %": "{pts} sur {goal} points · {pct} %",
   "Beta: Wochenziel": "Bêta : objectif hebdo",
   "Beta beendet": "Bêta terminée",

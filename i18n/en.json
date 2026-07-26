@@ -185,6 +185,7 @@
   "Für {name} ist diese Woche noch nichts eingetragen.": "Nothing has been logged for {name} this week yet.",
   "Wochenziel": "Weekly goal",
   "Punkte pro Woche · leer = kein Ziel": "Points per week · empty = no goal",
+  "{pts} von {goal} Punkten": "{pts} of {goal} points",
   "{pts} von {goal} Punkten · {pct} %": "{pts} of {goal} points · {pct} %",
   "Beta: Wochenziel": "Beta: weekly goal",
   "Beta beendet": "Beta ended",
