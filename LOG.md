@@ -1,3 +1,29 @@
+## 2026-07-26 — v4.69.4: Das «verlorene» Wochenziel war nie weg — goal fehlte in der Pull-Spaltenliste
+
+- Maintainer-Befund (praezise Reihenfolge: Admin-Ziel 30 weg, zweites
+  Admin-Ziel 30 weg, das zuletzt gesetzte Ziel 7 blieb) fuehrte zur
+  Server-Wahrheit: ALLE drei Schreibungen
+  standen dort (updated_at 12:08:32/41/56, exakt seine Sequenz). Verloren
+  hat nur die ANZEIGE: der regulaere Abgleich holte members mit expliziter
+  Spaltenliste OHNE goal — jeder Pull ersetzte state.members durch
+  ziellose Zeilen. Nur die frischeste Aenderung ueberlebte scheinbar
+  (pendingCreates-Schutzschild bis zum naechsten Abgleich) — daher auch
+  das urspruengliche «musste zweimal speichern».
+- Fix: goal in der Pull-SELECT-Liste (eine Zeile). Der Erstlade-Pfad
+  nutzte select=* und zeigte Ziele kurz — das erklaerte das Flackern.
+- WARUM 20+ Ziel-Tests gruen blieben: der Mock lieferte IMMER alle
+  Felder und ignorierte select= — er war grosszuegiger als PostgREST.
+  mockBackend projiziert jetzt select= fuer members/chores; der neue
+  Regressionstest (Ziel ueberlebt ZWEI Abgleiche) faellt mit der alten
+  Spaltenliste nachweislich durch (Negativkontrolle gefahren).
+- E2E-Lehre notiert: Draht+Server pruefen reicht nicht — der Zustand
+  NACH dem naechsten Pull gehoert in jede Speicher-Verifikation.
+- ONBOARDING 11a um Regel C ergaenzt: neue Spalte = Migration +
+  Schreibpfad + Pull-Liste, und Mocks muessen select= projizieren.
+- Keine Datenreparatur noetig: der Server hatte alles; nach dem Update
+  erscheinen alle Ziele von selbst wieder.
+- APP_VERSION 4.69.4, SW-Cache haushalt-v169
+
 ## 2026-07-26 — v4.69.3: Live-Beweis am Server (Ziel speichert, auch verschluesselt) + Wiederholung nach Fehlschlag
 
 - Maintainer-Meldung «speichert weiter nicht» + Hypothese Schema-Drift

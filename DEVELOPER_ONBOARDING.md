@@ -791,6 +791,21 @@ Live-Vorfaellen (Wochenziel «musste zweimal gespeichert werden»,
   (LCOLS-Reihenfolge), und Views in ALTEN Migrationsdateien nachziehen,
   wenn spaetere sie erweitern (Replay-Regel, §Migrationen).
 
+**C. Neue Spalte = DREI Orte, sonst luegt die App.**
+- Jede neue Tabellen-Spalte braucht: (1) die Migration, (2) den Schreibpfad
+  (upsert/PATCH), und (3) **die explizite SELECT-Spaltenliste des Pulls**.
+  Live-Vorfall 26.07. (Wochenziel): Migration und Schreiben stimmten, die
+  Pull-Liste fehlte — der Server BEHIELT jedes Ziel, aber jeder Abgleich
+  ersetzte state.members durch ziellose Zeilen: «erst gespeichert,
+  Sekunden spaeter weg», nur die frischeste Aenderung schien zu halten
+  (Schutzschild-Fenster). Symptom-Signatur fuer die Zukunft: Server hat
+  den Wert, Client verliert ihn nach dem naechsten Pull.
+- Test-Harness-Regel dazu: Mocks muessen select= PROJIZIEREN wie
+  PostgREST. Ein Mock, der immer alle Felder liefert, maskiert exakt
+  diese Fehlerklasse (20+ gruene Ziel-Tests, waehrend die echte App die
+  Spalte verwarf). Seit v4.69.4 projiziert mockBackend members/chores;
+  neue Tabellen-Mocks uebernehmen das Muster.
+
 ## 12. Bekannte offene Punkte / Vertagt
 
 - **Pro-Mitglied-Rechte serverseitig:** die v4.38.0-Rechte sind

@@ -71,6 +71,17 @@ async function mockBackend(context, { logRows = () => LOG, memberRows = null, fa
     // v4.65.0: log_totals VOR /log pruefen (Praefix-Falle) — die Sicht
     // liefert Server-Summen ueber ALLE Zeilen; im Mock aus logRows berechnet,
     // damit Bestandstests ihre Punktzahlen behalten.
+    // v4.69.4: der Mock respektiert select= — vorher lieferte er IMMER alle
+    // Felder und maskierte damit exakt den Live-Fehler «goal fehlt in der
+    // Pull-Spaltenliste» (20+ gruene Ziel-Tests, waehrend die echte App die
+    // Spalte verwarf). Projektion wie PostgREST: nur gelistete Spalten.
+    const project = rows => {
+      const sel = (url.match(/select=([^&]+)/) || [])[1];
+      if (!sel || decodeURIComponent(sel).trim() === '*' || !Array.isArray(rows)) return rows;
+      const cols = decodeURIComponent(sel).split(',').map(c => c.trim()).filter(c => /^[a-z_]+$/.test(c));
+      if (!cols.length) return rows;
+      return rows.map(r => Object.fromEntries(cols.filter(c => c in r).map(c => [c, r[c]])));
+    };
     const body =
       url.includes('/rest/v1/log_weekly') ? (() => {
         // Wochen-Summen wie die Server-Sicht, aus logRows gerechnet (Schluessel
@@ -105,7 +116,8 @@ async function mockBackend(context, { logRows = () => LOG, memberRows = null, fa
       url.includes('/rest/v1/chores')  ? CHORES :
       url.includes('/rest/v1/log')     ? logRows() :
       url.includes('/rest/v1/families') ? (famRows ? famRows() : FAMILIES) : [];
-    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+    const projected = (url.includes('/rest/v1/members') || url.includes('/rest/v1/chores')) ? project(body) : body;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(projected) });
   });
 }
 
@@ -3236,6 +3248,43 @@ test.describe('Fairli', () => {
     await expect.poll(() => oks.flat().some(r => r.id === 'm-mira' && r.goal === 9)).toBe(true);
     await expect.poll(() => page.evaluate(fam =>
       JSON.parse(localStorage.getItem('haushalt.pendmemb:' + fam) || '[]'), FAM)).not.toContain('m-mira');
+  });
+
+  test('Wochenziel ÜBERLEBT den nächsten Abgleich: Server hat es, Pull darf es nicht mehr ausblenden (v4.69.4)', async ({ context, page }) => {
+    // Live-Vorfall 26.07.: goal fehlte in der Pull-Spaltenliste — der Server
+    // BEHIELT jedes Ziel, aber jeder Abgleich ersetzte state.members durch
+    // ziellose Zeilen («erst gespeichert, dann weg», nur die frischeste
+    // Aenderung schien zu halten). Der Mock respektiert seit v4.69.4 select=,
+    // darum FAENGT dieser Test die alte Spaltenliste (negativ geprueft).
+    const srv = [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: false, assisted: false, goal: null }];
+    await mockBackend(context, {
+      famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      memberRows: () => srv });
+    await context.route(`${SB}/rest/v1/members**`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') {
+        for (const r of [].concat(JSON.parse(req.postData() || '[]')))
+          Object.assign(srv.find(x => x.id === r.id) || {}, { goal: r.goal });   // Server uebernimmt das Ziel
+        return route.fulfill({ status: 201, body: '' });
+      }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(600);
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await openPerson(page, 'm-mira');
+    await page.locator('#psGoal').fill('8');
+    await page.locator('#psDone').click();
+    await expect(page.locator('.prow[data-pid="m-mira"] .assistbadge', { hasText: '🎯8' })).toBeVisible();
+    // ZWEI Abgleiche spaeter (Schutzschild-Fenster vorbei) muss das Ziel noch da sein
+    for (let i = 0; i < 2; i++) {
+      await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+      await page.waitForTimeout(700);
+    }
+    await expect(page.locator('.prow[data-pid="m-mira"] .assistbadge', { hasText: '🎯8' })).toBeVisible();
+    await openPerson(page, 'm-mira');
+    await expect(page.locator('#psGoal')).toHaveValue('8');
+    await page.locator('#psDone').click();
   });
 
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {

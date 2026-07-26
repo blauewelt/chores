@@ -546,7 +546,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.69.3';
+  const APP_VERSION = '4.69.4';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1645,7 +1645,12 @@
         ? `log?select=${LCOLS}&or=(created_at.gt.${encodeURIComponent(wm)},updated_at.gt.${encodeURIComponent(wm)})&order=done_at.desc&limit=300`
         : `log?select=${LCOLS}&order=done_at.desc&limit=300`;
       const [members, chores, logRows, fam, totalRows] = await Promise.all([
-        sb('members?select=id,name,color,url_slug,assisted,admin&order=name'),
+        // v4.69.4: goal FEHLTE in dieser Spaltenliste — der Server hatte jedes
+        // gespeicherte Wochenziel, aber JEDER Abgleich ersetzte state.members
+        // durch ziellose Zeilen: Ziel «verschwand» nach Sekunden wieder
+        // (Live-Vorfall 26.07., «erst gespeichert, dann weg»). Regel 11a-C:
+        // neue Spalte ⇒ Migration + UPSERT + DIESE Liste, alle drei.
+        sb('members?select=id,name,color,url_slug,assisted,admin,goal&order=name'),
         sb('chores?select=id,name,points,note,art,created_at&order=points.desc,name'),
         sb(logQ),
         sb('families?select=*'),
