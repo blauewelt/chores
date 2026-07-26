@@ -30,6 +30,13 @@ aus. Drei Symptome, ein Mechanismus.
   Bearbeiten verliert nichts. 121 gruen.
 - Hinweis an die Familie: das verlorene 7er-Wochenziel der betreuten
   Person einmal NEU eintragen — der alte Stand lebte nur im Geraetespeicher.
+- Nachtrag (gleicher Tag): Maintainer meldete «Sync fehlgeschlagen» als
+  Ausloeser des Doppel-Speicherns — Diagnose am LIVE-Server schreibfrei
+  bewiesen (gemischte Schluesselmengen → 400 PGRST102 «All object keys
+  must match» VOR jeder Auth; formgleiche kommen durch die Parse-Stufe).
+  Zwei ergaenzende Tests: Boot-Nachzug mit GEMISCHTEN offenen Marken
+  (formgleich gruppiert + erster Pull setzt das Ziel nicht zurueck) und
+  Ehrlichkeits-Toast bei scheiterndem Personen-Upsert. Suite 123 gruen.
 - APP_VERSION 4.69.2, SW-Cache haushalt-v167
 
 ## 2026-07-26 — v4.69.1: Tastatur verdeckt den Speichern-Knopf nicht mehr; Sheet speichert SELBST; Luft

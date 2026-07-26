@@ -3163,6 +3163,65 @@ test.describe('Fairli', () => {
     await expect.poll(() => posts.flat().some(r => r.id === 'm-mira' && r.goal === 7), { timeout: 6000 }).toBe(true);
   });
 
+  // ---------- v4.69.2: PGRST102-Wache, Reload-Nachzug, Esc, ehrlicher Fehler ----------
+
+  test('Boot-Nachzug mit GEMISCHTEN offenen Marken: formgleich gruppiert, und der erste Pull setzt das Ziel nicht zurück (v4.69.2)', async ({ context, page }) => {
+    // Reload mitten im Bearbeiten: zwei offene Marken — Mira (voller
+    // Server-Umriss + frisches Ziel) und Nova (frisch angelegt: NUR
+    // id/name/color/family_id). Vor der Wache platzte GENAU dieser Sync
+    // als EIN Batch mit 400 PGRST102 («All object keys must match») —
+    // live am Server nachgewiesen. Jetzt: ein Request je Schluessel-Signatur.
+    const mira = { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: false, assisted: false, goal: 7 };
+    const nova = { id: 'm-nova', name: 'Nova', color: '#E8B931', family_id: FAM };
+    const posts = [];
+    await mockBackend(context, {
+      famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      memberRows: () => [{ ...mira, goal: null }] });   // Server: Ziel noch nicht angekommen, Nova unbekannt
+    await context.route(`${SB}/rest/v1/members**`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') { posts.push(req.postDataJSON()); return route.fulfill({ status: 201, body: '' }); }
+      return route.fallback();
+    });
+    await context.addInitScript(([fam, m, n]) => {
+      localStorage.setItem('haushalt.v2:' + fam, JSON.stringify({ members: [m, n], chores: [], log: [], famName: 'Testhaushalt' }));
+      localStorage.setItem('haushalt.pendmemb:' + fam, JSON.stringify([m.id, n.id]));
+    }, [FAM, mira, nova]);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect.poll(() => posts.flat().length, { timeout: 6000 }).toBeGreaterThanOrEqual(2);
+    // jeder Batch in sich formgleich (die PGRST102-Bedingung), zusammen vollständig
+    for (const batch of posts) {
+      const sigs = new Set([].concat(batch).map(r => Object.keys(r).sort().join(',')));
+      expect(sigs.size).toBe(1);
+    }
+    const all = posts.flat();
+    expect(all.find(r => r.id === 'm-mira').goal).toBe(7);
+    expect(all.some(r => r.id === 'm-nova')).toBe(true);
+    // und der Boot-Pull (Serverstand: goal null) darf das lokale Ziel NICHT
+    // zuruecksetzen — der Nachzug lief synchron VOR dem ersten Reconcile
+    await page.waitForTimeout(800);
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await expect(page.locator('.prow[data-pid="m-mira"] .assistbadge', { hasText: '🎯7' })).toBeVisible();
+  });
+
+  test('Scheitert der Personen-Upsert, sagt die App es («Sync fehlgeschlagen») statt zu schweigen (v4.69.2)', async ({ context, page }) => {
+    await mockBackend(context, {
+      famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      memberRows: () => [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', goal: null }] });
+    await context.route(`${SB}/rest/v1/members**`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') return route.fulfill({ status: 400,
+        contentType: 'application/json', body: '{"code":"PGRST102","message":"All object keys must match"}' });
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(600);
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await openPerson(page, 'm-mira');
+    await page.locator('#psGoal').fill('9');
+    await page.locator('#psDone').click();
+    await expect(page.locator('#toast')).toContainText('Sync fehlgeschlagen');
+  });
+
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);
