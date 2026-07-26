@@ -25,6 +25,14 @@ const LOG = [{ id: 'l-1', chore_id: 'c-1', chore_name: 'Müll rausbringen', chor
 const FAMILIES = [{ family_id: FAM, name: 'Testhaushalt' }];
 
 // Mock all Supabase REST + block third-party fetches (fonts, tile art).
+
+// v4.69.0: Pro-Person-Sheet oeffnen — synthetischer Klick (kein Koordinaten-
+// Klick, der nach dem showModal in den Backdrop-Close der neuen dialog
+// bubbeln koennte), danach Sichtbarkeit zusichern.
+async function openPerson(page, mid) {
+  await page.evaluate(id => document.querySelector(`.prow[data-pid="${id}"]`).click(), mid);
+  await expect(page.locator('#personSheet')).toBeVisible();
+}
 async function mockBackend(context, { logRows = () => LOG, memberRows = null, famRows = null } = {}) {
   // Standard-Persona: WIEDERKEHRER — das Onboarding «Zugriff sichern»
   // (v4.45.0, modal!) gilt als gesehen, sonst blockierte es jeden Test.
@@ -64,6 +72,25 @@ async function mockBackend(context, { logRows = () => LOG, memberRows = null, fa
     // liefert Server-Summen ueber ALLE Zeilen; im Mock aus logRows berechnet,
     // damit Bestandstests ihre Punktzahlen behalten.
     const body =
+      url.includes('/rest/v1/log_weekly') ? (() => {
+        // Wochen-Summen wie die Server-Sicht, aus logRows gerechnet (Schluessel
+        // = LOKALER Montag, wie der Client sie baut)
+        const agg = {};
+        const pad = x => String(x).padStart(2, '0');
+        for (const e of logRows()) {
+          if (e.deleted_at) continue;
+          const d = new Date(e.done_at); d.setHours(0, 0, 0, 0);
+          d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+          const wk = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+          const k = e.member_id + '|' + wk;
+          const a = agg[k] || (agg[k] = { member_id: e.member_id, week_start: wk, pts: 0, n: 0 });
+          a.pts += e.points; a.n++;
+        }
+        let rows = Object.values(agg);
+        const mm = url.match(/member_id=eq\.([^&]+)/);
+        if (mm) rows = rows.filter(r => r.member_id === decodeURIComponent(mm[1]));
+        return rows.sort((a, b) => (a.week_start < b.week_start ? 1 : -1));
+      })() :
       url.includes('/rest/v1/log_totals') ? (() => {
         const agg = {};
         for (const e of logRows()) {
@@ -953,8 +980,10 @@ test.describe('Fairli', () => {
     // 1) Person hinzufügen — exakt Timon' Ablauf: tippen, direkt «Fertig»
     //    (KEIN blur davor — die input-Events müssen genügen)
     await page.locator('#openMembers').click();
-    await page.locator('#addMember').click();
-    await page.locator('#memberRows .mrow').last().locator('input[type=text]').fill('Nova');
+    await page.locator('#addMember').click();          // oeffnet direkt das Pro-Person-Sheet (v4.69.0)
+    await expect(page.locator('#personSheet')).toBeVisible();
+    await page.locator('#psName').fill('Nova');
+    await page.locator('#psDone').click();
     await page.locator('#doneMembers').click();
     await expect(page.locator('.iam .chip', { hasText: 'Nova' })).toBeVisible();
     // 2) Der nächste Pull (Server kennt Nova noch nicht) darf sie NICHT schlucken
@@ -965,12 +994,9 @@ test.describe('Fairli', () => {
     expect(JSON.stringify(posts)).toContain('Nova');
     // 3) Bestehende Person umbenennen — muss ebenso Pulls überleben
     await page.locator('#openMembers').click();
-    const janaRow = page.locator('#memberRows .mrow', { has: page.locator('input[type=text]') }).filter({ hasText: '' }).first();
-    const inputs = page.locator('#memberRows .mrow input[type=text]');
-    const n = await inputs.count();
-    for (let i = 0; i < n; i++) {
-      if ((await inputs.nth(i).inputValue()) === 'Mira') { await inputs.nth(i).fill('Janine'); break; }
-    }
+    await openPerson(page, 'm-mira');
+    await page.locator('#psName').fill('Janine');
+    await page.locator('#psDone').click();
     await page.locator('#doneMembers').click();
     await expect(page.locator('.iam .chip', { hasText: 'Janine' })).toBeVisible();
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
@@ -1120,19 +1146,21 @@ test.describe('Fairli', () => {
     });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.locator('#openMembers').click();
-    const row0 = page.locator('.mrow', { has: page.locator('[data-mmenu="m-chris"]') });
-    await row0.locator('.kebab').click();
-    await page.locator('[data-massist="m-chris"]').click();
-    await expect(row0.locator('.assistbadge')).toBeVisible();      // 📵 sofort sichtbar
+    await openPerson(page, 'm-chris');
+    await page.locator('#psAssist').click();
+    await expect(page.locator('#psAssist .setval')).toHaveText('An');
+    await page.locator('#psDone').click();
+    await expect(page.locator('.prow[data-pid="m-chris"] .assistbadge', { hasText: '📵' })).toBeVisible();   // sofort sichtbar
     await page.locator('#doneMembers').click();
     await expect.poll(() => posts.length).toBeGreaterThan(0);
     const saved = [].concat(posts[0]).find(r => r.id === 'm-chris');
     expect(saved.assisted).toBe(true);
-    // Erneutes Öffnen: Häkchen im Menü, Badge in der Zeile (Zustand hält)
+    // Erneutes Öffnen: Badge in der Zeile, Schalter im Sheet auf An (Zustand hält)
     await page.locator('#openMembers').click();
-    await expect(page.locator('.mrow', { has: page.locator('[data-mmenu="m-chris"]') }).locator('.assistbadge')).toBeVisible();
-    await page.locator('[data-mmenu="m-chris"]').click();
-    await expect(page.locator('[data-massist="m-chris"]')).toContainText('✓');
+    await expect(page.locator('.prow[data-pid="m-chris"] .assistbadge', { hasText: '📵' })).toBeVisible();
+    await openPerson(page, 'm-chris');
+    await expect(page.locator('#psAssist .setval')).toHaveText('An');
+    await page.locator('#psDone').click();
   });
 
   test('Betreute Mitglieder: persönlicher Link — Chips, Fremd-Logging, Rechte (v4.49.0)', async ({ context, page }) => {
@@ -1498,21 +1526,25 @@ test.describe('Fairli', () => {
     });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.locator('#openMembers').click();
-    // Timon ist Admin: Häkchen im Menü, 🔑 in der Zeile
-    const timonRow = page.locator('.mrow', { has: page.locator('[data-mmenu="m-chris"]') });
+    // Timon ist Admin: 🔑 in der Zeile
+    const timonRow = page.locator('.prow[data-pid="m-chris"]');
     await expect(timonRow.locator('.assistbadge', { hasText: '🔑' })).toBeVisible();
     // Letzten Admin entziehen → verweigert
-    await page.locator('[data-mmenu="m-chris"]').click();
-    await page.locator('[data-madmin="m-chris"]').click();
+    await openPerson(page, 'm-chris');
+    await page.locator('#psAdmin').click();
     await expect(page.locator('#toast')).toContainText('Mindestens eine Person muss Admin bleiben');
-    await expect(timonRow.locator('.assistbadge', { hasText: '🔑' })).toBeVisible();   // unverändert
+    await expect(page.locator('#psAdmin .setval')).toHaveText('An');                    // unverändert
+    await page.locator('#psDone').click();
     // Zweiten Admin ernennen, DANN darf der erste abgeben
-    await page.locator('[data-mmenu="m-mira"]').click();
-    await page.locator('[data-madmin="m-mira"]').click();
-    await expect(page.locator('.mrow', { has: page.locator('[data-mmenu="m-mira"]') })
-      .locator('.assistbadge', { hasText: '🔑' })).toBeVisible();
-    await page.locator('[data-mmenu="m-chris"]').click();
-    await page.locator('[data-madmin="m-chris"]').click();
+    await openPerson(page, 'm-mira');
+    await page.locator('#psAdmin').click();
+    await expect(page.locator('#psAdmin .setval')).toHaveText('An');
+    await page.locator('#psDone').click();
+    await expect(page.locator('.prow[data-pid="m-mira"] .assistbadge', { hasText: '🔑' })).toBeVisible();
+    await openPerson(page, 'm-chris');
+    await page.locator('#psAdmin').click();
+    await expect(page.locator('#psAdmin .setval')).toHaveText('Aus');
+    await page.locator('#psDone').click();
     await expect(timonRow.locator('.assistbadge', { hasText: '🔑' })).toHaveCount(0);
     await page.locator('#doneMembers').click();
     await expect.poll(() => posts.length).toBeGreaterThan(0);
@@ -2892,7 +2924,10 @@ test.describe('Fairli', () => {
     await page.evaluate(() => document.getElementById('openMembers').click());
     await expect(page.locator('#memberSheet')).toBeVisible();
     await expect(page.locator('#memberSheet .assistbadge', { hasText: '🎯' })).toHaveCount(0);
-    await expect(page.locator('#memberSheet .goalrow')).toHaveCount(0);
+    await openPerson(page, 'm-mira');
+    await expect(page.locator('#psGoal')).toHaveCount(0);        // kein Zielfeld ohne Beta …
+    await expect(page.locator('#psChart')).toHaveCount(0);       // … und keine Wochen-Balken
+    await page.locator('#psDone').click();
     await page.evaluate(() => document.getElementById('memberSheet').close());
     // … ändert ohne Beta NICHTS an der Punkte-Ansicht: Sortierung nach Punkten
     await page.getByRole('tab', { name: 'Punkte' }).click();
@@ -2931,10 +2966,10 @@ test.describe('Fairli', () => {
     await expect(page.locator('.score .name').first()).toContainText('Timon');
     // Ziel 8 für Mira setzen
     await page.evaluate(() => document.getElementById('openMembers').click());
-    await page.locator('[data-mmenu="m-mira"]').click();
-    await page.locator('[data-mgoal="m-mira"]').click();
-    await expect(page.locator('.goalrow[data-gid="m-mira"]')).toBeVisible();
-    await page.locator('#goal-m-mira').fill('8');
+    await openPerson(page, 'm-mira');
+    await expect(page.locator('#psGoal')).toBeVisible();
+    await page.locator('#psGoal').fill('8');
+    await page.locator('#psDone').click();
     await page.locator('#doneMembers').click();
     await page.waitForTimeout(400);
     expect(saved).not.toBeNull();
@@ -2976,8 +3011,11 @@ test.describe('Fairli', () => {
     await page.goto(`${BASE}/f/${FAM}`);
     await page.waitForTimeout(700);
     await page.evaluate(() => document.getElementById('openMembers').click());
-    await expect(page.locator('.goalrow[data-gid="m-mira"]')).toBeVisible();   // Ziel vorhanden → Feld offen
-    await page.locator('#goal-m-mira').fill('');
+    await expect(page.locator('.prow[data-pid="m-mira"] .assistbadge', { hasText: '🎯8' })).toBeVisible();
+    await openPerson(page, 'm-mira');
+    await expect(page.locator('#psGoal')).toHaveValue('8');      // Ziel vorhanden → Feld gefuellt
+    await page.locator('#psGoal').fill('');
+    await page.locator('#psDone').click();
     await page.evaluate(() => document.getElementById('memberSheet').close());
     await page.getByRole('tab', { name: 'Punkte' }).click();
     await expect(page.locator('.score .sub').first()).toContainText('erledigt');
@@ -3000,6 +3038,35 @@ test.describe('Fairli', () => {
     await expect(page.locator('.score .sub').first()).toContainText('Ø 5/Woche');
     await page.locator('[data-p="week"]').click();
     await expect(page.locator('.score .sub').first()).not.toContainText('Ø');   // Woche: keine Ø-Zeile
+  });
+
+  test('Pro-Person-Sheet (Beta): Wochen-Balken aus log_weekly — 8 Slots, Lücken = 0, Ziellinie (v4.69.0)', async ({ context, page }) => {
+    const wk = off => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - off * 7); return d.toISOString(); };
+    const mk = (id, at, pts) => ({ id, chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
+      member_id: 'm-mira', member_name: 'Mira', points: pts, done_at: at, created_at: at, family_id: FAM });
+    // Punkte in dieser Woche (6), vor 2 Wochen (10) und vor 5 Wochen (4) — Wochen 1/3/4/6/7 leer
+    await mockBackend(context, {
+      famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      memberRows: () => [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', goal: 8 }],
+      logRows: () => [mk('l-1', wk(0), 6), mk('l-2', wk(2), 10), mk('l-3', wk(5), 4)] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(600);
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await openPerson(page, 'm-mira');
+    await expect(page.locator('#psChart')).toBeVisible();
+    await expect(page.locator('#psChart i')).toHaveCount(8);
+    await expect(page.locator('#psChart .wkgoal')).toHaveCount(1);          // Ziellinie bei Ziel 8
+    const heights = await page.$$eval('#psChart i', els => els.map(el => parseInt(el.style.height)));
+    // max = 10 (vor 2 Wochen) → 100 %; diese Woche 6/10 = 60 %; vor 5 Wochen 4/10 = 40 %; leere = 3 % Sockel
+    expect(heights[7]).toBe(60);            // aktuelle Woche (letzter Slot)
+    expect(heights[5]).toBe(100);
+    expect(heights[2]).toBe(40);
+    expect(heights[0]).toBe(3); expect(heights[6]).toBe(3);
+    await expect(page.locator('#psChart i.cur')).toHaveCount(1);
+    // Ziel im Feld ändern → Ziellinie folgt sofort (aus dem Slot-Cache, ohne Refetch)
+    await page.locator('#psGoal').fill('10');
+    await expect(page.locator('#psChart .wkgoal')).toHaveCount(1);
+    await page.locator('#psDone').click();
   });
 
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {

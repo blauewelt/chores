@@ -84,7 +84,7 @@
   "«{name}» gibt es schon": "«{name}» sudah ada",
   "Stattdessen verbuchen": "Catat yang itu",
   "Löschen fehlgeschlagen — wiederhergestellt": "Gagal menghapus — dipulihkan",
-  "Aus": "Nonaktif",
+  "Aus": "Mati",
   "Max. Punkte": "Poin maks.",
   "Mehrfach tippen addiert — die Skala ist keine harte Grenze.": "Ketukan berulang dijumlahkan — skala bukan batas kaku.",
   "Fairli hat Neues — ansehen": "Ada yang baru di Fairli — lihat",
@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{pts} dari {goal} poin · {pct} %",
   "Beta: Wochenziel": "Beta: target mingguan",
   "Beta beendet": "Beta diakhiri",
-  "Ø {n}/Woche": "Ø {n}/minggu"
+  "Ø {n}/Woche": "Ø {n}/minggu",
+  "Person": "Orang",
+  "Persönlichen Link teilen": "Bagikan tautan pribadi",
+  "Person löschen": "Hapus orang",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "Dapat mengubah tugas, orang, dan pengaturan",
+  "Andere tragen für diese Person ein": "Orang lain mencatat untuk orang ini",
+  "Bisher: Ø {n} Punkte/Woche": "Sejauh ini: Ø {n} poin/minggu",
+  "vor {n} Wochen": "{n} minggu lalu"
 }

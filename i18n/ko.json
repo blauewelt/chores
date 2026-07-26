@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{goal}점 중 {pts}점 · {pct}%",
   "Beta: Wochenziel": "베타: 주간 목표",
   "Beta beendet": "베타 종료됨",
-  "Ø {n}/Woche": "주 Ø {n}"
+  "Ø {n}/Woche": "주 Ø {n}",
+  "Person": "구성원",
+  "Persönlichen Link teilen": "개인 링크 공유",
+  "Person löschen": "구성원 삭제",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "집안일, 구성원, 설정을 변경할 수 있음",
+  "Andere tragen für diese Person ein": "다른 사람이 이 사람 대신 기록",
+  "Bisher: Ø {n} Punkte/Woche": "지금까지: 주 Ø {n}점",
+  "vor {n} Wochen": "{n}주 전"
 }

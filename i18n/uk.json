@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{pts} з {goal} очок · {pct} %",
   "Beta: Wochenziel": "Бета: ціль на тиждень",
   "Beta beendet": "Бета завершена",
-  "Ø {n}/Woche": "Ø {n}/тижд."
+  "Ø {n}/Woche": "Ø {n}/тижд.",
+  "Person": "Особа",
+  "Persönlichen Link teilen": "Поділитися особистим посиланням",
+  "Person löschen": "Видалити особу",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "Може змінювати справи, людей і налаштування",
+  "Andere tragen für diese Person ein": "Інші відмічають за цю особу",
+  "Bisher: Ø {n} Punkte/Woche": "Наразі: Ø {n} очок/тижд.",
+  "vor {n} Wochen": "{n} тижнів тому"
 }

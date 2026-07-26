@@ -84,7 +84,7 @@
   "«{name}» gibt es schon": "«{name}» esiste già",
   "Stattdessen verbuchen": "Registra invece",
   "Löschen fehlgeschlagen — wiederhergestellt": "Eliminazione non riuscita — ripristinato",
-  "Aus": "Disattiva",
+  "Aus": "Disattivo",
   "Max. Punkte": "Punti max",
   "Mehrfach tippen addiert — die Skala ist keine harte Grenze.": "Tocchi ripetuti si sommano — la scala non è un limite rigido.",
   "Fairli hat Neues — ansehen": "Novità in Fairli — guarda",
@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{pts} di {goal} punti · {pct} %",
   "Beta: Wochenziel": "Beta: obiettivo settimanale",
   "Beta beendet": "Beta terminata",
-  "Ø {n}/Woche": "Ø {n}/settimana"
+  "Ø {n}/Woche": "Ø {n}/settimana",
+  "Person": "Persona",
+  "Persönlichen Link teilen": "Condividi link personale",
+  "Person löschen": "Elimina persona",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "Può modificare compiti, persone e impostazioni",
+  "Andere tragen für diese Person ein": "Altri registrano per questa persona",
+  "Bisher: Ø {n} Punkte/Woche": "Finora: Ø {n} punti/settimana",
+  "vor {n} Wochen": "{n} settimane fa"
 }

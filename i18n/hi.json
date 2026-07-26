@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{goal} में से {pts} अंक · {pct} %",
   "Beta: Wochenziel": "बीटा: साप्ताहिक लक्ष्य",
   "Beta beendet": "बीटा समाप्त",
-  "Ø {n}/Woche": "Ø {n}/सप्ताह"
+  "Ø {n}/Woche": "Ø {n}/सप्ताह",
+  "Person": "व्यक्ति",
+  "Persönlichen Link teilen": "व्यक्तिगत लिंक साझा करें",
+  "Person löschen": "व्यक्ति हटाएं",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "काम, लोग और सेटिंग्स बदल सकते हैं",
+  "Andere tragen für diese Person ein": "दूसरे इस व्यक्ति के लिए दर्ज करते हैं",
+  "Bisher: Ø {n} Punkte/Woche": "अब तक: Ø {n} अंक/सप्ताह",
+  "vor {n} Wochen": "{n} सप्ताह पहले"
 }

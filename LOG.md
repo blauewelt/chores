@@ -1,3 +1,43 @@
+## 2026-07-26 — v4.69.0: Pro-Person-Sheet mit Wochen-Balken — das ⋯-Menü geht in Rente
+
+FREIGEGEBEN nach Vorschau (Maintainer: «Nice preview, let's go ahead» +
+Frage nach Wochen-Balken → ja, passt aufs Sheet).
+
+- Personenliste: Zeilen sind jetzt reine Tap-Ziele (Farbfeld, Name,
+  Abzeichen 🔑📵🎯N, Chevron). Antippen oeffnet das Pro-Person-Sheet im
+  Task-Sheet-Stil: Name/Farbe, (Beta:) Wochenziel mit Ø-Zeile und
+  Wochen-Balken, Admin und «Ohne eigenes Telefon» als ERKLAERTE Zeilen
+  («Darf Aufgaben, Personen und Einstellungen ändern» / «Andere tragen
+  für diese Person ein» — dafuer hatte das Menue nie Platz),
+  «Persönlichen Link teilen», rot «Person löschen», «Fertig».
+  Das Sheet ersetzt das ⋯-Menue FUER ALLE Haushalte (eine Bedienwelt,
+  eine Testsuite); Ziel/Ø/Balken bleiben Beta-gated. «+ Person
+  hinzufügen» oeffnet direkt das Sheet der neuen Person.
+- Wochen-Balken (Beta): 8 Wochen-Slots ab lokalem Montag, Luecken = 0,
+  aktuelle Woche hervorgehoben, gestrichelte Ziellinie folgt dem
+  Zielfeld LIVE (Slot-Cache, kein Refetch). Daten aus neuer Server-
+  Sicht log_weekly (family_id, member_id, week_start, pts, n) — das
+  Client-Fenster reicht bei aktiven Familien nur ~2 Wochen zurueck.
+  Slot-Schluessel aus LOKALEN Datumsteilen (toISOString rutschte bei
+  UTC+x auf den Sonntag → alle Balken leer); UTC-Wochengrenze der Sicht
+  als bewusste Randunschaerfe dokumentiert.
+- REPLAY-FALLE des Migrations-Runners gefunden und geheilt: der Runner
+  spielt bei JEDEM Lauf ALLE Dateien, und «create or replace view» kann
+  Spalten nicht entfernen. Die aeltere log_totals-Migration (4 Spalten)
+  scheiterte deshalb ueber der von v4.68 erweiterten 5-Spalten-Sicht —
+  ON_ERROR_STOP wuergte den Lauf ab, BEVOR log_weekly entstand. Regel
+  ab jetzt (in der Datei dokumentiert): erweitert eine spaetere
+  Migration eine Sicht, wird die aeltere Datei auf dieselbe Definition
+  nachgezogen.
+- Altfehler im Loesch-Undo behoben: _delM wurde NACH dem filter()
+  gefasst (immer null) — der Wiederherstell-Callback war toter Code.
+- Tests: 3 Bestandstests (Hinzufuegen/Umbenennen, 📵, Admin-Regeln) auf
+  den Sheet-Fluss migriert; openPerson-Helfer (synthetischer Klick,
+  Sichtbarkeits-Zusage); Harness liefert log_weekly aus logRows;
+  1 neuer Balken-Test (Slots, Luecken, Ziellinie, Hoehen). 118 gruen.
+- 8 neue i18n-Schluessel in 19 Sprachen.
+- APP_VERSION 4.69.0, SW-Cache haushalt-v165
+
 ## 2026-07-26 — v4.68.0: Ø Punkte/Woche in «Gesamt» (Beta) — die Messlatte fuers Wochenziel
 
 - Maintainer-Idee: Wochenziele setzt man leichter, wenn man sieht, was

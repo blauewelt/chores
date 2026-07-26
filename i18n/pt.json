@@ -84,7 +84,7 @@
   "«{name}» gibt es schon": "«{name}» já existe",
   "Stattdessen verbuchen": "Registar essa",
   "Löschen fehlgeschlagen — wiederhergestellt": "Falha ao eliminar — restaurado",
-  "Aus": "Desativada",
+  "Aus": "Desativado",
   "Max. Punkte": "Pontos máx.",
   "Mehrfach tippen addiert — die Skala ist keine harte Grenze.": "Vários toques somam-se — a escala não é um limite rígido.",
   "Fairli hat Neues — ansehen": "Novidades no Fairli — ver",
@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{pts} de {goal} pontos · {pct} %",
   "Beta: Wochenziel": "Beta: meta semanal",
   "Beta beendet": "Beta encerrada",
-  "Ø {n}/Woche": "Ø {n}/semana"
+  "Ø {n}/Woche": "Ø {n}/semana",
+  "Person": "Pessoa",
+  "Persönlichen Link teilen": "Partilhar link pessoal",
+  "Person löschen": "Eliminar pessoa",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "Pode alterar tarefas, pessoas e definições",
+  "Andere tragen für diese Person ein": "Outros registam por esta pessoa",
+  "Bisher: Ø {n} Punkte/Woche": "Até agora: Ø {n} pontos/semana",
+  "vor {n} Wochen": "há {n} semanas"
 }

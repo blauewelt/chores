@@ -296,9 +296,21 @@
   .mrow{display:flex; gap:8px; align-items:center; margin-bottom:8px}
   .mrow input[type=text], .mrow input[type=number]{flex:1; padding:10px 12px; font-size:16px; border:1px solid var(--line); border-radius:10px; background:#161D19; color:var(--ink)}
   .mrow input[type=color]{width:42px; height:42px; border:none; background:none; padding:0; cursor:pointer}
-  .goalrow{align-items:center; gap:10px; flex-wrap:wrap}
+  .prow{display:flex; width:100%; align-items:center; gap:10px; margin-bottom:8px; padding:12px;
+    background:#161D19; border:1px solid var(--line); border-radius:10px; color:var(--ink);
+    font-size:16px; text-align:left; cursor:pointer}
+  .prow .swatch{width:26px; height:26px; border-radius:8px; flex:none}
+  .prow .pname{flex:1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .prow .chev{color:var(--muted)}
+  .psrow small{color:var(--muted); font-weight:400}
+  .pshint{color:var(--muted); font-size:12.5px; margin:0 0 10px 2px}
+  .wkchart{position:relative; display:flex; align-items:flex-end; gap:5px; height:64px; margin:8px 2px 2px}
+  .wkchart i{flex:1; background:var(--accent); opacity:.5; border-radius:4px 4px 0 0; min-height:3px}
+  .wkchart i.cur{opacity:1}
+  .wkgoal{position:absolute; left:0; right:0; height:0; border-top:2px dashed #E8B931}
+  .wklbl{display:flex; justify-content:space-between; color:var(--muted); font-size:11px; margin:2px 2px 12px}
   .goallbl{color:var(--muted); font-size:14px; flex:none}
-  .goalrow input.goalinp{flex:none; width:84px; text-align:center; appearance:textfield; -moz-appearance:textfield}
+  input.goalinp{flex:none; width:84px; text-align:center; appearance:textfield; -moz-appearance:textfield}
   .goalinp::-webkit-outer-spin-button, .goalinp::-webkit-inner-spin-button{-webkit-appearance:none; margin:0}
   .goalhint{color:var(--muted); font-size:12.5px; flex:1 1 100%}
   .mrow .menupop{top:auto; bottom:100%; margin:0 0 4px}
@@ -527,7 +539,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.68.0';
+  const APP_VERSION = '4.69.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2804,34 +2816,143 @@
   // ---------- Personen-Sheet ----------
   const memberSheet = document.getElementById('memberSheet');
   const changedMembers = new Set();
-  const goalOpen = new Set();        // v4.67.0: welche Zielfelder sind aufgeklappt (nur Sitzung)
   function renderMemberRows() {
     const wrap = document.getElementById('memberRows');
     wrap.innerHTML = state.members.map(m =>
-      `<div class="mrow" data-mid="${m.id}">
-        <input type="color" value="${esc(m.color)}" aria-label="Farbe">
-        <input type="text" maxlength="30" aria-label="Name">
+      `<button type="button" class="prow" data-pid="${m.id}" aria-label="${esc(m.name || t('Person'))}">
+        <span class="swatch" style="background:${esc(m.color)}"></span>
+        <span class="pname">${esc(m.name) || '—'}</span>
         ${m.admin ? `<span class="assistbadge" title="${t('Admin')}">🔑</span>` : ''}
         ${m.assisted ? `<span class="assistbadge" title="${t('Ohne eigenes Telefon')}">📵</span>` : ''}
         ${BETA && m.goal ? `<span class="assistbadge" title="${t('Wochenziel')}">🎯${m.goal}</span>` : ''}
-        <div class="entmenu">
-          <button class="kebab" data-mmenu="${m.id}" aria-label="Optionen">⋯</button>
-          <div class="menupop" id="mmenu-${m.id}" hidden>
-            <button class="menuitem" data-mshare="${m.id}">${t('Link teilen')}</button>
-            <button class="menuitem" data-madmin="${m.id}">${m.admin ? '✓ ' : ''}🔑 ${t('Admin')}</button>
-            <button class="menuitem" data-massist="${m.id}">${m.assisted ? '✓ ' : ''}📵 ${t('Ohne eigenes Telefon')}</button>
-            ${BETA ? `<button class="menuitem" data-mgoal="${m.id}">${m.goal ? '✓ ' : ''}🎯 ${t('Wochenziel')}</button>` : ''}
-            <button class="menuitem danger" data-mdel="${m.id}">${t('Löschen')}</button>
-          </div>
-        </div>
+        <span class="chev">›</span>
+      </button>`).join('');
+  }
+
+  // ---------- Pro-Person-Sheet (v4.69.0) ----------
+  // Ersetzt das ⋯-Menue in der Personenliste: EIN Ort fuer Name, Farbe,
+  // Wochenziel (Beta), Admin/📵 (mit Erklaerung — dafuer hatte das Menue nie
+  // Platz), Link und Löschen. Aenderungen laufen wie bisher ueber
+  // changedMembers und werden erst mit «Speichern» der Liste synchronisiert.
+  function openPersonSheet(mid) {
+    const m = memberById(mid); if (!m) return;
+    let sh = document.getElementById('personSheet');
+    if (!sh) {
+      sh = document.createElement('dialog'); sh.id = 'personSheet';
+      document.body.appendChild(sh);
+      enableBackdropClose(sh, () => { sh.close(); renderMemberRows(); });
+    }
+    const v = state.totalsAll && state.totalsAll[mid];
+    const avg = (BETA && v && v.first && v.pts)
+      ? Math.round(v.pts / Math.max(1, (Date.now() - Date.parse(v.first)) / 604800000)) : null;
+    const rowBtn = (id, icon, label, sub, val) => `
+      <button type="button" class="menuitem setrow psrow" id="${id}">
+        <span class="seticon">${icon}</span>
+        <span class="setlabel">${label}${sub ? `<br><small>${sub}</small>` : ''}</span>
+        ${val !== undefined ? `<span class="setval"${val ? '' : ' style="opacity:.45"'}>${val ? t('An') : t('Aus')}</span>` : '<span class="chev">›</span>'}
+      </button>`;
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"></div><h2>${t('Person')}</h2>
+        <div class="slot end"><button type="button" class="x" id="psClose" aria-label="${esc(t('Schließen'))}">×</button></div>
       </div>
-      ${BETA && (m.goal || goalOpen.has(m.id)) ? `<div class="mrow goalrow" data-gid="${m.id}" style="margin:-2px 0 10px 50px">
-        <label class="goallbl" for="goal-${m.id}">🎯 ${t('Wochenziel')}</label>
-        <input type="number" id="goal-${m.id}" class="goalinp" inputmode="numeric" min="1" max="999"
+      <div class="mrow" style="margin:4px 0 14px">
+        <input type="color" id="psColor" value="${esc(m.color)}" aria-label="Farbe">
+        <input type="text" id="psName" maxlength="30" aria-label="Name">
+      </div>
+      ${!BETA ? '' : `
+      <div class="mrow" style="align-items:center; gap:10px; margin-bottom:2px">
+        <label class="goallbl" for="psGoal">🎯 ${t('Wochenziel')}</label>
+        <input type="number" id="psGoal" class="goalinp" inputmode="numeric" min="1" max="999"
           value="${m.goal || ''}" placeholder="—" aria-label="${esc(t('Wochenziel'))}">
-        <span class="goalhint">${t('Punkte pro Woche · leer = kein Ziel')}</span>
-      </div>` : ''}`).join('');
-    wrap.querySelectorAll('.mrow[data-mid]').forEach((r, i) => r.querySelector('input[type=text]').value = state.members[i].name);
+      </div>
+      <p class="pshint">${t('Punkte pro Woche · leer = kein Ziel')}${avg !== null ? `<br>${t('Bisher: Ø {n} Punkte/Woche', { n: avg })}` : ''}</p>
+      <div id="psChart" class="wkchart" hidden aria-hidden="true"></div>
+      <div id="psChartLbl" class="wklbl" hidden><span>${t('vor {n} Wochen', { n: 7 })}</span><span>${t('Diese Woche')}</span></div>`}
+      ${rowBtn('psAdmin', '🔑', t('Admin'), t('Darf Aufgaben, Personen und Einstellungen ändern'), !!m.admin)}
+      ${rowBtn('psAssist', '📵', t('Ohne eigenes Telefon'), t('Andere tragen für diese Person ein'), !!m.assisted)}
+      ${rowBtn('psShare', '🔗', t('Persönlichen Link teilen'), '')}
+      <button type="button" class="menuitem setrow psrow" id="psDel" style="color:var(--red)">
+        <span class="seticon">🗑️</span><span class="setlabel">${t('Person löschen')}</span>
+      </button>
+      <button type="button" class="btn primary wide" id="psDone" style="margin-top:14px">${t('Fertig')}</button>
+    </div>`;
+    sh.querySelector('#psName').value = m.name;
+    const done = () => { sh.close(); renderMemberRows(); };
+    sh.querySelector('#psClose').onclick = done;
+    sh.querySelector('#psDone').onclick = done;
+    sh.querySelector('#psName').addEventListener('input', e => {
+      m.name = e.target.value; changedMembers.add(m.id); save();
+    });
+    sh.querySelector('#psColor').addEventListener('input', e => {
+      m.color = e.target.value; changedMembers.add(m.id); save();
+    });
+    const setVal = (id, on) => {
+      const el = sh.querySelector('#' + id + ' .setval');
+      el.textContent = on ? t('An') : t('Aus'); el.style.opacity = on ? '' : '.45';
+    };
+    sh.querySelector('#psAdmin').onclick = () => {
+      if (!isAdmin()) { toast(t('Nur Admins können das ändern')); return; }
+      if (m.admin && adminMembers().length <= 1) { toast(t('Mindestens eine Person muss Admin bleiben')); return; }
+      m.admin = !m.admin; changedMembers.add(m.id); save(); setVal('psAdmin', m.admin);
+    };
+    sh.querySelector('#psAssist').onclick = () => {
+      m.assisted = !m.assisted; changedMembers.add(m.id); save(); setVal('psAssist', m.assisted);
+    };
+    sh.querySelector('#psShare').onclick = () =>
+      shareLink(userLink(m), t('Link für {name}', { name: m.name || '—' }),
+                t('{name}, mach mit bei {fam}:', { name: m.name || '', fam: state.famName || t('unseren Aufgaben') }));
+    sh.querySelector('#psDel').onclick = () => {
+      if (state.members.length <= 1) { toast(t('Mindestens eine Person wird benötigt.')); return; }
+      if (!confirm('Person entfernen? Ihre Punkte im Verlauf bleiben erhalten.')) return;
+      const _delM = m;                                  // VOR dem Entfernen fassen (Altfehler: nach filter() war es immer null)
+      state.members = state.members.filter(x => x.id !== m.id);
+      if (me === m.id) { me = null; localStorage.removeItem(LS_ME); }
+      changedMembers.delete(m.id);
+      save(); sh.close(); renderMemberRows();
+      deleteRemote('members', m.id, () => {
+        if (!state.members.some(x => x.id === _delM.id)) { state.members.push(_delM); save(); render(); }
+      });
+      render();
+    };
+    let chartSlots = null;
+    const drawChart = goal => {
+      const el = sh.querySelector('#psChart'); if (!el || !chartSlots) return;
+      const max = Math.max(goal || 0, ...chartSlots.map(x => x.pts), 1);
+      el.innerHTML = chartSlots.map(x =>
+        `<i class="${x.cur ? 'cur' : ''}" style="height:${Math.max(3, Math.round(x.pts / max * 100))}%" title="${x.key}: ${x.pts}"></i>`).join('') +
+        (goal ? `<b class="wkgoal" style="bottom:${Math.min(97, Math.round(goal / max * 100))}%"></b>` : '');
+      el.hidden = false;
+      const lbl = sh.querySelector('#psChartLbl'); if (lbl) lbl.hidden = false;
+    };
+    if (BETA) {
+      const g = sh.querySelector('#psGoal');
+      g.addEventListener('input', e => {
+        const n = parseInt(e.target.value, 10);
+        m.goal = Number.isFinite(n) && n > 0 ? Math.min(999, n) : null;
+        changedMembers.add(m.id); save(); render(); drawChart(m.goal || 0);
+      });
+      // Wochen-Balken: Summen je Woche vom SERVER (log_weekly) — das
+      // Client-Fenster reicht bei aktiven Familien nur ~2 Wochen zurueck.
+      // Slots ab LOKALEM Montag; Schluessel aus lokalen Datumsteilen
+      // (toISOString wuerde bei UTC+x auf den Sonntag rutschen).
+      sb('log_weekly?select=week_start,pts&member_id=eq.' + encodeURIComponent(mid) + '&order=week_start.desc&limit=10')
+        .then(rows => {
+          const by = new Map((rows || []).map(r => [r.week_start, r.pts]));
+          const pad = x => String(x).padStart(2, '0');
+          const mon = new Date(); mon.setHours(0, 0, 0, 0);
+          mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
+          chartSlots = [];
+          for (let i = 7; i >= 0; i--) {
+            const d = new Date(mon); d.setDate(d.getDate() - i * 7);
+            const key = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+            chartSlots.push({ key, pts: by.get(key) || 0, cur: i === 0 });
+          }
+          drawChart(m.goal || 0);
+        }).catch(() => {});   // offline/Sicht fehlt → Sheet ohne Grafik
+    }
+    sh.showModal();
   }
   // «Was ist neu»-Hinweis: einmal pro Version, nur fuer Wiederkehrer
   (() => {
@@ -2875,21 +2996,7 @@
     }
     memberSheet.showModal();
   });
-  document.getElementById('memberRows').addEventListener('input', e => {
-    const grow = e.target.closest('.goalrow');          // v4.67.0
-    if (grow) {
-      const m = memberById(grow.dataset.gid); if (!m) return;
-      const v = parseInt(e.target.value, 10);
-      m.goal = Number.isFinite(v) && v > 0 ? Math.min(999, v) : null;   // leer/0 = kein Ziel
-      changedMembers.add(m.id); save(); render();       // Punkte-Ansicht zieht sofort mit
-      return;
-    }
-    const row = e.target.closest('.mrow'); if (!row) return;
-    const m = memberById(row.dataset.mid); if (!m) return;
-    if (e.target.type === 'text') m.name = e.target.value;
-    if (e.target.type === 'color') m.color = e.target.value;
-    changedMembers.add(m.id); save();
-  });
+
   const appBase = () => location.origin + location.pathname;
   const familyLink = () => shareRouteUrl(FAMILY, null);
   const appLink = () => location.origin + SHARE_BASE;
@@ -3207,87 +3314,17 @@
     });
     sh.showModal();
   }
-  document.getElementById('memberRows').addEventListener('click', async e => {
-    // Kebab öffnen/schließen (gleiche Mechanik wie im Verlauf)
-    const kb = e.target.closest('[data-mmenu]');
-    if (kb) {
-      e.stopPropagation();
-      const pop = document.getElementById('mmenu-' + kb.dataset.mmenu);
-      document.querySelectorAll('.menupop').forEach(p => { if (p !== pop) p.hidden = true; });
-      if (pop) {
-        pop.hidden = !pop.hidden;
-        if (!pop.hidden) {
-          // Richtung nach Platz waehlen (v4.55.0): oberhalb messen, sonst kippen
-          pop.classList.remove('down');
-          const row = kb.closest('.mrow'), sheet = pop.closest('.sheet') || document.body;
-          if (row && sheet) {
-            const rowTop = row.getBoundingClientRect().top;
-            const sheetTop = sheet.getBoundingClientRect().top;
-            if (rowTop - sheetTop < pop.getBoundingClientRect().height + 12) pop.classList.add('down');
-          }
-        }
-      }
-      return;
-    }
-    // Admin-Schalter (v4.55.0) — nur Admins duerfen ihn bedienen, und der
-    // LETZTE Admin kann sich nicht selbst entmachten.
-    const ad = e.target.closest('[data-madmin]');
-    if (ad) {
-      const m = memberById(ad.dataset.madmin);
-      document.querySelectorAll('.menupop').forEach(p => p.hidden = true);
-      if (!m) return;
-      if (!isAdmin()) { toast(t('Nur Admins können das ändern')); return; }
-      if (m.admin && adminMembers().length <= 1) { toast(t('Mindestens eine Person muss Admin bleiben')); return; }
-      m.admin = !m.admin; changedMembers.add(m.id); save(); renderMemberRows();
-      return;
-    }
-    // Betreut-Toggle (ohne eigenes Telefon) — v4.49.0
-    const as_ = e.target.closest('[data-massist]');
-    if (as_) {
-      const m = memberById(as_.dataset.massist);
-      if (m) { m.assisted = !m.assisted; changedMembers.add(m.id); save(); renderMemberRows(); }
-      document.querySelectorAll('.menupop').forEach(p => p.hidden = true);
-      return;
-    }
-    // v4.67.0 (Beta): Wochenziel-Feld auf-/zuklappen. Zuklappen loescht ein
-    // gesetztes Ziel NICHT — dafuer das Feld leeren (dann verschwindet es).
-    const gl = e.target.closest('[data-mgoal]');
-    if (gl) {
-      const m = memberById(gl.dataset.mgoal);
-      if (m) { goalOpen.has(m.id) && !m.goal ? goalOpen.delete(m.id) : goalOpen.add(m.id); renderMemberRows(); }
-      document.querySelectorAll('.menupop').forEach(p => p.hidden = true);
-      return;
-    }
-    // Persönlichen Link dieser Person teilen
-    const sh = e.target.closest('[data-mshare]');
-    if (sh) {
-      const m = memberById(sh.dataset.mshare);
-      if (m) shareLink(userLink(m), t('Link für {name}', { name: m.name || '—' }),
-                       t('{name}, mach mit bei {fam}:', { name: m.name || '', fam: state.famName || t('unseren Aufgaben') }));
-      document.querySelectorAll('.menupop').forEach(p => p.hidden = true);
-      return;
-    }
-    const dl = e.target.closest('[data-mdel]');
-    if (!dl) return;
-    if (state.members.length <= 1) { toast(t('Mindestens eine Person wird benötigt.')); return; }
-    const id = dl.dataset.mdel;
-    if (!confirm('Person entfernen? Ihre Punkte im Verlauf bleiben erhalten.')) return;
-    state.members = state.members.filter(m => m.id !== id);
-    if (me === id) { me = null; localStorage.removeItem(LS_ME); }
-    changedMembers.delete(id);
-    save(); renderMemberRows();
-    const _delM = state.members.find(x => x.id === id) || null;
-    deleteRemote('members', id, () => {
-      if (_delM && !state.members.some(x => x.id === id)) { state.members.push(_delM); save(); render(); }
-    });
-    render();
+  document.getElementById('memberRows').addEventListener('click', e => {
+    const row = e.target.closest('.prow[data-pid]');
+    if (row) openPersonSheet(row.dataset.pid);
   });
   document.getElementById('addMember').addEventListener('click', () => {
     const m = { id: uid(), name: '', color: palette[state.members.length % palette.length] };
     state.members.push(m); changedMembers.add(m.id);
     save(); renderMemberRows();
-    const inputs = document.querySelectorAll('#memberRows input[type=text]');
-    inputs[inputs.length - 1].focus();
+    openPersonSheet(m.id);                       // direkt benennen (v4.69.0)
+    const ps = document.getElementById('personSheet');
+    if (ps) { const n = ps.querySelector('#psName'); if (n) n.focus(); }
   });
   function finishMembers() {
     state.members = state.members.filter(m => m.name.trim() !== '');

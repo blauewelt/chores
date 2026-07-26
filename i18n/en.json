@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{pts} of {goal} points · {pct} %",
   "Beta: Wochenziel": "Beta: weekly goal",
   "Beta beendet": "Beta ended",
-  "Ø {n}/Woche": "Ø {n}/week"
+  "Ø {n}/Woche": "Ø {n}/week",
+  "Person": "Person",
+  "Persönlichen Link teilen": "Share personal link",
+  "Person löschen": "Delete person",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "Can change chores, people and settings",
+  "Andere tragen für diese Person ein": "Others log for this person",
+  "Bisher: Ø {n} Punkte/Woche": "So far: Ø {n} points/week",
+  "vor {n} Wochen": "{n} weeks ago"
 }

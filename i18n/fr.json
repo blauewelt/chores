@@ -84,7 +84,7 @@
   "«{name}» gibt es schon": "«{name}» existe déjà",
   "Stattdessen verbuchen": "Saisir plutôt celle-ci",
   "Löschen fehlgeschlagen — wiederhergestellt": "Suppression échouée — restauré",
-  "Aus": "Désactivée",
+  "Aus": "Désactivé",
   "Max. Punkte": "Points max",
   "Mehrfach tippen addiert — die Skala ist keine harte Grenze.": "Plusieurs appuis s'additionnent — l'échelle n'est pas une limite stricte.",
   "Fairli hat Neues — ansehen": "Du nouveau dans Fairli — voir",
@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{pts} sur {goal} points · {pct} %",
   "Beta: Wochenziel": "Bêta : objectif hebdo",
   "Beta beendet": "Bêta terminée",
-  "Ø {n}/Woche": "Ø {n}/semaine"
+  "Ø {n}/Woche": "Ø {n}/semaine",
+  "Person": "Personne",
+  "Persönlichen Link teilen": "Partager le lien personnel",
+  "Person löschen": "Supprimer la personne",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "Peut modifier tâches, personnes et réglages",
+  "Andere tragen für diese Person ein": "D’autres enregistrent pour cette personne",
+  "Bisher: Ø {n} Punkte/Woche": "Jusqu’ici : Ø {n} points/semaine",
+  "vor {n} Wochen": "il y a {n} semaines"
 }

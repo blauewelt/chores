@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{pts} af {goal} point · {pct} %",
   "Beta: Wochenziel": "Beta: ugemål",
   "Beta beendet": "Beta afsluttet",
-  "Ø {n}/Woche": "Ø {n}/uge"
+  "Ø {n}/Woche": "Ø {n}/uge",
+  "Person": "Person",
+  "Persönlichen Link teilen": "Del personligt link",
+  "Person löschen": "Slet person",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "Kan ændre opgaver, personer og indstillinger",
+  "Andere tragen für diese Person ein": "Andre registrerer for denne person",
+  "Bisher: Ø {n} Punkte/Woche": "Hidtil: Ø {n} point/uge",
+  "vor {n} Wochen": "for {n} uger siden"
 }

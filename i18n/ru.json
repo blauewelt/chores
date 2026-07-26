@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{pts} из {goal} очков · {pct} %",
   "Beta: Wochenziel": "Бета: цель на неделю",
   "Beta beendet": "Бета завершена",
-  "Ø {n}/Woche": "Ø {n}/нед."
+  "Ø {n}/Woche": "Ø {n}/нед.",
+  "Person": "Человек",
+  "Persönlichen Link teilen": "Поделиться личной ссылкой",
+  "Person löschen": "Удалить человека",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "Может менять дела, людей и настройки",
+  "Andere tragen für diese Person ein": "Другие отмечают за этого человека",
+  "Bisher: Ø {n} Punkte/Woche": "Пока: Ø {n} очков/нед.",
+  "vor {n} Wochen": "{n} нед. назад"
 }

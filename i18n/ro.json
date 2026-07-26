@@ -84,7 +84,7 @@
   "«{name}» gibt es schon": "«{name}» există deja",
   "Stattdessen verbuchen": "Înregistrează în schimb",
   "Löschen fehlgeschlagen — wiederhergestellt": "Ștergere eșuată — restaurat",
-  "Aus": "Dezactivată",
+  "Aus": "Oprit",
   "Max. Punkte": "Puncte max.",
   "Mehrfach tippen addiert — die Skala ist keine harte Grenze.": "Atingerile repetate se adună — scala nu e o limită strictă.",
   "Fairli hat Neues — ansehen": "Noutăți în Fairli — vezi",
@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{pts} din {goal} puncte · {pct} %",
   "Beta: Wochenziel": "Beta: obiectiv săptămânal",
   "Beta beendet": "Beta încheiată",
-  "Ø {n}/Woche": "Ø {n}/săpt."
+  "Ø {n}/Woche": "Ø {n}/săpt.",
+  "Person": "Persoană",
+  "Persönlichen Link teilen": "Distribuie linkul personal",
+  "Person löschen": "Șterge persoana",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "Poate modifica sarcini, persoane și setări",
+  "Andere tragen für diese Person ein": "Alții înregistrează pentru această persoană",
+  "Bisher: Ø {n} Punkte/Woche": "Până acum: Ø {n} puncte/săpt.",
+  "vor {n} Wochen": "acum {n} săptămâni"
 }

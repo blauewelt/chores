@@ -84,7 +84,7 @@
   "«{name}» gibt es schon": "「{name}」已存在",
   "Stattdessen verbuchen": "改为记录它",
   "Löschen fehlgeschlagen — wiederhergestellt": "删除失败 — 已恢复",
-  "Aus": "关",
+  "Aus": "关闭",
   "Max. Punkte": "最高分",
   "Mehrfach tippen addiert — die Skala ist keine harte Grenze.": "多次点按会累加——刻度并非硬性上限。",
   "Fairli hat Neues — ansehen": "Fairli 有新内容——看看",
@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{goal}分中的{pts}分 · {pct}%",
   "Beta: Wochenziel": "测试版：每周目标",
   "Beta beendet": "测试版已结束",
-  "Ø {n}/Woche": "每周Ø {n}"
+  "Ø {n}/Woche": "每周Ø {n}",
+  "Person": "成员",
+  "Persönlichen Link teilen": "分享个人链接",
+  "Person löschen": "删除成员",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "可更改家务、成员和设置",
+  "Andere tragen für diese Person ein": "由他人为此成员记录",
+  "Bisher: Ø {n} Punkte/Woche": "迄今：每周Ø {n}分",
+  "vor {n} Wochen": "{n}周前"
 }

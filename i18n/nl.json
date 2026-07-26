@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{pts} van {goal} punten · {pct} %",
   "Beta: Wochenziel": "Bèta: weekdoel",
   "Beta beendet": "Bèta beëindigd",
-  "Ø {n}/Woche": "Ø {n}/week"
+  "Ø {n}/Woche": "Ø {n}/week",
+  "Person": "Persoon",
+  "Persönlichen Link teilen": "Persoonlijke link delen",
+  "Person löschen": "Persoon verwijderen",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "Mag taken, personen en instellingen wijzigen",
+  "Andere tragen für diese Person ein": "Anderen loggen voor deze persoon",
+  "Bisher: Ø {n} Punkte/Woche": "Tot nu: Ø {n} punten/week",
+  "vor {n} Wochen": "{n} weken geleden"
 }

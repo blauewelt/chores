@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{pts} trên {goal} điểm · {pct} %",
   "Beta: Wochenziel": "Beta: mục tiêu tuần",
   "Beta beendet": "Đã kết thúc beta",
-  "Ø {n}/Woche": "Ø {n}/tuần"
+  "Ø {n}/Woche": "Ø {n}/tuần",
+  "Person": "Thành viên",
+  "Persönlichen Link teilen": "Chia sẻ liên kết cá nhân",
+  "Person löschen": "Xóa thành viên",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "Có thể thay đổi việc nhà, thành viên và cài đặt",
+  "Andere tragen für diese Person ein": "Người khác ghi giúp thành viên này",
+  "Bisher: Ø {n} Punkte/Woche": "Đến nay: Ø {n} điểm/tuần",
+  "vor {n} Wochen": "{n} tuần trước"
 }

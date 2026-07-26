@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{pts} av {goal} poäng · {pct} %",
   "Beta: Wochenziel": "Beta: veckomål",
   "Beta beendet": "Beta avslutad",
-  "Ø {n}/Woche": "Ø {n}/vecka"
+  "Ø {n}/Woche": "Ø {n}/vecka",
+  "Person": "Person",
+  "Persönlichen Link teilen": "Dela personlig länk",
+  "Person löschen": "Ta bort person",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "Kan ändra sysslor, personer och inställningar",
+  "Andere tragen für diese Person ein": "Andra loggar för denna person",
+  "Bisher: Ø {n} Punkte/Woche": "Hittills: Ø {n} poäng/vecka",
+  "vor {n} Wochen": "för {n} veckor sedan"
 }

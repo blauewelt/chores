@@ -188,5 +188,12 @@
   "{pts} von {goal} Punkten · {pct} %": "{pts} z {goal} punktów · {pct} %",
   "Beta: Wochenziel": "Beta: cel tygodniowy",
   "Beta beendet": "Beta zakończona",
-  "Ø {n}/Woche": "Ø {n}/tydz."
+  "Ø {n}/Woche": "Ø {n}/tydz.",
+  "Person": "Osoba",
+  "Persönlichen Link teilen": "Udostępnij osobisty link",
+  "Person löschen": "Usuń osobę",
+  "Darf Aufgaben, Personen und Einstellungen ändern": "Może zmieniać zadania, osoby i ustawienia",
+  "Andere tragen für diese Person ein": "Inni zapisują za tę osobę",
+  "Bisher: Ø {n} Punkte/Woche": "Dotąd: Ø {n} pkt/tydz.",
+  "vor {n} Wochen": "{n} tygodni temu"
 }
