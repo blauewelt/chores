@@ -195,5 +195,11 @@
   "Darf Aufgaben, Personen und Einstellungen ändern": "家事・メンバー・設定を変更できます",
   "Andere tragen für diese Person ein": "他の人がこの人の分を記録します",
   "Bisher: Ø {n} Punkte/Woche": "これまで: 週Ø {n}ポイント",
-  "vor {n} Wochen": "{n}週間前"
+  "vor {n} Wochen": "{n}週間前",
+  "Sync-Details": "同期の詳細",
+  "Offene Marken": "保留中のマーク",
+  "Letzter Push-Fehler": "直近の送信エラー",
+  "Keine": "なし",
+  "Keiner": "なし",
+  "Ziele lokal": "この端末の目標"
 }

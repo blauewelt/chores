@@ -195,5 +195,11 @@
   "Darf Aufgaben, Personen und Einstellungen ändern": "Dapat mengubah tugas, orang, dan pengaturan",
   "Andere tragen für diese Person ein": "Orang lain mencatat untuk orang ini",
   "Bisher: Ø {n} Punkte/Woche": "Sejauh ini: Ø {n} poin/minggu",
-  "vor {n} Wochen": "{n} minggu lalu"
+  "vor {n} Wochen": "{n} minggu lalu",
+  "Sync-Details": "Detail sinkronisasi",
+  "Offene Marken": "Tanda tertunda",
+  "Letzter Push-Fehler": "Kesalahan kirim terakhir",
+  "Keine": "Tidak ada",
+  "Keiner": "Tidak ada",
+  "Ziele lokal": "Target di perangkat"
 }

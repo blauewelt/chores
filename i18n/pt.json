@@ -195,5 +195,11 @@
   "Darf Aufgaben, Personen und Einstellungen ändern": "Pode alterar tarefas, pessoas e definições",
   "Andere tragen für diese Person ein": "Outros registam por esta pessoa",
   "Bisher: Ø {n} Punkte/Woche": "Até agora: Ø {n} pontos/semana",
-  "vor {n} Wochen": "há {n} semanas"
+  "vor {n} Wochen": "há {n} semanas",
+  "Sync-Details": "Detalhes de sincronização",
+  "Offene Marken": "Marcas pendentes",
+  "Letzter Push-Fehler": "Último erro de envio",
+  "Keine": "Nenhuma",
+  "Keiner": "Nenhum",
+  "Ziele lokal": "Metas no dispositivo"
 }

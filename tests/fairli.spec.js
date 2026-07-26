@@ -3287,6 +3287,26 @@ test.describe('Fairli', () => {
     await page.locator('#psDone').click();
   });
 
+  test('Sync-Details: das Geraet zeigt Version, Marken, letzten Push-Fehler und lokale Ziele (v4.69.4)', async ({ context, page }) => {
+    await mockBackend(context, {
+      famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      memberRows: () => [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', goal: 8 }] });
+    // ein haengender Push-Fehler + eine offene Marke aus einer frueheren Sitzung
+    await context.addInitScript(fam => {
+      localStorage.setItem('haushalt.lastpusherr:' + fam, JSON.stringify({ at: Date.now() - 60000, msg: 'upsert members → 400' }));
+    }, FAM);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(600);
+    await page.locator('#openSettings').click();
+    await page.locator('#setSyncDiag').click();
+    const sheet = page.locator('#syncDiagSheet');
+    await expect(sheet).toBeVisible();
+    await expect(sheet).toContainText('Fairli ');
+    await expect(sheet).toContainText('🧪');                          // Beta sichtbar
+    await expect(sheet).toContainText('upsert members → 400');       // der Fehler verweht nicht mehr
+    await expect(sheet).toContainText('Mira:8');                     // lokale Ziel-Wahrheit
+  });
+
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);

@@ -195,5 +195,11 @@
   "Darf Aufgaben, Personen und Einstellungen ändern": "Може змінювати справи, людей і налаштування",
   "Andere tragen für diese Person ein": "Інші відмічають за цю особу",
   "Bisher: Ø {n} Punkte/Woche": "Наразі: Ø {n} очок/тижд.",
-  "vor {n} Wochen": "{n} тижнів тому"
+  "vor {n} Wochen": "{n} тижнів тому",
+  "Sync-Details": "Деталі синхронізації",
+  "Offene Marken": "Мітки в очікуванні",
+  "Letzter Push-Fehler": "Остання помилка надсилання",
+  "Keine": "Немає",
+  "Keiner": "Немає",
+  "Ziele lokal": "Цілі на пристрої"
 }

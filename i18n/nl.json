@@ -195,5 +195,11 @@
   "Darf Aufgaben, Personen und Einstellungen ändern": "Mag taken, personen en instellingen wijzigen",
   "Andere tragen für diese Person ein": "Anderen loggen voor deze persoon",
   "Bisher: Ø {n} Punkte/Woche": "Tot nu: Ø {n} punten/week",
-  "vor {n} Wochen": "{n} weken geleden"
+  "vor {n} Wochen": "{n} weken geleden",
+  "Sync-Details": "Sync-details",
+  "Offene Marken": "Openstaande markeringen",
+  "Letzter Push-Fehler": "Laatste push-fout",
+  "Keine": "Geen",
+  "Keiner": "Geen",
+  "Ziele lokal": "Doelen op toestel"
 }

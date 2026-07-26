@@ -890,6 +890,8 @@
         <span class="seticon">↕️</span><span class="setlabel">${t('Sortierung')}</span><span class="setval">${t(SORT === 'alpha' ? 'Alphabetisch' : SORT === 'usage' ? 'Nach Nutzung' : 'Nach Erstellung')}</span><span class="chev">›</span></button>
       ${!isAdmin() ? '' : `<button class="menuitem setrow" id="setRetention" style="border-radius:12px">
         <span class="seticon">🗓️</span><span class="setlabel">${t('Verlauf aufbewahren')}</span><span class="setval">${RETENTION ? t('{n} Tage', { n: RETENTION }) : t('Unbegrenzt')}</span><span class="chev">›</span></button>`}
+      <button class="menuitem setrow" id="setSyncDiag" style="border-radius:12px">
+        <span class="seticon">🩺</span><span class="setlabel">${t('Sync-Details')}</span><span class="chev">›</span></button>
       <button class="menuitem setrow" id="setTrash" style="border-radius:12px">
         <span class="seticon">🗑️</span><span class="setlabel">${t('Papierkorb')}</span><span class="setval">${trashVisible().length || ''}</span><span class="chev">›</span></button>
       <button class="menuitem setrow" id="setSearch" style="border-radius:12px">
@@ -918,6 +920,7 @@
     </div>`;
     sh.querySelector('#closeSettings').onclick = () => sh.close();
     sh.querySelector('#setTrash').onclick = () => { sh.close(); openTrashSheet(); };
+    sh.querySelector('#setSyncDiag').onclick = () => { sh.close(); openSyncDiag(); };
     const bo = sh.querySelector('#setBetaOff');       // v4.67.0: Selbst-Ausstieg aus der Beta
     if (bo) bo.onclick = async () => {
       if (!isAdmin()) { toast(t('Nur Admins können das ändern')); return; }
@@ -1858,7 +1861,14 @@
     if (!cfg) return;
     mutationSeq++;              // jede lokale Schreibung entwertet laufende pulls
     fn().then(() => { syncOk = true; renderSyncDot(); })
-        .catch(err => { syncOk = false; renderSyncDot(); if (!err || !err.silent) toast(t('Sync fehlgeschlagen')); });
+        .catch(err => {
+          syncOk = false; renderSyncDot();
+          // v4.69.4: Diagnose-Gedaechtnis — der letzte Push-Fehler bleibt
+          // nachlesbar (Sync-Details), statt als Toast zu verwehen.
+          try { localStorage.setItem('haushalt.lastpusherr:' + FAMILY,
+            JSON.stringify({ at: Date.now(), msg: String((err && err.message) || err).slice(0, 120) })); } catch {}
+          if (!err || !err.silent) toast(t('Sync fehlgeschlagen'));
+        });
   }
 
   // ---------- Abgleich lokaler Schreibvorgaenge mit pull() ----------
@@ -3418,6 +3428,39 @@
     };
     window.visualViewport.addEventListener('resize', vvAdjust);
     window.visualViewport.addEventListener('scroll', vvAdjust);
+  }
+
+  // ---------- Sync-Details (v4.69.4): das Geraet bekommt eine Stimme ----------
+  // Read-only. Entstanden aus dem Wochenziel-Vorfall 26.07.: Server und Code
+  // waren mehrfach entlastet, aber niemand konnte sehen, was DAS GERAET
+  // glaubt. Ein Screenshot dieses Sheets beantwortet: welche Version laeuft
+  // wirklich, wann kam der letzte uebernommene Abgleich, blieb ein Push-Fehler
+  // haengen, warten Marken — und was steht LOKAL in den Zielen.
+  function openSyncDiag() {
+    let sh = document.getElementById('syncDiagSheet');
+    if (!sh) { sh = document.createElement('dialog'); sh.id = 'syncDiagSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
+    let swv = '—';
+    try { swv = (Array.from(document.scripts).map(x => x.src).join(' ').match(/haushalt-v\d+/) || [])[0] || '—'; } catch {}
+    let perr = null;
+    try { perr = JSON.parse(localStorage.getItem('haushalt.lastpusherr:' + FAMILY) || 'null'); } catch {}
+    let marks = [];
+    try { marks = JSON.parse(localStorage.getItem(LS_PENDMEMB) || '[]'); } catch {}
+    const mins = lastSyncAt ? Math.round((Date.now() - lastSyncAt) / 60000) : null;
+    const row = (k, v) => `<div style="display:flex; justify-content:space-between; gap:12px; padding:9px 2px; border-bottom:1px solid var(--line)">
+      <span style="color:var(--muted)">${k}</span><span style="text-align:right; word-break:break-all">${v}</span></div>`;
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar"><div class="slot"></div><h2>${t('Sync-Details')}</h2>
+        <div class="slot end"><button type="button" class="x" aria-label="${esc(t('Schließen'))}">×</button></div></div>
+      ${row('Version', 'Fairli ' + APP_VERSION)}
+      ${row('Familie', FAMILY.slice(0, 9) + '… · ' + (IS_ENC ? '🔒' : '—') + (BETA ? ' · 🧪' : ''))}
+      ${row(t('Letzter Abgleich: {when}', { when: '' }).replace(/: ?$/, ''), mins === null ? '—' : mins + ' min')}
+      ${row(t('Offene Marken'), marks.length ? marks.length + ' (' + marks.map(x => String(x).slice(0, 6)).join(', ') + ')' : t('Keine'))}
+      ${row(t('Letzter Push-Fehler'), perr ? new Date(perr.at).toLocaleTimeString(LOCALE) + ' · ' + esc(perr.msg) : t('Keiner'))}
+      ${row(t('Ziele lokal'), esc(state.members.map(m => (m.name || '?').slice(0, 6) + ':' + (m.goal ?? '—')).join(' ')))}
+    </div>`;
+    sh.querySelector('.x').onclick = () => sh.close();
+    sh.showModal();
   }
 
   function enableBackdropClose(dlg, onClose, guard) {

@@ -195,5 +195,11 @@
   "Darf Aufgaben, Personen und Einstellungen ändern": "Can change chores, people and settings",
   "Andere tragen für diese Person ein": "Others log for this person",
   "Bisher: Ø {n} Punkte/Woche": "So far: Ø {n} points/week",
-  "vor {n} Wochen": "{n} weeks ago"
+  "vor {n} Wochen": "{n} weeks ago",
+  "Sync-Details": "Sync details",
+  "Offene Marken": "Pending marks",
+  "Letzter Push-Fehler": "Last push error",
+  "Keine": "None",
+  "Keiner": "None",
+  "Ziele lokal": "Goals on device"
 }

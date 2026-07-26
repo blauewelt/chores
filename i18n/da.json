@@ -195,5 +195,11 @@
   "Darf Aufgaben, Personen und Einstellungen ändern": "Kan ændre opgaver, personer og indstillinger",
   "Andere tragen für diese Person ein": "Andre registrerer for denne person",
   "Bisher: Ø {n} Punkte/Woche": "Hidtil: Ø {n} point/uge",
-  "vor {n} Wochen": "for {n} uger siden"
+  "vor {n} Wochen": "for {n} uger siden",
+  "Sync-Details": "Synk-detaljer",
+  "Offene Marken": "Ventende markeringer",
+  "Letzter Push-Fehler": "Seneste push-fejl",
+  "Keine": "Ingen",
+  "Keiner": "Ingen",
+  "Ziele lokal": "Mål på enheden"
 }

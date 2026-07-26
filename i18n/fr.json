@@ -195,5 +195,11 @@
   "Darf Aufgaben, Personen und Einstellungen ändern": "Peut modifier tâches, personnes et réglages",
   "Andere tragen für diese Person ein": "D’autres enregistrent pour cette personne",
   "Bisher: Ø {n} Punkte/Woche": "Jusqu’ici : Ø {n} points/semaine",
-  "vor {n} Wochen": "il y a {n} semaines"
+  "vor {n} Wochen": "il y a {n} semaines",
+  "Sync-Details": "Détails de synchro",
+  "Offene Marken": "Marques en attente",
+  "Letzter Push-Fehler": "Dernière erreur d’envoi",
+  "Keine": "Aucune",
+  "Keiner": "Aucune",
+  "Ziele lokal": "Objectifs sur l’appareil"
 }

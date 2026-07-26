@@ -195,5 +195,11 @@
   "Darf Aufgaben, Personen und Einstellungen ändern": "Có thể thay đổi việc nhà, thành viên và cài đặt",
   "Andere tragen für diese Person ein": "Người khác ghi giúp thành viên này",
   "Bisher: Ø {n} Punkte/Woche": "Đến nay: Ø {n} điểm/tuần",
-  "vor {n} Wochen": "{n} tuần trước"
+  "vor {n} Wochen": "{n} tuần trước",
+  "Sync-Details": "Chi tiết đồng bộ",
+  "Offene Marken": "Đánh dấu đang chờ",
+  "Letzter Push-Fehler": "Lỗi gửi gần nhất",
+  "Keine": "Không có",
+  "Keiner": "Không có",
+  "Ziele lokal": "Mục tiêu trên thiết bị"
 }

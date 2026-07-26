@@ -195,5 +195,11 @@
   "Darf Aufgaben, Personen und Einstellungen ändern": "집안일, 구성원, 설정을 변경할 수 있음",
   "Andere tragen für diese Person ein": "다른 사람이 이 사람 대신 기록",
   "Bisher: Ø {n} Punkte/Woche": "지금까지: 주 Ø {n}점",
-  "vor {n} Wochen": "{n}주 전"
+  "vor {n} Wochen": "{n}주 전",
+  "Sync-Details": "동기화 세부정보",
+  "Offene Marken": "대기 중인 표시",
+  "Letzter Push-Fehler": "마지막 전송 오류",
+  "Keine": "없음",
+  "Keiner": "없음",
+  "Ziele lokal": "기기의 목표"
 }
