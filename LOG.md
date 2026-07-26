@@ -1,3 +1,20 @@
+## 2026-07-26 — v4.67.1: Wochenziel-Eingabefeld sieht aus wie die App (nicht wie 1998)
+
+- Maintainer-Befund: das Zahlenfeld wirkte «very dated». Ursache: die
+  Basis-Eingabefeld-Styles im Personen-Sheet galten nur fuer
+  input[type=text] — das neue number-Feld fiel auf den nackten
+  Browser-Standard zurueck (helles Feld, native Spinner). Die Vorschau
+  hatte inline-Styles und verdeckte den Fehler.
+- Fix: number-Inputs teilen die Basis-Regel (dunkler Grund, Rahmen,
+  Radius, 16 px); native Spin-Buttons entfernt; Breite 84 px, zentriert.
+  Computed-Styles im Harness geprueft, nicht nur per Auge.
+- Nebenbefund, gefixt: Flake im Claim-Backdrop-Test (v4.61.0) war ein
+  ECHTES Rennen — die «Später»-Marke hing am close-EVENT (queued task)
+  und konnte gegen sofortige Navigation verlieren. Backdrop/Wischen
+  markiert jetzt synchron; onclose bleibt Netz fuer close()-Aufrufe;
+  Test tippt den echten Backdrop (3× wiederholt gruen).
+- APP_VERSION 4.67.1, SW-Cache haushalt-v163
+
 ## 2026-07-26 — v4.67.0: Wochenziel als BETA — pro Haushalt schaltbar, fuer alle anderen inert
 
 MAINTAINER-WUNSCH: Wochenziel ausprobieren, ohne dass sich fuer irgendeine

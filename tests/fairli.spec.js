@@ -2508,7 +2508,10 @@ test.describe('Fairli', () => {
     ] });
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('#claimSheet')).toBeVisible();
-    await page.evaluate(() => document.getElementById('claimSheet').close());   // wie Backdrop/Wischen
+    // ECHTER Backdrop-Tipp (Klick auf das dialog-Element selbst) — markiert
+    // synchron; .close() liesse das close-Event gegen den Reload verlieren
+    await page.evaluate(() => document.getElementById('claimSheet')
+      .dispatchEvent(new MouseEvent('click', { bubbles: true })));
     await page.reload();
     await page.waitForTimeout(900);
     await expect(page.locator('#claimSheet')).toBeHidden();        // Marke gesetzt, Ruhe

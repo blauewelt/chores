@@ -294,11 +294,12 @@
   input[type=range]::-moz-range-thumb{width:26px; height:26px; border-radius:50%; background:#fff; border:4px solid var(--accent)}
 
   .mrow{display:flex; gap:8px; align-items:center; margin-bottom:8px}
-  .mrow input[type=text]{flex:1; padding:10px 12px; font-size:16px; border:1px solid var(--line); border-radius:10px; background:#161D19; color:var(--ink)}
+  .mrow input[type=text], .mrow input[type=number]{flex:1; padding:10px 12px; font-size:16px; border:1px solid var(--line); border-radius:10px; background:#161D19; color:var(--ink)}
   .mrow input[type=color]{width:42px; height:42px; border:none; background:none; padding:0; cursor:pointer}
   .goalrow{align-items:center; gap:10px; flex-wrap:wrap}
   .goallbl{color:var(--muted); font-size:14px; flex:none}
-  .goalrow input.goalinp{flex:none; width:78px; text-align:center}
+  .goalrow input.goalinp{flex:none; width:84px; text-align:center; appearance:textfield; -moz-appearance:textfield}
+  .goalinp::-webkit-outer-spin-button, .goalinp::-webkit-inner-spin-button{-webkit-appearance:none; margin:0}
   .goalhint{color:var(--muted); font-size:12.5px; flex:1 1 100%}
   .mrow .menupop{top:auto; bottom:100%; margin:0 0 4px}
   /* Kein Platz nach oben (erste Zeilen, seit v4.55.0 vier Eintraege)?
@@ -526,7 +527,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.67.0';
+  const APP_VERSION = '4.67.1';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1178,7 +1179,14 @@
     claimShown = true;
     try { sessionStorage.removeItem('fairli.claimAfterMig'); } catch {}
     let sh = document.getElementById('claimSheet');
-    if (!sh) { sh = document.createElement('dialog'); sh.id = 'claimSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
+    const markLater = () => { try { localStorage.setItem(LS_CLAIM(), '1'); } catch {} };
+    if (!sh) {
+      sh = document.createElement('dialog'); sh.id = 'claimSheet'; document.body.appendChild(sh);
+      // Marke SYNCHRON beim Backdrop-/Wisch-Schliessen (v4.67.1): das
+      // close-EVENT ist ein queued task und verliert gegen sofortige
+      // Navigation; onclose unten bleibt als Netz fuer close()-Aufrufe.
+      enableBackdropClose(sh, () => { markLater(); sh.close(); });
+    }
     sh.innerHTML = `<div class="sheet">
       <div class="grabber"></div>
       <div class="sheetbar">
@@ -1196,9 +1204,10 @@
     sh.querySelector('#claimLater').onclick = dismiss;
     sh.querySelector('#claimSkip').onclick = dismiss;
     sh.querySelectorAll('[data-claim]').forEach(b => b.onclick = () => claimIdentity(memberById(b.dataset.claim)));
-    // v4.61.0: JEDES Schliessen (auch Backdrop/Wischen) zaehlt als «Später» —
-    // sonst nervt das Sheet bei jedem Besuch erneut.
-    sh.onclose = () => { try { localStorage.setItem(LS_CLAIM(), '1'); } catch {} };
+    // v4.61.0: JEDES Schliessen zaehlt als «Später» — sonst nervt das Sheet
+    // bei jedem Besuch erneut. Backdrop/Wischen markiert synchron (oben),
+    // onclose faengt programmatische close()-Aufrufe.
+    sh.onclose = markLater;
     sh.showModal();
   }
 
