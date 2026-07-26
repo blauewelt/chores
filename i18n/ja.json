@@ -184,6 +184,7 @@
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{total}件中{n}件を読み込み · {ptotal}ポイント中{p}ポイント",
   "Für {name} ist diese Woche noch nichts eingetragen.": "今週の{name}の記録はまだありません。",
   "Wochenziel": "週の目標",
+  "ohne Wochenziel": "週の目標なし",
   "Punkte pro Woche · leer = kein Ziel": "週あたりのポイント · 空欄 = 目標なし",
   "{pts} von {goal} Punkten": "{goal}ポイント中{pts}",
   "{pts} von {goal} Punkten · {pct} %": "{goal}ポイント中{pts} · {pct}%",

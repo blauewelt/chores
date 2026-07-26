@@ -3157,9 +3157,81 @@ test.describe('Fairli', () => {
     await expect(page.locator('.score .bar u.tick')).toHaveCount(0);
     await expect(page.locator('.score .bar.goal')).toHaveCount(0);
     await expect(page.locator('#list')).not.toContainText('%');
+    await expect(page.locator('.scoresep')).toHaveCount(0);   // reine Liste = kein Trenner
     // relativer Balken wie bisher: der Beste fuellt ganz
     near((await barGeo(page, 'm-a')).fill, 100);
     near((await barGeo(page, 'm-b')).fill, 33);
+  });
+
+  // ---------- v4.71.0: gemischter Zustand = zwei Bloecke ----------
+
+  test('Teilweise gesetzte Ziele: Trenner sagt an, wo der Massstab wechselt (v4.71.0)', async ({ context, page }) => {
+    // Live-Befund: im gemischten Zustand standen zwei Balkenarten unkommentiert
+    // untereinander und massen Verschiedenes (Ziel vs. relativ zum Besten).
+    // 1 von 100 Punkten trug die Krone, waehrend 80 Punkte darunter voll
+    // ausschlugen. Die Reihenfolge (erst Ziele, dann Ziellose) ist unveraendert
+    // — neu ist, dass die Liste SAGT, dass sie zwei Register hat.
+    await goalFixture(context, [
+      { id: 'm-a', name: 'Mira', goal: 100, pts: 1 },     // Ziel,   1 %
+      { id: 'm-b', name: 'Timon', goal: 30, pts: 0 },     // Ziel,   0 %
+      { id: 'm-c', name: 'Noel', goal: null, pts: 80 },   // kein Ziel, fleissig
+      { id: 'm-d', name: 'Carla', goal: null, pts: 40 },  // kein Ziel
+    ]);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    // Block 1 nach Zielerreichung, Block 2 nach Punkten — beide fuer sich sortiert
+    await expect(page.locator('.score .name')).toHaveText([/Mira/, /Timon/, /Noel/, /Carla/]);
+    // Der Trenner steht GENAU zwischen den Bloecken, nicht irgendwo
+    await expect(page.locator('.scoresep')).toHaveCount(1);
+    await expect(page.locator('.scoresep')).toHaveText('ohne Wochenziel');
+    const order = await page.locator('#list > div').evaluateAll(
+      els => els.map(e => e.className.split(' ')[0] + (e.dataset.mid ? ':' + e.dataset.mid : '')));
+    expect(order).toEqual(['period', 'score:m-a', 'score:m-b', 'scoresep', 'score:m-c', 'score:m-d']);
+    await expect(page.locator('.score .bar.goal')).toHaveCount(2);   // nur oben Ziel-Balken
+  });
+
+  test('Der ziellose Block hat SEINEN eigenen Massstab — ein fleissiger Ziel-Träger staucht ihn nicht mehr (v4.71.0)', async ({ context, page }) => {
+    // Vorher war die Bezugsgroesse der beste ueberhaupt: Mira (Ziel, 90 Punkte)
+    // drueckte Noel auf 44 % und Carla auf 22 %, obwohl Noel der Beste seines
+    // Blocks ist. Zwei Register, zwei Bezugsgroessen.
+    await goalFixture(context, [
+      { id: 'm-a', name: 'Mira', goal: 100, pts: 90 },    // Ziel UND die meisten Punkte
+      { id: 'm-c', name: 'Noel', goal: null, pts: 40 },   // Bester ohne Ziel
+      { id: 'm-d', name: 'Carla', goal: null, pts: 20 },
+    ]);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    near((await barGeo(page, 'm-c')).fill, 100);   // 40 von 40 — nicht 40 von 90
+    near((await barGeo(page, 'm-d')).fill, 50);    // 20 von 40 — nicht 20 von 90
+    near((await barGeo(page, 'm-a')).fill, 72);    // Ziel-Balken unberuehrt: 90 % × 0,8
+  });
+
+  test('Gemischt: die Krone bleibt beim Ziel-Block und verschwindet, wenn dort niemand Punkte hat (v4.71.0)', async ({ context, page }) => {
+    await goalFixture(context, [
+      { id: 'm-a', name: 'Mira', goal: 30, pts: 0 },      // Ziel, aber nichts getan
+      { id: 'm-b', name: 'Timon', goal: null, pts: 80 },  // kein Ziel, fleissig
+    ]);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    // Niemand hat sein Ziel angefasst → gar keine Krone. Ehrlicher, als sie fuer
+    // 0 % zu vergeben (alte Regel) oder sie in den ziellosen Block zu schieben.
+    await expect(page.locator('#list')).not.toContainText('👑');
+    await expect(page.locator('.scoresep')).toHaveCount(1);
+  });
+
+  test('Gemischt nur in «Diese Woche»: unter «Gesamt» gibt es keine Blöcke (v4.71.0)', async ({ context, page }) => {
+    await goalFixture(context, [
+      { id: 'm-a', name: 'Mira', goal: 30, pts: 12 },
+      { id: 'm-b', name: 'Timon', goal: null, pts: 80 },
+    ]);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('.scoresep')).toHaveCount(1);
+    await page.locator('[data-p="all"]').click();
+    // «Gesamt» ist das absolute Register: keine Ziele, kein Trenner, Punkte zaehlen
+    await expect(page.locator('.scoresep')).toHaveCount(0);
+    await expect(page.locator('.score .name').first()).toContainText('Timon');
+    await expect(page.locator('#list')).not.toContainText('%');
   });
 
   test('Beta: «Gesamt» zeigt Ø Punkte/Woche als Messlatte fürs Wochenziel — ohne Beta nicht (v4.68.0)', async ({ context, page }) => {

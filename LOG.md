@@ -1,3 +1,39 @@
+## 2026-07-26 — v4.71.0 (SW haushalt-v172): Teilweise gesetzte Ziele — zwei Bloecke statt einer gemischten Liste
+
+- Befund auf Nachfrage des Maintainers («soll man Ziele fuer alle
+  empfehlen?»), live nachgestellt statt hergeleitet: im GEMISCHTEN
+  Zustand standen zwei Kartenarten unkommentiert untereinander und
+  massen Verschiedenes. Oben Ziel-Balken (Bezug: das eigene Ziel), unten
+  relative Balken (Bezug: der Wochenbeste). Konkret trug «1 von 100
+  Punkten» die Krone, waehrend zwei Karten tiefer 80 Punkte den Balken
+  voll ausschlugen. Wer die Spalte ueberflog, las das Gegenteil der
+  Rangliste — genau der Fall aus §11 «was verspricht die UI».
+- Fix (Variante 1 von drei vorgelegten): der ziellose Teil bekommt einen
+  eigenen Block mit Trennzeile «ohne Wochenziel» (.scoresep, 19 Sprachen).
+  Die REIHENFOLGE ist unveraendert (erst Ziele nach Zielerreichung, dann
+  Ziellose nach Punkten) — neu ist, dass die Liste ansagt, wo das
+  Register wechselt.
+- Zweitens: die Bezugsgroesse der relativen Balken ist jetzt der beste
+  ZIELLOSE, nicht der beste ueberhaupt. Vorher stauchte ein fleissiger
+  Ziel-Traeger den ganzen unteren Block (90 Punkte mit Ziel druecken den
+  40-Punkte-Besten auf 44 %). Ohne Ziele im Haushalt ist das exakt der
+  alte Wert — die Zusage an alle anderen Haushalte bleibt.
+- Trenner NUR im gemischten Zustand und NUR in «Diese Woche»; «Gesamt»
+  bleibt das absolute Register. Krone unveraendert: sie haengt am ersten
+  Platz und faellt weg, wenn dort niemand Punkte hat.
+- Vier Tests, beide Negativkontrollen gefahren (Trenner entfernt → 3 rot;
+  alter globaler Massstab → 1 rot). Lehre aus dem ersten Anlauf: der
+  erste Test hiess «Ziellose rutschen nicht mehr nach unten» und war
+  GRUEN, auch als die alte Sortierung wieder eingesetzt wurde — die
+  Reihenfolge war naemlich schon vorher dieselbe. Testnamen, die mehr
+  behaupten als der Test prueft, sind ein eigener Fehler.
+- BEWUSST NICHT gebaut: ein Banner «setz Ziele fuer alle». Ein Hinweis
+  macht den gemischten Zustand nicht ehrlich, er draengt nur heraus —
+  und man landet unvermeidlich wieder drin (neues Mitglied). Haushalte,
+  die absichtlich nur den Kindern Ziele geben, wuerden dauergenoergelt.
+  Vertagt in §12: Vorschlagswerte aus dem Ø/Woche beim Setzen des ERSTEN
+  Ziels anbieten, einmalig und ablehnbar.
+
 ## 2026-07-26 — v4.70.1 (SW haushalt-v171): Ziel-Karte zeigt nur noch die Prozentzahl gross
 
 - Maintainer-Entscheid nach der visuellen Abnahme von v4.70.0: die kleine

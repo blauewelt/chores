@@ -179,6 +179,12 @@
   .score .bar.capped::after{content:''; position:absolute; right:-1px; top:-2px; bottom:-2px;
     width:7px; clip-path:polygon(0 0, 100% 50%, 0 100%); background:var(--ink); opacity:.85}
   .score .sub{font-size:14px; color:var(--muted); margin-top:6px}
+  /* Trenner zwischen Ziel-Block und ziellosem Block (v4.71.0). Er ist die
+     Ansage, dass ab hier ein ANDERER Massstab gilt — ohne ihn stuenden zwei
+     Balkenarten unkommentiert untereinander und sagten Verschiedenes. */
+  .scoresep{display:flex; align-items:center; gap:10px; margin:18px 2px 10px;
+    color:var(--muted); font-size:12.5px; font-weight:600; letter-spacing:.02em}
+  .scoresep::before, .scoresep::after{content:''; flex:1; height:1px; background:var(--line)}
   .period{display:flex; gap:6px; margin:4px 4px 12px}
   .period button{border:1px solid var(--line); background:var(--card); border-radius:999px;
     padding:6px 14px; font-size:14px; font-weight:600; color:var(--muted); cursor:pointer}
@@ -563,7 +569,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.70.1';
+  const APP_VERSION = '4.71.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2252,15 +2258,30 @@
       // WICHTIG: nie `t` nennen — das schattet die i18n-Funktion t()!
       // (Live-Bug v4.27–v4.31: «t is not a function», Punkte-Tab leer)
       const tot = totals();
-      const max = Math.max(1, ...Object.values(tot).map(x => x.pts));
       // v4.67.0 (Beta): Wochenziel. Wer ein Ziel hat, wird nach ZIELERREICHUNG
       // gereiht — so kann ein Kind mit 6/8 vor Erwachsenen mit mehr Punkten
       // stehen. Nur in «Diese Woche»: «Gesamt» bleibt das absolute Register.
       // Ohne Ziele (alle anderen Haushalte) ist die Sortierung identisch zu vorher.
       const goalOf = m => (BETA && period === 'week' && m.goal) || 0;
-      const quota = m => goalOf(m) ? tot[m.id].pts / goalOf(m) : -1;
-      const ranked = state.members.slice().sort((a, b) =>
-        quota(b) - quota(a) || tot[b.id].pts - tot[a.id].pts);
+      const quota = m => tot[m.id].pts / goalOf(m);
+      // v4.71.0 (Beta): ZWEI BLOECKE statt einer gemischten Liste. Vorher gab
+      // quota() fuer «kein Ziel» −1 zurueck — jeder Ziellose sortierte sich
+      // damit unter JEDEN mit Ziel, auch unter jemanden bei 0 %. Live nachge-
+      // stellt: 1 von 100 Punkten trug die Krone vor 80 Punkten ohne Ziel.
+      // Schlimmer noch: beide Kartentypen sahen gleich aus, massen aber
+      // Verschiedenes (Ziel vs. relativ zum Wochenbesten). Jetzt hat jeder
+      // Block seinen eigenen Massstab, und der Trenner sagt, welcher gilt.
+      const withGoal = state.members.filter(m => goalOf(m))
+        .sort((a, b) => quota(b) - quota(a) || tot[b.id].pts - tot[a.id].pts);
+      const noGoal = state.members.filter(m => !goalOf(m))
+        .sort((a, b) => tot[b.id].pts - tot[a.id].pts);
+      const ranked = withGoal.concat(noGoal);
+      // Trenner NUR im gemischten Zustand — eine reine Liste bleibt eine Liste.
+      const sepAt = withGoal.length && noGoal.length ? withGoal.length : -1;
+      // Bezugsgroesse der relativen Balken ist der beste ZIELLOSE, nicht der
+      // beste ueberhaupt: sonst staucht ein fleissiger Ziel-Traeger den ganzen
+      // unteren Block. Ohne Ziele im Haushalt ist das exakt der alte Wert.
+      const max = Math.max(1, ...noGoal.map(m => tot[m.id].pts));
       // v4.70.0 (Beta): Der Ziel-Balken hat KOPFRAUM. 100 % des Ziels liegen
       // bei GOALW = 80 % der Balkenbreite, markiert durch einen Strich; der
       // Rest ist die Uebererfuellung. Vorher endete der Balken bei 100 % —
@@ -2287,6 +2308,7 @@
           const g = goalOf(m), pts = tot[m.id].pts;
           const pct = g ? Math.round(pts / g * 100) : 0;
           return `
+          ${i === sepAt ? `<div class="scoresep">${esc(t('ohne Wochenziel'))}</div>` : ''}
           <div class="score" data-mid="${m.id}" role="button" tabindex="0"
                aria-label="${esc(t('Verlauf von {name} anzeigen', { name: m.name }))}">
             <div class="top">

@@ -184,6 +184,7 @@
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} af {total} poster indlæst · {p} af {ptotal} point",
   "Für {name} ist diese Woche noch nichts eingetragen.": "Der er endnu ikke registreret noget for {name} i denne uge.",
   "Wochenziel": "Ugemål",
+  "ohne Wochenziel": "uden ugemål",
   "Punkte pro Woche · leer = kein Ziel": "Point pr. uge · tom = intet mål",
   "{pts} von {goal} Punkten": "{pts} af {goal} point",
   "{pts} von {goal} Punkten · {pct} %": "{pts} af {goal} point · {pct} %",

@@ -399,6 +399,19 @@ Information, für die er da ist. Erreicht/offen darf NIE nur an der Farbe
 hängen (Zahl und Strich tragen es mit). Ohne Ziel ist die Karte
 unverändert — dafür gibt es einen eigenen Test.
 
+**Gemischter Zustand = zwei Blöcke (v4.71.0).** Haben nur EINIGE ein
+Ziel, trennt `.scoresep` («ohne Wochenziel») den Ziel-Block vom
+ziellosen. Reihenfolge wie vorher (erst Ziele nach Zielerreichung, dann
+Ziellose nach Punkten); neu ist die Ansage, dass ab dort ein anderes
+Register gilt — vorher standen zwei Balkenarten unkommentiert
+untereinander und massen Verschiedenes, sodass die Spalte das Gegenteil
+der Rangliste erzählte. Dazu: die Bezugsgrösse der relativen Balken ist
+der beste ZIELLOSE, nicht der beste überhaupt (sonst staucht ein
+fleissiger Ziel-Träger den ganzen unteren Block). **Stehende Regel:
+zwei Massstäbe in einer Liste brauchen eine sichtbare Grenze — oder sie
+müssen zu einem Massstab werden.** Trenner nur im gemischten Zustand und
+nur in «Diese Woche».
+
 ### Identität übernehmen (v4.60.0)
 claimIdentity()/maybeOfferClaim(): EIN Mechanismus für Bestands-Link
 und Nach-Migration (sessionStorage fairli.claimAfterMig). Wachen: nur
@@ -851,6 +864,16 @@ Live-Vorfaellen (Wochenziel «musste zweimal gespeichert werden»,
 - **mutationSeq-Boot-Verursacher** (v4.36.2 beobachtet): irgendetwas
   pusht während des Boot-Pulls; durch die Zweig-Neuordnung unschädlich,
   Verursacher unidentifiziert.
+- **Ziel-Vorschläge statt Ziel-Nudge** (Beta, erwogen und vertagt
+  26.07.): im gemischten Zustand einen Banner «setz Ziele für alle» zu
+  zeigen, wurde VERWORFEN — er macht den Zustand nicht ehrlich (das tut
+  v4.71.0), man landet unvermeidlich wieder drin (neues Mitglied), und
+  Haushalte, die absichtlich nur den Kindern Ziele geben, würden
+  dauergenörgelt. Falls doch: EINMALIG direkt nach dem ersten gesetzten
+  Ziel, mit VORGESCHLAGENEN Werten aus dem Ø/Woche (v4.68.0) statt eines
+  leeren Formulars, ablehnbar pro Haushalt, und mit dem Satz «Ziele
+  dürfen unterschiedlich sein» — sonst setzt man reflexhaft für alle
+  dieselbe Zahl und es ist wieder ein Punkterennen.
 - **Kunst-Privacy-Schalter** für verschlüsselte Familien (Pollinations
   sieht Kachel-Namen als Prompts).
 - **Nudge für Alt-Familien-Admins** zur Verschlüsselungs-Migration

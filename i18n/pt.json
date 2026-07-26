@@ -184,6 +184,7 @@
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} de {total} registos carregados · {p} de {ptotal} pontos",
   "Für {name} ist diese Woche noch nichts eingetragen.": "Esta semana ainda não há nada registado para {name}.",
   "Wochenziel": "Meta semanal",
+  "ohne Wochenziel": "sem meta semanal",
   "Punkte pro Woche · leer = kein Ziel": "Pontos por semana · vazio = sem meta",
   "{pts} von {goal} Punkten": "{pts} de {goal} pontos",
   "{pts} von {goal} Punkten · {pct} %": "{pts} de {goal} pontos · {pct} %",

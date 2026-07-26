@@ -184,6 +184,7 @@
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} of {total} entries loaded · {p} of {ptotal} points",
   "Für {name} ist diese Woche noch nichts eingetragen.": "Nothing has been logged for {name} this week yet.",
   "Wochenziel": "Weekly goal",
+  "ohne Wochenziel": "no weekly goal",
   "Punkte pro Woche · leer = kein Ziel": "Points per week · empty = no goal",
   "{pts} von {goal} Punkten": "{pts} of {goal} points",
   "{pts} von {goal} Punkten · {pct} %": "{pts} of {goal} points · {pct} %",

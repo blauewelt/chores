@@ -184,6 +184,7 @@
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} din {total} intrări încărcate · {p} din {ptotal} puncte",
   "Für {name} ist diese Woche noch nichts eingetragen.": "Săptămâna aceasta nu există încă nimic pentru {name}.",
   "Wochenziel": "Obiectiv săptămânal",
+  "ohne Wochenziel": "fără obiectiv săptămânal",
   "Punkte pro Woche · leer = kein Ziel": "Puncte pe săptămână · gol = fără obiectiv",
   "{pts} von {goal} Punkten": "{pts} din {goal} puncte",
   "{pts} von {goal} Punkten · {pct} %": "{pts} din {goal} puncte · {pct} %",

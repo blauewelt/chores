@@ -184,6 +184,7 @@
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{total} kayıttan {n} tanesi yüklendi · {ptotal} puandan {p}",
   "Für {name} ist diese Woche noch nichts eingetragen.": "Bu hafta {name} için henüz kayıt yok.",
   "Wochenziel": "Haftalık hedef",
+  "ohne Wochenziel": "haftalık hedefi yok",
   "Punkte pro Woche · leer = kein Ziel": "Haftalık puan · boş = hedef yok",
   "{pts} von {goal} Punkten": "{goal} puandan {pts}",
   "{pts} von {goal} Punkten · {pct} %": "{goal} puandan {pts} · %{pct}",

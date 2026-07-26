@@ -184,6 +184,7 @@
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} entrées sur {total} chargées · {p} points sur {ptotal}",
   "Für {name} ist diese Woche noch nichts eingetragen.": "Rien n’a encore été enregistré pour {name} cette semaine.",
   "Wochenziel": "Objectif hebdo",
+  "ohne Wochenziel": "sans objectif hebdo",
   "Punkte pro Woche · leer = kein Ziel": "Points par semaine · vide = aucun objectif",
   "{pts} von {goal} Punkten": "{pts} sur {goal} points",
   "{pts} von {goal} Punkten · {pct} %": "{pts} sur {goal} points · {pct} %",

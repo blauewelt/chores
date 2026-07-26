@@ -184,6 +184,7 @@
   "{n} von {total} Einträgen geladen · {p} von {ptotal} Punkten": "{n} voci su {total} caricate · {p} punti su {ptotal}",
   "Für {name} ist diese Woche noch nichts eingetragen.": "Questa settimana non c’è ancora nulla per {name}.",
   "Wochenziel": "Obiettivo settimanale",
+  "ohne Wochenziel": "senza obiettivo settimanale",
   "Punkte pro Woche · leer = kein Ziel": "Punti a settimana · vuoto = nessun obiettivo",
   "{pts} von {goal} Punkten": "{pts} di {goal} punti",
   "{pts} von {goal} Punkten · {pct} %": "{pts} di {goal} punti · {pct} %",
