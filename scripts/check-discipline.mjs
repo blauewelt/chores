@@ -56,8 +56,14 @@ let leaks = 0;
 for (const f of walk('.')) {
   const txt = readFileSync(f, 'utf8');
   for (const tok of new Set((txt.toLowerCase().match(/[a-z0-9][a-z0-9-]{3,}/g) || []))) {
-    if (!ALLOW.has(tok) && BANNED_HASHES.has(sha(tok))) {
-      console.error(`FEHLER: Anonymisierungs-Wache — «${tok}» in ${f}`); leaks++;
+    if (ALLOW.has(tok)) continue;
+    // v4.69.4: auch PRAEFIXE pruefen — «Christinas» (Genitiv) tokenisierte an
+    // «christina» vorbei und stand seit 12.07. unbemerkt im oeffentlichen LOG.
+    // Gebeugte Formen duerfen die Wache nicht mehr unterlaufen.
+    for (let L = 4; L <= tok.length; L++) {
+      if (BANNED_HASHES.has(sha(tok.slice(0, L)))) {
+        console.error(`FEHLER: Anonymisierungs-Wache — «${tok}» in ${f}`); leaks++; break;
+      }
     }
   }
   for (const re of BANNED_RE) {

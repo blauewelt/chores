@@ -2601,9 +2601,9 @@ Verwirrung:
   Deep-URL im plist
 - APP_VERSION → 4.20.0, SW cache → haushalt-v75
 
-## 2026-07-12 — v4.19.5: Christinas Fall — Icons heissen auch «Haushalt», Paste heilt
+## 2026-07-12 — v4.19.5: Der Icon-Fall eines Familienmitglieds — Icons heissen auch «Haushalt», Paste heilt
 
-- Christinas Test: 3 «Fairli»-Icons geloescht, «Link geoeffnet» → trotzdem
+- Der Live-Test: 3 «Fairli»-Icons geloescht, «Link geoeffnet» → trotzdem
   Standalone-Einstiegsseite. Signatur (standalone + kein Referrer + blanke
   index.html) beweist: ein VIERTES veraltetes Icon startete. Ursache des
   Such-Fehlschlags per Commit-Historie belegt: fruehe Versionen hiessen
@@ -2611,7 +2611,7 @@ Verwirrung:
   document.title = Familienname → Icons heissen je nach Aera «Haushalt»,
   «Fanti WG» oder «Fairli». Spotlight-Suche nach «Fairli» findet nur die
   juengste Generation
-- Wichtig: goto() speichert die Route VOR der Navigation → Christinas
+- Wichtig: goto() speichert die Route VOR der Navigation → ihre
   Link-Einfuegen IM veralteten Clip hat dessen Storage geheilt — dieses
   Icon restauriert ab jetzt dauerhaft die Familien-Sicht (family-first,
   durch Regressionstest «gesundes Admin-Icon» abgedeckt). Kein Loeschen
