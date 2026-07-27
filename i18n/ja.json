@@ -189,6 +189,7 @@
   "{pts} von {goal} Punkten": "{goal}ポイント中{pts}",
   "{pts} von {goal} Punkten · {pct} %": "{goal}ポイント中{pts} · {pct}%",
   "Beta: Wochenziel": "ベータ: 週の目標",
+  "Beta: Adressleiste": "ベータ: アドレスバー",
   "Beta beendet": "ベータを終了しました",
   "Ø {n}/Woche": "週Ø {n}",
   "Person": "メンバー",

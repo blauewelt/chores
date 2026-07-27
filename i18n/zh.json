@@ -189,6 +189,7 @@
   "{pts} von {goal} Punkten": "{goal}分中的{pts}分",
   "{pts} von {goal} Punkten · {pct} %": "{goal}分中的{pts}分 · {pct}%",
   "Beta: Wochenziel": "测试版：每周目标",
+  "Beta: Adressleiste": "测试版：地址栏",
   "Beta beendet": "测试版已结束",
   "Ø {n}/Woche": "每周Ø {n}",
   "Person": "成员",

@@ -189,6 +189,7 @@
   "{pts} von {goal} Punkten": "{goal}점 중 {pts}점",
   "{pts} von {goal} Punkten · {pct} %": "{goal}점 중 {pts}점 · {pct}%",
   "Beta: Wochenziel": "베타: 주간 목표",
+  "Beta: Adressleiste": "베타: 주소 표시줄",
   "Beta beendet": "베타 종료됨",
   "Ø {n}/Woche": "주 Ø {n}",
   "Person": "구성원",

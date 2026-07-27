@@ -3113,29 +3113,54 @@ test.describe('Fairli', () => {
 
   // ---------- v4.67.0: Wochenziel als Beta (families.beta) ----------
 
-  test('OHNE Beta ist ALLES unverändert: kein 🎯 im Personen-Sheet, keine Ziel-Sortierung (v4.67.0)', async ({ context, page }) => {
-    // Die Zusage an alle anderen Haushalte: der neue Code ist inert.
+  test('Wochenziel ist Standard: auch OHNE families.beta gibt es Zielfeld, 🎯-Marke und Ziel-Rangliste (v4.74.0)', async ({ context, page }) => {
+    // Umkehrung des v4.67.0-Tests: damals war die Zusage «ohne Beta inert».
+    // Seit v4.74.0 gilt das Gegenteil — das Wochenziel ist Standard, und der
+    // Beta-Schalter gehoert nur noch dem URL-Experiment (v4.73.0).
     await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }],
       memberRows: () => [
         { id: 'm-chris', name: 'Timon', color: '#2FAE6A', family_id: FAM, url_slug: 'slugchris1', admin: true, goal: null },
-        { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', goal: 8 },  // Ziel in den Daten …
+        { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', goal: 8 },
       ] });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.waitForTimeout(700);
     await page.evaluate(() => document.getElementById('openMembers').click());
     await expect(page.locator('#memberSheet')).toBeVisible();
-    await expect(page.locator('#memberSheet .assistbadge', { hasText: '🎯' })).toHaveCount(0);
+    await expect(page.locator('#memberSheet .assistbadge', { hasText: '🎯8' })).toBeVisible();
     await openPerson(page, 'm-mira');
-    await expect(page.locator('#psGoal')).toHaveCount(0);        // kein Zielfeld ohne Beta …
-    await expect(page.locator('#psChart')).toHaveCount(0);       // … und keine Wochen-Balken
+    await expect(page.locator('#psGoal')).toHaveValue('8');      // Zielfeld ohne Beta …
+    await expect(page.locator('#psChart')).toHaveCount(1);       // … und Wochen-Balken
     await page.locator('#psDone').click();
     await page.evaluate(() => document.getElementById('memberSheet').close());
-    // … ändert ohne Beta NICHTS an der Punkte-Ansicht: Sortierung nach Punkten
+    // Rangliste nach Zielerreichung, Trenner fuer den ziellosen Block
     await page.getByRole('tab', { name: 'Punkte' }).click();
-    await expect(page.locator('.score .sub').first()).toContainText('erledigt');
-    await expect(page.locator('#list')).not.toContainText('%');
+    await expect(page.locator('.score .num.pct').first()).toBeVisible();
+    await expect(page.locator('.scoresep')).toHaveText('ohne Wochenziel');
+    // Der Beta-Schalter bleibt sichtbar NUR fuer Beta-Haushalte …
     await page.locator('#openSettings').click();
-    await expect(page.locator('#setBetaOff')).toHaveCount(0);        // kein Beta-Hinweis
+    await expect(page.locator('#setBetaOff')).toHaveCount(0);
+  });
+
+  test('Der Beta-Schalter heisst jetzt «Adressleiste» und schaltet NICHT das Wochenziel ab (v4.74.0)', async ({ context, page }) => {
+    // Regressionswache gegen die Kopplung: waere das Wochenziel weiter an
+    // BETA gehaengt, haette «Beta beenden» es einem Haushalt weggenommen.
+    await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      memberRows: () => [
+        { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: true, goal: 8 },
+      ] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForTimeout(700);
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setBetaOff')).toContainText('Adressleiste');
+    await expect(page.locator('#setBetaOff')).not.toContainText('Wochenziel');
+    await page.locator('#setBetaOff').click();
+    await page.waitForTimeout(300);
+    // Beta aus — das Ziel bleibt trotzdem da
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('.score .num.pct').first()).toBeVisible();
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await openPerson(page, 'm-mira');
+    await expect(page.locator('#psGoal')).toHaveValue('8');
   });
 
   test('MIT Beta: Ziel setzen im Personen-Sheet, Kind führt die Wochen-Rangliste an (v4.67.0)', async ({ context, page }) => {
@@ -3408,14 +3433,14 @@ test.describe('Fairli', () => {
     await expect(page.locator('#list')).not.toContainText('%');
   });
 
-  test('Beta: «Gesamt» zeigt Ø Punkte/Woche als Messlatte fürs Wochenziel — ohne Beta nicht (v4.68.0)', async ({ context, page }) => {
+  test('«Gesamt» zeigt Ø Punkte/Woche als Messlatte fürs Wochenziel — für alle Haushalte (v4.68.0/v4.74.0)', async ({ context, page }) => {
     const mk = (id, off, pts) => ({ id, chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
       member_id: 'm-mira', member_name: 'Mira', points: pts,
       done_at: new Date(Date.now() - off).toISOString(), created_at: new Date(Date.now() - off).toISOString(), family_id: FAM });
     // Ersteintrag vor ~4 Wochen, 20 Punkte gesamt → Ø 5/Woche
     const rows = [mk('l-a', 28 * 86400e3 - 3600e3, 8), mk('l-b', 14 * 86400e3, 6), mk('l-c', 3600e3, 6)];
     await mockBackend(context, {
-      famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }],   // v4.74.0: kein Beta noetig
       memberRows: () => [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', goal: null }],
       logRows: () => rows });
     await page.goto(`${BASE}/f/${FAM}`);

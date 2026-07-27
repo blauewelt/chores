@@ -416,7 +416,15 @@ toast (err.silent convention against double toasts). Points view: bars,
 crown, counter. **NEVER name a variable `t`** (it shadows i18n; live bug
 Punkte tab empty).
 
-**Goal card (beta, v4.70.0/.1) — ONE lead figure, and that is the
+**`families.beta` is NOT the weekly goal any more (v4.74.0).** The goal
+shipped to every household; the flag now gates exactly ONE thing, the
+v4.73.0 address-bar stripping, until the device checks in §12 pass.
+The settings row is labelled «Beta: Adressleiste» accordingly, and a
+test guards that switching it off does NOT take the goal away — that
+coupling would have silently removed a shipped feature from any
+household that left the beta.
+
+**Goal card (v4.70.0/.1) — ONE lead figure, and that is the
 ranking criterion.** With a weekly goal the app ranks by GOAL
 ATTAINMENT (v4.67.0); so the percentage stands ALONE in the place of the
 big number (`.num.pct`, from 100 % on golden `#E8B931` like the goal
@@ -912,7 +920,7 @@ live incidents (weekly goal «had to be saved twice»,
 - **mutationSeq boot causer** (observed in v4.36.2): something
   pushes during the boot pull; harmless thanks to the branch reordering,
   causer unidentified.
-- **Goal suggestions instead of goal nudge** (beta, considered and
+- **Goal suggestions instead of goal nudge** (considered and
   deferred 26.07.): showing a banner «setz Ziele für alle» (set goals
   for everyone) in the mixed state was REJECTED — it does not make the
   state honest (v4.71.0 does that), you inevitably end up back in it

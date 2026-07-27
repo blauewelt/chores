@@ -1,3 +1,45 @@
+## 2026-07-27 — v4.74.0 (SW haushalt-v176): the weekly goal ships to everyone
+
+- Maintainer call: the beta is ready. The goal is now STANDARD for every
+  household — goal field and week bars in the person sheet, 🎯 mark in
+  the people list, ranking by attainment in «Diese Woche», the Ø/week
+  yardstick in «Gesamt», headroom bar and the «ohne Wochenziel» divider.
+- Un-gated in the CLIENT, not by writing to the database. Flipping
+  families.beta for every row would have been a mass write to user data
+  that only another mass write could undo; removing the condition ships
+  the same thing, touches nobody's rows, and is revertible by a deploy.
+- **The important part: families.beta gated TWO unrelated things.** The
+  goal AND the v4.73.0 address-bar stripping, which is still waiting on
+  the device checks (Android install, iPhone web clip). «Enable the beta
+  for everyone» would therefore have shipped an unverified ROUTING and
+  INSTALL change to every household — §6, the biggest minefield in this
+  project. So the flag was split: the goal is unconditional, beta now
+  gates the URL experiment alone.
+- Follow-through on that split: the settings row said «Beta: Wochenziel»
+  and would have been a lie — relabelled «Beta: Adressleiste» (19
+  languages). A new test switches the beta OFF and asserts the goal is
+  STILL there; with the old coupling, leaving the beta would have
+  silently removed a shipped feature from that household.
+- Test that asserted the opposite is inverted, not deleted: «OHNE Beta
+  ist ALLES unverändert» (v4.67.0) was the promise while it was a beta,
+  and is now false. It became «Wochenziel ist Standard: auch OHNE
+  families.beta …». A test whose premise expires must be rewritten to
+  state the NEW truth — deleting it would have dropped the coverage.
+  Negative control: re-gate goalOf() behind BETA → 2 red.
+- updates.html extended (DE + EN) and NEWS_VERSION bumped to 4.74.0 in
+  the SAME commit, per the mandatory rule. Checked against the 18.07.
+  dud case: devices carry seenver ≤ 4.73.0, which is BELOW 4.74.0, so
+  the banner actually fires instead of silently never triggering.
+  The release note names the point of the feature, not just the
+  mechanics: goals may and should DIFFER per person, otherwise it turns
+  back into a points race.
+- Visual acceptance in both device projects, DE and EN, for a household
+  that has never seen a goal: person sheet with 🎯 field, Ø hint and
+  week bars, and the points view unchanged while no goal is set.
+- Unchanged for households without goals — that promise still holds and
+  is still tested: goalOf() returns 0 without a goal, so the card, bar
+  and ranking render exactly as before.
+
 ## 2026-07-27 — v4.73.0 (SW haushalt-v175, BETA only): the household secret leaves the address bar
 
 - Maintainer finding (Android): sharing a screenshot attaches the page

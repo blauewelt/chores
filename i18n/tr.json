@@ -189,6 +189,7 @@
   "{pts} von {goal} Punkten": "{goal} puandan {pts}",
   "{pts} von {goal} Punkten · {pct} %": "{goal} puandan {pts} · %{pct}",
   "Beta: Wochenziel": "Beta: haftalık hedef",
+  "Beta: Adressleiste": "Beta: adres çubuğu",
   "Beta beendet": "Beta sona erdi",
   "Ø {n}/Woche": "Haftalık Ø {n}",
   "Person": "Kişi",

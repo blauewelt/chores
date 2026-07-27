@@ -569,7 +569,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.73.0';
+  const APP_VERSION = '4.74.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -954,7 +954,7 @@
           unread > 0 ? `<br>${t('{n} Einträge nicht lesbar (Verschlüsselung)', { n: unread })}` : ''}</p>`;
       })()}
       ${!BETA ? '' : `<button class="menuitem setrow" id="setBetaOff" style="border-radius:12px">
-        <span class="seticon">🧪</span><span class="setlabel">${t('Beta: Wochenziel')}</span><span class="setval">${t('An')}</span><span class="chev">›</span></button>`}
+        <span class="seticon">🧪</span><span class="setlabel">${t('Beta: Adressleiste')}</span><span class="setval">${t('An')}</span><span class="chev">›</span></button>`}
       <p style="color:var(--muted);font-size:12.5px;margin:4px 4px 2px;text-align:center">Fairli ${APP_VERSION}</p>
     </div>`;
     sh.querySelector('#closeSettings').onclick = () => sh.close();
@@ -2103,7 +2103,12 @@
   // Personen, ohne geheime Geste. Fuer alle anderen Haushalte ist der neue
   // Code inert: BETA=false blendet die Bedienung aus, und ohne gesetztes Ziel
   // rendert die Punkte-Ansicht ohnehin unveraendert.
-  let BETA = false;                 // aus families.retention_days
+  // v4.74.0: BETA gilt NICHT mehr dem Wochenziel — das ist seit diesem
+  // Release Standard fuer alle Haushalte. Uebrig bleibt EIN Experiment:
+  // das Strippen des Geheimnisses aus der Adressleiste (v4.73.0), das
+  // noch auf die Geraete-Abnahme (Android-Install, iPhone) wartet.
+  // Wer den Schalter in den Einstellungen umlegt, schaltet nur DAS ab.
+  let BETA = false;                 // families.beta
   const retentionCutoff = () => RETENTION ? Date.now() - RETENTION * 86400e3 : null;
   const expiredEntries = () => {
     const cut = retentionCutoff();
@@ -2307,7 +2312,8 @@
       // gereiht — so kann ein Kind mit 6/8 vor Erwachsenen mit mehr Punkten
       // stehen. Nur in «Diese Woche»: «Gesamt» bleibt das absolute Register.
       // Ohne Ziele (alle anderen Haushalte) ist die Sortierung identisch zu vorher.
-      const goalOf = m => (BETA && period === 'week' && m.goal) || 0;
+      // v4.74.0: Wochenziel ist Standard — kein Beta-Schalter mehr davor.
+      const goalOf = m => (period === 'week' && m.goal) || 0;
       // quota() ist NUR fuer Ziel-Traeger gedacht; die Aufrufer filtern vorher
       // (withGoal). Der Zweig fuer «kein Ziel» ist trotzdem noetig: ohne ihn
       // waere es pts/0 = Infinity, und 0/0 = NaN. NaN in einem Komparator
@@ -2385,7 +2391,7 @@
               // v4.68.0 (Beta): Ø Punkte/Woche in «Gesamt» — die Messlatte fuers
               // Wochenziel. Braucht den ECHTEN Ersteintrag (first_done aus der
               // Server-Sicht); das Client-Fenster kennt ihn nicht.
-              if (!BETA || period === 'week') return '';
+              if (period === 'week') return '';
               const v = state.totalsAll && state.totalsAll[m.id];
               if (!v || !v.first || !v.pts) return '';
               const weeks = Math.max(1, (Date.now() - Date.parse(v.first)) / 604800000);
@@ -3016,7 +3022,7 @@
         <span class="pname">${esc(m.name) || '—'}</span>
         ${m.admin ? `<span class="assistbadge" title="${t('Admin')}">🔑</span>` : ''}
         ${m.assisted ? `<span class="assistbadge" title="${t('Ohne eigenes Telefon')}">📵</span>` : ''}
-        ${BETA && m.goal ? `<span class="assistbadge" title="${t('Wochenziel')}">🎯${m.goal}</span>` : ''}
+        ${m.goal ? `<span class="assistbadge" title="${t('Wochenziel')}">🎯${m.goal}</span>` : ''}
         <span class="chev">›</span>
       </button>`).join('');
   }
@@ -3038,7 +3044,7 @@
       sh.addEventListener('close', () => { renderMemberRows(); syncChangedMembers(); });
     }
     const v = state.totalsAll && state.totalsAll[mid];
-    const avg = (BETA && v && v.first && v.pts)
+    const avg = (v && v.first && v.pts)
       ? Math.round(v.pts / Math.max(1, (Date.now() - Date.parse(v.first)) / 604800000)) : null;
     const rowBtn = (id, icon, label, sub, val) => `
       <button type="button" class="menuitem setrow psrow" id="${id}">
@@ -3056,7 +3062,7 @@
         <input type="color" id="psColor" value="${esc(m.color)}" aria-label="Farbe">
         <input type="text" id="psName" maxlength="30" aria-label="Name">
       </div>
-      ${!BETA ? '' : `
+      ${`
       <div class="mrow" style="align-items:center; gap:10px; margin-bottom:2px">
         <label class="goallbl" for="psGoal">🎯 ${t('Wochenziel')}</label>
         <input type="number" id="psGoal" class="goalinp" inputmode="numeric" min="1" max="999"
@@ -3121,7 +3127,7 @@
       el.hidden = false;
       const lbl = sh.querySelector('#psChartLbl'); if (lbl) lbl.hidden = false;
     };
-    if (BETA) {
+    {
       const g = sh.querySelector('#psGoal');
       g.addEventListener('input', e => {
         const n = parseInt(e.target.value, 10);
@@ -3161,7 +3167,7 @@
     // egal wie viele Releases folgen. Erst ein Bump von NEWS_VERSION
     // (ZUSAMMEN mit neuem updates.html-Inhalt!) zündet erneut. Marke wird
     // bei stillen Durchläufen aktuell gehalten.
-    const NEWS_VERSION = '4.55.0';   // = Version des Recap-RELEASES selbst! Die seenver-Marke
+    const NEWS_VERSION = '4.74.0';   // = Version des Recap-RELEASES selbst! Die seenver-Marke
     // rueckt bei jedem Besuch still auf APP_VERSION vor — ein NEWS_VERSION
     // UNTER bereits gesehenen Versionen kann darum nie zuenden (Live-Fund
     // 18.07.: Familie sah keinen Banner, Marken standen auf 4.47.x).
