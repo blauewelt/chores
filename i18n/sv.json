@@ -212,5 +212,11 @@
   "Ziele lokal": "Mål på enheten",
   "Verschoben auf {day}, {time}": "Flyttad till {day}, {time}",
   "{n} Einträge verschoben auf {day}, {time}": "{n} poster flyttade till {day}, {time}",
-  "nicht mehr in «Diese Woche»": "inte längre i ”Denna vecka”"
+  "nicht mehr in «Diese Woche»": "inte längre i ”Denna vecka”",
+  "Zeit wählen": "Välj tid",
+  "Übernehmen": "Använd",
+  "Voriger Monat": "Föregående månad",
+  "Nächster Monat": "Nästa månad",
+  "Stunde": "Timme",
+  "Minute": "Minut"
 }

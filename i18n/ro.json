@@ -212,5 +212,11 @@
   "Ziele lokal": "Obiective pe dispozitiv",
   "Verschoben auf {day}, {time}": "Mutat la {day}, {time}",
   "{n} Einträge verschoben auf {day}, {time}": "{n} intrări mutate la {day}, {time}",
-  "nicht mehr in «Diese Woche»": "nu mai este în „Săptămâna aceasta”"
+  "nicht mehr in «Diese Woche»": "nu mai este în „Săptămâna aceasta”",
+  "Zeit wählen": "Alege ora",
+  "Übernehmen": "Aplică",
+  "Voriger Monat": "Luna anterioară",
+  "Nächster Monat": "Luna următoare",
+  "Stunde": "Oră",
+  "Minute": "Minut"
 }

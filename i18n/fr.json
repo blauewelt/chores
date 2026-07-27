@@ -212,5 +212,11 @@
   "Ziele lokal": "Objectifs sur l’appareil",
   "Verschoben auf {day}, {time}": "Déplacé au {day}, {time}",
   "{n} Einträge verschoben auf {day}, {time}": "{n} entrées déplacées au {day}, {time}",
-  "nicht mehr in «Diese Woche»": "plus dans « Cette semaine »"
+  "nicht mehr in «Diese Woche»": "plus dans « Cette semaine »",
+  "Zeit wählen": "Choisir l’heure",
+  "Übernehmen": "Appliquer",
+  "Voriger Monat": "Mois précédent",
+  "Nächster Monat": "Mois suivant",
+  "Stunde": "Heure",
+  "Minute": "Minute"
 }

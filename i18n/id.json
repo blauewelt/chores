@@ -212,5 +212,11 @@
   "Ziele lokal": "Target di perangkat",
   "Verschoben auf {day}, {time}": "Dipindahkan ke {day}, {time}",
   "{n} Einträge verschoben auf {day}, {time}": "{n} entri dipindahkan ke {day}, {time}",
-  "nicht mehr in «Diese Woche»": "tidak lagi di “Minggu ini”"
+  "nicht mehr in «Diese Woche»": "tidak lagi di “Minggu ini”",
+  "Zeit wählen": "Pilih waktu",
+  "Übernehmen": "Terapkan",
+  "Voriger Monat": "Bulan sebelumnya",
+  "Nächster Monat": "Bulan berikutnya",
+  "Stunde": "Jam",
+  "Minute": "Menit"
 }

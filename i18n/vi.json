@@ -212,5 +212,11 @@
   "Ziele lokal": "Mục tiêu trên thiết bị",
   "Verschoben auf {day}, {time}": "Đã chuyển đến {day}, {time}",
   "{n} Einträge verschoben auf {day}, {time}": "Đã chuyển {n} mục đến {day}, {time}",
-  "nicht mehr in «Diese Woche»": "không còn trong “Tuần này”"
+  "nicht mehr in «Diese Woche»": "không còn trong “Tuần này”",
+  "Zeit wählen": "Chọn thời gian",
+  "Übernehmen": "Áp dụng",
+  "Voriger Monat": "Tháng trước",
+  "Nächster Monat": "Tháng sau",
+  "Stunde": "Giờ",
+  "Minute": "Phút"
 }

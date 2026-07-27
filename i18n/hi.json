@@ -212,5 +212,11 @@
   "Ziele lokal": "डिवाइस पर लक्ष्य",
   "Verschoben auf {day}, {time}": "{day}, {time} पर ले जाया गया",
   "{n} Einträge verschoben auf {day}, {time}": "{n} प्रविष्टियाँ {day}, {time} पर ले जाई गईं",
-  "nicht mehr in «Diese Woche»": "अब «इस सप्ताह» में नहीं"
+  "nicht mehr in «Diese Woche»": "अब «इस सप्ताह» में नहीं",
+  "Zeit wählen": "समय चुनें",
+  "Übernehmen": "लागू करें",
+  "Voriger Monat": "पिछला महीना",
+  "Nächster Monat": "अगला महीना",
+  "Stunde": "घंटा",
+  "Minute": "मिनट"
 }

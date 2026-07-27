@@ -212,5 +212,11 @@
   "Ziele lokal": "Cele na urządzeniu",
   "Verschoben auf {day}, {time}": "Przeniesiono na {day}, {time}",
   "{n} Einträge verschoben auf {day}, {time}": "Przeniesiono {n} wpisów na {day}, {time}",
-  "nicht mehr in «Diese Woche»": "już nie w „Ten tydzień”"
+  "nicht mehr in «Diese Woche»": "już nie w „Ten tydzień”",
+  "Zeit wählen": "Wybierz czas",
+  "Übernehmen": "Zastosuj",
+  "Voriger Monat": "Poprzedni miesiąc",
+  "Nächster Monat": "Następny miesiąc",
+  "Stunde": "Godzina",
+  "Minute": "Minuta"
 }

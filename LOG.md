@@ -1,3 +1,35 @@
+## 2026-07-27 — v4.82.0 (SW haushalt-v185): own time picker — the OS dialog is gone
+
+- Maintainer decision (after the v4.80.0 «Clear» round): replace
+  datetime-local entirely. The system dialog was OS chrome — system
+  language instead of app language, unstylable Set/Cancel emphasis, an
+  unremovable Clear, and the wheel behind the 27.07. off-by-one.
+- Zeit field in the edit sheet is now a Fairli-styled button showing the
+  value in app language via dayLabel («Gestern, 19:47»); the machine
+  value lives in data-v ('YYYY-MM-DDTHH:mm', local). Tapping opens an
+  own picker SHEET in Fairli anatomy: grabber, title «Zeit wählen»,
+  × top right, Heute/Gestern chips, month calendar (Mo–So per app
+  locale, today ringed, selection filled, neighbor-month days dimmed
+  but tappable), hour:minute selects, ONE primary action «Übernehmen».
+- Contract: NOTHING commits until Übernehmen — ×, backdrop and swipe
+  discard the selection outright (nothing is dirty until applied, so no
+  guard). There is no clear path at all; the v4.80.0 snap-back listener
+  is deleted with the input it guarded, its test replaced by the new
+  anatomy contract (no Clear text, one primary action, × discards
+  restlos, done_at byte-identical without Übernehmen).
+- Save path unchanged: reads data-v where it read input.value; delta
+  math, sub-minute rule and the v4.78.0 move-toast apply as before.
+  Series editing (n>1) untouched — the picker sets the anchor, the
+  delta shifts the series as always.
+- 6 new i18n keys in 19 languages («Zeit wählen», «Übernehmen», month
+  nav, Stunde/Minute — the calendar itself needs none, weekday and
+  month names come from toLocaleDateString in the app locale).
+- Tests: shared helper setPickerTime() drives the sheet UI; the three
+  lTime.fill() call sites (v4.25.0 series, v4.78.0 both) rewritten to
+  it; 2 new tests (anatomy/discard contract; Gestern chip end-to-end
+  with the move-toast). datetime-local no longer appears in the app.
+- APP_VERSION 4.82.0, SW-Cache haushalt-v185
+
 ## 2026-07-27 — v4.81.0 (SW haushalt-v184): Verlauf aesthetics — art leads, the person is a chip
 
 - Maintainer feedback on v4.79.0 from the live device, two rounds:

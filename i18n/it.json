@@ -212,5 +212,11 @@
   "Ziele lokal": "Obiettivi sul dispositivo",
   "Verschoben auf {day}, {time}": "Spostato a {day}, {time}",
   "{n} Einträge verschoben auf {day}, {time}": "{n} voci spostate a {day}, {time}",
-  "nicht mehr in «Diese Woche»": "non più in «Questa settimana»"
+  "nicht mehr in «Diese Woche»": "non più in «Questa settimana»",
+  "Zeit wählen": "Scegli l’ora",
+  "Übernehmen": "Applica",
+  "Voriger Monat": "Mese precedente",
+  "Nächster Monat": "Mese successivo",
+  "Stunde": "Ora",
+  "Minute": "Minuto"
 }

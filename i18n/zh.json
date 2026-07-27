@@ -212,5 +212,11 @@
   "Ziele lokal": "设备上的目标",
   "Verschoben auf {day}, {time}": "已移至 {day} {time}",
   "{n} Einträge verschoben auf {day}, {time}": "{n} 条记录已移至 {day} {time}",
-  "nicht mehr in «Diese Woche»": "不再属于“本周”"
+  "nicht mehr in «Diese Woche»": "不再属于“本周”",
+  "Zeit wählen": "选择时间",
+  "Übernehmen": "应用",
+  "Voriger Monat": "上个月",
+  "Nächster Monat": "下个月",
+  "Stunde": "小时",
+  "Minute": "分钟"
 }

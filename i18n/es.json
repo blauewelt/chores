@@ -212,5 +212,11 @@
   "Ziele lokal": "Metas en el dispositivo",
   "Verschoben auf {day}, {time}": "Movido a {day}, {time}",
   "{n} Einträge verschoben auf {day}, {time}": "{n} entradas movidas a {day}, {time}",
-  "nicht mehr in «Diese Woche»": "ya no está en «Esta semana»"
+  "nicht mehr in «Diese Woche»": "ya no está en «Esta semana»",
+  "Zeit wählen": "Elegir hora",
+  "Übernehmen": "Aplicar",
+  "Voriger Monat": "Mes anterior",
+  "Nächster Monat": "Mes siguiente",
+  "Stunde": "Hora",
+  "Minute": "Minuto"
 }

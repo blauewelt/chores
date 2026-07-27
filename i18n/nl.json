@@ -212,5 +212,11 @@
   "Ziele lokal": "Doelen op toestel",
   "Verschoben auf {day}, {time}": "Verplaatst naar {day}, {time}",
   "{n} Einträge verschoben auf {day}, {time}": "{n} items verplaatst naar {day}, {time}",
-  "nicht mehr in «Diese Woche»": "niet meer in “Deze week”"
+  "nicht mehr in «Diese Woche»": "niet meer in “Deze week”",
+  "Zeit wählen": "Tijd kiezen",
+  "Übernehmen": "Toepassen",
+  "Voriger Monat": "Vorige maand",
+  "Nächster Monat": "Volgende maand",
+  "Stunde": "Uur",
+  "Minute": "Minuut"
 }

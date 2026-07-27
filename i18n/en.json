@@ -212,5 +212,11 @@
   "Ziele lokal": "Goals on device",
   "Verschoben auf {day}, {time}": "Moved to {day}, {time}",
   "{n} Einträge verschoben auf {day}, {time}": "{n} entries moved to {day}, {time}",
-  "nicht mehr in «Diese Woche»": "no longer in “This week”"
+  "nicht mehr in «Diese Woche»": "no longer in “This week”",
+  "Zeit wählen": "Choose time",
+  "Übernehmen": "Apply",
+  "Voriger Monat": "Previous month",
+  "Nächster Monat": "Next month",
+  "Stunde": "Hour",
+  "Minute": "Minute"
 }

@@ -39,6 +39,22 @@ function weekSafeAgo(ms) {
   return new Date(Math.max(w.getTime() + 1000, Date.now() - ms)).toISOString();
 }
 
+// v4.82.0: den eigenen Zeit-Picker bedienen — Feld-Knopf oeffnet das Sheet,
+// Zieltag antippen (bei Bedarf einen Monat zurueckblaettern: das 42er-Raster
+// zeigt Nachbarmonats-Tage, aber nicht beliebig weit), Stunde/Minute waehlen,
+// Uebernehmen. Erst DANACH ist der Wert im Feld — × und Backdrop verwerfen.
+async function setPickerTime(page, day /* 'YYYY-MM-DD' */, h, m) {
+  await page.locator('#lTime').click();
+  await expect(page.locator('#timeSheet')).toBeVisible();
+  const cell = page.locator(`#timeSheet .day[data-day="${day}"]`);
+  if (!(await cell.count())) await page.locator('#tpPrev').click();
+  await page.locator(`#timeSheet .day[data-day="${day}"]`).click();
+  await page.locator('#tpH').selectOption(String(h));
+  await page.locator('#tpM').selectOption(String(m));
+  await page.locator('#tpApply').click();
+  await expect(page.locator('#timeSheet')).toBeHidden();
+}
+
 // v4.69.0: Pro-Person-Sheet oeffnen — synthetischer Klick (kein Koordinaten-
 // Klick, der nach dem showModal in den Backdrop-Close der neuen dialog
 // bubbeln koennte), danach Sichtbarkeit zusichern.
@@ -524,7 +540,7 @@ test.describe('Fairli', () => {
     await g.click();
     const sh = page.locator('#logSheet');
     await expect(sh.getByText('verschiebt alle 3 gemeinsam')).toBeVisible();
-    await sh.locator('#lTime').fill('2026-07-08T08:30');
+    await setPickerTime(page, '2026-07-08', 8, 30);   // eigener Picker seit v4.82.0
     await sh.locator('#saveLog').click();
     await expect(g.locator('.xn')).toHaveText('×3');                 // Serie bleibt Serie (Delta!)
     // v4.32: Datum wandert in den Tages-Kopf, Zeile zeigt nur die Zeit
@@ -4016,11 +4032,13 @@ test.describe('Fairli', () => {
     await expect(page.locator('#toast')).not.toContainText('Verschoben');
     // 2) Zeit innerhalb HEUTE geaendert → Toast nennt «Heute» + Uhrzeit, OHNE Wochen-Warnung
     await page.locator('[data-editlog]').first().click();
-    const v = await page.locator('#lTime').inputValue();
-    // 12 h Abstand, gleiche Kalendertag-Haelfte gewechselt: immer >1 min
-    // Delta (Sub-Minuten-Regel greift nie), immer noch «Heute».
-    const nt = String((parseInt(v.slice(11, 13), 10) + 12) % 24).padStart(2, '0') + v.slice(13, 16);
-    await page.locator('#lTime').fill(v.slice(0, 11) + nt);
+    const v = await page.locator('#lTime').getAttribute('data-v');
+    // 12 h Abstand, gleicher Kalendertag: immer >1 min Delta (Sub-Minuten-
+    // Regel greift nie), immer noch «Heute».
+    const nh = (parseInt(v.slice(11, 13), 10) + 12) % 24;
+    const nt = String(nh).padStart(2, '0') + v.slice(13, 16);
+    await setPickerTime(page, v.slice(0, 10), nh, parseInt(v.slice(14, 16), 10));
+    await expect(page.locator('#lTime .tfv')).toContainText(nt);   // Feld zeigt die Wahl an
     await page.locator('#saveLog').click();
     await expect(page.locator('#toast')).toContainText('Verschoben auf Heute, ' + nt);
     await expect(page.locator('#toast')).not.toContainText('Diese Woche');
@@ -4037,7 +4055,7 @@ test.describe('Fairli', () => {
     // 8 Tage zurueck liegt IMMER vor weekStart() (Montag), egal an welchem
     // Wochentag der Test laeuft — kein weekSafeAgo noetig, der Rand ist der Punkt.
     const d = new Date(Date.now() - 8 * 86400e3), p = x => String(x).padStart(2, '0');
-    await page.locator('#lTime').fill(`${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T11:11`);
+    await setPickerTime(page, `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`, 11, 11);
     await page.locator('#saveLog').click();
     await expect(page.locator('#toast')).toContainText('Verschoben auf');
     await expect(page.locator('#toast')).toContainText('11:11');
@@ -4046,9 +4064,11 @@ test.describe('Fairli', () => {
     await expect(page.locator('#list')).toContainText('Tonne raus');
   });
 
-  test('«Clear» im nativen Zeit-Picker ist folgenlos: Feld springt zurück, Speichern ändert nichts (v4.80.0)', async ({ context, page }) => {
-    // Androids System-Picker bringt einen nicht entfernbaren Clear-Knopf mit;
-    // ein Eintrag ohne Zeit existiert nicht. Leeres Feld → sofort alter Wert.
+  test('Eigener Zeit-Picker: Fairli-Anatomie, kein Clear; × verwirft die Auswahl restlos (v4.82.0)', async ({ context, page }) => {
+    // Ersetzt den v4.80.0-Clear-Vertrag: der native Picker (samt Clear) ist
+    // weg. Neuer Vertrag: das Picker-Sheet folgt der Sheet-Anatomie (× oben
+    // rechts, EINE Primaeraktion «Übernehmen»), kennt keinen Clear-Pfad, und
+    // NICHTS aendert sich ohne Übernehmen — done_at bleibt byte-identisch.
     const entry = { id: 'l-cl1', chore_id: null, chore_name: 'Tonne rausstellen', chore_note: '',
       member_id: 'm-mira', member_name: 'Mira', points: 1,
       done_at: new Date().toISOString(), created_at: new Date().toISOString(), family_id: FAM };
@@ -4056,15 +4076,43 @@ test.describe('Fairli', () => {
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     await page.locator('[data-editlog]').first().click();
-    const orig = await page.locator('#lTime').inputValue();
-    await page.locator('#lTime').fill('');                 // «Clear» im System-Dialog
-    await expect(page.locator('#lTime')).toHaveValue(orig); // Feld springt sofort zurück
+    const orig = await page.locator('#lTime').getAttribute('data-v');
+    await page.locator('#lTime').click();
+    await expect(page.locator('#timeSheet')).toBeVisible();
+    // Anatomie: ×, Chips, Kalender, Zeit, genau EINE Primaeraktion — kein Clear
+    await expect(page.locator('#timeSheet #tpClose')).toBeVisible();
+    await expect(page.locator('#timeSheet #tpApply')).toHaveText('Übernehmen');
+    await expect(page.locator('#timeSheet')).not.toContainText('Clear');
+    await expect(page.locator('#timeSheet .day.sel')).toHaveCount(1);
+    // Anderen Tag ANTIPPEN, dann × → verworfen, Feld unveraendert
+    await page.locator('#timeSheet #tpYest').click();
+    await page.locator('#timeSheet #tpClose').click();
+    await expect(page.locator('#timeSheet')).toBeHidden();
+    await expect(page.locator('#lTime')).toHaveAttribute('data-v', orig);
     await page.locator('#saveLog').click();
     await page.waitForTimeout(150);
     await expect(page.locator('#toast')).not.toContainText('Verschoben');   // kein Verschiebe-Toast
     const done = await page.evaluate(fam =>
       JSON.parse(localStorage.getItem('haushalt.v2:' + fam)).log.find(e => e.id === 'l-cl1').done_at, FAM);
     expect(done).toBe(entry.done_at);                      // Zeit byte-identisch erhalten
+  });
+
+  test('Zeit-Picker: Gestern-Chip + Übernehmen — Feld sagt «Gestern», Speichern meldet den Umzug (v4.82.0)', async ({ context, page }) => {
+    const entry = { id: 'l-yd1', chore_id: null, chore_name: 'Tonne rausstellen', chore_note: '',
+      member_id: 'm-mira', member_name: 'Mira', points: 1,
+      done_at: new Date().toISOString(), created_at: new Date().toISOString(), family_id: FAM };
+    await mockBackend(context, { logRows: () => [entry] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('[data-editlog]').first().click();
+    await page.locator('#lTime').click();
+    await page.locator('#timeSheet #tpYest').click();
+    await expect(page.locator('#timeSheet #tpYest')).toHaveAttribute('aria-pressed', 'true');
+    await page.locator('#tpApply').click();
+    await expect(page.locator('#lTime .tfv')).toContainText('Gestern');
+    await page.locator('#saveLog').click();
+    // Montags traegt der Toast zusaetzlich die Wochen-Warnung — beides faengt der Praefix
+    await expect(page.locator('#toast')).toContainText('Verschoben auf Gestern');
   });
 
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {
