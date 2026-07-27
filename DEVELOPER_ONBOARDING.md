@@ -367,6 +367,12 @@ title change (__afterTitle). Below the head: `#installBar` (dismissible,
 context-specific key) and `#newsBar` («Was ist neu» — CONTENT-anchored
 since v4.43.1: `NEWS_VERSION` = how far updates.html reports; whoever
 has seen that state is never pinged again, releases are irrelevant.
+updates.html reads `haushalt.lang` for its initial language (v4.75.1:
+the app setting wins; de → de, other set languages → en, no setting →
+browser language; the in-page toggle lasts for the visit). And note:
+updates.html sits in the SW PRECACHE — the shell rule routes navigations
+past the app shell (v4.39.1), but the generic cache-first handler still
+serves the precached copy, so ANY edit to it needs a cache bump.
 MANDATORY: extend updates.html ⇒ bump NEWS_VERSION in the SAME commit —
 the banner test watches that it never runs ahead of the reported state.
 First contact sets the mark silently; link → updates.html, × and click
@@ -747,6 +753,14 @@ CI on real infrastructure was green — but that was luck, not process.
 Related trap from the same incident: `grep -E "failed|flaky"` also
 matches GPU/driver noise («MESA: error», «libEGL warning») and can make
 a red run look clean. Anchor on the SUMMARY lines, and on `✘`.
+
+**The sandbox WebKit spawn flake (27.07.2026).** In GPU-less containers
+WebKit occasionally wedges on context/page start: `goto` hangs until the
+test timeout, a DIFFERENT test each run, 3/3 green in isolation, MESA/
+EGL noise in the log. Local runs now retry once (same as CI always did);
+Playwright reports such tests as FLAKY, and a flaky count in the summary
+is a finding to read, not a pass to wave through. A test that fails
+BOTH attempts is a real failure.
 
 **A crashing teardown is infrastructure, not a finding.** Helpers that
 own a context (`withUA`) shield ONLY the disposal, never the test body:

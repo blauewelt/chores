@@ -300,10 +300,20 @@
     document.querySelectorAll('[data-'+l+']').forEach(function(el){ el.textContent = el.getAttribute('data-'+l); });
     try { localStorage.setItem('fairli.notes.lang', l); } catch(e){}
   }
-  // Startsprache: gemerkte Wahl, sonst Browsersprache
+  // Startsprache (v4.75.1): die SPRACHWAHL DER APP gewinnt. Vorher zaehlte
+  // nur die Browsersprache — Telefon-OS Englisch + App Deutsch ergab
+  // englische Notes (Maintainer-Befund). haushalt.lang ist die
+  // ausdrueckliche Wahl in den Einstellungen; die Notes gibt es nur in
+  // DE/EN, darum: de → de, jede ANDERE gesetzte App-Sprache → en (fuer
+  // fr/uk/ja ist Englisch die bessere Naeherung als Deutsch). Ohne
+  // App-Wahl wie bisher: gemerkter Toggle, sonst Browsersprache. Der
+  // Toggle wirkt fuer den Besuch — beim naechsten Oeffnen zaehlt wieder
+  // die App-Einstellung.
   (function(){
+    var app; try { app = localStorage.getItem('haushalt.lang'); } catch(e){}
     var saved; try { saved = localStorage.getItem('fairli.notes.lang'); } catch(e){}
-    var l = saved || ((navigator.language||'de').slice(0,2) === 'en' ? 'en' : 'de');
+    var l = app ? (app === 'de' ? 'de' : 'en')
+                : saved || ((navigator.language||'de').slice(0,2) === 'en' ? 'en' : 'de');
     setLang(l);
   })();
 </script>

@@ -1,3 +1,35 @@
+## 2026-07-27 — v4.75.1 (SW haushalt-v178): release notes follow the APP language
+
+- Maintainer finding on device: app set to German, phone OS English →
+  updates.html rendered in English. The page decided from its own memory
+  (fairli.notes.lang) and then navigator.language — it never read the
+  app's actual setting.
+- Fix: `haushalt.lang` wins (same origin, so the notes page can read it).
+  Notes exist only in DE/EN, so: de → de, any OTHER explicitly set app
+  language → en (for an app set to fr/uk/ja, English is the better
+  approximation — German would only be the accident of the source
+  language). Without an app choice, behavior is unchanged: remembered
+  toggle, else browser language. The in-page toggle still works but now
+  lasts for the visit — on the next open the settings own the language
+  again. All three rules tested; negative control (navigator-only init
+  restored) → 2 red.
+- Trap documented while shipping this: updates.html LOOKS like a plain
+  network page (the v4.39.1 shell-rule fix routes navigations past the
+  app shell), but it sits in the SW PRECACHE — installed devices serve
+  it cache-first. A fix to it therefore needs a cache bump like any app
+  change, hence v4.75.1/haushalt-v178 rather than a bump-less deploy.
+- Shipping this surfaced the sandbox WebKit spawn flake clearly enough
+  to name it: two consecutive full runs each had exactly ONE webkit
+  failure — `goto` hanging until the timeout — on a DIFFERENT, unrelated
+  test each time, both 3/3 green in isolation, MESA/EGL noise in the
+  log. That is the GPU-less container wedging WebKit's process start,
+  not the app. Local runs now retry once, exactly as CI always has;
+  Playwright reports retried tests as FLAKY in the summary, which must
+  be read (rule in §10). A test failing both attempts stays a real
+  failure.
+- NEWS_VERSION stays 4.74.0: the CONTENT of the notes is unchanged, and
+  re-pinging every household over a language fix would be noise.
+
 ## 2026-07-27 — v4.75.0 (SW haushalt-v177): the address bar is only tidied WITH consent
 
 - Maintainer, on reading v4.73.0: «losing access via losing local storage

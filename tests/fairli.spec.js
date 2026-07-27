@@ -3013,6 +3013,55 @@ test.describe('Fairli', () => {
     });
   });
 
+  // ---------- v4.75.1: Release-Notes folgen der App-Sprache ----------
+
+  test('Release-Notes: App auf Deutsch schlaegt englisches Telefon — und der Toggle gilt nur fuer den Besuch (v4.75.1)', async ({ browser }) => {
+    // Live-Befund: Telefon-OS Englisch, App Deutsch → englische Notes. Die
+    // Seite las nur navigator.language, nie die Einstellung der App.
+    const ctx = await browser.newContext({ locale: 'en-US' });
+    try {
+      await blockExternal(ctx);
+      await ctx.addInitScript(() => { try { localStorage.setItem('haushalt.lang', 'de'); } catch {} });
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/updates.html`);
+      await expect(page.locator('#lang-de')).toBeVisible();
+      await expect(page.locator('#lang-en')).toBeHidden();
+      await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+      // Der Toggle funktioniert weiter …
+      await page.locator('button#en').click();
+      await expect(page.locator('#lang-en')).toBeVisible();
+      // … gilt aber nur fuer diesen Besuch: beim naechsten Oeffnen gewinnt
+      // wieder die App-Einstellung (die Einstellungen BESITZEN die Sprache).
+      await page.reload();
+      await expect(page.locator('#lang-de')).toBeVisible();
+    } finally { try { await ctx.close(); } catch {} }
+  });
+
+  test('Release-Notes ohne App-Sprachwahl: Browsersprache entscheidet wie bisher (v4.75.1)', async ({ browser }) => {
+    const ctx = await browser.newContext({ locale: 'en-US' });
+    try {
+      await blockExternal(ctx);
+      const page = await ctx.newPage();                     // KEIN haushalt.lang
+      await page.goto(`${BASE}/updates.html`);
+      await expect(page.locator('#lang-en')).toBeVisible();
+      await expect(page.locator('#lang-de')).toBeHidden();
+    } finally { try { await ctx.close(); } catch {} }
+  });
+
+  test('Release-Notes: dritte App-Sprache (fr) faellt auf Englisch zurueck, nicht auf Deutsch (v4.75.1)', async ({ browser }) => {
+    // Die Notes gibt es nur in DE/EN. Fuer eine franzoesisch eingestellte App
+    // ist Englisch die bessere Naeherung — Deutsch waere nur der Zufall der
+    // Quellsprache.
+    const ctx = await browser.newContext({ locale: 'de-CH' });   // Browser sagt de …
+    try {
+      await blockExternal(ctx);
+      await ctx.addInitScript(() => { try { localStorage.setItem('haushalt.lang', 'fr'); } catch {} });
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/updates.html`);
+      await expect(page.locator('#lang-en')).toBeVisible();       // … die App-Wahl gewinnt
+    } finally { try { await ctx.close(); } catch {} }
+  });
+
   // ---------- v4.72.0: app_version je Eintrag (Schreib-Telemetrie) ----------
 
   test('Neuer Eintrag traegt die App-Version — im Klartext, nur beim ANLEGEN (v4.72.0)', async ({ context, page }) => {

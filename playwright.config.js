@@ -5,7 +5,13 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   timeout: 20_000,
-  retries: process.env.CI ? 1 : 0,
+  // Ein Retry AUCH lokal (27.07.2026): in GPU-losen Sandboxen wedelt der
+  // WebKit-Prozessstart gelegentlich (goto haengt bis zum Timeout, jedes Mal
+  // ein ANDERER Test, 3/3 gruen in Isolation — MESA/EGL-Meldungen im Log).
+  // CI hatte den Retry laengst; lokal machte derselbe Zufall die Suite rot.
+  // Playwright meldet wiederholte Tests als FLAKY, nicht als bestanden —
+  // «X flaky» in der Zusammenfassung ist ein Befund und wird GELESEN.
+  retries: 1,
   use: {
     baseURL: 'http://127.0.0.1:8080',
     serviceWorkers: 'block',
