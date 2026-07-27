@@ -569,7 +569,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.71.1';
+  const APP_VERSION = '4.72.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1655,6 +1655,10 @@
       // Wasserzeichen existiert und der letzte VOLL-Abgleich < 24 h her ist.
       // Delta sieht neue UND (dank updated_at-Trigger) geaenderte Zeilen;
       // fremde LOESCHUNGEN erscheinen erst beim naechsten Voll-Abgleich.
+      // app_version fehlt hier ABSICHTLICH (v4.72.0): reine Schreib-Telemetrie,
+      // der Client liest sie nie — ausgewertet wird im Dashboard. Regel C
+      // («neue Spalte = drei Orte») meint Spalten, die der Client ANZEIGT;
+      // diese hier nachzutragen kostete nur Egress. Nicht «reparieren».
       const LCOLS = 'id,chore_id,chore_name,chore_note,member_id,member_name,logged_by,points,done_at,created_at,updated_at,deleted_at,deleted_by';
       const wmKey = 'haushalt.delta:' + FAMILY, fullKey = 'haushalt.full:' + FAMILY;
       const verKey = 'haushalt.pullver:' + FAMILY;   // v4.61.0: App-Version des letzten VOLL-Abgleichs
@@ -2765,7 +2769,24 @@
       // Wer hat verbucht? (v4.54.0) Die Identitaet des LINKS — auf dem
       // Familien-Link gehoert der niemandem einzeln, darum null.
       logged_by: (slugSelf() || {}).id || null,
-      points: choreLike.points, done_at: new Date().toISOString()
+      points: choreLike.points, done_at: new Date().toISOString(),
+      // v4.72.0: Welche App-Version hat diesen Eintrag ERZEUGT? Nach einem
+      // Deploy weiss sonst niemand, wer die neue Fassung ueberhaupt hat — der
+      // SW aktiviert erst beim NAECHSTEN Oeffnen, ein Geraet kann tagelang auf
+      // einer alten Version sitzen und Fehler melden, die laengst behoben sind
+      // (v4.69.x verlor einen halben Tag daran: «Geraet vermutlich auf altem
+      // SW» war eine VERMUTUNG, nie eine Messung).
+      // NUR beim Anlegen — nicht beim Bearbeiten und nicht bei der
+      // 1-h-Zusammenlegung (die kehrt oben schon um). Der Wert heisst
+      // «Version, die den Eintrag erzeugt hat»; NULL = Client aelter als
+      // v4.72.0, also eine Aussage und keine Luecke.
+      // Klartext wie points/done_at (NICHT in ENC_FIELDS): eine Build-Nummer
+      // ist kein Personenbezug — und verschluesselt waere sie wertlos, weil
+      // sie im Dashboard lesbar sein muss.
+      // BEWUSST NICHT in der Pull-Spaltenliste (LCOLS): der Client liest den
+      // Wert nie, er schreibt ihn nur. Das ist die EINE erlaubte Ausnahme von
+      // «neue Spalte = drei Orte» (§11a C) — nicht nachtragen.
+      app_version: APP_VERSION
     };
     state.log.unshift(entry);
     bumpTotals(entry.member_id, entry.points || 0, 1);   // Gesamt sofort mitziehen (v4.65.0)

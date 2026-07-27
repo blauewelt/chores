@@ -1,3 +1,58 @@
+## 2026-07-27 — v4.72.0 (SW haushalt-v174): log.app_version — which build are people actually running?
+
+- Maintainer question: after a deploy nobody knows who has the new
+  version. The SW only activates on the NEXT app open, so a device can
+  sit on a stale build for days while its user reports bugs that were
+  fixed long ago. v4.69.x lost half a day to exactly that — «device
+  likely on a stale SW» was a GUESS. Now it is a measurement.
+- ONE additive, nullable column on `log`, written on INSERT only. The
+  value means «version that CREATED this entry», not «version that last
+  touched the row»: the 1 h point accumulation and the entry editor
+  leave it alone, so the number stays interpretable.
+- WHY log and not members: `members` carries the touch_updated_at
+  trigger and the delta sync keys off `updated_at`. Stamping a version
+  there would bump the row into every device's next delta and add churn
+  right next to the pendingCreates/marks machinery that produced the
+  v4.69 goal saga. Log rows are written anyway — no extra traffic — and
+  the log yields adoption over TIME, where members would only give a
+  snapshot.
+- Deliberately NOT in the pull column list (LCOLS). Rule C («new column
+  = three places») is about columns the client DISPLAYS; this one is
+  write-only and reading it back would just cost egress. A test guards
+  the ABSENCE — without it the next session adds it «per the rule».
+- Existing households, checked rather than asserted, against the LIVE
+  database after the migration ran: the new column selects 200; the old
+  client's exact LCOLS query still selects 200; log_totals and
+  log_weekly still select 200 (all three views name explicit columns, so
+  a new base column cannot reshape them); and no existing row was
+  touched (`app_version=not.is.null` returns []). Old clients neither
+  write the column (nullable) nor select it — version-cut philosophy,
+  nobody gets locked out.
+- Order kept: migration deployed and dispatched FIRST, verified against
+  production, only THEN the client (LCOLS ordering rule).
+- Cleartext by design, like points/done_at — NOT in ENC_FIELDS. A build
+  number is not personal data, and encrypted it would be worthless
+  because it has to be readable in the dashboard. Nothing else is
+  collected: no user agent, no device model, no IP-adjacent data.
+- NO view and NO new grant. Read access to `log` is open to anon, so a
+  global aggregate view would hand anyone holding the publishable key a
+  cross-family adoption report. Evaluation happens in the dashboard SQL
+  editor (service role); the three queries are documented at the top of
+  the migration file.
+- Three tests, all three negative-controlled: remove the write → red;
+  add the column to LCOLS → red; let the accumulation stamp the version
+  → red.
+- Known limit, so nobody over-reads the data: it only sees people who
+  LOG something. Someone who never taps stays invisible — precisely the
+  population most likely to be sitting on a stale build. It also cannot
+  separate «SW not activated» from «has not opened the app since the
+  deploy», and a person with a phone and a tablet appears as whichever
+  device wrote. It answers «how fast does a release spread among active
+  users», not «is everyone updated».
+- Play Store note: a version string counts as diagnostics data in the
+  data-safety declaration and belongs in the privacy policy page that is
+  still outstanding.
+
 ## 2026-07-26 — v4.71.1 (SW haushalt-v173): quota() hardened — no NaN comparator possible any more
 
 - During the rework into two blocks (v4.71.0) the guard clause fell out

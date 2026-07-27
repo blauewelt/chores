@@ -82,6 +82,28 @@ is editable (title, note, time, points — a deliberate user correction,
 not an automatism). New fields that should appear in the history →
 always as their own snapshot column in log.
 
+**`log.app_version` (v4.72.0) — write-only telemetry, the ONE documented
+exception to rule C.** Every entry records the version that CREATED it
+(set on INSERT only; never on edit, never on the 1 h accumulation).
+NULL = written by a client older than v4.72.0, which is a statement and
+not a gap. It sits on `log` rather than `members` on purpose: `members`
+carries the `touch_updated_at` trigger and the delta sync keys off
+`updated_at`, so stamping a version there would push the row into every
+device's next delta and add churn next to the pendingCreates machinery.
+The log is written anyway, and it yields a time series instead of a
+snapshot. **It is deliberately absent from the pull's LCOLS list** — the
+client never reads it, so adding it would only cost egress; rule C
+(«new column = three places») is about columns the client DISPLAYS. A
+test guards the absence, otherwise the next session will «fix» it.
+Cleartext (not in ENC_FIELDS): a build number is not personal data, and
+encrypted it would be worthless since it has to be readable in the
+dashboard. Nothing else is collected — no user agent, no device model.
+Read it with SQL in the Supabase dashboard; there is intentionally NO
+view and no extra grant, because read access to `log` is open to anon
+and a global aggregate view would hand anyone with the publishable key a
+cross-family adoption report. The queries live in the migration file
+`20260727080000_log_app_version.sql`.
+
 **Points accumulation (v4.35.0):** Tapping the same thing again (same
 person, same chore_id or same one-off name) within 1 h ADDS the points
 into the existing row via PATCH; `done_at` stays the first tap — the

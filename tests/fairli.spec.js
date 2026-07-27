@@ -2802,6 +2802,81 @@ test.describe('Fairli', () => {
     await expect(page.locator('.filterpill')).toContainText('Mira');
   });
 
+  // ---------- v4.72.0: app_version je Eintrag (Schreib-Telemetrie) ----------
+
+  test('Neuer Eintrag traegt die App-Version — im Klartext, nur beim ANLEGEN (v4.72.0)', async ({ context, page }) => {
+    const posts = [];
+    await mockBackend(context, { logRows: () => [] });
+    await context.route(`${SB}/rest/v1/log**`, route => {
+      if (route.request().method() === 'POST') {
+        posts.push([].concat(route.request().postDataJSON()));
+        return route.fulfill({ status: 201, body: '' });
+      }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.locator('.chip', { hasText: 'Mira' }).click();
+    await page.locator('.chore', { hasText: 'Müll rausbringen' }).first().click();
+    await expect.poll(() => posts.flat().length).toBeGreaterThan(0);
+    const row = posts.flat()[0];
+    expect(row.app_version).toMatch(/^\d+\.\d+\.\d+$/);
+    // Nicht hartkodiert: es muss die Version sein, die der Client selbst traegt
+    const shown = await page.evaluate(() =>
+      (document.documentElement.innerHTML.match(/APP_VERSION = '([\d.]+)'/) || [])[1] || null);
+    if (shown) expect(row.app_version).toBe(shown);
+    // Klartext: eine Build-Nummer ist kein Personenbezug und nie enc1:
+    expect(String(row.app_version).startsWith('enc1:')).toBe(false);
+  });
+
+  test('Die Version wandert NIE in die Pull-Spaltenliste — Schreib-Telemetrie kostet keinen Egress (v4.72.0)', async ({ context, page }) => {
+    // Gegenstueck zu Regel C: die Spalte gehoert bewusst NICHT in LCOLS.
+    // Ohne diesen Test traegt die naechste Session sie «regelkonform» nach.
+    const selects = [];
+    await mockBackend(context);
+    await context.route(`${SB}/rest/v1/log**`, route => {
+      if (route.request().method() === 'GET') {
+        selects.push(new URL(route.request().url()).searchParams.get('select') || '');
+      }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect.poll(() => selects.length).toBeGreaterThan(0);
+    for (const s of selects) expect(s).not.toContain('app_version');
+  });
+
+  test('Bestandsschutz: Zeilen OHNE app_version rendern und synchronisieren unveraendert (v4.72.0)', async ({ context, page }) => {
+    // Die Zusage an alle, die noch auf einer aelteren Fassung sitzen: ihre
+    // Zeilen haben die Spalte nicht (NULL) — nichts im Client darf sie brauchen.
+    const upserts = [];
+    const old = { id: 'l-old', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
+      member_id: 'm-mira', member_name: 'Mira', points: 2,
+      done_at: new Date().toISOString(), created_at: new Date().toISOString(), family_id: FAM };
+    await mockBackend(context, { logRows: () => [old] });
+    await context.route(`${SB}/rest/v1/log**`, route => {
+      if (route.request().method() === 'POST') {
+        upserts.push([].concat(route.request().postDataJSON()));
+        return route.fulfill({ status: 201, body: '' });
+      }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('.entry')).toHaveCount(1);          // rendert
+    await expect(page.locator('.entry').first()).toContainText('Müll rausbringen');
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('.score', { hasText: 'Mira' })).toContainText('2');
+    // 1-h-Zusammenlegung auf die GEPULLTE Zeile: die Version des Erzeugers
+    // darf dabei weder gesetzt noch ueberschrieben werden.
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await page.locator('.chip', { hasText: 'Mira' }).click();
+    await page.locator('.chore', { hasText: 'Müll rausbringen' }).first().click();
+    await expect.poll(() => upserts.flat().some(r => r.id === 'l-old')).toBe(true);
+    const merged = upserts.flat().find(r => r.id === 'l-old');
+    expect('app_version' in merged).toBe(false);      // Zusammenlegung fasst sie nicht an
+    expect(merged.points).toBe(4);                    // … addiert aber wie bisher
+  });
+
   // ---------- v4.65.0: Gesamt-Punkte vom Server (Fenster-Vorfall 22.07.) ----------
 
   test('Gesamt kommt vom SERVER: Punkte sinken nicht mehr, wenn alte Einträge aus dem 300er-Fenster fallen (v4.65.0)', async ({ context, page }) => {
