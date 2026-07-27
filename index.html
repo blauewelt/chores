@@ -347,13 +347,25 @@
      (gleiches Seitenverhaeltnis wie die Kachel, 440x300) und Mini-Bild im
      Verlauf. Beide nutzen EXAKT die Kachel-URL — der SW hat sie gecacht,
      es entsteht kein neuer Request und kein neuer Privacy-Pfad. */
-  #cArtPrev{display:block; width:100%; aspect-ratio:440/300; object-fit:cover;
-    border-radius:12px; margin-top:8px; background:#161D19; border:1px solid var(--line)}
+  /* Maintainer-Feedback 27.07. (2. Runde): volle Breite erdrueckte das Sheet.
+     Jetzt KACHELGROESSE (2-Spalten-Anteil, gleicher Radius) oben links —
+     das Sheet beginnt mit dem Bild der Kachel, die man gerade bearbeitet. */
+  #cArtPrev{display:block; width:46%; aspect-ratio:440/300; object-fit:cover;
+    border-radius:14px; margin:2px 0 12px; background:#161D19; border:1px solid var(--line)}
   /* display:block schlaegt das hidden-Attribut — ohne diese Zeile zeigte das
      Anlegen-Sheet den leeren Vorschau-Rahmen (vom Test gefangen). */
   #cArtPrev[hidden]{display:none}
-  .entry .eart{width:38px; height:38px; border-radius:9px; object-fit:cover;
-    flex:none; background:#252F29}
+  /* Maintainer-Feedback 27.07. (3. Runde): das Bild spannt die VOLLE
+     Zeilenhoehe und blutet links buendig in die Karte (negative Raender
+     gegen das Karten-Padding, Radius nur an den linken Ecken). So kann
+     nichts mehr «unter» dem Bild landen — es ist eine eigene Spalte. */
+  .entry .eart{align-self:stretch; width:64px; height:auto; min-height:54px;
+    border-radius:calc(var(--radius) - 1px) 0 0 calc(var(--radius) - 1px);
+    margin:-11px 3px -11px -13px; object-fit:cover; flex:none; background:#252F29}
+  .entry .mchip{display:inline-block; padding:2px 10px; border-radius:999px;
+    color:#10140F; font-weight:800; font-size:13px; margin-right:8px;
+    vertical-align:1px; max-width:40%; overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap}
   .mrow .menupop{top:auto; bottom:100%; margin:0 0 4px}
   /* Kein Platz nach oben (erste Zeilen, seit v4.55.0 vier Eintraege)?
      Dann nach UNTEN aufklappen — sonst liegt das Menue ausserhalb des Sheets. */
@@ -533,6 +545,7 @@
       <h2 id="choreSheetTitle">Neue Aufgabe</h2>
       <div class="slot end"><button type="button" class="x" id="cancelChore" aria-label="Schließen">×</button></div>
     </div>
+    <img id="cArtPrev" class="art" alt="" hidden>
     <div class="field">
       <label for="cName" data-i18n>Aufgabe</label>
       <div id="dupHint" style="display:none;background:color-mix(in srgb, var(--accent) 12%, transparent);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--ink);margin-bottom:2px">
@@ -552,7 +565,6 @@
     <div class="field">
       <label for="cArt"><span data-i18n>Bild-Idee</span> <span style="font-weight:400;color:var(--muted)" data-i18n>(optional)</span></label>
       <input type="text" id="cArt" placeholder="z. B. «mowing the lawn with a lawnmower»" maxlength="120" autocomplete="off">
-      <img id="cArtPrev" class="art" alt="" hidden>
       <span class="subnote" style="display:block;margin-top:6px" data-i18n>Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.</span>
     </div>
     <button type="submit" class="btn primary wide" id="saveChore">Speichern</button>
@@ -581,7 +593,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.80.0';
+  const APP_VERSION = '4.81.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2531,9 +2543,13 @@
             const ac = e.chore_id ? state.chores.find(x => x.id === e.chore_id) : null;
             const art = ac && ac.name === e.chore_name
               ? `<img class="art eart${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)">` : '';
+            // v4.80.0: Das Bild fuehrt die Zeile an, die Person ist ein farbiger
+            // Chip. Der alte Farbpunkt war neben dem Bild nur noch Rauschen
+            // (Maintainer-Screenshot 27.07.); der Chip traegt dieselbe
+            // Information — Personenfarbe — dort, wo das Auge sowieso liest.
             const inner = `
-              <span class="dot" style="background:${esc(m ? m.color : '#C2CCC5')}"></span>${art}
-              <span class="what"><b>${esc(e.member_name)}</b> · ${esc(e.chore_name)}${n > 1 ? `<span class="xn">×${n}</span>` : ''}
+              ${art}
+              <span class="what"><span class="mchip" style="background:${esc(m ? m.color : '#C2CCC5')}">${esc(e.member_name)}</span>${esc(e.chore_name)}${n > 1 ? `<span class="xn">×${n}</span>` : ''}
                 ${note ? `<div class="enote">${esc(note)}</div>` : ''}
                 <div class="when">${d.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' })}</div>
               </span>

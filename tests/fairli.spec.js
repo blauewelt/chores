@@ -3066,6 +3066,22 @@ test.describe('Fairli', () => {
     await expect(row('Alter Kachelname').locator('img.eart')).toHaveCount(0);
   });
 
+  test('Verlauf-Zeile: Bild fuehrt, Person ist ein farbiger Chip, der alte Punkt ist weg (v4.80.0)', async ({ context, page }) => {
+    await mockBackend(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    const row = page.locator('.entry', { hasText: 'Müll rausbringen' }).first();
+    // Chip traegt Namen UND Personenfarbe (Mira = #3E6BD6 in der Fixture)
+    await expect(row.locator('.mchip')).toHaveText('Mira');
+    const bg = await row.locator('.mchip').evaluate(el => getComputedStyle(el).backgroundColor);
+    expect(bg).toBe('rgb(62, 107, 214)');
+    // Der Farbpunkt ist aus der Verlaufszeile verschwunden …
+    await expect(row.locator('.dot')).toHaveCount(0);
+    // … und das Bild steht VOR dem Text (erstes Element der Zeile)
+    const first = await row.evaluate(el => el.firstElementChild.className);
+    expect(first).toContain('eart');
+  });
+
   // ---------- v4.76.0: «Wie das Geraet» ist die Standard-Sprachwahl ----------
 
   test('Sprache «Wie das Gerät»: ohne Wahl folgt die App dem Gerät — und die Liste sagt das ehrlich (v4.76.0)', async ({ browser }) => {

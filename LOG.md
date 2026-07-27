@@ -1,3 +1,37 @@
+## 2026-07-27 — v4.81.0 (SW haushalt-v184): Verlauf aesthetics — art leads, the person is a chip
+
+- Maintainer feedback on v4.79.0 from the live device, two rounds:
+  (1) the colored dots no longer fit next to the art, and the art could
+  lead the row; (2) the edit-sheet preview at full width overwhelmed the
+  sheet — tile size, top left.
+- Maintainer feedback round 3 (mid-build, from the live device): the
+  date could land visually under the art, and the art should span the
+  FULL row height. Final row: the art is a full-height leading COLUMN
+  (64 px wide, align-self:stretch, negative margins bleed it flush into
+  the card, radius only on the outer corners) — nothing can sit under it
+  by construction. Then the person as a COLORED CHIP (person color as
+  background, dark bold text, ellipsis at 40 % width for long names),
+  chore name inline, note and time left-aligned beneath in the same text
+  column. The old color dot is gone from Verlauf rows — next to a
+  picture it was noise, and the chip carries the same information where
+  the eye already reads. The dot stays in the trash sheet (no art).
+- Edit sheet: the preview sits at the TOP LEFT at tile proportions
+  (46 % width, tile radius 14) — the sheet now opens with the picture of
+  the tile being edited. The live Bild-Idee coupling is unchanged.
+- Rows without art (one-offs, snapshot-name mismatches) start with the
+  chip — deliberately no placeholder box, an empty frame would be worse
+  than honest raggedness.
+- Chip test pins name, computed person color, dot absence and art-first
+  order. Visual acceptance re-rendered on both device projects.
+- Renumbered 4.80.0 → 4.81.0 DURING deploy prep: the parallel session
+  shipped ITS v4.80.0 (time-picker Clear fix, 886054de) while this
+  feature's suite was running — the second collision today, and both
+  sessions had independently chosen SW cache haushalt-v183. Merged on
+  top (their index/tests changes are disjoint from the art work; the
+  LOG both-prepend resolved by keeping both entries), cache leapfrogged
+  to v184. Two sessions deploying at once WILL eventually clobber a
+  release — the handover rule is not ceremony.
+
 ## 2026-07-27 — v4.80.0 (SW haushalt-v183): «Clear» in the native time picker is now visibly a no-op
 
 - Maintainer concern (screenshot of the Android system picker): the OS
