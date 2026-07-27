@@ -1,3 +1,30 @@
+## 2026-07-27 — process: release lock + intent board (§11b) — parallel sessions, serialized releases
+
+- Maintainer question after the third collision: engineers work in
+  parallel all the time, why can't sessions? Answer: they can — teams
+  parallelize WORK but centralize RELEASE NUMBERING, and that was the
+  missing piece. All three collisions were version/cache races; the code
+  itself merged cleanly every time.
+- deploy.mjs now takes an atomic release lock (refs/heads/release-lock;
+  creation fails if held; stale >30 min is broken automatically; every
+  abort path releases it — the first cut leaked the lock on abort
+  because process.exit() skips finally, caught before shipping). It also
+  guards the actual failure mode: deploying an index.html/sw.js whose
+  APP_VERSION/cache EQUALS the live one aborts. Version numbers are now
+  assigned under the lock, from the remote, never during development.
+- scripts/wip.mjs is the intent board — claim/list/done on wip-* refs —
+  because sessions cannot talk to each other, and today's five parallel
+  releases composing cleanly was luck, not design: both sessions were in
+  Verlauf-adjacent code all evening.
+- All behaviours tested against the real repo before this deploy:
+  foreign lock blocks (exit 2, holder + age printed), version guard
+  aborts (exit 3), lock released on every abort, claim/list/done
+  roundtrip. THIS deploy is the happy path's first real use.
+- No version bump: app files are untouched — scripts and docs only.
+- Adoption note for the OTHER session: you are running the old
+  deploy.mjs until your next fetch/reset. Pull before your next release,
+  set FAIRLI_SESSION, and claim your area on the board.
+
 ## 2026-07-27 — v4.83.0 (SW haushalt-v186): Verlauf order — one row height, square art, one baseline
 
 - Maintainer spec (round 4, from the live device): uniform crops, SAME

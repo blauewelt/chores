@@ -936,6 +936,42 @@ live incidents (weekly goal «had to be saved twice»,
   the column). Since v4.69.4 mockBackend projects members/chores;
   new table mocks adopt the pattern.
 
+## 11b. Working in parallel (protocol, 27.07.2026)
+
+Three release collisions in ONE day taught this: two sessions merged
+each other's code cleanly all day — what collided every single time was
+the RELEASE: both independently assigned the same next APP_VERSION and
+the same next SW cache, and deployed over each other. Human teams
+parallelize work but centralize release numbering; here that
+centralization is mechanical:
+
+- **Release lock (enforced by deploy.mjs — you cannot forget it).**
+  Deploying acquires `refs/heads/release-lock` atomically (ref creation
+  fails if it exists); held by another session → abort with holder and
+  age; stale after 30 min → broken automatically (crashed sessions).
+  Every abort path releases the lock. Set `FAIRLI_SESSION=<name>` so
+  the holder is identifiable.
+- **Version is assigned UNDER the lock, from the remote.** Never pick
+  your APP_VERSION/cache during development. Before the bump: fetch,
+  rebase onto origin/main, read the LIVE version, increment. deploy.mjs
+  guards this: pushing an index.html/sw.js whose version/cache EQUALS
+  the remote's aborts (exit 3) — that equality is exactly the collision.
+- **Intent board (`scripts/wip.mjs`) — the substitute for talking.**
+  `wip.mjs claim "<area>"` at task START, `wip.mjs done` when finished,
+  `wip.mjs list` before starting anything. If a foreign claim overlaps
+  your area: STAND DOWN or renegotiate with the maintainer. The lock
+  serializes deploys; it cannot merge two opinions about the same UI.
+- **Merging when the head moved:** stash → reset to origin/main → pop,
+  resolve LOG.md by keeping BOTH entries (newest on top), verify the
+  foreign feature survived (diff your base against their commit),
+  renumber, re-run the FULL suite on the merged state.
+- Deploys still go straight to main (trunk = prod). No PR layer: there
+  is no human reviewer, the suite + discipline checks are the review,
+  and a PR would double every 10-minute suite run. Exception: a large
+  refactor lives on a feature branch until its release slot.
+- The old rule «one session at a time» is hereby replaced for RELEASES;
+  it still holds per FEATURE AREA (see intent board).
+
 ## 12. Known open items / deferred
 
 - **Per-member permissions server-side:** the v4.38.0 permissions are
