@@ -1,3 +1,38 @@
+## 2026-07-27 — v4.79.0 (SW haushalt-v182): tile art in the edit sheet and in the history
+
+- Maintainer request: surface the tile art in two more places. Chosen in
+  review: the task EDIT sheet and the Verlauf.
+- Edit sheet: a full-width preview of the current tile art sits under the
+  Bild-Idee field and follows it live (debounced 1 s — every prompt
+  variant is its own image generation, per-keystroke would be waste; the
+  prompt feeds from Bild-Idee OR name+note, so all three fields listen).
+  Only when EDITING an existing tile: the art seed hangs off the id, and
+  a new tile has none until save. This makes the Bild-Idee field
+  tangible for the first time — change the idea, see the picture.
+- Verlauf: a 38 px thumbnail per entry, person dot kept (it carries
+  information). SNAPSHOT GUARD: the thumb appears only while the tile
+  still exists AND still carries the entry's snapshot name — history is
+  immutable with respect to the chore (§3), and a renamed tile's new
+  picture would lie next to the old entry text. One-offs (chore_id null)
+  have no art and render as before.
+- Both places reuse EXACTLY the tile URL: SW-cached, so no new requests
+  and no new privacy surface (Pollinations already saw that prompt).
+- The hidden-attribute test caught a real CSS bug before it shipped:
+  display:block on the preview overrode the hidden attribute, so the
+  create sheet showed an empty preview frame. #cArtPrev[hidden] fixes it.
+- **Parallel-session collision, recorded for the next reader:** while
+  this was being built, ANOTHER session deployed v4.78.0 (move-toast for
+  Verlauf date edits, cd73beb1) — its tests appeared unexplained in this
+  session's tree after the base fetch and matched the -g v4.78.0 filter.
+  This feature was renumbered 4.78.0 → 4.79.0, rebased on cd73beb1, and
+  both features' tests run green together. The handover rule stands for
+  a reason: ONE session per working tree at a time; deploy.mjs at least
+  fails loudly on a moved ref (non-fast-forward) instead of clobbering.
+- Visual acceptance on both device projects with a real PNG routed in
+  place of Pollinations (an aborted route leaves art invisible and shows
+  only the reserved gap — the earlier hand-built base64 PNG was invalid
+  and produced exactly that, worth knowing for future previews).
+
 ## 2026-07-27 — v4.78.0 (SW haushalt-v181): move-toast after a Verlauf date edit — plus a seconds-nudge fix it exposed
 
 INCIDENT (27.07., maintainer's own family): an entry meant for «yesterday»

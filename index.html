@@ -343,6 +343,17 @@
   input.goalinp{flex:none; width:84px; text-align:center; appearance:textfield; -moz-appearance:textfield}
   .goalinp::-webkit-outer-spin-button, .goalinp::-webkit-inner-spin-button{-webkit-appearance:none; margin:0}
   .goalhint{color:var(--muted); font-size:12.5px; flex:1 1 100%}
+  /* v4.78.0: Kachelbild an zwei weiteren Orten. Vorschau im Bearbeiten-Sheet
+     (gleiches Seitenverhaeltnis wie die Kachel, 440x300) und Mini-Bild im
+     Verlauf. Beide nutzen EXAKT die Kachel-URL — der SW hat sie gecacht,
+     es entsteht kein neuer Request und kein neuer Privacy-Pfad. */
+  #cArtPrev{display:block; width:100%; aspect-ratio:440/300; object-fit:cover;
+    border-radius:12px; margin-top:8px; background:#161D19; border:1px solid var(--line)}
+  /* display:block schlaegt das hidden-Attribut — ohne diese Zeile zeigte das
+     Anlegen-Sheet den leeren Vorschau-Rahmen (vom Test gefangen). */
+  #cArtPrev[hidden]{display:none}
+  .entry .eart{width:38px; height:38px; border-radius:9px; object-fit:cover;
+    flex:none; background:#252F29}
   .mrow .menupop{top:auto; bottom:100%; margin:0 0 4px}
   /* Kein Platz nach oben (erste Zeilen, seit v4.55.0 vier Eintraege)?
      Dann nach UNTEN aufklappen — sonst liegt das Menue ausserhalb des Sheets. */
@@ -541,6 +552,7 @@
     <div class="field">
       <label for="cArt"><span data-i18n>Bild-Idee</span> <span style="font-weight:400;color:var(--muted)" data-i18n>(optional)</span></label>
       <input type="text" id="cArt" placeholder="z. B. «mowing the lawn with a lawnmower»" maxlength="120" autocomplete="off">
+      <img id="cArtPrev" class="art" alt="" hidden>
       <span class="subnote" style="display:block;margin-top:6px" data-i18n>Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.</span>
     </div>
     <button type="submit" class="btn primary wide" id="saveChore">Speichern</button>
@@ -569,7 +581,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.78.0';
+  const APP_VERSION = '4.79.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2511,8 +2523,16 @@
             const d = new Date(e.done_at);
             const note = e.chore_note || '';
             const editable = g.entries.every(canEditLog);
+            // v4.78.0: Kachelbild im Verlauf — aber nur, wenn die Kachel noch
+            // existiert UND noch den Schnappschuss-Namen traegt. Der Verlauf
+            // ist unveraenderlich gegenueber der Kachel (§3): eine umbenannte
+            // Kachel hat ein NEUES Bild, und das wuerde neben dem alten
+            // Eintragstext luegen. Einmalige (chore_id null) haben kein Bild.
+            const ac = e.chore_id ? state.chores.find(x => x.id === e.chore_id) : null;
+            const art = ac && ac.name === e.chore_name
+              ? `<img class="art eart${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)">` : '';
             const inner = `
-              <span class="dot" style="background:${esc(m ? m.color : '#C2CCC5')}"></span>
+              <span class="dot" style="background:${esc(m ? m.color : '#C2CCC5')}"></span>${art}
               <span class="what"><b>${esc(e.member_name)}</b> · ${esc(e.chore_name)}${n > 1 ? `<span class="xn">×${n}</span>` : ''}
                 ${note ? `<div class="enote">${esc(note)}</div>` : ''}
                 <div class="when">${d.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' })}</div>
@@ -2532,6 +2552,9 @@
           : fm
             ? `<div class="empty"><b>${t('Noch nichts erledigt')}</b>${t(LOGWEEK ? 'Für {name} ist diese Woche noch nichts eingetragen.' : 'Für {name} ist hier noch nichts eingetragen.', { name: fm.name })}</div>`
             : `<div class="empty"><b>${t('Noch nichts erledigt')}</b>${t('Jede gedrückte Aufgabe landet hier.')}</div>`);
+      // Bilder, die beim Rendern schon fertig geladen waren (SW-Cache!),
+      // feuern kein onload mehr — nachziehen wie im Kachel-Zweig.
+      listEl.querySelectorAll('img.art:not(.ok)').forEach(i => { if (i.complete && i.naturalWidth) artOk(i); });
     }
   }
 
@@ -2919,6 +2942,24 @@
   const choreSheet = document.getElementById('choreSheet');
   let choreDirty = false;
   document.getElementById('choreForm').addEventListener('input', () => { choreDirty = true; });
+  // v4.78.0: Idee aendern → Bild sehen. Debounced, denn jede Prompt-Variante
+  // ist eine eigene Bild-Erzeugung — pro Tastendruck waere Verschwendung.
+  // Der Prompt speist sich aus Bild-Idee ODER Name+Notiz (wie choreArt),
+  // darum lauschen alle drei Felder. Nur im Bearbeiten-Modus (stabile id).
+  let artPrevTimer = null;
+  ['cArt', 'cName', 'cNote'].forEach(fid =>
+    document.getElementById(fid).addEventListener('input', () => {
+      const prev = document.getElementById('cArtPrev');
+      if (!editingChore || oneOffMode || prev.hidden) return;
+      clearTimeout(artPrevTimer);
+      artPrevTimer = setTimeout(() => {
+        const url = choreArt({ id: editingChore,
+          name: document.getElementById('cName').value.trim(),
+          note: document.getElementById('cNote').value.trim() || null,
+          art: document.getElementById('cArt').value.trim() || null });
+        if (prev.src !== url) { prev.classList.remove('ok'); prev.src = url; }
+      }, 1000);
+    }));
   // Duplikat-Hinweis: nur beim ANLEGEN, live waehrend des Tippens
   let dupMatch = null;
   document.getElementById('cName').addEventListener('input', () => {
@@ -2978,6 +3019,15 @@
     // Oeffnen im Bearbeiten-Modus: ohne Fokus keine Tastatur.
     setPtsSlider(c ? c.points : 1);
     document.getElementById('deleteChore').style.visibility = c ? 'visible' : 'hidden';
+    // v4.78.0: Bild-Vorschau NUR beim Bearbeiten einer bestehenden Kachel —
+    // der Seed haengt an der id, und die gibt es beim Anlegen noch nicht.
+    // Die Vorschau macht das Bild-Idee-Feld greifbar: Idee aendern, Bild sehen.
+    const prev = document.getElementById('cArtPrev');
+    prev.hidden = !c || oneOffMode;
+    prev.classList.remove('ok');
+    prev.onload = () => prev.classList.add('ok');
+    prev.onerror = () => prev.classList.remove('ok');   // Rahmen bleibt, kein Kaputt-Icon
+    if (c && !oneOffMode) prev.src = choreArt(c);
     choreDirty = false;
     choreSheet.showModal();
   }

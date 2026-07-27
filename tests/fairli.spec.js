@@ -3021,6 +3021,51 @@ test.describe('Fairli', () => {
     });
   });
 
+  // ---------- v4.78.0: Kachelbild im Bearbeiten-Sheet und im Verlauf ----------
+
+  test('Bearbeiten-Sheet zeigt das Kachelbild — und die Bild-Idee aktualisiert es (debounced) (v4.78.0)', async ({ context, page }) => {
+    await mockBackend(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.locator('.chore', { hasText: 'Müll rausbringen' }).locator('.edit').click();
+    const prev = page.locator('#cArtPrev');
+    await expect(prev).toHaveAttribute('src', /gen\.pollinations\.ai/);
+    await expect(prev).toHaveAttribute('src', /seed=/);
+    const before = await prev.getAttribute('src');
+    // Idee tippen: das Bild folgt — nach der Debounce-Pause, nicht pro Taste
+    await page.locator('#cArt').fill('a red robot vacuum');
+    await page.waitForTimeout(400);
+    expect(await prev.getAttribute('src')).toBe(before);        // noch nicht …
+    await expect.poll(() => prev.getAttribute('src'), { timeout: 4000 })
+      .toContain(encodeURIComponent('a red robot vacuum'));     // … jetzt
+  });
+
+  test('KEINE Bild-Vorschau beim Anlegen und bei Einmalig — ohne id gibt es keinen stabilen Seed (v4.78.0)', async ({ context, page }) => {
+    await mockBackend(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.locator('#openAdd').click();                     // Neue Aufgabe
+    await expect(page.locator('#cArtPrev')).toBeHidden();
+    await page.locator('#cancelChore').click();
+    await page.evaluate(() => document.getElementById('oneOffTile').click());   // Einmalig
+    await expect(page.locator('#cArtPrev')).toBeHidden();
+  });
+
+  test('Verlauf traegt das Kachelbild — aber NUR solange die Kachel den Schnappschuss-Namen traegt (v4.78.0)', async ({ context, page }) => {
+    const now = new Date().toISOString();
+    const mk = (id, cid, cname, extra) => Object.assign({ id, chore_id: cid, chore_name: cname, chore_note: '',
+      member_id: 'm-mira', member_name: 'Mira', points: 2, done_at: now, created_at: now, family_id: FAM }, extra);
+    await mockBackend(context, { logRows: () => [
+      mk('l-a', 'c-1', 'Müll rausbringen'),          // Kachel existiert, Name stimmt → Bild
+      mk('l-b', null, 'Pizza holen'),                // Einmalig → kein Bild
+      mk('l-c', 'c-1', 'Alter Kachelname'),          // Schnappschuss ≠ Kachel → KEIN Bild:
+    ] });                                            // das neue Bild wuerde neben dem alten Text luegen (§3)
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    const row = txt => page.locator('.entry', { hasText: txt });
+    await expect(row('Müll rausbringen').first().locator('img.eart')).toHaveAttribute('src', /gen\.pollinations\.ai/);
+    await expect(row('Pizza holen').locator('img.eart')).toHaveCount(0);
+    await expect(row('Alter Kachelname').locator('img.eart')).toHaveCount(0);
+  });
+
   // ---------- v4.76.0: «Wie das Geraet» ist die Standard-Sprachwahl ----------
 
   test('Sprache «Wie das Gerät»: ohne Wahl folgt die App dem Gerät — und die Liste sagt das ehrlich (v4.76.0)', async ({ browser }) => {
