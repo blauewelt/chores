@@ -2802,6 +2802,92 @@ test.describe('Fairli', () => {
     await expect(page.locator('.filterpill')).toContainText('Mira');
   });
 
+  // ---------- v4.73.0 (Beta): Geheimnis raus aus der Adressleiste ----------
+
+  // Das Strippen haengt an der PLATTFORM, nicht am Testprojekt: auf iOS bleibt
+  // die URL stehen (§6.2, Web-Clip backt die aktuelle URL ein). Diese Tests
+  // stellen die UA deshalb SELBST, sonst behaupten sie auf dem iPhone-Projekt
+  // das Gegenteil von dem, was dort gilt — und ein leckender Kontext reisst
+  // Folgetests mit (real passiert: «Target page has been closed» drei Tests
+  // spaeter). Darum eigener Kontext, und Aufraeumen im finally.
+  const UA_ANDROID = 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
+    + '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
+  const UA_IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
+    + 'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+  async function withUA(browser, userAgent, fn) {
+    const ctx = await browser.newContext({ userAgent });
+    try { return await fn(ctx); } finally { await ctx.close(); }
+  }
+
+  test('Beta (Android/Desktop): nach dem ersten Abgleich steht das Familien-Geheimnis NICHT mehr in der URL (v4.73.0)', async ({ browser }) => {
+    // link = auth: die URL ist ein Zugang auf Dauer-Anzeige — Screenshot,
+    // «Tab teilen», Verlauf, Chronik-Sync. Route liegt in localStorage,
+    // die App laeuft ohne URL weiter (Homescreen-Pfad).
+    await withUA(browser, UA_ANDROID, async ctx => {
+      await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] });
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/f/${FAM}`);
+      await expect.poll(() => page.url()).not.toContain(FAM);
+      expect(page.url()).toMatch(/\/chores\/?$/);
+      // … und die App funktioniert unveraendert weiter
+      await expect(page.locator('.chip', { hasText: 'Mira' })).toBeVisible();
+      await page.getByRole('tab', { name: 'Punkte' }).click();
+      await expect(page.locator('.score').first()).toBeVisible();
+      // Reload: der Boot restauriert die Route aus localStorage — und darf
+      // das Geheimnis dabei NICHT zurueckschreiben. Erste Fassung tat genau
+      // das; die URL war ab dem Reload wieder vollstaendig, bis der naechste
+      // Abgleich sie erneut strippte. Also SOFORT nach dem Reload pruefen,
+      // nicht erst wenn die App fertig ist.
+      await page.reload();
+      expect(page.url()).not.toContain(FAM);
+      await expect(page.locator('.chip', { hasText: 'Mira' })).toBeVisible();
+      expect(page.url()).not.toContain(FAM);
+      // … und ein zweiter Reload ebenso (die Marke ist persistent)
+      await page.reload();
+      expect(page.url()).not.toContain(FAM);
+      await expect(page.locator('.chip', { hasText: 'Mira' })).toBeVisible();
+    });
+  });
+
+  test('Persoenlicher Link: das Geheimnis verschwindet AUCH dort — es steht vor dem /u/-Teil (v4.73.0)', async ({ browser }) => {
+    // §12: der persoenliche Link traegt das Familien-Geheimnis. Wer /u/<slug>
+    // abschneidet, hat den Familien-Link — persoenliche Links waren nie eine
+    // Eindaemmung. Also gleiche Behandlung.
+    await withUA(browser, UA_ANDROID, async ctx => {
+      await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] });
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+      await expect.poll(() => page.url()).not.toContain(FAM);
+      expect(page.url()).not.toContain('slugmira1');
+      await expect(page.locator('.chip', { hasText: 'Mira' })).toBeVisible();
+    });
+  });
+
+  test('OHNE Beta bleibt die URL, wie sie war — die Zusage an alle anderen Haushalte (v4.73.0)', async ({ browser }) => {
+    await withUA(browser, UA_ANDROID, async ctx => {
+      await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }] });
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/f/${FAM}`);
+      await expect(page.locator('.chip', { hasText: 'Mira' })).toBeVisible();
+      await page.waitForTimeout(700);
+      expect(page.url()).toContain(FAM);
+    });
+  });
+
+  test('iOS: die URL bleibt stehen, auch MIT Beta — der Web-Clip backt sie ein (v4.73.0)', async ({ browser }) => {
+    // §6.2: ohne Manifest nimmt der iOS-Web-Clip die AKTUELLE URL. Gestrippt
+    // zeigte das Symbol auf BASE und haenge allein an localStorage — auf der
+    // Plattform, die Storage bei Platzdruck raeumt.
+    await withUA(browser, UA_IPHONE, async ctx => {
+      await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] });
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/f/${FAM}`);
+      await expect(page.locator('.chip', { hasText: 'Mira' })).toBeVisible();
+      await page.waitForTimeout(700);
+      expect(page.url()).toContain(FAM);
+    });
+  });
+
   // ---------- v4.72.0: app_version je Eintrag (Schreib-Telemetrie) ----------
 
   test('Neuer Eintrag traegt die App-Version — im Klartext, nur beim ANLEGEN (v4.72.0)', async ({ context, page }) => {

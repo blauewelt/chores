@@ -1,3 +1,57 @@
+## 2026-07-27 — v4.73.0 (SW haushalt-v175, BETA only): the household secret leaves the address bar
+
+- Maintainer finding (Android): sharing a screenshot attaches the page
+  URL. Since link = auth, that is the whole household handed over by
+  accident. The same URL leaks through «share tab», browser history and
+  history sync — a credential on permanent display.
+- Fix: after the FIRST successful sync, `history.replaceState` to BASE.
+  The route is already in localStorage by then (saveRoute at boot), so
+  the app keeps running without a URL — this is not a new mode, it is
+  exactly the homescreen-icon path (generic start_url + loadRoute()).
+- Applies to PERSONAL links too, and that is the point: the personal
+  link carries the family secret in front of the /u/ part (§12, first
+  item). Cutting off /u/<slug> yields the family link. Revoking a
+  url_slug revokes the label, not the access — personal links were never
+  a containment boundary, and the earlier assumption that they were was
+  wrong.
+- NOT on iOS, deliberately: without a manifest the web clip bakes in the
+  CURRENT URL (§6.2, dynamic manifests discarded twice). A stripped
+  iPhone icon would point at BASE and depend entirely on localStorage —
+  on the one platform documented to evict storage under pressure. Safari
+  shows only the domain anyway, so the screenshot damage there is small
+  while the lockout damage would be large.
+- BETA-gated on purpose. This touches routing and install, «the
+  project's biggest minefield» (§6), and the one thing that cannot be
+  verified from a sandbox is a real install. So it ships to one
+  household first. Un-gate only after the device checks below pass.
+- Four tests, two negative controls (disable the strip → red; drop the
+  BETA/iOS guards → red). Full suite green on both engines.
+- The suite then caught the real gap, which the first cut had missed: on
+  RELOAD the boot restores the route from localStorage and wrote the
+  secret straight back into the address bar, so it reappeared on every
+  start until the next sync stripped it again — precisely the seconds in
+  which somebody takes a screenshot. And that is the homescreen-icon
+  path, i.e. every launch. Fix: a per-device, per-household mark
+  (`haushalt.stripurl:<fam>`) set when stripping; the boot's
+  replaceState now goes through `canonUrl()` and never restores a secret
+  once the mark stands. The mark deliberately does not depend on BETA —
+  BETA is only known after the first sync, the boot has to decide
+  earlier. IS_IOS moved above the routing block and is now defined ONCE:
+  two platform detections in one file drift apart, and this one decides
+  whether an iPhone icon still works.
+- Test lesson, paid for once: the first cut asserted «the URL is
+  stripped» from the shared page fixture, so on the webkit-iphone
+  PROJECT it claimed the opposite of what iOS actually does — and the
+  context it left behind killed an unrelated test three cases later
+  («Target page has been closed»). Behaviour that depends on the
+  PLATFORM must set its own user agent, not inherit the project's, and
+  own contexts belong in try/finally. Both engines now run all four.
+- STILL OPEN, and honestly the bigger half: a clean address bar does not
+  make link = auth un-leakable. The invite sheet and the QR code show
+  the link on screen, and that is a screen people screenshot ON PURPOSE
+  to send to somebody. What actually helps is being able to rotate fast
+  — see §12, «In-app link rotation».
+
 ## 2026-07-27 — v4.72.0 (SW haushalt-v174): log.app_version — which build are people actually running?
 
 - Maintainer question: after a deploy nobody knows who has the new

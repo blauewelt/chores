@@ -923,6 +923,26 @@ live incidents (weekly goal «had to be saved twice»,
   with the sentence «Ziele dürfen unterschiedlich sein» (goals may
   differ) — otherwise people reflexively set the same number for
   everyone and it is a points race again.
+- **In-app link rotation** (requested 27.07.2026, NOT built): today
+  rotating a leaked household link means running scripts that live
+  outside the repo (done once, 18.07.). It should be an in-app action:
+  new famx secret → rows copied → verification → old ID tombstoned in
+  retired_families → everyone re-invited by QR. This is the recovery
+  path that actually matters, because link = auth cannot be made
+  un-leakable: v4.73.0 removes the secret from the address bar, but the
+  invite sheet and the QR code still put it on screen, and that is a
+  screen people screenshot on purpose. Reuse the runMigration machinery
+  (backup → encrypted copy → VERIFY → only then delete) — it already
+  does the hard part. Watch the invariant: never delete user data, and
+  tombstone BOTH IDs.
+- **Un-gate v4.73.0 URL stripping** once the device checks pass: (a)
+  Android — install to homescreen from a STRIPPED family URL, then open
+  the icon and confirm the household loads; (b) Android — an existing
+  personal-link shortcut still opens correctly, and a NEW one created
+  after stripping does too (personal links rely on the SW-served
+  manifest, §6.4 is out of date since v4.56.0); (c) iPhone — the URL is
+  unchanged and Add-to-Home-Screen still carries the household. Until
+  then it stays behind families.beta.
 - **Art privacy switch** for encrypted families (Pollinations
   sees tile names as prompts).
 - **Nudge for old-family admins** about the encryption migration

@@ -569,7 +569,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.72.0';
+  const APP_VERSION = '4.73.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -622,6 +622,23 @@
     return location.origin + SHARE_BASE + 'f/' + family + (slug ? '/u/' + slug : '');
   }
 
+  const IS_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  // v4.73.0: Hat dieses Geraet die URL fuer diese Familie schon einmal
+  // gestrippt, darf das Geheimnis NIE wieder in die Leiste — sonst steht es
+  // nach JEDEM Start und jedem Reload erneut da (die Route kommt dann aus
+  // localStorage, und der Boot schrieb sie brav zurueck). Genau diese
+  // Sekunden sind die, in denen jemand einen Screenshot macht.
+  // Die Marke haengt am Geraet und an der Familie, nicht am Beta-Schalter:
+  // BETA kennt erst der erste Abgleich, der Boot muss vorher entscheiden.
+  const stripKey = f => 'haushalt.stripurl:' + f;
+  function wantStripped(f) {
+    if (IS_IOS || !f) return false;                 // iOS: Web-Clip braucht die URL (§6.2)
+    try { return localStorage.getItem(stripKey(f)) === '1'; } catch { return false; }
+  }
+  // Kanonische URL fuer die Adressleiste — gestrippt, sobald die Marke steht.
+  function canonUrl(f, slug) { return wantStripped(f) ? BASE : routeUrl(f, slug); }
+
   // Reihenfolge der Quellen: ?r= (vom 404-Handoff), echter Pfad, Hash (legacy).
   let route = null;
   const qr = new URLSearchParams(location.search).get('r');
@@ -639,11 +656,11 @@
   if (route) {
     saveRoute(route);
     // URL auf saubere Pfadform bringen, ohne Reload (auch für Standalone-Reloads)
-    try { history.replaceState(null, '', routeUrl(route.family, route.userSlug)); } catch {}
+    try { history.replaceState(null, '', canonUrl(route.family, route.userSlug)); } catch {}
   } else {
     route = loadRoute();
     if (route && route.family) {
-      try { history.replaceState(null, '', routeUrl(route.family, route.userSlug)); } catch {}
+      try { history.replaceState(null, '', canonUrl(route.family, route.userSlug)); } catch {}
     }
   }
   const FAMILY = (route && route.family) || null;
@@ -659,8 +676,7 @@
   // Manifeste fuer Install/WebAPK). iOS nutzt so garantiert die aktuelle
   // URL; persoenliche Links bleiben ueberall manifest-frei (mehrere
   // Personen-Shortcuts pro Geraet).
-  const IS_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  // IS_IOS steht weiter oben (die Routing-Entscheidung braucht ihn schon dort).
   // v4.56.0 (Maintainer-Befund): persoenliche Links waren MANIFEST-FREI —
   // deshalb bot Chrome dort nur eine Verknuepfung an, keine echte App. Der
   // Grund von damals (mehrere Personen-Shortcuts pro Geraet duerfen sich
@@ -1629,6 +1645,7 @@
   }
 
   // Alle Zustaende der Abgleich-Schicht VOR pull() deklarieren (pull liest sie).
+  let urlStripped = false;      // v4.73.0: Geheimnis genau EINMAL aus der Leiste nehmen
   let mutationSeq = 0;
   const pendingDeletes = new Map();   // "table:id" -> { resolvedAt }
   const pendingCreates = new Map();
@@ -1712,6 +1729,30 @@
       {
         RETENTION = (fam[0] && fam[0].retention_days) || null;   // v4.52.0
         BETA = !!(fam[0] && fam[0].beta);                         // v4.67.0
+        // v4.73.0 (Beta): Das Familien-GEHEIMNIS steht in der Adressleiste —
+        // link = auth, also ein Zugang auf Dauer-Anzeige. Es leckt nicht nur
+        // per Screenshot (Maintainer-Befund Android: der Teilen-Fluss haengt
+        // die URL an), sondern auch ueber «Tab teilen», Browser-Verlauf und
+        // Chronik-Synchronisierung. Auch PERSOENLICHE Links tragen es: dort
+        // steht das Geheimnis vor dem /u/-Teil (§12, erster Punkt) — wer
+        // /u/<slug> abschneidet, hat den Familien-Link.
+        // Ab hier ist die Route sicher in localStorage (saveRoute im Boot),
+        // die App laeuft ohne URL weiter — exakt wie beim Start ueber das
+        // Homescreen-Symbol (generischer start_url + loadRoute()). Das ist
+        // kein neuer Modus, sondern der bestehende Installations-Pfad.
+        // NICHT auf iOS: dort backt der Web-Clip die AKTUELLE URL ein
+        // (§6.2 — dynamische Manifeste wurden zweimal verworfen). Ein
+        // gestripptes iPhone-Symbol zeigte auf BASE und haenge allein an
+        // localStorage — auf genau der Plattform, die Storage bei Platzdruck
+        // raeumt. Safari zeigt ohnehin nur die Domain; der Screenshot-Schaden
+        // ist dort klein, der Lockout-Schaden waere gross.
+        if (BETA && !IS_IOS && FAMILY && !urlStripped) {
+          urlStripped = true;
+          try { localStorage.setItem(stripKey(FAMILY), '1'); } catch {}
+          if (location.pathname !== BASE) {
+            try { history.replaceState(null, '', BASE); } catch {}
+          }
+        }
         const srvName = (fam[0] && fam[0].name) || '';
         if (!pendingFamName) state.famName = srvName;
         else if (pendingFamName.resolvedAt && pendingFamName.resolvedAt < pullStartedAt) {
