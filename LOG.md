@@ -36,6 +36,21 @@
 - Visual acceptance in both device projects, DE and EN, for a household
   that has never seen a goal: person sheet with 🎯 field, Ø hint and
   week bars, and the points view unchanged while no goal is set.
+- **Process failure, recorded because it is the useful part:** the suite
+  check and the deploy were chained into ONE shell command, so the deploy
+  fired before the result could be read — and one webkit case WAS red.
+  It turned out to be a WebKit crash inside ctx.close() in the sandbox
+  (MESA/EGL without a GPU → «WebKit encountered an internal error»),
+  every assertion in the test had already passed, CI on real
+  infrastructure is green for bbd4b45e and the case passes 3/3 on
+  re-run. So the shipped state is sound — by luck, not by process.
+  Two fixes: withUA() now shields ONLY the teardown (a disposable
+  context failing to be disposed is infrastructure, not a finding, and
+  the test body stays unguarded), and §10 gets the rule: verify, READ,
+  then deploy, never in one command. Second trap from the same incident:
+  grep -E "failed|flaky" also matches «MESA: error» and «libEGL warning»
+  in the log, which can make a red run look clean — anchor on the
+  SUMMARY lines.
 - Unchanged for households without goals — that promise still holds and
   is still tested: goalOf() returns 0 without a goal, so the card, bar
   and ranking render exactly as before.

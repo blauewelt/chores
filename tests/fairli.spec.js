@@ -2816,7 +2816,17 @@ test.describe('Fairli', () => {
     + 'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
   async function withUA(browser, userAgent, fn) {
     const ctx = await browser.newContext({ userAgent });
-    try { return await fn(ctx); } finally { await ctx.close(); }
+    try {
+      return await fn(ctx);
+    } finally {
+      // Der Abbau darf den Test nicht faellen. Am 27.07. stuerzte WebKit im
+      // Sandbox-Container WAEHREND ctx.close() ab (MESA/EGL ohne GPU, dann
+      // «WebKit encountered an internal error») — 20 s Timeout, Test rot,
+      // obwohl JEDE Zusicherung vorher durchgelaufen war. Der Kontext ist an
+      // dieser Stelle Wegwerfware; ein Fehler beim Wegwerfen ist Infrastruktur,
+      // kein Befund. NUR der Abbau ist abgeschirmt, nie der Testkoerper.
+      try { await ctx.close(); } catch {}
+    }
   }
 
   test('Beta (Android/Desktop): nach dem ersten Abgleich steht das Familien-Geheimnis NICHT mehr in der URL (v4.73.0)', async ({ browser }) => {

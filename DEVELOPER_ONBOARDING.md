@@ -737,6 +737,22 @@ marks (never fires) and a mock substring bug
 NEWS_VERSION rule: ALWAYS = version of the recap release itself.
 
 ### Suite output & self-routers (mandatory)
+**Verify, READ, and only THEN deploy — never in one command
+(27.07.2026).** Chaining the suite check and `deploy.mjs` into a single
+shell line means the deploy fires regardless of what the check said;
+there is no way to act on a red you have not read yet. It happened
+exactly once: one webkit case was red and the deploy went out anyway.
+It turned out to be a sandbox WebKit crash during context teardown and
+CI on real infrastructure was green — but that was luck, not process.
+Related trap from the same incident: `grep -E "failed|flaky"` also
+matches GPU/driver noise («MESA: error», «libEGL warning») and can make
+a red run look clean. Anchor on the SUMMARY lines, and on `✘`.
+
+**A crashing teardown is infrastructure, not a finding.** Helpers that
+own a context (`withUA`) shield ONLY the disposal, never the test body:
+a disposable context failing to be disposed must not turn a run red
+after every assertion has already passed.
+
 **Abort external hosts — even with your own routing (v4.70.0).**
 `blockExternal(context)` (fonts.googleapis, fonts.gstatic,
 gen.pollinations) sits inside `mockBackend`, but must be called
