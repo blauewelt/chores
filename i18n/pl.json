@@ -209,5 +209,8 @@
   "Letzter Push-Fehler": "Ostatni błąd wysyłki",
   "Keine": "Brak",
   "Keiner": "Brak",
-  "Ziele lokal": "Cele na urządzeniu"
+  "Ziele lokal": "Cele na urządzeniu",
+  "Verschoben auf {day}, {time}": "Przeniesiono na {day}, {time}",
+  "{n} Einträge verschoben auf {day}, {time}": "Przeniesiono {n} wpisów na {day}, {time}",
+  "nicht mehr in «Diese Woche»": "już nie w „Ten tydzień”"
 }

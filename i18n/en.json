@@ -209,5 +209,8 @@
   "Letzter Push-Fehler": "Last push error",
   "Keine": "None",
   "Keiner": "None",
-  "Ziele lokal": "Goals on device"
+  "Ziele lokal": "Goals on device",
+  "Verschoben auf {day}, {time}": "Moved to {day}, {time}",
+  "{n} Einträge verschoben auf {day}, {time}": "{n} entries moved to {day}, {time}",
+  "nicht mehr in «Diese Woche»": "no longer in “This week”"
 }

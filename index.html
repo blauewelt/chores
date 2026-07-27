@@ -569,7 +569,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.77.0';
+  const APP_VERSION = '4.78.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2082,6 +2082,15 @@
     d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // Montag
     return d.toISOString();
   }
+  // Day label («Heute»/«Gestern»/full date) — used by the Verlauf's day
+  // headers AND by the move-toast (v4.78.0), hence module scope.
+  const dayLabel = iso => {
+    const d = new Date(iso), now = new Date();
+    const y = new Date(now); y.setDate(now.getDate() - 1);
+    if (d.toDateString() === now.toDateString()) return t('Heute');
+    if (d.toDateString() === y.toDateString()) return t('Gestern');
+    return d.toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' });
+  };
   function totals() {
     const t = {};
     state.members.forEach(m => t[m.id] = { pts: 0, n: 0 });
@@ -2469,13 +2478,7 @@
         else groups.push({ key, entries: [e] });
       }
       const dayKey = iso => new Date(iso).toDateString();
-      const dayLabel = iso => {
-        const d = new Date(iso), now = new Date();
-        const y = new Date(now); y.setDate(now.getDate() - 1);
-        if (d.toDateString() === now.toDateString()) return t('Heute');
-        if (d.toDateString() === y.toDateString()) return t('Gestern');
-        return d.toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' });
-      };
+      // dayLabel: module scope since v4.78.0 (shared with the move-toast)
       let lastDay = null;
       const fm = LOGFILTER ? memberById(LOGFILTER) : null;
       const pill = fm ? `<button class="filterpill" id="clearLogFilter" aria-label="${esc(t('Filter entfernen'))}">
@@ -2820,7 +2823,12 @@
       // Zeit: Serie wird um dasselbe Delta VERSCHOBEN (Abstaende und
       // Reihenfolge bleiben), Einzeleintrag direkt gesetzt.
       const tv = sh.querySelector('#lTime').value;
-      const delta = tv ? (new Date(tv) - new Date(first.done_at)) : 0;
+      // Sub-minute «deltas» are truncation noise, not intent: the input has
+      // minute precision, so an untouched time still differs from done_at by
+      // its stripped seconds. Before v4.78.0 every unrelated save silently
+      // nudged done_at backwards by those seconds — now it stays put.
+      const rawDelta = tv ? (new Date(tv) - new Date(first.done_at)) : 0;
+      const delta = Math.abs(rawDelta) < 60000 ? 0 : rawDelta;
       for (const id of ids) {
         const x = state.log.find(y => y.id === id);
         if (!x) continue;
@@ -2836,6 +2844,19 @@
       }
       if (delta) state.log.sort((a, b) => new Date(b.done_at) - new Date(a.done_at));
       save(); render(); sh.close();   // save() entwertet laufende Pulls (mutationSeq)
+      // Move-toast (v4.78.0): an edit that changes the date silently re-files
+      // the entry under another day header — and possibly out of the view the
+      // user is standing in. Incident 27.07.: an entry meant for «yesterday»
+      // landed a day further AND left «Diese Woche» (Monday reset), reading
+      // as data loss. The toast names the landing day; if the entry left the
+      // current week, it says that too — BEFORE anyone goes looking.
+      if (delta) {
+        const d = new Date(first.done_at);
+        let msg = t(ids.length > 1 ? '{n} Einträge verschoben auf {day}, {time}' : 'Verschoben auf {day}, {time}',
+          { n: ids.length, day: dayLabel(first.done_at), time: d.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' }) });
+        if (first.done_at < weekStart()) msg += ' — ' + t('nicht mehr in «Diese Woche»');
+        toast(msg);
+      }
     };
     sh.showModal();
   }

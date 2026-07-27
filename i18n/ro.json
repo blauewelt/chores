@@ -209,5 +209,8 @@
   "Letzter Push-Fehler": "Ultima eroare de trimitere",
   "Keine": "Niciunul",
   "Keiner": "Niciuna",
-  "Ziele lokal": "Obiective pe dispozitiv"
+  "Ziele lokal": "Obiective pe dispozitiv",
+  "Verschoben auf {day}, {time}": "Mutat la {day}, {time}",
+  "{n} Einträge verschoben auf {day}, {time}": "{n} intrări mutate la {day}, {time}",
+  "nicht mehr in «Diese Woche»": "nu mai este în „Săptămâna aceasta”"
 }

@@ -209,5 +209,8 @@
   "Letzter Push-Fehler": "Dernière erreur d’envoi",
   "Keine": "Aucune",
   "Keiner": "Aucune",
-  "Ziele lokal": "Objectifs sur l’appareil"
+  "Ziele lokal": "Objectifs sur l’appareil",
+  "Verschoben auf {day}, {time}": "Déplacé au {day}, {time}",
+  "{n} Einträge verschoben auf {day}, {time}": "{n} entrées déplacées au {day}, {time}",
+  "nicht mehr in «Diese Woche»": "plus dans « Cette semaine »"
 }

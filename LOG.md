@@ -1,3 +1,32 @@
+## 2026-07-27 — v4.78.0 (SW haushalt-v181): move-toast after a Verlauf date edit — plus a seconds-nudge fix it exposed
+
+INCIDENT (27.07., maintainer's own family): an entry meant for «yesterday»
+was date-edited and «disappeared». Live-DB forensics: it existed the whole
+time, owner unchanged, but it had landed one day FURTHER back than intended
+— and because the edit happened on a Monday, «yesterday» was already last
+week, so the entry also left the weekly scoreboard and the week-restricted
+Verlauf jump (v4.66.0). Re-filed two headers down and absent from every
+«Diese Woche» view, it read as data loss.
+
+- Move-toast: saving a Verlauf edit whose date changed now confirms the
+  landing day — «Verschoben auf Samstag, 25. Juli, 11:11» (dayLabel says
+  Heute/Gestern where applicable; series: «{n} Einträge verschoben …»).
+  If the new date lies before weekStart(), the toast appends
+  «— nicht mehr in ‹Diese Woche›» — the answer BEFORE anyone goes looking.
+- dayLabel moved to module scope (was render-local); shared by the day
+  headers and the toast, byte-identical output.
+- FOUND BY THE NEW TEST, fixed alongside: the datetime-local input has
+  minute precision, so an untouched time differs from done_at by its
+  stripped seconds — every unrelated save (rename, note, points) silently
+  nudged done_at backwards by up to 59 s. Sub-minute deltas now count as
+  «no move»: done_at stays byte-identical on unrelated edits, and the
+  toast cannot fire on truncation noise.
+- 3 new i18n keys in 19 languages; 2 new tests (name-only edit stays
+  silent + same-day move names «Heute» without week warning; out-of-week
+  move warns and the entry is provably still in the list). The name-only
+  case doubles as the regression test for the seconds-nudge.
+- APP_VERSION 4.78.0, SW-Cache haushalt-v181
+
 ## 2026-07-27 — v4.77.0 (SW haushalt-v180): «Adressleiste aufräumen» for every household; rotation design frozen in §12
 
 - Maintainer decisions: un-gate the tidy toggle now; rotation design is

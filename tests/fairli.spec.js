@@ -3938,6 +3938,53 @@ test.describe('Fairli', () => {
     await expect(sheet).toContainText('Mira:8');                     // lokale Ziel-Wahrheit
   });
 
+  // ---------- v4.78.0: Verschiebe-Toast nach Verlaufs-Edit ----------
+
+  test('Datums-Edit im Verlauf bestätigt den Landetag als Toast; reiner Namens-Edit schweigt (v4.78.0)', async ({ context, page }) => {
+    const entry = { id: 'l-mv1', chore_id: null, chore_name: 'Tonne rausstellen', chore_note: '',
+      member_id: 'm-mira', member_name: 'Mira', points: 1,
+      done_at: new Date().toISOString(), created_at: new Date().toISOString(), family_id: FAM };
+    await mockBackend(context, { logRows: () => [entry] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    // 1) Nur der Name geaendert → KEIN Verschiebe-Toast
+    await page.locator('[data-editlog]').first().click();
+    await page.locator('#lName').fill('Tonne raus und zurück');
+    await page.locator('#saveLog').click();
+    await page.waitForTimeout(150);
+    await expect(page.locator('#toast')).not.toContainText('Verschoben');
+    // 2) Zeit innerhalb HEUTE geaendert → Toast nennt «Heute» + Uhrzeit, OHNE Wochen-Warnung
+    await page.locator('[data-editlog]').first().click();
+    const v = await page.locator('#lTime').inputValue();
+    // 12 h Abstand, gleiche Kalendertag-Haelfte gewechselt: immer >1 min
+    // Delta (Sub-Minuten-Regel greift nie), immer noch «Heute».
+    const nt = String((parseInt(v.slice(11, 13), 10) + 12) % 24).padStart(2, '0') + v.slice(13, 16);
+    await page.locator('#lTime').fill(v.slice(0, 11) + nt);
+    await page.locator('#saveLog').click();
+    await expect(page.locator('#toast')).toContainText('Verschoben auf Heute, ' + nt);
+    await expect(page.locator('#toast')).not.toContainText('Diese Woche');
+  });
+
+  test('Datums-Edit, der die Woche verlässt, WARNT — genau der 27.07.-Fall «Eintrag verschwunden» (v4.78.0)', async ({ context, page }) => {
+    const entry = { id: 'l-mv2', chore_id: null, chore_name: 'Tonne rausstellen', chore_note: '',
+      member_id: 'm-mira', member_name: 'Mira', points: 1,
+      done_at: new Date().toISOString(), created_at: new Date().toISOString(), family_id: FAM };
+    await mockBackend(context, { logRows: () => [entry] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('[data-editlog]').first().click();
+    // 8 Tage zurueck liegt IMMER vor weekStart() (Montag), egal an welchem
+    // Wochentag der Test laeuft — kein weekSafeAgo noetig, der Rand ist der Punkt.
+    const d = new Date(Date.now() - 8 * 86400e3), p = x => String(x).padStart(2, '0');
+    await page.locator('#lTime').fill(`${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T11:11`);
+    await page.locator('#saveLog').click();
+    await expect(page.locator('#toast')).toContainText('Verschoben auf');
+    await expect(page.locator('#toast')).toContainText('11:11');
+    await expect(page.locator('#toast')).toContainText('nicht mehr in «Diese Woche»');
+    // Der Eintrag ist NICHT weg: er steht jetzt unter seinem neuen Tages-Header
+    await expect(page.locator('#list')).toContainText('Tonne raus');
+  });
+
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);

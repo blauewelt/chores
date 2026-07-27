@@ -209,5 +209,8 @@
   "Letzter Push-Fehler": "Последняя ошибка отправки",
   "Keine": "Нет",
   "Keiner": "Нет",
-  "Ziele lokal": "Цели на устройстве"
+  "Ziele lokal": "Цели на устройстве",
+  "Verschoben auf {day}, {time}": "Перенесено на {day}, {time}",
+  "{n} Einträge verschoben auf {day}, {time}": "{n} записей перенесено на {day}, {time}",
+  "nicht mehr in «Diese Woche»": "больше не в «Этой неделе»"
 }

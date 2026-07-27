@@ -209,5 +209,8 @@
   "Letzter Push-Fehler": "Son gönderim hatası",
   "Keine": "Yok",
   "Keiner": "Yok",
-  "Ziele lokal": "Cihazdaki hedefler"
+  "Ziele lokal": "Cihazdaki hedefler",
+  "Verschoben auf {day}, {time}": "{day}, {time} tarihine taşındı",
+  "{n} Einträge verschoben auf {day}, {time}": "{n} kayıt {day}, {time} tarihine taşındı",
+  "nicht mehr in «Diese Woche»": "artık “Bu hafta” içinde değil"
 }

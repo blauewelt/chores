@@ -209,5 +209,8 @@
   "Letzter Push-Fehler": "最近推送错误",
   "Keine": "无",
   "Keiner": "无",
-  "Ziele lokal": "设备上的目标"
+  "Ziele lokal": "设备上的目标",
+  "Verschoben auf {day}, {time}": "已移至 {day} {time}",
+  "{n} Einträge verschoben auf {day}, {time}": "{n} 条记录已移至 {day} {time}",
+  "nicht mehr in «Diese Woche»": "不再属于“本周”"
 }

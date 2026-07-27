@@ -209,5 +209,8 @@
   "Letzter Push-Fehler": "अंतिम पुश त्रुटि",
   "Keine": "कोई नहीं",
   "Keiner": "कोई नहीं",
-  "Ziele lokal": "डिवाइस पर लक्ष्य"
+  "Ziele lokal": "डिवाइस पर लक्ष्य",
+  "Verschoben auf {day}, {time}": "{day}, {time} पर ले जाया गया",
+  "{n} Einträge verschoben auf {day}, {time}": "{n} प्रविष्टियाँ {day}, {time} पर ले जाई गईं",
+  "nicht mehr in «Diese Woche»": "अब «इस सप्ताह» में नहीं"
 }

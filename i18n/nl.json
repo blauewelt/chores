@@ -209,5 +209,8 @@
   "Letzter Push-Fehler": "Laatste push-fout",
   "Keine": "Geen",
   "Keiner": "Geen",
-  "Ziele lokal": "Doelen op toestel"
+  "Ziele lokal": "Doelen op toestel",
+  "Verschoben auf {day}, {time}": "Verplaatst naar {day}, {time}",
+  "{n} Einträge verschoben auf {day}, {time}": "{n} items verplaatst naar {day}, {time}",
+  "nicht mehr in «Diese Woche»": "niet meer in “Deze week”"
 }

@@ -209,5 +209,8 @@
   "Letzter Push-Fehler": "Kesalahan kirim terakhir",
   "Keine": "Tidak ada",
   "Keiner": "Tidak ada",
-  "Ziele lokal": "Target di perangkat"
+  "Ziele lokal": "Target di perangkat",
+  "Verschoben auf {day}, {time}": "Dipindahkan ke {day}, {time}",
+  "{n} Einträge verschoben auf {day}, {time}": "{n} entri dipindahkan ke {day}, {time}",
+  "nicht mehr in «Diese Woche»": "tidak lagi di “Minggu ini”"
 }

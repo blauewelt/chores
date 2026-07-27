@@ -209,5 +209,8 @@
   "Letzter Push-Fehler": "直近の送信エラー",
   "Keine": "なし",
   "Keiner": "なし",
-  "Ziele lokal": "この端末の目標"
+  "Ziele lokal": "この端末の目標",
+  "Verschoben auf {day}, {time}": "{day} {time} に移動しました",
+  "{n} Einträge verschoben auf {day}, {time}": "{n}件を {day} {time} に移動しました",
+  "nicht mehr in «Diese Woche»": "「今週」の対象外になりました"
 }

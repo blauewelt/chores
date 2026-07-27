@@ -209,5 +209,8 @@
   "Letzter Push-Fehler": "Último error de envío",
   "Keine": "Ninguna",
   "Keiner": "Ninguno",
-  "Ziele lokal": "Metas en el dispositivo"
+  "Ziele lokal": "Metas en el dispositivo",
+  "Verschoben auf {day}, {time}": "Movido a {day}, {time}",
+  "{n} Einträge verschoben auf {day}, {time}": "{n} entradas movidas a {day}, {time}",
+  "nicht mehr in «Diese Woche»": "ya no está en «Esta semana»"
 }

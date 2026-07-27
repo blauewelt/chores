@@ -209,5 +209,8 @@
   "Letzter Push-Fehler": "마지막 전송 오류",
   "Keine": "없음",
   "Keiner": "없음",
-  "Ziele lokal": "기기의 목표"
+  "Ziele lokal": "기기의 목표",
+  "Verschoben auf {day}, {time}": "{day} {time}(으)로 이동됨",
+  "{n} Einträge verschoben auf {day}, {time}": "{n}개 항목이 {day} {time}(으)로 이동됨",
+  "nicht mehr in «Diese Woche»": "더 이상 “이번 주”에 없음"
 }

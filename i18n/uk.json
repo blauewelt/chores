@@ -209,5 +209,8 @@
   "Letzter Push-Fehler": "Остання помилка надсилання",
   "Keine": "Немає",
   "Keiner": "Немає",
-  "Ziele lokal": "Цілі на пристрої"
+  "Ziele lokal": "Цілі на пристрої",
+  "Verschoben auf {day}, {time}": "Перенесено на {day}, {time}",
+  "{n} Einträge verschoben auf {day}, {time}": "{n} записів перенесено на {day}, {time}",
+  "nicht mehr in «Diese Woche»": "більше не в «Цьому тижні»"
 }
