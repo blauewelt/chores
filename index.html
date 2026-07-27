@@ -382,17 +382,23 @@
   /* display:block schlaegt das hidden-Attribut — ohne diese Zeile zeigte das
      Anlegen-Sheet den leeren Vorschau-Rahmen (vom Test gefangen). */
   #cArtPrev[hidden]{display:none}
-  /* Maintainer-Feedback 27.07. (3. Runde): das Bild spannt die VOLLE
-     Zeilenhoehe und blutet links buendig in die Karte (negative Raender
-     gegen das Karten-Padding, Radius nur an den linken Ecken). So kann
-     nichts mehr «unter» dem Bild landen — es ist eine eigene Spalte. */
-  .entry .eart{align-self:stretch; width:64px; height:auto; min-height:54px;
-    border-radius:calc(var(--radius) - 1px) 0 0 calc(var(--radius) - 1px);
-    margin:-11px 3px -11px -13px; object-fit:cover; flex:none; background:#252F29}
+  /* Maintainer-Feedback 27.07. (4. Runde, Ordnung): JEDE Verlaufszeile hat
+     DIESELBE Hoehe, das Bild ist ein einheitliches QUADRAT, Zeile 1 traegt
+     Chip + Titel auf EINER Grundlinie, Notiz/Zeit folgen einzeilig darunter,
+     Inhalt vertikal zentriert. Einheit schlaegt Dichte: lange Titel und
+     Notizen werden mit Ellipse gekappt statt die Zeile zu sprengen. */
+  .entry.vrow{height:96px; gap:12px}
+  .entry.vrow .what{display:flex; flex-direction:column; gap:2px; justify-content:center}
+  .entry .eart, .entry .eartph{width:60px; height:60px; border-radius:12px;
+    object-fit:cover; flex:none; background:#252F29}
+  .entry .eartph{background:#1E2620}                 /* leerer Slot: gleiche Spalte, ruhig */
+  .entry .eline1{display:flex; align-items:baseline; gap:9px; min-width:0}
+  .entry .ename{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
+  .entry.vrow .enote, .entry.vrow .when{overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap; margin:0}
   .entry .mchip{display:inline-block; padding:2px 10px; border-radius:999px;
-    color:#10140F; font-weight:800; font-size:13px; margin-right:8px;
-    vertical-align:1px; max-width:40%; overflow:hidden; text-overflow:ellipsis;
-    white-space:nowrap}
+    color:#10140F; font-weight:800; font-size:13px; flex:none; max-width:44%;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .mrow .menupop{top:auto; bottom:100%; margin:0 0 4px}
   /* Kein Platz nach oben (erste Zeilen, seit v4.55.0 vier Eintraege)?
      Dann nach UNTEN aufklappen — sonst liegt das Menue ausserhalb des Sheets. */
@@ -620,7 +626,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.82.0';
+  const APP_VERSION = '4.83.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2653,22 +2659,27 @@
             // Kachel hat ein NEUES Bild, und das wuerde neben dem alten
             // Eintragstext luegen. Einmalige (chore_id null) haben kein Bild.
             const ac = e.chore_id ? state.chores.find(x => x.id === e.chore_id) : null;
+            // Ohne Bild ein LEERER Slot in gleicher Groesse: die Textspalte
+            // beginnt in jeder Zeile an derselben x-Koordinate (Ordnung
+            // schlaegt hier die fruehere «ehrliche Raggedness», 4. Runde).
             const art = ac && ac.name === e.chore_name
-              ? `<img class="art eart${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)">` : '';
+              ? `<img class="art eart${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)">`
+              : '<span class="eartph"></span>';
             // v4.80.0: Das Bild fuehrt die Zeile an, die Person ist ein farbiger
             // Chip. Der alte Farbpunkt war neben dem Bild nur noch Rauschen
             // (Maintainer-Screenshot 27.07.); der Chip traegt dieselbe
             // Information — Personenfarbe — dort, wo das Auge sowieso liest.
             const inner = `
               ${art}
-              <span class="what"><span class="mchip" style="background:${esc(m ? m.color : '#C2CCC5')}">${esc(e.member_name)}</span>${esc(e.chore_name)}${n > 1 ? `<span class="xn">×${n}</span>` : ''}
+              <span class="what">
+                <span class="eline1"><span class="mchip" style="background:${esc(m ? m.color : '#C2CCC5')}">${esc(e.member_name)}</span><span class="ename">${esc(e.chore_name)}</span>${n > 1 ? `<span class="xn">×${n}</span>` : ''}</span>
                 ${note ? `<div class="enote">${esc(note)}</div>` : ''}
                 <div class="when">${d.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' })}</div>
               </span>
               <span class="pts">+${sum}</span>`;
             return editable
-              ? `<button class="entry" data-editlog="${ids}">${inner}</button>`
-              : `<div class="entry">${inner}</div>`;
+              ? `<button class="entry vrow" data-editlog="${ids}">${inner}</button>`
+              : `<div class="entry vrow">${inner}</div>`;
           }).map((html, i) => {
             const day = dayKey(groups[i].entries[0].done_at);
             const head = day !== lastDay ? `<div class="dayhead">${dayLabel(groups[i].entries[0].done_at)}</div>` : '';

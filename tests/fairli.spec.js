@@ -3082,7 +3082,7 @@ test.describe('Fairli', () => {
     await expect(row('Alter Kachelname').locator('img.eart')).toHaveCount(0);
   });
 
-  test('Verlauf-Zeile: Bild fuehrt, Person ist ein farbiger Chip, der alte Punkt ist weg (v4.80.0)', async ({ context, page }) => {
+  test('Verlauf-Zeile: Bild fuehrt, Person ist ein farbiger Chip, der alte Punkt ist weg (v4.80.0/v4.82.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
@@ -3096,6 +3096,36 @@ test.describe('Fairli', () => {
     // … und das Bild steht VOR dem Text (erstes Element der Zeile)
     const first = await row.evaluate(el => el.firstElementChild.className);
     expect(first).toContain('eart');
+  });
+
+  test('Verlauf-Ordnung: JEDE Zeile gleich hoch, Bild quadratisch, ohne Bild ein leerer Slot (v4.82.0)', async ({ context, page }) => {
+    // Maintainer-Spez 27.07.: gleiche Zeilenhoehe ueberall, Inhalt vertikal
+    // zentriert, Bild als einheitliches Quadrat, Textspalte immer an derselben
+    // x-Koordinate — Einmalige bekommen dafuer einen leeren Slot.
+    const now = new Date().toISOString();
+    const mk = (id, cid, cname, note, off) => ({ id, chore_id: cid, chore_name: cname, chore_note: note,
+      member_id: 'm-mira', member_name: 'Mira', points: 2,
+      done_at: new Date(Date.now() - off).toISOString(), created_at: now, family_id: FAM });
+    await mockBackend(context, { logRows: () => [
+      mk('l-a', 'c-1', 'Müll rausbringen', 'nur Restmüll', 0),   // Bild + Notiz (3 Zeilen)
+      mk('l-b', null, 'Pizza holen', '', 3600e3),                // kein Bild, keine Notiz (2 Zeilen)
+    ] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    const rows = page.locator('.entry.vrow');
+    await expect(rows).toHaveCount(2);
+    const boxes = [await rows.nth(0).boundingBox(), await rows.nth(1).boundingBox()];
+    expect(Math.abs(boxes[0].height - boxes[1].height)).toBeLessThan(1);   // gleiche Hoehe
+    // Bild ist quadratisch …
+    const img = await page.locator('.entry img.eart').first().boundingBox();
+    expect(Math.abs(img.width - img.height)).toBeLessThan(1);
+    // … und der bildlose Eintrag traegt den leeren Slot in gleicher Groesse
+    const ph = await page.locator('.entry .eartph').first().boundingBox();
+    expect(Math.abs(ph.width - img.width)).toBeLessThan(1);
+    // Textspalte startet in beiden Zeilen an derselben x-Koordinate
+    const x1 = (await rows.nth(0).locator('.eline1').boundingBox()).x;
+    const x2 = (await rows.nth(1).locator('.eline1').boundingBox()).x;
+    expect(Math.abs(x1 - x2)).toBeLessThan(1);
   });
 
   // ---------- v4.76.0: «Wie das Geraet» ist die Standard-Sprachwahl ----------

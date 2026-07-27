@@ -1,3 +1,33 @@
+## 2026-07-27 — v4.83.0 (SW haushalt-v186): Verlauf order — one row height, square art, one baseline
+
+- Maintainer spec (round 4, from the live device): uniform crops, SAME
+  height for every row, chip and title letter-aligned on one baseline,
+  note/time on the following lines, everything vertically centered.
+- Row is now a fixed 96 px (.vrow — scoped so the trash sheet keeps its
+  own layout). The art is a uniform 60 px SQUARE (object-fit:cover,
+  radius 12) instead of the full-height bleed from v4.81.0 — variable
+  row heights had made those crops visibly inconsistent from row to row.
+- Line 1 is a flex row with align-items:baseline: chip text and chore
+  title sit on the SAME baseline. Long titles and notes get single-line
+  ellipsis — uniformity beats density in a feed.
+- REVERSED from v4.80.0, deliberately: rows without art (one-offs,
+  renamed tiles) now carry an EMPTY slot in the same size, so the text
+  column starts at one x-coordinate in every row. The earlier «honest
+  raggedness» stance lost to the maintainer's ordered-look requirement —
+  the slot is quiet (slightly lighter than the card, no icon), so it
+  reads as a gutter, not as a broken image.
+- Structure test pins all of it: equal row heights, square image, slot
+  in image size, and the text column x-position identical across rows
+  with and without art.
+- Renumbered AGAIN during deploy prep (4.82.0 → 4.83.0): the parallel
+  session shipped ITS v4.82.0 (own time picker, ef461ff0) while this
+  suite ran — third collision today, third time both sessions chose the
+  same next version AND the same next SW cache independently. Merged on
+  top; their picker verified present after the merge. The sessions are
+  now effectively interleaving releases blind. STOP RULE for whoever
+  reads this next: check git log for a foreign head before EVERY bump,
+  and if the other session is still live, one of the two stands down.
+
 ## 2026-07-27 — v4.82.0 (SW haushalt-v185): own time picker — the OS dialog is gone
 
 - Maintainer decision (after the v4.80.0 «Clear» round): replace
