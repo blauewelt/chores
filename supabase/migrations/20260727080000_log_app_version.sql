@@ -1,0 +1,68 @@
+-- App version per entry (v4.72.0). ONE additive, nullable column on log.
+--
+-- WHY: after a deploy nobody knows who is actually running the new build.
+-- The service worker only activates on the NEXT app open, so a device can
+-- sit on a stale version for days while its user reports bugs that were
+-- fixed long ago (v4.69.x burned half a day on exactly that: "device
+-- likely on a stale SW" was a GUESS, never a measurement). This column
+-- turns the guess into data.
+--
+-- WHY ON log AND NOT ON members: members carries the touch_updated_at
+-- trigger, and the delta sync keys off updated_at. Writing a version there
+-- on every action would bump the row, push it into every device's next
+-- delta, and add churn right next to the pendingCreates/marks machinery
+-- that caused the v4.69 goal saga. Log rows are written anyway — no extra
+-- traffic, no new interaction. As a bonus the log gives a TIME SERIES
+-- (adoption over days), where members would only give a snapshot.
+--
+-- SEMANTICS: set on INSERT only, never on edit and never on the 1 h point
+-- accumulation. The value therefore means "version that CREATED this
+-- entry", not "version that last touched the row". NULL = written by a
+-- client older than v4.72.0 (or by a device that never updated) — that is
+-- a meaningful reading, not missing data.
+--
+-- SAFETY (existing households):
+--   * additive + nullable + `if not exists` → idempotent under the
+--     db-migrate replay rule, and no existing row is touched or rewritten.
+--   * Old clients keep working unchanged: they neither write the column
+--     (nullable) nor select it (the pull uses an explicit LCOLS list).
+--     Version-cut philosophy — old clients are never locked out.
+--   * Cleartext by design, like points/member_id/done_at: NOT in
+--     ENC_FIELDS. A build number is not personal data, and encrypting it
+--     would defeat the entire purpose (it must be readable in the
+--     dashboard). No user agent, no device model, no IP-adjacent data —
+--     the version string and nothing else.
+--   * The views over log (log_totals, log_totals_first, log_weekly) all
+--     select EXPLICIT columns, so a new base column cannot change their
+--     shape. Nothing to backfill under the view-replay rule.
+--   * NO view and NO grant for this column beyond what log already has.
+--     Read access to log is open to anon; a global aggregate view would
+--     hand anyone with the publishable key a cross-family adoption report.
+--     Read it in the dashboard SQL editor (service role) instead.
+--
+-- HOW TO READ IT (Supabase dashboard → SQL editor):
+--
+--   -- Adoption over the last 14 days: which versions are writing?
+--   select date(done_at) as day, coalesce(app_version, '< 4.72.0') as ver,
+--          count(*) as entries, count(distinct member_id) as people
+--     from log
+--    where done_at > now() - interval '14 days' and deleted_at is null
+--    group by 1, 2 order by 1 desc, 3 desc;
+--
+--   -- Who is stale RIGHT NOW: newest version each member has written
+--   select family_id, member_id, max(app_version) as newest_seen,
+--          max(done_at) as last_entry
+--     from log
+--    where deleted_at is null
+--    group by 1, 2 order by 3 nulls first, 4 desc;
+--
+--   -- How long does a release take to reach everyone?
+--   select coalesce(app_version, '< 4.72.0') as ver,
+--          min(done_at) as first_seen, max(done_at) as last_seen,
+--          count(distinct family_id) as households
+--     from log where deleted_at is null group by 1 order by 2;
+--
+-- NOTE on max(app_version): that is a STRING max, so '4.9.0' sorts above
+-- '4.71.1'. Fine while the minor stays in the 70s; sort properly with
+-- string_to_array(app_version, '.')::int[] once it matters.
+alter table log add column if not exists app_version text;
