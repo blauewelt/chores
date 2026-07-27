@@ -647,6 +647,11 @@ navy neutrals, always CSS variables.
 Run the audit one-liner (t() keys vs. dictionaries) during larger UI
 rounds — the migration gap (v4.45.2) went unnoticed for months,
 because t() falls back to German silently.
+Language choice (v4.76.0): `haushalt.lang` stores only an EXPLICIT
+choice; absence of the key means «Wie das Gerät» (default) — the device
+language is re-derived on every boot via deviceLang(). The sheet's
+checkmark shows the choice, not the effect. Never write the key on the
+user's behalf; updates.html shares the same semantics.
 German = source language = key (gettext pattern): `t('Speichern')`,
 fallback German. Dictionaries `i18n/<code>.json`; only the active
 language is loaded (localStorage copy for offline). Static content via

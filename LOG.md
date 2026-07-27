@@ -1,3 +1,30 @@
+## 2026-07-27 — v4.76.0 (SW haushalt-v179): «Wie das Gerät» is the default language choice
+
+- Maintainer request, and the cheapest of the three open items because it
+  is REPRESENTATIONAL: «no stored choice → derive from navigator.language
+  at boot» has been the behavior all along. What was missing was honesty
+  and a way back. The language sheet marked the DERIVED language with a
+  checkmark as if the user had chosen it, and after one tap there was no
+  way to return to following the device.
+- Now: first row «Wie das Gerät · <resolved language>», carrying the
+  checkmark whenever no explicit choice is stored — the language row
+  below stays unmarked even while it is the active language, because the
+  checkmark shows the CHOICE, not the effect. Picking a language stores
+  it (as before); picking «Wie das Gerät» deletes the stored key.
+- Absence of the key IS the state — no sentinel, no migration. Every
+  existing user who never chose is already on the new default; every
+  explicit choice keeps working unchanged (v4.27.0 test untouched and
+  green). updates.html needs no change: it reads the same key and falls
+  back to the browser language (v4.75.1), which is exactly the
+  «Wie das Gerät» semantics.
+- Follow-the-device is real, not one-shot: the device language is
+  re-derived on EVERY boot, so changing the phone language changes the
+  app on the next start without touching settings.
+- Two tests (device wins without a choice + choice beats device and the
+  way back survives a reload), two negative controls (checkmark back on
+  the derived language → red; langAuto without deleting the key → red).
+- New i18n key «Wie das Gerät» in 19 languages.
+
 ## 2026-07-27 — v4.75.1 (SW haushalt-v178): release notes follow the APP language
 
 - Maintainer finding on device: app set to German, phone OS English →

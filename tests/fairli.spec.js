@@ -3013,6 +3013,53 @@ test.describe('Fairli', () => {
     });
   });
 
+  // ---------- v4.76.0: «Wie das Geraet» ist die Standard-Sprachwahl ----------
+
+  test('Sprache «Wie das Gerät»: ohne Wahl folgt die App dem Gerät — und die Liste sagt das ehrlich (v4.76.0)', async ({ browser }) => {
+    // Englisches Geraet, keine gespeicherte Wahl: App startet Englisch, das
+    // Haekchen sitzt bei «Wie das Geraet» — NICHT bei English, denn gewaehlt
+    // hat der Nutzer nichts.
+    const ctx = await browser.newContext({ locale: 'en-US' });
+    try {
+      await mockBackend(ctx);
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/f/${FAM}`);
+      await expect(page.getByRole('tab', { name: 'Tasks' })).toBeVisible();   // Geraetesprache wirkt
+      await page.locator('#openSettings').click();
+      await page.locator('#setLang').click();
+      await expect(page.locator('#langAuto')).toContainText('✓');
+      await expect(page.locator('#langAuto')).toContainText('English');      // zeigt, WAS das Geraet ist
+      await expect(page.locator('#langSheet [data-lang="en"]')).not.toContainText('✓');
+    } finally { try { await ctx.close(); } catch {} }
+  });
+
+  test('Sprache: explizite Wahl schlaegt das Gerät, «Wie das Gerät» fuehrt zurueck — auch ueber den Reload (v4.76.0)', async ({ browser }) => {
+    const ctx = await browser.newContext({ locale: 'en-US' });
+    try {
+      await mockBackend(ctx);
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/f/${FAM}`);
+      await expect(page.getByRole('tab', { name: 'Tasks' })).toBeVisible();
+      // Deutsch waehlen: gilt sofort und uebersteht den Reload (englisches Geraet!)
+      await page.locator('#openSettings').click();
+      await page.locator('#setLang').click();
+      await page.locator('#langSheet [data-lang="de"]').click();
+      await expect(page.getByRole('tab', { name: 'Aufgaben' })).toBeVisible();
+      await page.reload();
+      await expect(page.getByRole('tab', { name: 'Aufgaben' })).toBeVisible();
+      await page.locator('#openSettings').click();
+      await page.locator('#setLang').click();
+      await expect(page.locator('#langSheet [data-lang="de"]')).toContainText('✓');
+      await expect(page.locator('#langAuto')).not.toContainText('✓');
+      // Zurueck zu «Wie das Geraet»: Wahl geloescht, Geraetesprache gilt wieder —
+      // sofort UND nach dem Reload (vorher gab es diesen Rueckweg gar nicht).
+      await page.locator('#langAuto').click();
+      await expect(page.getByRole('tab', { name: 'Tasks' })).toBeVisible();
+      await page.reload();
+      await expect(page.getByRole('tab', { name: 'Tasks' })).toBeVisible();
+    } finally { try { await ctx.close(); } catch {} }
+  });
+
   // ---------- v4.75.1: Release-Notes folgen der App-Sprache ----------
 
   test('Release-Notes: App auf Deutsch schlaegt englisches Telefon — und der Toggle gilt nur fuer den Besuch (v4.75.1)', async ({ browser }) => {

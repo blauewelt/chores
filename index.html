@@ -569,7 +569,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.75.1';
+  const APP_VERSION = '4.76.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -757,11 +757,20 @@
                   ru: 'Русский', uk: 'Українська', hi: 'हिन्दी', zh: '中文',
                   ja: '日本語', ko: '한국어', vi: 'Tiếng Việt', id: 'Bahasa Indonesia' };
   const LS_LANG = 'haushalt.lang';
-  let LANG = (() => {
-    try { const s = localStorage.getItem(LS_LANG); if (s && LANGS[s]) return s; } catch {}
+  // v4.76.0: «Wie das Geraet» ist der NAME fuer das, was ohne gespeicherte
+  // Wahl schon immer galt — beim Start entscheidet die Geraetesprache. Neu
+  // ist nur die Ehrlichkeit: die Sprachliste zeigte die ABGELEITETE Sprache
+  // mit Haekchen, als haette man sie gewaehlt, und wer einmal tippte, kam
+  // nie wieder zurueck zum Folgen der Geraetesprache.
+  function deviceLang() {
     const b = (navigator.language || 'de').slice(0, 2).toLowerCase();
     return LANGS[b] ? b : 'en' in LANGS && b !== 'de' ? 'en' : 'de';
-  })();
+  }
+  function storedLang() {
+    try { const s = localStorage.getItem(LS_LANG); if (s && LANGS[s]) return s; } catch {}
+    return null;
+  }
+  let LANG = storedLang() || deviceLang();
   let DICT = {};
   const LOCALES = { de: 'de-CH', en: 'en-GB', fr: 'fr-CH', it: 'it-CH',
                     es: 'es-ES', pt: 'pt-PT', ro: 'ro-RO', nl: 'nl-NL',
@@ -812,6 +821,18 @@
     translatePage();
     if (typeof render === 'function') render();
   }
+  // «Wie das Geraet»: die gespeicherte Wahl faellt weg, ab jetzt entscheidet
+  // wieder jeder Start die Geraetesprache (Abwesenheit des Schluessels IST
+  // der Zustand — kein Sentinel, keine Migration, updates.html liest es
+  // ueber denselben Schluessel mit).
+  async function setLangAuto() {
+    try { localStorage.removeItem(LS_LANG); } catch {}
+    const l = deviceLang();
+    LANG = l; LOCALE = LOCALES[l] || 'de-CH';
+    await loadDict(l);
+    translatePage();
+    if (typeof render === 'function') render();
+  }
   function openMaxPtsSheet() {
     let sh = document.getElementById('maxPtsSheet');
     if (!sh) { sh = document.createElement('dialog'); sh.id = 'maxPtsSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
@@ -858,11 +879,19 @@
         <h2>${t('Sprache')}</h2>
         <div class="slot end"><button type="button" class="x" id="closeLang" aria-label="${t('Schließen')}">×</button></div>
       </div>
-      ${Object.entries(LANGS).map(([code, name]) =>
-        `<button class="menuitem" data-lang="${code}" style="border-radius:12px${code === LANG ? ';color:var(--accent)' : ''}">${name}${code === LANG ? ' ✓' : ''}</button>`).join('')}
+      ${(() => {
+        // Haekchen zeigen die WAHL, nicht die Wirkung: ohne gespeicherte Wahl
+        // traegt «Wie das Geraet» das Haekchen — die Sprachzeile darunter
+        // bleibt leer, auch wenn sie gerade die aktive Sprache ist.
+        const stored = storedLang();
+        const auto = `<button class="menuitem" id="langAuto" style="border-radius:12px${!stored ? ';color:var(--accent)' : ''}">${t('Wie das Gerät')} · ${LANGS[deviceLang()]}${!stored ? ' ✓' : ''}</button>`;
+        return auto + Object.entries(LANGS).map(([code, name]) =>
+          `<button class="menuitem" data-lang="${code}" style="border-radius:12px${code === stored ? ';color:var(--accent)' : ''}">${name}${code === stored ? ' ✓' : ''}</button>`).join('');
+      })()}
       <p style="color:var(--muted);font-size:13px;margin:10px 4px 2px">${t('Weitere Sprachen folgen.')}</p>
     </div>`;
     sh.querySelector('#closeLang').onclick = () => sh.close();
+    sh.querySelector('#langAuto').onclick = async () => { await setLangAuto(); sh.close(); };
     sh.querySelectorAll('[data-lang]').forEach(b => b.onclick = async () => { await setLang(b.dataset.lang); sh.close(); });
     sh.showModal();
   }
