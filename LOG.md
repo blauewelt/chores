@@ -1,3 +1,25 @@
+## 2026-07-27 — v4.80.0 (SW haushalt-v183): «Clear» in the native time picker is now visibly a no-op
+
+- Maintainer concern (screenshot of the Android system picker): the OS
+  dialog for datetime-local ships a Clear button that CANNOT be removed
+  or restyled from the web page (no attribute hides it; `required` does
+  not either) — but a Fairli entry without a time does not exist as a
+  concept. Decision: keep the native picker (styling it means replacing
+  it), make Clear harmless.
+- The save path has always treated an empty Zeit field as «time
+  unchanged» — the data was never at risk. What was wrong is the FORM:
+  after Clear the field sat there empty, looking like a cleared time.
+  Now an input listener restores the previous value the moment the field
+  empties, so Clear visibly does nothing and the sheet can never show a
+  timeless entry.
+- Not touched: the picker's look (Set/Cancel/Clear labels, button
+  emphasis) — that is OS chrome, rendered by Android in the SYSTEM
+  language and theme; the page has no reach into it. On record because
+  the question will come back.
+- 1 new test (field snaps back on clear; Speichern afterwards changes
+  nothing — done_at byte-identical, no move-toast). No i18n keys.
+- APP_VERSION 4.80.0, SW-Cache haushalt-v183
+
 ## 2026-07-27 — v4.79.0 (SW haushalt-v182): tile art in the edit sheet and in the history
 
 - Maintainer request: surface the tile art in two more places. Chosen in

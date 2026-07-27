@@ -581,7 +581,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.79.0';
+  const APP_VERSION = '4.80.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2839,6 +2839,14 @@
       sh.close();
       deleteLogEntries(ids);   // Undo-Toast ersetzt das confirm() — weniger Reibung, volle Reue-Option
     };
+    // «Clear» im nativen Android-Picker (v4.80.0): der System-Dialog bringt
+    // einen nicht entfernbaren Loeschen-Knopf mit — ein Eintrag OHNE Zeit
+    // existiert in Fairli aber nicht. Der Save-Pfad behandelt leer schon
+    // immer als «Zeit unveraendert»; jetzt springt auch das FELD sofort auf
+    // den alten Wert zurueck, damit «Clear» sichtbar folgenlos ist und nie
+    // eine scheinbar geloeschte Zeit im Formular steht.
+    const lt = sh.querySelector('#lTime');
+    lt.addEventListener('input', () => { if (!lt.value) lt.value = localDT(first.done_at); });
     sh.querySelector('#saveLog').onclick = () => {
       const name = sh.querySelector('#lName').value.trim();
       const note = sh.querySelector('#lNote').value.trim() || null;

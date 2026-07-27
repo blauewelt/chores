@@ -4030,6 +4030,27 @@ test.describe('Fairli', () => {
     await expect(page.locator('#list')).toContainText('Tonne raus');
   });
 
+  test('«Clear» im nativen Zeit-Picker ist folgenlos: Feld springt zurück, Speichern ändert nichts (v4.80.0)', async ({ context, page }) => {
+    // Androids System-Picker bringt einen nicht entfernbaren Clear-Knopf mit;
+    // ein Eintrag ohne Zeit existiert nicht. Leeres Feld → sofort alter Wert.
+    const entry = { id: 'l-cl1', chore_id: null, chore_name: 'Tonne rausstellen', chore_note: '',
+      member_id: 'm-mira', member_name: 'Mira', points: 1,
+      done_at: new Date().toISOString(), created_at: new Date().toISOString(), family_id: FAM };
+    await mockBackend(context, { logRows: () => [entry] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('[data-editlog]').first().click();
+    const orig = await page.locator('#lTime').inputValue();
+    await page.locator('#lTime').fill('');                 // «Clear» im System-Dialog
+    await expect(page.locator('#lTime')).toHaveValue(orig); // Feld springt sofort zurück
+    await page.locator('#saveLog').click();
+    await page.waitForTimeout(150);
+    await expect(page.locator('#toast')).not.toContainText('Verschoben');   // kein Verschiebe-Toast
+    const done = await page.evaluate(fam =>
+      JSON.parse(localStorage.getItem('haushalt.v2:' + fam)).log.find(e => e.id === 'l-cl1').done_at, FAM);
+    expect(done).toBe(entry.done_at);                      // Zeit byte-identisch erhalten
+  });
+
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);
