@@ -2879,14 +2879,17 @@ test.describe('Fairli', () => {
     });
   });
 
-  test('OHNE Beta bleibt die URL, wie sie war — die Zusage an alle anderen Haushalte (v4.73.0)', async ({ browser }) => {
+  test('Aufraeumen gilt fuer ALLE Haushalte: auch ohne Beta strippt die Zustimmung (v4.77.0)', async ({ browser }) => {
+    // v4.73.0 versprach «ohne Beta unveraendert»; seit v4.77.0 ist die
+    // ZUSTIMMUNG das Gate. Ohne sie unveraendert (Test v4.75.0), mit ihr
+    // gestrippt — Beta spielt keine Rolle mehr.
     await withUA(browser, UA_ANDROID, async ctx => {
       await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }] });
+      await linkSafe(ctx);
       const page = await ctx.newPage();
       await page.goto(`${BASE}/f/${FAM}`);
+      await expect.poll(() => page.url()).not.toContain(FAM);
       await expect(page.locator('.chip', { hasText: 'Mira' })).toBeVisible();
-      await page.waitForTimeout(700);
-      expect(page.url()).toContain(FAM);
     });
   });
 
@@ -2901,6 +2904,10 @@ test.describe('Fairli', () => {
       await expect(page.locator('.chip', { hasText: 'Mira' })).toBeVisible();
       await page.waitForTimeout(700);
       expect(page.url()).toContain(FAM);
+      // v4.77.0: die Einstellungs-Zeile fehlt auf iOS — ein Schalter, der
+      // nichts bewirken kann, ist ein gebrochenes Versprechen (§11-Frage).
+      await page.locator('#openSettings').click();
+      await expect(page.locator('#setStripUrl')).toHaveCount(0);
     });
   });
 
@@ -2974,9 +2981,10 @@ test.describe('Fairli', () => {
     });
   });
 
-  test('Zustimmen und widerrufen: der Schalter raeumt auf und stellt den Link SOFORT wieder her (v4.75.0)', async ({ browser }) => {
+  test('Zustimmen und widerrufen: der Schalter raeumt auf und stellt den Link SOFORT wieder her (v4.75.0/v4.77.0)', async ({ browser }) => {
     await withUA(browser, UA_ANDROID, async ctx => {
-      await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+      // beta:null — seit v4.77.0 sehen ALLE Haushalte die Zeile
+      await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }],
         memberRows: () => [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: true, goal: null }] });
       const page = await ctx.newPage();
       page.on('dialog', d => d.accept());                    // die Rueckfrage bejahen
@@ -3362,29 +3370,34 @@ test.describe('Fairli', () => {
     await expect(page.locator('#setBetaOff')).toHaveCount(0);
   });
 
-  test('Der Adressleisten-Schalter nimmt NICHT das Wochenziel weg (v4.74.0/v4.75.0)', async ({ context, page }) => {
+  test('Der Adressleisten-Schalter nimmt NICHT das Wochenziel weg (v4.74.0/v4.75.0/v4.77.0)', async ({ browser }) => {
     // Regressionswache gegen die Kopplung: haenge das Wochenziel je wieder an
     // BETA, dann nimmt der Schalter einem Haushalt ein ausgeliefertes Feature
-    // weg. Seit v4.75.0 heisst der Schalter «Adressleiste aufräumen» und
-    // steuert ausschliesslich die URL.
-    await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
-      memberRows: () => [
-        { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: true, goal: 8 },
-      ] });
-    page.on('dialog', d => d.accept());
-    await page.goto(`${BASE}/f/${FAM}`);
-    await page.waitForTimeout(700);
-    await page.locator('#openSettings').click();
-    await expect(page.locator('#setStripUrl')).toContainText('Adressleiste');
-    await expect(page.locator('#setStripUrl')).not.toContainText('Wochenziel');
-    await page.locator('#setStripUrl').click();
-    await page.waitForTimeout(300);
-    // Schalter betaetigt — das Ziel ist trotzdem noch da
-    await page.getByRole('tab', { name: 'Punkte' }).click();
-    await expect(page.locator('.score .num.pct').first()).toBeVisible();
-    await page.evaluate(() => document.getElementById('openMembers').click());
-    await openPerson(page, 'm-mira');
-    await expect(page.locator('#psGoal')).toHaveValue('8');
+    // weg. Der Schalter existiert seit v4.77.0 NUR auf Android/Desktop (auf
+    // iOS fehlt die Zeile absichtlich, s. iOS-Test) — also prueft dieser Test
+    // mit Android-UA, sonst behauptet er auf dem iPhone-Projekt einen Knopf,
+    // den es dort bewusst nicht gibt (genau daran ist er einmal gescheitert).
+    await withUA(browser, UA_ANDROID, async ctx => {
+      await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }],
+        memberRows: () => [
+          { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: true, goal: 8 },
+        ] });
+      const page = await ctx.newPage();
+      page.on('dialog', d => d.accept());
+      await page.goto(`${BASE}/f/${FAM}`);
+      await page.waitForTimeout(700);
+      await page.locator('#openSettings').click();
+      await expect(page.locator('#setStripUrl')).toContainText('Adressleiste');
+      await expect(page.locator('#setStripUrl')).not.toContainText('Wochenziel');
+      await page.locator('#setStripUrl').click();
+      await page.waitForTimeout(300);
+      // Schalter betaetigt — das Ziel ist trotzdem noch da
+      await page.getByRole('tab', { name: 'Punkte' }).click();
+      await expect(page.locator('.score .num.pct').first()).toBeVisible();
+      await page.evaluate(() => document.getElementById('openMembers').click());
+      await openPerson(page, 'm-mira');
+      await expect(page.locator('#psGoal')).toHaveValue('8');
+    });
   });
 
   test('MIT Beta: Ziel setzen im Personen-Sheet, Kind führt die Wochen-Rangliste an (v4.67.0)', async ({ context, page }) => {

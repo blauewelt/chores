@@ -569,7 +569,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.76.0';
+  const APP_VERSION = '4.77.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -990,8 +990,8 @@
           pullDiscards > 0 ? `<br>${t('Empfangen, noch nicht übernommen: {n} Abgleiche', { n: pullDiscards })}` : ''}${
           unread > 0 ? `<br>${t('{n} Einträge nicht lesbar (Verschlüsselung)', { n: unread })}` : ''}</p>`;
       })()}
-      ${!BETA ? '' : `<button class="menuitem setrow" id="setStripUrl" style="border-radius:12px">
-        <span class="seticon">🧪</span><span class="setlabel">${t('Adressleiste aufräumen')}</span><span class="setval">${
+      ${IS_IOS ? '' : `<button class="menuitem setrow" id="setStripUrl" style="border-radius:12px">
+        <span class="seticon">🔗</span><span class="setlabel">${t('Adressleiste aufräumen')}</span><span class="setval">${
           wantStripped(FAMILY) ? t('An') : t('Aus')}</span><span class="chev">›</span></button>`}
       <p style="color:var(--muted);font-size:12.5px;margin:4px 4px 2px;text-align:center">Fairli ${APP_VERSION}</p>
     </div>`;
@@ -1798,15 +1798,13 @@
         // localStorage — auf genau der Plattform, die Storage bei Platzdruck
         // raeumt. Safari zeigt ohnehin nur die Domain; der Screenshot-Schaden
         // ist dort klein, der Lockout-Schaden waere gross.
-        // v4.75.0: NUR mit ausdruecklicher Zustimmung (Einstellungen). Ohne sie
-        // bleibt der Link stehen — die Adressleiste ist fuer viele die einzige
-        // Sicherungskopie, und die nimmt man niemandem ungefragt weg.
-        if (BETA && wantStripped(FAMILY) && !urlStripped) {
-          urlStripped = true;
-          if (location.pathname !== BASE) {
-            try { history.replaceState(null, '', BASE); } catch {}
-          }
-        }
+        // v4.77.0: HIER wird nicht mehr gestrippt — dieser Block war seit dem
+        // v4.73.0-Reload-Fix tot: JEDER Einstieg laeuft durch das Boot-
+        // replaceState (canonUrl), das die Zustimmung bereits respektiert,
+        // und der Einstellungs-Schalter strippt beim Einschalten selbst.
+        // Entdeckt durch eine Negativkontrolle, die NICHT rot wurde — ein
+        // Guard, dessen Entfernung keinen Test faellt, bewacht nichts.
+        // Die Zustimmung (haushalt.linksafe) ist das Gate; Beta ist frei.
         const srvName = (fam[0] && fam[0].name) || '';
         if (!pendingFamName) state.famName = srvName;
         else if (pendingFamName.resolvedAt && pendingFamName.resolvedAt < pullStartedAt) {
@@ -2157,11 +2155,10 @@
   // Personen, ohne geheime Geste. Fuer alle anderen Haushalte ist der neue
   // Code inert: BETA=false blendet die Bedienung aus, und ohne gesetztes Ziel
   // rendert die Punkte-Ansicht ohnehin unveraendert.
-  // v4.74.0: BETA gilt NICHT mehr dem Wochenziel — das ist seit diesem
-  // Release Standard fuer alle Haushalte. Uebrig bleibt EIN Experiment:
-  // das Strippen des Geheimnisses aus der Adressleiste (v4.73.0), das
-  // noch auf die Geraete-Abnahme (Android-Install, iPhone) wartet.
-  // Wer den Schalter in den Einstellungen umlegt, schaltet nur DAS ab.
+  // v4.77.0: families.beta gate aktuell NICHTS — Wochenziel (v4.74.0) und
+  // Adressleisten-Aufraeumen (v4.77.0) sind Standard fuer alle. Die Flagge
+  // bleibt gelesen (🧪 in den Sync-Details) und ist FREI fuer das naechste
+  // Experiment.
   let BETA = false;                 // families.beta
   const retentionCutoff = () => RETENTION ? Date.now() - RETENTION * 86400e3 : null;
   const expiredEntries = () => {

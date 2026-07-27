@@ -1,3 +1,36 @@
+## 2026-07-27 — v4.77.0 (SW haushalt-v180): «Adressleiste aufräumen» for every household; rotation design frozen in §12
+
+- Maintainer decisions: un-gate the tidy toggle now; rotation design is
+  approved but built later.
+- Un-gate: the settings row appears for every household (icon 🔗 instead
+  of 🧪 — it is no longer an experiment), default OFF, which is exactly
+  the previous behavior. The consent mark is the only gate. On iOS the
+  row does not appear at all: stripping can never work there (§6.2), and
+  a switch that cannot do anything is a broken promise — asserted in the
+  iOS test.
+- The negative control did its real job by NOT going red: re-gating the
+  sync-time strip block changed no test outcome, which exposed that the
+  block has been DEAD since the v4.73.0 reload fix — every entry path
+  runs through the boot replaceState (canonUrl), which already respects
+  the consent, and the settings toggle strips immediately itself.
+  Removed. A guard whose removal fails no test guards nothing; the
+  control that bites is re-gating the settings ROW (roundtrip test with
+  beta:null → red).
+- Follow-through the suite demanded: the goal-coupling guard clicked the
+  settings row on the iPhone project, where the row is now deliberately
+  absent — deterministic red on webkit, green on chromium. The guard now
+  runs under an Android UA (and with beta:null, proving the un-gate),
+  because a test must exercise the switch where the switch exists.
+- families.beta now gates NOTHING and is free for the next experiment.
+  It is still read (🧪 marker in the sync details).
+- Rotation («Neuer Haushalts-Link»): full build-ready design written
+  into §12 — sheet mock, famx/famc-only v1 scope, runMigration reuse,
+  full-log paging, decrypt/re-encrypt per ENC_FIELDS, row-by-row verify,
+  crash-safe step order with persisted pending marks and boot resume,
+  tombstone as the point of no return, and the test list the build must
+  cover. Maintainer rotates the currently exposed link with the 18.07.
+  scripts in the meantime.
+
 ## 2026-07-27 — v4.76.0 (SW haushalt-v179): «Wie das Gerät» is the default language choice
 
 - Maintainer request, and the cheapest of the three open items because it

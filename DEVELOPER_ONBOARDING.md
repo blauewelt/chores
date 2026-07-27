@@ -966,34 +966,72 @@ live incidents (weekly goal «had to be saved twice»,
   with the sentence «Ziele dürfen unterschiedlich sein» (goals may
   differ) — otherwise people reflexively set the same number for
   everyone and it is a points race again.
-- **In-app link rotation** (requested 27.07.2026, NOT built): today
-  rotating a leaked household link means running scripts that live
-  outside the repo (done once, 18.07.). It should be an in-app action:
-  new famx secret → rows copied → verification → old ID tombstoned in
-  retired_families → everyone re-invited by QR. This is the recovery
-  path that actually matters, because link = auth cannot be made
-  un-leakable: v4.73.0 removes the secret from the address bar, but the
-  invite sheet and the QR code still put it on screen, and that is a
-  screen people screenshot on purpose. Reuse the runMigration machinery
-  (backup → encrypted copy → VERIFY → only then delete) — it already
-  does the hard part. Watch the invariant: never delete user data, and
-  tombstone BOTH IDs.
-- **Un-gate the address-bar stripping** (v4.73.0/v4.75.0). The emulator
-  checks turned out to be unnecessary and are now assertions: installation
-  depends ONLY on the manifest, and every start_url is built from the route
-  VARIABLES (`FAMILY`/`USER_SLUG`), never from `location.href` — the family
-  case points at the STATIC `/chores/manifest.json` (generic start_url +
-  loadRoute(), always was), the personal case at `manifest.json?f=…&u=…`
-  for the SW to answer. Three tests cover it on both engines; negative
-  control: build the manifest from `location.href` → red. **The real
-  question was never the install but the BACKUP:** the address bar,
-  bookmarks and history are a copy of the link that most people do not
-  know they have, and `family_id = SHA-256(secret)` means the server can
-  never hand it back. Since v4.75.0 the app therefore does not strip on
-  its own — it asks, and the answer is revocable at any time
-  (`haushalt.linksafe:<fam>`, settings row «Adressleiste aufräumen»).
-  Remaining step: drop the `BETA &&` guard so every household can make
-  that choice; the default (off) is exactly today's behaviour.
+- **In-app link rotation — DESIGN APPROVED 27.07.2026, build when
+  scheduled.** The maintainer reviewed and approved this design; a future
+  session can build it cold from here. Motivation: the household link has
+  now been exposed twice (repo history 17.07., chat screenshot 27.07.);
+  the out-of-repo scripts from 18.07. exist only on the maintainer's
+  side. Link = auth cannot be made un-leakable — rotation is the real
+  recovery path.
+
+  **Entry:** Einstellungen → «Neuer Haushalts-Link». isAdmin() only.
+  v1 scope: famx/famc households only; fam- (never-migrated cleartext)
+  gets a hint to run the encryption migration first.
+
+  **Sheet** (one button, progress list ①–④ ticks through):
+  header «Neuer Haushalts-Link»; body: «Der alte Link wird dauerhaft
+  ungültig. Danach braucht JEDES Mitglied den neuen Link — am
+  einfachsten per QR. Nutzt das, wenn euer Link geteilt oder
+  versehentlich weitergegeben wurde.» Steps shown: ① Sicherungskopie
+  herunterladen ② Alles unter neuem Link kopieren ③ Prüfen ④ Alten Link
+  stilllegen. Red button «Neuen Link erstellen». On success: open the
+  EXISTING invite sheet with the new QR. Old-link devices are handled by
+  the EXISTING v4.47.0 replaced-link notice (retired_families check at
+  boot) — re-invite is guided, not mysterious.
+
+  **Mechanics** (mostly runMigration reuse — backup → copy → VERIFY →
+  only then retire):
+  * New secret from the same generator as famx first-run; new DB id =
+    'famx-'+SHA256(secret)[:48]; families row carries re-encrypted name,
+    write_key_hash = SHA256(HKDF(new secret, write-key-v1)), and the
+    beta/retention flags copied over.
+  * Copy members/chores/log INCLUDING tombstoned rows (deleted_at) —
+    trash and retention semantics survive. The client window holds only
+    300 log rows: page the FULL log from the server (created_at cursor,
+    explicit column list). Decrypt with the old HKDF data-key,
+    re-encrypt with the new, per ENC_FIELDS. Preserve ids, url_slugs and
+    all timestamps — member identities and personal links survive; only
+    the family part of every URL changes. log.app_version is copied
+    verbatim (it describes the entry's creator, not the copier).
+  * VERIFY like the migration: read the new store back and compare row
+    by row after decryption — counts alone are not verification.
+  * **Crash-safe order, each step behind a persisted pending mark so an
+    interrupted run resumes at boot:** (1) write the new store — purely
+    additive, old store untouched; a re-run deletes the partial new
+    store first (those rows are minutes old and OURS — the never-delete-
+    user-data rule is about the old store). (2) switch the ACTING device
+    to the new route (saveRoute, canonUrl; carry the
+    haushalt.linksafe consent to the new family key; reset delta/full
+    watermarks). (3) tombstone the OLD id in retired_families —
+    permanent by RLS, this is the point of no return, everything before
+    it is abortable. (4) delete the old rows with the old write key
+    (log, chores, members, families LAST). Between (2) and (3) the
+    household is briefly split (old store still writable) — same
+    transition the 18.07. manual rotation had; the pending mark keeps it
+    to seconds unless the network dies, and boot-resume closes it.
+  * Tests the build must include: full-log paging against a mock that
+    enforces the page size; failure injection at every step boundary
+    incl. resume; the replaced-link notice on an old-link device; a
+    famx e2e proving no cleartext and no OLD-key material ever leaves
+    the client during the copy.
+
+- ~~Un-gate the address-bar stripping~~ DONE in v4.77.0: the row is
+  visible for every household (not on iOS — a switch that cannot work is
+  a broken promise), consent is the only gate, default off. families.beta
+  gates nothing any more and is free for the next experiment. The
+  localStorage-loss trade-off stands, made visible in the confirmation:
+  with the secret stripped, a device that loses storage has no fallback
+  in bookmark or history — entry screen + QR are the rescue path.
 - **Art privacy switch** for encrypted families (Pollinations
   sees tile names as prompts).
 - **Nudge for old-family admins** about the encryption migration
