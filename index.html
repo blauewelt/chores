@@ -569,7 +569,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.71.0';
+  const APP_VERSION = '4.71.1';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2263,7 +2263,15 @@
       // stehen. Nur in «Diese Woche»: «Gesamt» bleibt das absolute Register.
       // Ohne Ziele (alle anderen Haushalte) ist die Sortierung identisch zu vorher.
       const goalOf = m => (BETA && period === 'week' && m.goal) || 0;
-      const quota = m => tot[m.id].pts / goalOf(m);
+      // quota() ist NUR fuer Ziel-Traeger gedacht; die Aufrufer filtern vorher
+      // (withGoal). Der Zweig fuer «kein Ziel» ist trotzdem noetig: ohne ihn
+      // waere es pts/0 = Infinity, und 0/0 = NaN. NaN in einem Komparator
+      // ergibt eine INSTABILE, engine-abhaengige Ordnung — ein Fehler, der nur
+      // auf manchen Geraeten auftraete. −1 ist ein ENDLICHER Rueckfallwert
+      // (−1 − −1 = 0, nie NaN), aber KEIN Ranking-Mittel: genau ueber diesen
+      // Sentinel lief die gemischte Sortierung, die v4.71.0 abgeloest hat.
+      // Also nie wieder eine gemischte Liste damit sortieren — filtern.
+      const quota = m => goalOf(m) ? tot[m.id].pts / goalOf(m) : -1;
       // v4.71.0 (Beta): ZWEI BLOECKE statt einer gemischten Liste. Vorher gab
       // quota() fuer «kein Ziel» −1 zurueck — jeder Ziellose sortierte sich
       // damit unter JEDEN mit Ziel, auch unter jemanden bei 0 %. Live nachge-

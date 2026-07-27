@@ -1,194 +1,198 @@
-# Fairli — Tier-2-Teststrategie (Emulatoren & echte Geräte)
+# Fairli — Tier 2 test strategy (emulators & real devices)
 
-Tier 1 (Playwright, `tests/`) deckt die Web-Schicht ab. Tier 2 deckt das ab,
-was NUR auf einem (emulierten) Betriebssystem existiert: Homescreen-Install,
-Icon-Start, Standalone-Modus, Browser↔OS-Übergaben. Auslöser dieser
-Strategie: zwei Feld-Fehlschläge (ein Mitglied, Noel), deren Ursachen in genau
-dieser Schicht lagen bzw. liegen.
+Tier 1 (Playwright, `tests/`) covers the web layer. Tier 2 covers what
+exists ONLY on an (emulated) operating system: home-screen install, icon
+launch, standalone mode, browser↔OS handoffs. Trigger for this strategy:
+two field failures (one member, Noel) whose causes lay — and lie — in
+exactly this layer.
 
-## Was Emulatoren können — und was nicht (ehrliche Grenzen)
+## What emulators can do — and what they cannot (honest limits)
 
-| Fähigkeit | iOS Simulator | Android Emulator |
+| Capability | iOS Simulator | Android Emulator |
 |---|---|---|
-| Safari/Chrome mit echter Engine | ✓ | ✓ |
-| Deep-Link öffnen (`simctl openurl` / `adb am start -d`) | ✓ | ✓ |
-| «Zum Home-Bildschirm» automatisieren | ✓ (XCUITest/Appium: Share-Sheet + Springboard) | ✓ (UiAutomator: Chrome-Menü) |
-| Web-Clip/Shortcut vom Homescreen starten | ✓ | ✓ |
-| WebAPK-Minting (echte Android-PWA) | — | ⚠ nur Play-Store-Images, flaky |
-| Kamera / echter QR-Scan | ✗ (kein Kamera-Stack) | ✗ (nur virtuelle Szene) |
-| iOS Link Tracking Protection realistisch | ⚠ teilweise (kein Mail/Messages-Kontext) | n/a |
+| Safari/Chrome with a real engine | ✓ | ✓ |
+| Open deep link (`simctl openurl` / `adb am start -d`) | ✓ | ✓ |
+| Automate «Zum Home-Bildschirm» (add to home screen) | ✓ (XCUITest/Appium: share sheet + Springboard) | ✓ (UiAutomator: Chrome menu) |
+| Launch web clip/shortcut from the home screen | ✓ | ✓ |
+| WebAPK minting (real Android PWA) | — | ⚠ Play Store images only, flaky |
+| Camera / real QR scan | ✗ (no camera stack) | ✗ (virtual scene only) |
+| iOS Link Tracking Protection realistically | ⚠ partly (no Mail/Messages context) | n/a |
 
-Kamera-Scan bleibt prinzipiell untestbar → das treue Äquivalent ist
-«dekodierte URL öffnen» (QR-Byte-Exaktheit ist per ECC-Round-Trip bewiesen,
-siehe LOG 2026-07-11). Echte LTP-/WebAPK-Verhalten brauchen echte Geräte
+Camera scanning stays untestable in principle → the faithful equivalent is
+"open the decoded URL" (QR byte exactness is proven by an ECC round trip,
+see LOG 2026-07-11). Real LTP/WebAPK behaviour needs real devices
 (Tier 2b).
 
-## Szenarien (Prioritätsreihenfolge)
+## Scenarios (in priority order)
 
-Alle Szenarien laufen gegen EINEN festen, dedizierten Test-Haushalt in der
-Produktions-DB (`fam-e2e-fairli01`, Mitglied «Testperson», Slug
-`e2etest0001`) — niemals gegen Fanti WG. Der Haushalt wurde EINMAL angelegt
-und wird nur wiederverwendet; die Läufe sind strikt LESEND (Links öffnen,
-Sicht assertieren — getippt wird nur auf Browser-Dialoge/Springboard, nie
-auf App-Elemente, die schreiben würden). Es entsteht pro Lauf NICHTS, also
-ist auch nichts aufzuräumen. Ein automatisches «Zurücksetzen per REST im
-Workflow-Setup» war geplant, ist aber NIE implementiert worden — diese
-Zeile hier ersetzt die frühere Falschbehauptung.
+All scenarios run against ONE fixed, dedicated test household in the
+production DB (`fam-e2e-fairli01`, member «Testperson», slug
+`e2etest0001`) — never against Fanti WG. The household was created ONCE
+and is only reused; the runs are strictly READING (open links, assert the
+view — taps only go to browser dialogs/Springboard, never to app elements
+that would write). NOTHING is created per run, so there is nothing to
+clean up either. An automatic "reset via REST in the workflow setup" was
+planned but has NEVER been implemented — this line here replaces the
+earlier false claim.
 
-WARTUNGS-HINWEIS: der Familien-Link steht (bewusst) im öffentlichen Repo —
-jeder könnte den Test-Haushalt öffnen und z. B. umbenennen; dann brechen
-die Assertions («Testperson»). Wiederherstellen OHNE Löschen: in der App
-über den Familien-Link den Haushaltsnamen zurücksetzen bzw. das Mitglied
-wieder «Testperson» nennen (Upsert-Semantik; nichts löschen — Standing
-Rule). Kein Automatismus, bewusst: ein Reset-Skript mit Schreibrechten
-wäre mehr Risiko als der seltene Handgriff wert.
+MAINTENANCE NOTE: the family link is (deliberately) in the public repo —
+anyone could open the test household and e.g. rename it; then the
+assertions break («Testperson»). Restore WITHOUT deleting: in the app,
+via the family link, reset the household name or rename the member back
+to «Testperson» (upsert semantics; delete nothing — standing rule). No
+automation, deliberately: a reset script with write permissions would be
+more risk than the rare manual step is worth.
 
-- **S1 — Scan-Äquivalent iOS:** `xcrun simctl openurl booted <PERSONAL_URL>`
-  → Safari → Assertion: verriegelte Sicht («Testperson» sichtbar, kein
-  «Personen»-Button). Deckt: Handoff-Kette End-to-End auf echtem WebKit
-  inkl. HTTP-404-Verhalten.
-- **S2 — iOS-Install:** Appium (XCUITest): Share-Sheet → «Zum
-  Home-Bildschirm» → Hinzufügen → Springboard-Icon «Fairli» tippen →
-  Assertion: verriegelte Sicht UND `Modus: standalone` NICHT auf der
-  Einstiegsseite. Deckt: Web-Clip-URL-Erfassung (unser ältester Bug).
-- **S3 — Stale-Icon-Falle (Noel-Szenario):** Web Clip absichtlich von der
-  EINSTIEGSSEITE aus hinzufügen → Icon starten → Assertion: Diagnose zeigt
-  `Modus: standalone (Homescreen-Icon!)`. Dokumentiert die Falle und
-  verifiziert, dass die Diagnose sie benennt.
+- **S1 — scan equivalent iOS:** `xcrun simctl openurl booted <PERSONAL_URL>`
+  → Safari → assertion: locked view («Testperson» visible, no
+  «Personen» button). Covers: handoff chain end-to-end on real WebKit
+  including HTTP 404 behaviour.
+- **S2 — iOS install:** Appium (XCUITest): share sheet → «Zum
+  Home-Bildschirm» → Add → tap the Springboard icon «Fairli» →
+  assertion: locked view AND `Modus: standalone` NOT on the entry
+  screen. Covers: web-clip URL capture (our oldest bug).
+- **S3 — stale-icon trap (Noel scenario):** deliberately add the web clip
+  from the ENTRY SCREEN → launch the icon → assertion: diagnostics show
+  `Modus: standalone (Homescreen-Icon!)`. Documents the trap and
+  verifies that the diagnostics name it.
 - **S4 — Android Chrome:** `adb shell am start -a android.intent.action.VIEW
-  -d <PERSONAL_URL>` → UiAutomator-Dump → Assertion «Testperson». Danach
-  Chrome-Menü → «Zum Startbildschirm» → Icon starten → Assertion Sicht.
-  (Shortcut-Pfad, deterministisch; WebAPK siehe S5.)
-- **S5 — WebAPK (best effort):** Play-Store-Image, Familien-Link
-  installieren, Icon starten. Als `continue-on-error` markieren —
-  Minting auf Emulatoren ist bekannt flaky; rote Läufe hier blockieren
-  nichts, grüne sind Signal.
+  -d <PERSONAL_URL>` → UiAutomator dump → assertion «Testperson». Then
+  Chrome menu → «Zum Startbildschirm» → launch the icon → assert the view.
+  (Shortcut path, deterministic; for WebAPK see S5.)
+- **S5 — WebAPK (best effort):** Play Store image, install the family
+  link, launch the icon. Mark as `continue-on-error` — minting on
+  emulators is known to be flaky; red runs here block nothing, green
+  ones are signal.
 
-## Infrastruktur
+## Infrastructure
 
-- **iOS (S1–S3):** GitHub-Actions `macos-14`-Runner (für öffentliche Repos
-  kostenlos). `xcrun simctl` fürs Booten/OpenURL; Appium mit
-  XCUITest-Driver für Share-Sheet/Springboard. Zwei Simulator-Versionen
-  (aktuelles iOS + Vorgänger), da sich LTP-Verhalten zwischen Versionen
-  ändert.
+- **iOS (S1–S3):** GitHub Actions `macos-14` runner (free for public
+  repos). `xcrun simctl` for booting/openurl; Appium with the XCUITest
+  driver for share sheet/Springboard. Two simulator versions (current
+  iOS + predecessor), because LTP behaviour changes between versions.
 - **Android (S4–S5):** `ubuntu-latest` + `reactivecircus/android-emulator-runner`;
-  S4 mit `google_apis`-Image, S5 mit `google_apis_playstore`.
-- **Trigger:** `workflow_dispatch` + nightly `schedule` — NICHT pro Push
-  (10–20 min Laufzeit, Flakiness-Risiko; Tier 1 bleibt der Push-Gate).
-- **Artefakte:** Screenshots + UiAutomator-Dumps/Simulator-Logs bei jedem
-  Lauf hochladen — Feld-Fehlschläge vergleicht man am besten gegen ein
-  bekannt-gutes Referenzbild.
+  S4 with the `google_apis` image, S5 with `google_apis_playstore`.
+- **Trigger:** `workflow_dispatch` + nightly `schedule` — NOT per push
+  (10–20 min runtime, flakiness risk; Tier 1 remains the push gate).
+- **Artifacts:** upload screenshots + UiAutomator dumps/simulator logs on
+  every run — field failures are best compared against a known-good
+  reference image.
 
-## Tier 2b — echte Geräte (vor «Produktion»)
+## Tier 2b — real devices (before «production»)
 
-BrowserStack App Live / AWS Device Farm mit echten iPhones/Pixels:
-BrowserStack hat einen kostenlosen Open-Source-Plan (Antrag mit Repo-Link).
-Dort zusätzlich: echter Kamera-Scan (manuell, dokumentiertes Skript),
-echtes LTP in Mail/Messages (Link per iMessage senden!), echtes
-WebAPK-Minting. Frequenz: vor Releases, nicht nightly.
+BrowserStack App Live / AWS Device Farm with real iPhones/Pixels:
+BrowserStack has a free open-source plan (application with a repo link).
+Additionally there: real camera scan (manual, documented script), real
+LTP in Mail/Messages (send the link via iMessage!), real WebAPK minting.
+Frequency: before releases, not nightly.
 
-## Stand (11.07.2026)
+## Status (11.07.2026)
 
-- **S4 GRÜN** (Lauf 2): echtes Chrome, Emulator api-34, voller Produktions-
-  Handoff, UiAutomator-Assertion. Gelernt: der emulator-runner führt
-  `script:` zeilenweise via `sh -c` aus → Szenario lebt in
+- **S4 GREEN** (run 2): real Chrome, emulator api-34, full production
+  handoff, UiAutomator assertion. Learned: the emulator-runner executes
+  `script:` line by line via `sh -c` → the scenario lives in
   `scripts/tier2-s4.sh`.
-- **S1 implementiert** (OCR-Assertion via tesseract): Lauf 1 bewies die
-  volle Kette in echtem iOS-Safari (Mitglieder-Sicht gerendert), scheiterte
-  nur an OCR-untauglicher Assertion (kleiner Chip-Text) → auf grossen
-  Titel umgestellt. Laufzeit ~18 min (macos-14, brew tesseract).
-- Beide nightly (03:07/03:17 UTC) + workflow_dispatch.
-- **S3 in Tier-1 vorgezogen** (12 Tests): Stale-Icon-Falle als
-  Playwright-Test via `navigator.standalone`-Shim — standalone + blanke
-  index.html ⇒ Diagnose zeigt «Homescreen-Icon!»; dazu der Gegenfall
-  (gesundes Admin-Icon ⇒ family-first-Restore). Laeuft pro Push auf beiden
-  Engines. Das ECHTE Springboard-Web-Clip-Szenario (S2/S3 via Appium)
-  bleibt der naechste Tier-2-Ausbau. Gelernt: CDP-display-mode-Emulation
-  greift im Headless-Shell nicht; das navigator-Signal ist das richtige
-  Testobjekt (es ist, was die App prueft).
-- Diagnostischer Wert sofort eingelöst: die Kette, an der das Kind-Telefon
-  scheitert, funktioniert auf sauberen Geräten beider Plattformen —
-  stützt die Stale-Icon-Hypothese.
+- **S1 implemented** (OCR assertion via tesseract): run 1 proved the full
+  chain in real iOS Safari (members view rendered), it only failed on an
+  OCR-unsuitable assertion (small chip text) → switched to the large
+  title. Runtime ~18 min (macos-14, brew tesseract).
+- Both nightly (03:07/03:17 UTC) + workflow_dispatch.
+- **S3 pulled forward into Tier 1** (12 tests): stale-icon trap as a
+  Playwright test via a `navigator.standalone` shim — standalone + a bare
+  index.html ⇒ diagnostics show «Homescreen-Icon!»; plus the counter-case
+  (healthy admin icon ⇒ family-first restore). Runs per push on both
+  engines. The REAL Springboard web-clip scenario (S2/S3 via Appium)
+  remains the next Tier 2 expansion. Learned: CDP display-mode emulation
+  does not take effect in the headless shell; the navigator signal is the
+  right test object (it is what the app checks).
+- Diagnostic value cashed in immediately: the chain that the child's
+  phone fails on works on clean devices of both platforms — supports the
+  stale-icon hypothesis.
 
-### S2/S3 auf dem echten Simulator: WebClip-Injektion (implementiert)
+### S2/S3 on the real simulator: web-clip injection (implemented)
 
-Workflow `tier2-ios-webclip.yml` (nightly 03:27 UTC + dispatch), Ansatz OHNE
-Appium: Web Clips sind auf dem Simulator schlichte Dateien
-(`data/Library/WebClips/<Name>.webclip/Info.plist` mit Title/URL/FullScreen).
-Der Workflow injiziert zwei Clips bei heruntergefahrenem Simulator, bootet,
-tippt die Springboard-Icons per `idb ui tap` (Suche per AXLabel,
-`scripts/idb-find-tap.py`, defensiv geparst, wischt bei Bedarf weiter) und
-prueft per Screenshot-OCR:
-- **S3a «FairliOK»** (persoenliche E2E-URL): erwartet Mitglieder-Sicht.
-- **S3b «FairliStale»** (blanke index.html — die Kind-Telefon-Falle): erwartet
-  Einstiegsseite; Modus-Diagnose per OCR ist Bonus (10.5px evtl. zu klein).
-Getestet wird die LAUNCH-Semantik installierter Icons (URL eingebacken,
+Workflow `tier2-ios-webclip.yml` (nightly 03:27 UTC + dispatch), approach
+WITHOUT Appium: web clips on the simulator are plain files
+(`data/Library/WebClips/<Name>.webclip/Info.plist` with Title/URL/FullScreen).
+The workflow injects two clips while the simulator is shut down, boots,
+taps the Springboard icons via `idb ui tap` (search by AXLabel,
+`scripts/idb-find-tap.py`, defensively parsed, swipes further if needed)
+and checks via screenshot OCR:
+- **S3a «FairliOK»** (personal E2E URL): expects the members view.
+- **S3b «FairliStale»** (bare index.html — the child's-phone trap):
+  expects the entry screen; the mode diagnostics via OCR are a bonus
+  (10.5px possibly too small).
+What is tested is the LAUNCH semantics of installed icons (URL baked in,
 FullScreen).
 
-**Status: S3a + S3b GRÜN (Lauf 3, 11.07.).** S3a-Screenshot zeigt die
-Mitglieder-Sicht OHNE Safari-URL-Zeile ⇒ FullScreen/standalone wirkt.
-S3b reproduziert die Kind-Telefon-Stale-Icon-Falle nightly auf echtem iOS.
-Runner-Drift-Lektionen (14.07., erster Nightly-Ausfall): (0) Das
-macOS-Runner-Image wandert unter uns — Symptome: frisch gebootete Sims
-zeigen jetzt einen LOCK SCREEN (grosse Uhr im describe-all = das Signal;
-Fix: Swipe-up + HOME vor dem ersten Icon-Tap), und iOS-18.x-Springboards
-IGNORIEREN dateisystem-injizierte WebClips (plists ueberleben auf der
-Platte, Icons erscheinen nie). Fix: eigenes Geraet per `simctl create`
-fest auf iOS 17.x pinnen statt Regex ueber Runner-Defaults. Wenn 17.x aus
-den Images faellt: Clip-Erzeugung auf den Capture-Flow (Share-Sheet)
-umbauen — der funktioniert auf jedem Runtime. Iterations-Lektionen: (1) neueres Homebrew verlangt `brew trust
-facebook/fb` für Fremd-Taps; (2) fb-idb ist mit brew-Python 3.14
-inkompatibel (asyncio.get_event_loop entfernt) → System-Python nutzen:
-`/usr/bin/python3 -m pip install --user fb-idb`, USERBIN in GITHUB_PATH.
-(3) Die Modus-Diagnosezeile (10.5px) ist für OCR zu klein — Assertions
-auf grosse UI-Elemente stützen. **Capture-Semantik-Test (tier2-ios-capture.yml, 12.07., dispatch):** prueft
-Maintainer-Hypothese («beim Hinzufuegen wird nur die Basis-URL eingebacken»)
-EMPIRISCH: echter Share-Flow in Safari (idb: Share → Add to Home Screen →
-Add, `scripts/idb-share-flow.py` mit Sheet-Scroll), danach wird die
-Wahrheit direkt aus dem erzeugten Web Clip gelesen
-(`data/Library/WebClips/*.webclip/Info.plist`, Feld URL) — keine OCR,
-keine Deutung. Ergebnis steht im Log unter «EINGEBACKENE URL».
-Die Share-Sheet-ERFASSUNG («baeckt iOS beim Hinzufuegen die
-aktuelle URL ein?») bleibt der letzte offene Ausbau — braucht
-UI-Automation des Teilen-Dialogs (idb-Taps auf Safari-UI oder Appium).
+**Status: S3a + S3b GREEN (run 3, 11.07.).** The S3a screenshot shows the
+members view WITHOUT the Safari URL bar ⇒ FullScreen/standalone works.
+S3b reproduces the child's-phone stale-icon trap nightly on real iOS.
+Runner drift lessons (14.07., first nightly failure): (0) The macOS
+runner image is drifting under us — symptoms: freshly booted sims now
+show a LOCK SCREEN (large clock in describe-all = the signal; fix:
+swipe up + HOME before the first icon tap), and iOS 18.x Springboards
+IGNORE filesystem-injected web clips (plists survive on disk, icons
+never appear). Fix: pin your own device to iOS 17.x via `simctl create`
+instead of a regex over runner defaults. If 17.x drops out of the
+images: rework clip creation onto the capture flow (share sheet) — that
+works on every runtime. Iteration lessons: (1) newer Homebrew requires
+`brew trust facebook/fb` for third-party taps; (2) fb-idb is
+incompatible with brew Python 3.14 (asyncio.get_event_loop removed) →
+use the system Python: `/usr/bin/python3 -m pip install --user fb-idb`,
+USERBIN in GITHUB_PATH. (3) The mode diagnostics line (10.5px) is too
+small for OCR — base assertions on large UI elements. **Capture
+semantics test (tier2-ios-capture.yml, 12.07., dispatch):** checks the
+maintainer hypothesis ("when adding, only the base URL gets baked in")
+EMPIRICALLY: a real share flow in Safari (idb: Share → Add to Home
+Screen → Add, `scripts/idb-share-flow.py` with sheet scrolling), after
+which the truth is read directly out of the generated web clip
+(`data/Library/WebClips/*.webclip/Info.plist`, field URL) — no OCR, no
+interpretation. The result is in the log under «EINGEBACKENE URL».
+Share-sheet CAPTURE ("does iOS bake in the current URL when adding?")
+remains the last open expansion — it needs UI automation of the share
+dialog (idb taps on the Safari UI, or Appium).
 
-### Share-Sheet-Capture (S2-Kern): ABGESCHLOSSEN, nightly
+### Share-sheet capture (core of S2): COMPLETED, nightly
 
-`tier2-ios-capture.yml` (03:37 UTC): echter Share-Flow (Koordinaten-Tap
-Share → OCR-Tap «Add to Home Screen» → OCR-Tap «Add», wortgenau/oben-rechts)
-→ liest die plist des frisch erzeugten Web Clips. 13.07.: Bug per Ground
-Truth bewiesen (URL => index.html trotz Deep-Link in Safari; Ursache:
-statisches Manifest wird beim Parsen registriert, JS-Entfernen wirkungslos)
-und Fix v4.20.0 verifiziert (URL => voller Familien-Pfad). Lektionen:
-tesseract-Zeilen verschmelzen Navbars → exakte Matches WORTweise, oben-
-rechts gewinnt; HOMEBREW_NO_AUTO_UPDATE=1 spart ~10 min; Screenshot→OCR→
-Tap ist unser Standardmechanismus fuer System-UI, die der Accessibility-
-Baum nicht zeigt.
+`tier2-ios-capture.yml` (03:37 UTC): real share flow (coordinate tap
+Share → OCR tap «Add to Home Screen» → OCR tap «Add», word-exact/top
+right) → reads the plist of the freshly generated web clip. 13.07.: bug
+proven by ground truth (URL => index.html despite a deep link in Safari;
+cause: the static manifest is registered at parse time, removing it via
+JS has no effect) and fix v4.20.0 verified (URL => full family path).
+Lessons: tesseract lines merge navbars → exact matches WORD by word, top
+right wins; HOMEBREW_NO_AUTO_UPDATE=1 saves ~10 min; screenshot→OCR→tap
+is our standard mechanism for system UI that the accessibility tree does
+not expose.
 
-## Reihenfolge der Umsetzung
+## Implementation order
 
-1. S4 (Android Chrome Deep-Link) — geringster Aufwand, sofortiger Wert.
-2. S1 (iOS openurl) — der macOS-Runner-Einstieg, noch ohne Appium.
-3. S2/S3 (Appium + Springboard) — der eigentliche Gewinn, aber am meisten
-   Pflege; erst bauen, wenn S1 stabil läuft.
-4. S5 + Tier 2b vor einem echten Produktions-Anspruch.
+1. S4 (Android Chrome deep link) — least effort, immediate value.
+2. S1 (iOS openurl) — the entry point to the macOS runner, still without
+   Appium.
+3. S2/S3 (Appium + Springboard) — the actual win, but the most
+   maintenance; only build it once S1 runs stably.
+4. S5 + Tier 2b before any real production claim.
 
-Grundsatz aus Tier 1 übernehmen: Jedes Szenario referenziert den realen
-Vorfall, den es verhindert. Kein Szenario ohne Geschichte.
+Carry over the principle from Tier 1: every scenario references the real
+incident it prevents. No scenario without a story.
 
-## Grenze: Chrome auf iOS (Stand 14.07.2026, v4.20.1)
+## Limit: Chrome on iOS (status 14.07.2026, v4.20.1)
 
-Der Chrome-auf-iOS-Install-Flow ist NICHT Tier-2-automatisierbar — am
-14.07. aktiv verifiziert: chromium-browser-snapshots enthaelt keine
-iOS-Artefakte (Bucket-Listing leer), Chrome for Testing kennt kein iOS,
-App-Store-IPAs sind FairPlay-verschluesselt (Simulator lehnt ab),
-Chromium-Source-Build braucht 7–9 h / ~120 GB und sprengt das
-6-h-Job-Limit. Moeglicher Proxy: Firefox iOS aus Source (~30 min Build,
-gleiches System-Share-Sheet seit 16.4) — Experimentierlauf noetig, da die
-«Zum Home-Bildschirm»-Aktion am web-browser-Entitlement haengt. Abdeckung stattdessen dreistufig:
-1. Tier 1 pinnt das CriOS-UA-Profil (kein Manifest, Handoff, Anleitung) und
-   den Anleitungs-Wortlaut (Chrome erlaubt, kein nacktes «Teilen»).
-2. Mechanik-Aequivalenz: seit iOS 16.4 nutzen alle Browser dasselbe
-   System-Share-Sheet/Web-Clip wie Safari (S2/S3 decken die Mechanik ab).
-3. Ein manueller Geraetetest (oder Tier 2b/BrowserStack-Echtgeraet) bleibt
-   offen — s. DEVELOPER_ONBOARDING §12.
+The Chrome-on-iOS install flow is NOT Tier 2 automatable — actively
+verified on 14.07.: chromium-browser-snapshots contains no iOS artifacts
+(bucket listing empty), Chrome for Testing knows no iOS, App Store IPAs
+are FairPlay-encrypted (the simulator refuses them), a Chromium source
+build takes 7–9 h / ~120 GB and blows past the 6 h job limit. Possible
+proxy: Firefox iOS from source (~30 min build, same system share sheet
+since 16.4) — an experimental run is needed, since the «Zum
+Home-Bildschirm» action depends on the web-browser entitlement. Coverage
+instead in three stages:
+1. Tier 1 pins the CriOS UA profile (no manifest, handoff, instructions)
+   and the wording of the instructions (Chrome allowed, no bare
+   «Teilen»).
+2. Mechanical equivalence: since iOS 16.4 all browsers use the same
+   system share sheet/web clip as Safari (S2/S3 cover the mechanics).
+3. A manual device test (or Tier 2b/BrowserStack real device) remains
+   open — see DEVELOPER_ONBOARDING §12.

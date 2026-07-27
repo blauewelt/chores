@@ -26,6 +26,19 @@ const FAMILIES = [{ family_id: FAM, name: 'Testhaushalt' }];
 
 // Mock all Supabase REST + block third-party fetches (fonts, tile art).
 
+// v4.71.1: Zeitstempel «vor N ms, aber GARANTIERT in dieser Woche».
+// Fixtures, die «vor 40 Stunden» seeden und dann eine WOCHEN-Summe pruefen,
+// sind Zeitbomben: montags frueh liegt der grosse Teil davon vor weekStart()
+// (Montag 00:00), die Summe faellt, der Test wird rot — an einem Wochentag,
+// nicht an einem Commit. Genau so ist v4.65.0 an einem Montag um 06:14 UTC
+// gefallen, gruen an allen anderen Tagen. Deshalb an die Wochengrenze
+// klemmen: ausserhalb des Randfalls aendert das nichts.
+function weekSafeAgo(ms) {
+  const w = new Date(); w.setHours(0, 0, 0, 0);
+  w.setDate(w.getDate() - ((w.getDay() + 6) % 7));        // Montag, wie weekStart()
+  return new Date(Math.max(w.getTime() + 1000, Date.now() - ms)).toISOString();
+}
+
 // v4.69.0: Pro-Person-Sheet oeffnen — synthetischer Klick (kein Koordinaten-
 // Klick, der nach dem showModal in den Backdrop-Close der neuen dialog
 // bubbeln koennte), danach Sichtbarkeit zusichern.
@@ -2797,8 +2810,8 @@ test.describe('Fairli', () => {
     const win = Array.from({ length: 40 }, (_, i) => ({
       id: 'l-' + i, chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
       member_id: i % 2 ? 'm-mira' : 'm-chris', member_name: i % 2 ? 'Mira' : 'Timon', points: 1,
-      done_at: new Date(Date.now() - i * 3600e3).toISOString(),
-      created_at: new Date(Date.now() - i * 3600e3).toISOString(), family_id: FAM }));
+      done_at: weekSafeAgo(i * 3600e3),
+      created_at: weekSafeAgo(i * 3600e3), family_id: FAM }));
     await mockBackend(context, { logRows: () => win });   // «Fenster»: 20/20 Punkte
     await context.route(`${SB}/rest/v1/log_totals**`, route =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([

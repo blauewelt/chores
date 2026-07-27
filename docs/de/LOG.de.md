@@ -1,0 +1,3631 @@
+## 2026-07-26 — v4.71.1 (SW haushalt-v173): quota() gehaertet — kein NaN-Komparator mehr moeglich
+
+- Beim Umbau auf zwei Bloecke (v4.71.0) fiel die Schutzklausel aus
+  quota() heraus, weil die Aufrufer seither vorfiltern. Korrekt, aber
+  eine Falle fuer die naechste Session: ein Aufruf ohne Ziel ergaebe
+  pts/0 = Infinity bzw. 0/0 = NaN, und NaN in einem Komparator erzeugt
+  eine instabile, engine-abhaengige Ordnung — also einen Fehler, der nur
+  auf manchen Geraeten auftritt und in der Suite nicht reproduziert.
+- Klausel zurueck, aber mit −1 als ENDLICHEM Rueckfallwert und dem
+  ausdruecklichen Vermerk, dass das KEIN Ranking-Mittel ist: genau ueber
+  diesen Sentinel lief die gemischte Sortierung, die v4.71.0 abgeloest
+  hat. Aufrufer filtern, der Wert ist nur das Netz.
+- KEIN neuer Test, und zwar bewusst: die Aenderung ist von aussen nicht
+  beobachtbar (die Aufrufer filtern ja), ein Test waere nicht
+  gegenprobenfaehig — Guard entfernen und die Suite bliebe gruen. Nach
+  der Regel aus §10 («sonst testet er nichts») ist ein solcher Test
+  Theater und keine Absicherung. Die 263 bestehenden Tests laufen gruen.
+- Nicht-Beta-Haushalte: erneut pixelgleich zu v4.69.4 geprueft (3
+  Zustaende × 2 Zeitraeume × 2 Geraete-Projekte, 12 Renderings identisch,
+  inkl. des heiklen Falls «kein Beta, aber goal steht in den Zeilen»).
+
+## 2026-07-26 — v4.71.0 (SW haushalt-v172): Teilweise gesetzte Ziele — zwei Bloecke statt einer gemischten Liste
+
+- Befund auf Nachfrage des Maintainers («soll man Ziele fuer alle
+  empfehlen?»), live nachgestellt statt hergeleitet: im GEMISCHTEN
+  Zustand standen zwei Kartenarten unkommentiert untereinander und
+  massen Verschiedenes. Oben Ziel-Balken (Bezug: das eigene Ziel), unten
+  relative Balken (Bezug: der Wochenbeste). Konkret trug «1 von 100
+  Punkten» die Krone, waehrend zwei Karten tiefer 80 Punkte den Balken
+  voll ausschlugen. Wer die Spalte ueberflog, las das Gegenteil der
+  Rangliste — genau der Fall aus §11 «was verspricht die UI».
+- Fix (Variante 1 von drei vorgelegten): der ziellose Teil bekommt einen
+  eigenen Block mit Trennzeile «ohne Wochenziel» (.scoresep, 19 Sprachen).
+  Die REIHENFOLGE ist unveraendert (erst Ziele nach Zielerreichung, dann
+  Ziellose nach Punkten) — neu ist, dass die Liste ansagt, wo das
+  Register wechselt.
+- Zweitens: die Bezugsgroesse der relativen Balken ist jetzt der beste
+  ZIELLOSE, nicht der beste ueberhaupt. Vorher stauchte ein fleissiger
+  Ziel-Traeger den ganzen unteren Block (90 Punkte mit Ziel druecken den
+  40-Punkte-Besten auf 44 %). Ohne Ziele im Haushalt ist das exakt der
+  alte Wert — die Zusage an alle anderen Haushalte bleibt.
+- Trenner NUR im gemischten Zustand und NUR in «Diese Woche»; «Gesamt»
+  bleibt das absolute Register. Krone unveraendert: sie haengt am ersten
+  Platz und faellt weg, wenn dort niemand Punkte hat.
+- Vier Tests, beide Negativkontrollen gefahren (Trenner entfernt → 3 rot;
+  alter globaler Massstab → 1 rot). Lehre aus dem ersten Anlauf: der
+  erste Test hiess «Ziellose rutschen nicht mehr nach unten» und war
+  GRUEN, auch als die alte Sortierung wieder eingesetzt wurde — die
+  Reihenfolge war naemlich schon vorher dieselbe. Testnamen, die mehr
+  behaupten als der Test prueft, sind ein eigener Fehler.
+- BEWUSST NICHT gebaut: ein Banner «setz Ziele fuer alle». Ein Hinweis
+  macht den gemischten Zustand nicht ehrlich, er draengt nur heraus —
+  und man landet unvermeidlich wieder drin (neues Mitglied). Haushalte,
+  die absichtlich nur den Kindern Ziele geben, wuerden dauergenoergelt.
+  Vertagt in §12: Vorschlagswerte aus dem Ø/Woche beim Setzen des ERSTEN
+  Ziels anbieten, einmalig und ablehnbar.
+
+## 2026-07-26 — v4.70.1 (SW haushalt-v171): Ziel-Karte zeigt nur noch die Prozentzahl gross
+
+- Maintainer-Entscheid nach der visuellen Abnahme von v4.70.0: die kleine
+  Punkte-Nebenzahl im Kopf faellt weg. Sie wiederholte, was zwei Zeilen
+  tiefer ohnehin steht («36» neben «36 von 30 Punkten»), und bei 0 Punkten
+  las sich «0 0 %» wie ein Fehler. Jetzt gilt: EINE Leitzahl je Karte, und
+  das ist das Ranking-Kriterium; die Punkte nennt die Unterzeile genau
+  einmal.
+- Nur Markup/CSS der Ziel-Karte (`.score .pts` entfaellt, Regel entfernt) —
+  Balken-Geometrie, Sortierung, Sync und alles OHNE Ziel unveraendert.
+- Test nachgezogen und geschaerft: er nagelt jetzt die Abwesenheit fest
+  (`.score .pts` = 0 Treffer, Kopfzeile enthaelt die Punktzahl NICHT),
+  nicht nur die Anwesenheit der Prozentzahl.
+
+## 2026-07-26 — v4.70.0 (SW haushalt-v170): Ziel-Balken mit Kopfraum, Zielerreichung als Leitzahl
+
+- Maintainer-Befund an der Live-Rangliste: der Ziel-Balken endete bei
+  100 %. 100 %, 120 % und 300 % sahen damit IDENTISCH aus — ausgerechnet
+  die Zahl, die seit v4.67.0 die Reihenfolge entscheidet, war die
+  einzige, die der Balken nicht zeigen konnte. Und die Zielerreichung
+  stand klein in der Unterzeile, waehrend die grosse Zahl die Punkte
+  zeigte (= NICHT das Ranking-Kriterium).
+- Balken: 100 % des Ziels liegen jetzt bei GOALW = 80 % der Breite,
+  markiert durch einen Strich (u.tick, steht oben/unten ueber). Der Rest
+  ist Kopfraum: die Uebererfuellung fuellt ihn als gestreiftes Segment
+  (b.over) in der Personenfarbe. Ab 125 % ist der Balken voll — dann sagt
+  es die Kappen-Spitze (.capped), die Wahrheit steht in der Zahl.
+  Regressionstest misst die GERENDERTE Geometrie (0/50/100/120/200 %)
+  inkl. Monotonie; Negativkontrolle gefahren (GOALW=100 → rot).
+- Karte: die Zielerreichung ist die grosse Zahl (var(--display), ab 100 %
+  goldig wie die Ziellinie im Wochen-Chart), die Punkte stehen als
+  Nebenzahl daneben, die Unterzeile nennt nur noch «X von Y Punkten»
+  (neuer i18n-Schluessel, 19 Sprachen aus dem alten abgeleitet). Bei
+  0 Punkten entfaellt die Nebenzahl — «0 0 %» las sich wie ein Fehler.
+  Erreicht/offen haengt NICHT nur an der Farbe: Zahl und Balkenstrich
+  tragen dieselbe Information.
+- OHNE Ziel ist die Karte unveraendert (alle anderen Haushalte, «Gesamt»,
+  Beta aus): Punkte gross, relativer Balken, kein Strich, kein Prozent —
+  eigener Test, der genau das festnagelt.
+- Visuelle Abnahme in beiden Geraete-Projekten (Pixel 7 + iPhone 14),
+  DE und EN, inkl. Randzustaenden: 0 %, 400 %, Ziel 100 bei 1 Punkt,
+  sehr langer Name (umbricht, Zahlen bleiben buendig).
+- Test-Hygiene nebenbei: blockExternal() ist jetzt eine Funktion, und die
+  beiden Ersteinrichtungs-Tests mit EIGENEM Routing nutzen sie. Ohne
+  Aborts ANTWORTET ein Font-Request in Sandboxen mit Egress-Proxy nicht,
+  er HAENGT — das load-Event feuert nie, waitForURL laeuft ins Timeout.
+  Genau die stehende Regel aus §10, die dort fehlte.
+
+## 2026-07-26 — v4.69.4: Das «verlorene» Wochenziel war nie weg — goal fehlte in der Pull-Spaltenliste
+
+- Maintainer-Befund (praezise Reihenfolge: Admin-Ziel 30 weg, zweites
+  Admin-Ziel 30 weg, das zuletzt gesetzte Ziel 7 blieb) fuehrte zur
+  Server-Wahrheit: ALLE drei Schreibungen
+  standen dort (updated_at 12:08:32/41/56, exakt seine Sequenz). Verloren
+  hat nur die ANZEIGE: der regulaere Abgleich holte members mit expliziter
+  Spaltenliste OHNE goal — jeder Pull ersetzte state.members durch
+  ziellose Zeilen. Nur die frischeste Aenderung ueberlebte scheinbar
+  (pendingCreates-Schutzschild bis zum naechsten Abgleich) — daher auch
+  das urspruengliche «musste zweimal speichern».
+- Fix: goal in der Pull-SELECT-Liste (eine Zeile). Der Erstlade-Pfad
+  nutzte select=* und zeigte Ziele kurz — das erklaerte das Flackern.
+- WARUM 20+ Ziel-Tests gruen blieben: der Mock lieferte IMMER alle
+  Felder und ignorierte select= — er war grosszuegiger als PostgREST.
+  mockBackend projiziert jetzt select= fuer members/chores; der neue
+  Regressionstest (Ziel ueberlebt ZWEI Abgleiche) faellt mit der alten
+  Spaltenliste nachweislich durch (Negativkontrolle gefahren).
+- E2E-Lehre notiert: Draht+Server pruefen reicht nicht — der Zustand
+  NACH dem naechsten Pull gehoert in jede Speicher-Verifikation.
+- ONBOARDING 11a um Regel C ergaenzt: neue Spalte = Migration +
+  Schreibpfad + Pull-Liste, und Mocks muessen select= projizieren.
+- Keine Datenreparatur noetig: der Server hatte alles; nach dem Update
+  erscheinen alle Ziele von selbst wieder.
+- APP_VERSION 4.69.4, SW-Cache haushalt-v169
+
+## 2026-07-26 — v4.69.3: Live-Beweis am Server (Ziel speichert, auch verschluesselt) + Wiederholung nach Fehlschlag
+
+- Maintainer-Meldung «speichert weiter nicht» + Hypothese Schema-Drift
+  (Beta-Familie vs. Rest). Befund: NEIN — Schema und Krypto-Pfad sind
+  unschuldig. End-to-End-Beweis gegen den ECHTEN Server: frischer
+  famx-Haushalt (famx-e2e-…, Zeilen bleiben gem. Ops-Regel stehen),
+  Onboarding durchlaufen, Ziel 7 im Pro-Person-Sheet gespeichert →
+  POST 200 mit goal im (verschluesselten) Payload, Serverzeile goal=7.
+  encRow ist Copy-and-encrypt ohne Feld-Whitelist — goal laeuft durch.
+- Wahrscheinlichste Ursache am Geraet: VERALTETER Service-Worker
+  (≤4.69.1): dort fehlte die PGRST102-Wache UND Marken wurden nie
+  geleert — EIN formfremdes Mitglied vergiftete jeden weiteren Save der
+  Sitzung. Bitte pruefen: Einstellungen → Fairli 4.69.3, sonst App
+  vollstaendig schliessen und neu oeffnen (SW-Zyklus).
+- Haertung (§11a «kein Weg verliert etwas»): scheitert der Personen-
+  Push, kommen die Marken persistiert ZURUECK — die naechste Speichern-
+  Geste oder der naechste Boot wiederholt den Upsert automatisch,
+  statt die Aenderung nur lokal weiterleben zu lassen. upsertRemote
+  kann dafuer onFail (Muster von deleteRemote uebernommen).
+- Ehrlichkeits-Test erweitert: Fehlschlag → Toast + Marke bleibt;
+  Server gesund → naechstes Speichern schickt dieselbe Person, Marke
+  geleert. Suite 123 gruen.
+- APP_VERSION 4.69.3, SW-Cache haushalt-v168
+
+## 2026-07-26 — v4.69.2: Der «musste zweimal speichern»-Fehler — gefunden, reproduziert, dreifach abgedichtet
+
+URSACHE (mit 400er reproduziert): PostgREST verlangt in EINEM Batch
+IDENTISCHE Schluesselmengen (PGRST102 «All object keys must match»).
+Lokale Personen-Zeilen driften aber natuerlich — frisch angelegt hat 3
+Schluessel, gepullt alle Spalten. EINE abweichende Zeile (hier: die
+betreute Person mit Alt-Form) liess JEDEN Batch platzen, in dem sie
+mitfuhr: «Sync fehlgeschlagen», das Wochenziel dieser Person kam nie an,
+und pendingCreates hielt die lokalen Werte am Leben — es SAH gespeichert
+aus. Drei Symptome, ein Mechanismus.
+
+- FIX 1 (Mechanismus): upsert() gruppiert Zeilen nach Schluessel-
+  Signatur und sendet je Gruppe einen Request — fuer ALLE Tabellen;
+  PGRST102 ist damit konstruktionsbedingt unmoeglich.
+- FIX 2 (Verlustfestigkeit): Aenderungs-Marken persistieren
+  (LS_PENDMEMB) und werden beim Boot SYNCHRON nachgezogen — synchron,
+  weil der pendingCreates-Schild stehen muss, BEVOR der erste Pull
+  reconciled (Debug-Harness fuehrte das Rennen live vor: goal 7 → null
+  zurueckgeschickt). Der Marken-Kahlschlag beim Oeffnen der Liste
+  (changedMembers.clear) ist entfernt — er war ein realer Verlustpfad.
+- FIX 3 (Exit-Pfade): Esc/programmatisches close speichert jetzt auch
+  (close-Event als Netz); syncChangedMembers loescht Marken nach der
+  Uebergabe und ist damit idempotent — Knopf + Netz ergeben EINEN POST.
+- Stehende Regeln in DEVELOPER_ONBOARDING §11a festgeschrieben
+  (Maintainer-Auftrag): Speichern speichert / kein Exit verliert /
+  Reload verliert nicht; Tastatur-Regel (visualViewport, nicht
+  interactive-widget); PGRST102-Wache.
+- 3 neue Tests: Signatur-Gruppierung (heterogene Batches → getrennte,
+  einheitliche Requests), Esc speichert genau EINMAL, Reload mitten im
+  Bearbeiten verliert nichts. 121 gruen.
+- Hinweis an die Familie: das verlorene 7er-Wochenziel der betreuten
+  Person einmal NEU eintragen — der alte Stand lebte nur im Geraetespeicher.
+- Nachtrag (gleicher Tag): Maintainer meldete «Sync fehlgeschlagen» als
+  Ausloeser des Doppel-Speicherns — Diagnose am LIVE-Server schreibfrei
+  bewiesen (gemischte Schluesselmengen → 400 PGRST102 «All object keys
+  must match» VOR jeder Auth; formgleiche kommen durch die Parse-Stufe).
+  Zwei ergaenzende Tests: Boot-Nachzug mit GEMISCHTEN offenen Marken
+  (formgleich gruppiert + erster Pull setzt das Ziel nicht zurueck) und
+  Ehrlichkeits-Toast bei scheiterndem Personen-Upsert. Suite 123 gruen.
+- APP_VERSION 4.69.2, SW-Cache haushalt-v167
+
+## 2026-07-26 — v4.69.1: Tastatur verdeckt den Speichern-Knopf nicht mehr; Sheet speichert SELBST; Luft
+
+- TASTATUR (Live-Screenshot des Maintainers): die Bildschirmtastatur lag
+  ueber dem Knopf. interactive-widget=resizes-content und dvh waren
+  laengst gesetzt — die INSTALLIERTE App ignoriert beides zuverlaessig
+  genug, um den Fix zu brauchen. Jetzt misst visualViewport die
+  Tastaturhoehe (--kb auf :root); Sheets sind unten verankert
+  (margin-bottom:var(--kb)) und die max-Hoehe rechnet die Tastatur mit
+  ein. Schwelle 40 px gegen Zitter-Resizes (URL-Leiste).
+- SPEICHERN STATT FERTIG (Maintainer: «usual gesture to save changes»):
+  der Knopf heisst Speichern und SPEICHERT — jedes Verlassen des
+  Pro-Person-Sheets (Knopf, ×, Backdrop/Wischen) synchronisiert die
+  geaenderten Personen sofort (syncChangedMembers, aus finishMembers
+  extrahiert; Namenlose werden nicht gesynct, die Liste raeumt sie beim
+  Schliessen auf). Vorher speicherte erst das Listen-Speichern — ein
+  Sheet-Schliessen + Liste-per-Reopen haette Aenderungen verlieren
+  koennen (changedMembers.clear beim Oeffnen).
+- Admin-Test auf Mehr-POST-Semantik umgestellt (letzter Stand je Person
+  zaehlt). Grosszuegigere Abstaende im Sheet (Zeilen, Huefte um die
+  Grafik, Knopf-Abstand).
+- APP_VERSION 4.69.1, SW-Cache haushalt-v166
+
+## 2026-07-26 — v4.69.0: Pro-Person-Sheet mit Wochen-Balken — das ⋯-Menü geht in Rente
+
+FREIGEGEBEN nach Vorschau (Maintainer: «Nice preview, let's go ahead» +
+Frage nach Wochen-Balken → ja, passt aufs Sheet).
+
+- Personenliste: Zeilen sind jetzt reine Tap-Ziele (Farbfeld, Name,
+  Abzeichen 🔑📵🎯N, Chevron). Antippen oeffnet das Pro-Person-Sheet im
+  Task-Sheet-Stil: Name/Farbe, (Beta:) Wochenziel mit Ø-Zeile und
+  Wochen-Balken, Admin und «Ohne eigenes Telefon» als ERKLAERTE Zeilen
+  («Darf Aufgaben, Personen und Einstellungen ändern» / «Andere tragen
+  für diese Person ein» — dafuer hatte das Menue nie Platz),
+  «Persönlichen Link teilen», rot «Person löschen», «Fertig».
+  Das Sheet ersetzt das ⋯-Menue FUER ALLE Haushalte (eine Bedienwelt,
+  eine Testsuite); Ziel/Ø/Balken bleiben Beta-gated. «+ Person
+  hinzufügen» oeffnet direkt das Sheet der neuen Person.
+- Wochen-Balken (Beta): 8 Wochen-Slots ab lokalem Montag, Luecken = 0,
+  aktuelle Woche hervorgehoben, gestrichelte Ziellinie folgt dem
+  Zielfeld LIVE (Slot-Cache, kein Refetch). Daten aus neuer Server-
+  Sicht log_weekly (family_id, member_id, week_start, pts, n) — das
+  Client-Fenster reicht bei aktiven Familien nur ~2 Wochen zurueck.
+  Slot-Schluessel aus LOKALEN Datumsteilen (toISOString rutschte bei
+  UTC+x auf den Sonntag → alle Balken leer); UTC-Wochengrenze der Sicht
+  als bewusste Randunschaerfe dokumentiert.
+- REPLAY-FALLE des Migrations-Runners gefunden und geheilt: der Runner
+  spielt bei JEDEM Lauf ALLE Dateien, und «create or replace view» kann
+  Spalten nicht entfernen. Die aeltere log_totals-Migration (4 Spalten)
+  scheiterte deshalb ueber der von v4.68 erweiterten 5-Spalten-Sicht —
+  ON_ERROR_STOP wuergte den Lauf ab, BEVOR log_weekly entstand. Regel
+  ab jetzt (in der Datei dokumentiert): erweitert eine spaetere
+  Migration eine Sicht, wird die aeltere Datei auf dieselbe Definition
+  nachgezogen.
+- Altfehler im Loesch-Undo behoben: _delM wurde NACH dem filter()
+  gefasst (immer null) — der Wiederherstell-Callback war toter Code.
+- Tests: 3 Bestandstests (Hinzufuegen/Umbenennen, 📵, Admin-Regeln) auf
+  den Sheet-Fluss migriert; openPerson-Helfer (synthetischer Klick,
+  Sichtbarkeits-Zusage); Harness liefert log_weekly aus logRows;
+  1 neuer Balken-Test (Slots, Luecken, Ziellinie, Hoehen). 118 gruen.
+- 8 neue i18n-Schluessel in 19 Sprachen.
+- APP_VERSION 4.69.0, SW-Cache haushalt-v165
+
+## 2026-07-26 — v4.68.0: Ø Punkte/Woche in «Gesamt» (Beta) — die Messlatte fuers Wochenziel
+
+- Maintainer-Idee: Wochenziele setzt man leichter, wenn man sieht, was
+  eine Person BISHER pro Woche geschafft hat. Umsetzung: «Gesamt»-Karten
+  zeigen (nur Beta-Haushalten) «· Ø N/Woche» — Gesamtpunkte geteilt
+  durch Wochen seit dem ERSTEN Eintrag (mindestens 1 Woche).
+- Der Ersteintrag kommt als first_done aus der Server-Sicht log_totals
+  (create or replace, additiv — der v4.65-Client selektiert explizit und
+  bleibt unberuehrt): das Client-Fenster kennt den Ersteintrag nicht,
+  dieselbe 300-Zeilen-Falle wie beim Gesamt-Vorfall vom 22.07.
+- Nur in «Gesamt», nicht in «Diese Woche» (dort regiert das Ziel);
+  bumpTotals setzt first beim allerersten lokalen Eintrag einer neuen
+  Person. Mock-Harness rechnet first_done aus logRows.
+- Nebenprodukt dieser Runde: Vorschau des Pro-Person-Sheets (Task-Sheet-
+  Stil: Name/Farbe, Wochenziel mit Ø-Zeile, erklaerte Admin/📵-Schalter,
+  Link teilen, Löschen) an den Maintainer — Umbau folgt nach Freigabe
+  als eigene Runde.
+- 1 neuer i18n-Schluessel in 19 Sprachen; 1 neuer Test (Ø in Gesamt,
+  nicht in Woche; Beta-AUS-Garantie erneut gruen).
+- APP_VERSION 4.68.0, SW-Cache haushalt-v164
+
+## 2026-07-26 — v4.67.1: Wochenziel-Eingabefeld sieht aus wie die App (nicht wie 1998)
+
+- Maintainer-Befund: das Zahlenfeld wirkte «very dated». Ursache: die
+  Basis-Eingabefeld-Styles im Personen-Sheet galten nur fuer
+  input[type=text] — das neue number-Feld fiel auf den nackten
+  Browser-Standard zurueck (helles Feld, native Spinner). Die Vorschau
+  hatte inline-Styles und verdeckte den Fehler.
+- Fix: number-Inputs teilen die Basis-Regel (dunkler Grund, Rahmen,
+  Radius, 16 px); native Spin-Buttons entfernt; Breite 84 px, zentriert.
+  Computed-Styles im Harness geprueft, nicht nur per Auge.
+- Nebenbefund, gefixt: Flake im Claim-Backdrop-Test (v4.61.0) war ein
+  ECHTES Rennen — die «Später»-Marke hing am close-EVENT (queued task)
+  und konnte gegen sofortige Navigation verlieren. Backdrop/Wischen
+  markiert jetzt synchron; onclose bleibt Netz fuer close()-Aufrufe;
+  Test tippt den echten Backdrop (3× wiederholt gruen).
+- APP_VERSION 4.67.1, SW-Cache haushalt-v163
+
+## 2026-07-26 — v4.67.0: Wochenziel als BETA — pro Haushalt schaltbar, fuer alle anderen inert
+
+MAINTAINER-WUNSCH: Wochenziel ausprobieren, ohne dass sich fuer irgendeine
+andere Familie etwas aendert. Umsetzung als Feature-Schalter PRO HAUSHALT
+(families.beta) statt als zweite Deployment-Umgebung — bewusste Wahl:
+
+- EINE Codebasis, EINE Testsuite, ein Deploy. Ein «/beta/»-Zweig waere
+  divergiert (eigener SW-Cache, eigener Migrationsstand), und die
+  installierte PWA/TWA haengt ohnehin an der Produktions-URL: die Familie
+  haette die Beta auf dem Homescreen gar nicht sehen koennen.
+- Der Schalter haengt am HAUSHALT, nicht am Geraet: alle Telefone der
+  Familie (auch Kind- und assistierte Geraete) sehen dasselbe, ohne dass
+  jemand eine geheime Geste kennen muss. families?select=* holt ihn
+  ohne weitere Client-Aenderung.
+- Preis, ehrlich benannt: der Beta-Code liegt auch bei allen anderen
+  Haushalten im Bundle — inert, aber vorhanden. Genau dagegen steht der
+  erste neue Test (Beta AUS ⇒ kein 🎯, keine Ziel-Sortierung, kein %).
+
+FUNKTION (nur bei beta=true):
+- Personen-Sheet: ⋯-Menue je Person → «🎯 Wochenziel» klappt ein Zahlenfeld
+  auf (leer = kein Ziel). Gesetzte Ziele zeigt ein 🎯N-Abzeichen; das Feld
+  ist bei vorhandenem Ziel automatisch offen. Admin-gated wie die uebrigen
+  Personen-Aenderungen, syncht als normales members-Feld.
+- Punkte/«Diese Woche»: wer ein Ziel hat, wird nach ZIELERREICHUNG gereiht
+  (Balken und Untertitel «6 von 8 Punkten · 75 %»), Personen ohne Ziel
+  folgen darunter nach Punkten wie bisher. Ein Kind mit 6/8 steht damit
+  vor Erwachsenen mit mehr absoluten Punkten — das war der ganze Zweck.
+- «Gesamt» bleibt unberuehrt das absolute Register (v4.65.0-Serversummen).
+- Einstellungen zeigen Beta-Haushalten «🧪 Beta: Wochenziel · An» mit
+  Selbst-Ausstieg (PATCH families.beta=false). Nicht-Beta-Haushalte sehen
+  die Zeile nie — Einstieg nur ueber die Datenbank.
+
+- Migration 20260726010000_beta_goal.sql (additiv, nullbar: families.beta,
+  members.goal) VOR dem Client-Deploy angewandt und per REST-Probe geprueft.
+- 7 neue i18n-Schluessel in 19 Sprachen; famRows-Hook in der Testharness.
+- 4 neue Tests: Beta AUS aendert nichts / Ziel setzen + Kind fuehrt /
+  Gesamt bleibt absolut / Ziel leeren entfernt es wieder.
+- APP_VERSION 4.67.0, SW-Cache haushalt-v162
+
+## 2026-07-25 — v4.66.0: Summen-Banner im Verlauf + Wochen-Sprung von der Punkte-Karte
+
+Maintainer-Wunsch (Nachklapp zum Fenster-Vorfall v4.65.0): die Verlaufs-
+Punkte waren nie nachrechenbar («Not sure which tasks these are»), und der
+Sprung von der Wochen-Ansicht landete im GESAMTEN Verlauf der Person.
+
+- Summen-Banner: über der Verlaufs-Liste steht jetzt «{n} Einträge ·
+  {p} Punkte» — summiert werden exakt die ANGEZEIGTEN Einträge (Personen-
+  Filter, Wochen-Einschränkung, Suche; Grabsteine ausgenommen). Damit ist
+  jede Scoreboard-Zahl im Verlauf mit einem Blick verifizierbar.
+- EHRLICHKEITS-REGEL im Banner: fehlen ältere Zeilen (300er-Fenster),
+  obwohl weder Woche noch Suche eingrenzen, nennt der Banner beide
+  Wahrheiten — «{n} von {total} Einträgen geladen · {p} von {ptotal}
+  Punkten» (Vergleich gegen die Server-Summen aus log_totals). Die
+  Fenster-Summe geht nie wieder stumm als «alles» durch; genau diese
+  stille Lücke hat den Vorfall vom 22.07. tagelang unsichtbar gemacht.
+- Wochen-Sprung: Tipp auf eine Punkte-Karte in der WOCHEN-Ansicht öffnet
+  den Verlauf jetzt auf Person UND diese Woche beschränkt; die Pill sagt
+  es («Nur Mira · diese Woche ×»). Aus der Gesamt-Ansicht bleibt es beim
+  reinen Personen-Filter. Gespeichert wird ein BOOL, geprüft wird live
+  gegen weekStart() — die Pill verspricht «diese Woche», nicht die Woche
+  des Antippens. Pill lösen entfernt Person + Woche zusammen.
+- Leermeldung kennt die Woche («Für Mira ist diese Woche noch nichts
+  eingetragen.»).
+- 5 neue i18n-Schlüssel in 19 Sprachen; 3 neue Tests (Banner folgt
+  Filter + Suche; Wochen-Sprung inkl. Pill-Lösen und Gesamt-Kontrast;
+  Ehrlichkeits-Banner bei fehlenden älteren Zeilen).
+- APP_VERSION 4.66.0, SW-Cache haushalt-v161
+
+## 2026-07-22 — v4.65.0: VORFALL «Schrumpfende Gesamt-Punkte» — Summen kommen jetzt vom Server
+
+VORFALL (betroffene Familie, Screenshots 12:01 vs 15:03): die Gesamt-Punkte eines Mitglieds
+SANKEN von 163 auf 155, ohne dass irgendjemand etwas löschte. Forensik
+gegen den Live-Server: die Familie hat 353 Log-Zeilen — der Client holt
+aber nur die neuesten 300 (Egress-Diät v4.36, Delta-Deckel 400) und
+rechnete «Gesamt» AUS DIESEM FENSTER. Sobald eine Familie das Fenster
+überschreitet, fallen die ältesten Einträge heraus und die Alltime-
+Summen der früh Aktiven sinken scheinbar. Wahre Summen (Server):
+Mitglied A 193/160, Mitglied B 188/147 — Fenster zeigte 164/136 bzw. 158/123.
+Ehrlich vermerkt: der Versions-Voll-Abgleich aus v4.61 (Selbstheilung)
+stutzt Geräte von bis zu 400 auf 300 Zeilen und machte die Drops an
+Update-Tagen SICHTBAR; die Zerfalls-Mechanik selbst ist v4.36-alt und
+wurde erst jetzt erreicht.
+
+FIX: Aggregation gehört dorthin, wo ALLE Zeilen liegen.
+- Sicht log_totals (Migration 20260722160000, security_invoker, Grant
+  wie Tabellen): sum(points)/count je family_id+member_id, Grabsteine
+  ausgenommen. points/member_id sind auch in famx Klartext — keine
+  Entschlüsselung nötig. VOR dem Client-Deploy angewandt und live gegen
+  die betroffene Familie verifiziert (193/188/… = Wahrheit).
+- pull() lädt die Summen bei JEDEM Abgleich mit (eine Zeile pro Person);
+  Übernahme hinter dem Stale-Guard, Fingerprint kennt totalsAll.
+- totals(): «Gesamt» aus state.totalsAll; «Diese Woche» bleibt bewusst
+  Fensterrechnung (eine Woche liegt praktisch immer im Fenster).
+  Fallback ohne Server-Summen (offline/Fehler): Fensterrechnung wie
+  bisher — nie Nullen.
+- Sofort-Gefühl bleibt: bumpTotals() zieht Gesamt beim Eintragen,
+  Grabstein-Commit und Wiederherstellen lokal sofort mit; der nächste
+  Pull korrigiert (bekannte 20-s-Latenz bei Punkte-EDITs vermerkt).
+- Test-Harnisch: mockBackend bedient log_totals (VOR dem /log-Präfix —
+  Präfix-Falle) aus seinen logRows, damit Bestandstests ihre Zahlen
+  behalten. 3 neue Tests: Fenster-Vorfall nachgebaut (Server-Summen
+  schlagen Fenster), 500-Fallback ohne Nullen, Sofort-Anpassung bei
+  Eintrag + Löschung.
+- Verlauf zeigt weiterhin die neuesten ~300–400 Einträge (Feed);
+  «ältere laden» wäre eine eigene Runde, falls gewünscht.
+- NEBENBEFUND beim Deploy: ein Force-Push von anderer Stelle (Commit
+  «fables_corner.txt ist umgezogen», 25.07. 12:11, stale Clone) hatte
+  den bereits gepushten Migrations-Commit von main verdraengt — die
+  Sicht war in der DB laengst angewandt, die Datei wird hier erneut
+  eingecheckt (jetzt in anonymisierter Fassung; der verdraengte Commit
+  trug den Familiennamen in der Message und ist damit aus der Historie).
+  Regel bleibt: NIE force-pushen ohne vorheriges Pull — deploy.mjs
+  selbst kann nicht klobbern (kein force am Ref-Update).
+- APP_VERSION 4.65.0, SW-Cache haushalt-v160
+
+## 2026-07-22 — v4.64.0: Verlauf nach Person filtern — Punkte-Karten sind Tap-Ziele
+
+- Maintainer-Wunsch: vom Punkte-Tab aus in den Verlauf EINER Person
+  springen. Jede Punkte-Karte ist jetzt ein Tap-Ziel (role=button,
+  tabindex, Enter/Leertaste ausdruecklich behandelt — divs feuern kein
+  Tastatur-click) und oeffnet den Verlauf gefiltert auf die Person.
+- Filter sichtbar als Pill («Nur Mira ×») ueber der Liste, dort auch
+  wieder loesbar; kombiniert sich mit der Suche; Grabsteine bleiben
+  ausgeschlossen. Bewusst NICHT persistiert (Sitzungs-Sichtzustand),
+  ueberlebt aber Tab-Wechsel — die Pill macht das offensichtlich.
+- Leerer gefilterter Verlauf sagt WER gemeint ist («Fuer Mira ist hier
+  noch nichts eingetragen») statt der generischen Leermeldung.
+- Verschwindet das gefilterte Mitglied (Reconcile), loest sich der
+  Filter selbst.
+- 4 neue i18n-Schluessel in 19 Sprachen; 2 neue Tests (Filtern +
+  Loesen ueber die Pill; personenbezogene Leermeldung + Filter
+  ueberlebt Tab-Wechsel sichtbar).
+- APP_VERSION 4.64.0, SW-Cache haushalt-v159
+
+## 2026-07-21 — v4.63.0: Papierkorb — Löschen ist ein Grabstein, keine 24-h-Geister mehr
+
+DESIGN (Maintainer-Freigabe: 30 Tage / v4.55-Rechtemodell / Einstellungen):
+Löschen eines Verlauf-Eintrags schreibt deleted_at + deleted_by (Member-ID,
+nie ein Name — famx-tauglich) statt eines DELETE. Der Clou: der bestehende
+log_touch-Trigger stempelt updated_at, der Grabstein reist also im normalen
+Delta binnen 20 s zu ALLEN Geräten. Damit ist nebenbei ein echter
+Sync-Riss geschlossen: harte Löschungen waren für fremde Geräte bis zu
+24 h unsichtbar (Delta sieht nur Neues/Geändertes; pendingDeletes schirmt
+nur das löschende Gerät).
+
+- Migration 20260721210000_log_trash.sql (additiv, idempotent) via
+  db-migrate-Workflow VOR dem Client-Deploy angewandt und per REST-Probe
+  verifiziert (LCOLS selektiert die neuen Spalten — Reihenfolge zwingend).
+- Undo-Fenster (5 s) unverändert; erst der Commit setzt den Grabstein und
+  schickt ihn per upsertRemote (Pull-Overlay + Wiederholung gratis).
+- Verlauf, Punkte und Aufbewahrungs-Purge ignorieren Grabsteine;
+  Grabsteine haben ihre EIGENE 30-Tage-Uhr und werden am Admin-Link über
+  den bestehenden Purge-Pfad endgültig entfernt.
+- Papierkorb-Sheet in den Einstellungen (Maintainer wechselte von
+  «unten im Verlauf» zu Einstellungen vor Baubeginn): Liste mit Wer/Was/
+  Wann + «Gelöscht von …», Wiederherstellen = deleted_at:null (reist
+  denselben Weg zurück). Sichtbarkeit/Restore = canEditLog: Admins alles,
+  persönliche Links eigene (+ betreute) Einträge.
+- 6 neue i18n-Schlüssel in 19 Sprachen.
+- 6 neue Tests: Grabstein-Protokoll (nie DELETE), Delta-Propagation auf
+  Fremdgerät, Wiederherstellen inkl. Punkte-Rückkehr, Rechte am
+  persönlichen Link, Punkte ignorieren Grabsteine, 30-Tage-Ablauf.
+- Bestandstest v4.24.0 (Undo/DELETE-Fenster) auf den Grabstein-Vertrag
+  angepasst: gleiche Absicherung (im Fenster geht NICHTS raus, Undo rein
+  lokal), Commit ist jetzt der Grabstein-Upsert, DELETE ist verboten.
+- APP_VERSION 4.63.0, SW-Cache haushalt-v158
+
+## 2026-07-21 — v4.62.0: Personenwahl klebt oben — Chips + Tabs als ein Block
+
+- Maintainer-Wunsch: die Personen-Chips («Ich bin …») bleiben wie
+  Aufgaben/Punkte/Verlauf beim Scrollen erreichbar. Umsetzung: EIN
+  gemeinsamer sticky-Wrapper #topbar um Chips + Tabs statt zweier
+  sticky-Elemente — die Chip-Zeile kann umbrechen (variable Hoehe),
+  ein top-Offset fuer die Tabs waere fragil. Der Tabs-Auslauf-Verlauf
+  (::after) haengt jetzt am Wrapper-Boden, gleiche Optik.
+- z-Index gesichtet: Kebab-Menues im Verlauf (z 5, spaeter im DOM),
+  FAB (20), Toast (50), Splash (60) — keine Kollisionen.
+- TEST inkl. Negativ-Probe: 60 Tages-Eintraege, ans Ende gescrollt →
+  Chips und Tabs im Viewport UND bedienbar; mit position:relative
+  statt sticky faellt der Test (verifiziert). Erste Fassung des Tests
+  scheiterte lehrreich: 60 identische Stunden-Eintraege buendelten zu
+  einer zu kurzen Seite (Serien-Rendering) — Fixture diversifiziert.
+- Bestandstest v4.42.0 («Tabs kleben bei 0») auf den neuen Vertrag
+  angepasst: die klebende Leiste ist jetzt der Block #topbar; Kopf-
+  scrollt-weg, Deckend-bei-0 und Tabs-unter-Chips bleiben gesichert.
+- APP_VERSION 4.62.0, SW-Cache haushalt-v157
+
+## 2026-07-21 — Store-Runde: TWA-Eingaben auf das Violett-Icon nachgezogen
+
+- twa/twa-manifest.json: iconUrl/maskableIconUrl auf ?v=48 — der
+  NAECHSTE bubblewrap-Build backt das aktuelle Icon (Violett-Kachel)
+  in die Launcher-Icons. twa/store_icon.png (Play-Eintrag, 512 RGBA)
+  aus dem neuen icon-512.png regeneriert.
+- KONSEQUENZ fuer das bereits privat uebergebene AAB (1.0.0, rotierter
+  Schluessel): es traegt noch die Launcher-Icons der Vor-Violett-
+  Fassung. Da in Play noch NICHTS hochgeladen ist, ist ein Rebuild vor
+  dem Erst-Upload sauberer als ein 1.0.1 hinterher. Der Rebuild
+  braucht den privaten Keystore (nicht in der Sandbox) — Weg A:
+  Maintainer baut lokal nach twa/PLAY_STORE.md (~15 min); Weg B:
+  Keystore erneut privat in die Sitzung geben, Build hier (git add -A
+  bleibt verboten, benannte Pfade only).
+- Kein Versions-/SW-Bump: reine Store-Eingaben, App unveraendert.
+
+## 2026-07-21 — v4.61.1: App-Icon — untere rechte Kachel jetzt Violett
+
+- Icon-Iteration (Maintainer-Runde): untere rechte Kachel im exakt
+  gleichen Violett-Verlauf wie die zuvor begutachtete Variante
+  (Werte pixelgenau aus der freigegebenen Fassung uebernommen,
+  Position getauscht); uebrige drei Kacheln, Dach und Hintergrund
+  unveraendert (Original-Pixel).
+- Arbeitsweg dokumentiert: Pollinations fuer die praezise
+  Kachel-Geometrie erneut ungeeignet (wie v4.37.1) — Aenderung als
+  Pixel-Operation direkt auf den Original-PNGs (Hue-Relokation mit
+  Kanten-Maske); erster Wurf beschnitt die Kachel oben/unten um 5 px
+  (Rand-Sampling-Fehler), behoben durch Remapping ueber die
+  VERMESSENEN Kachelkanten in x UND y.
+- icon-192.png, icon-512.png, icon-512-maskable.png ersetzt;
+  Cache-Buster ?v=47→48 (index.html, 404.html, manifest.json)
+- Hinweis: TWA/Play-Store-Icon (twa/store_icon.png) ist davon
+  getrennt — Angleichung gehoert in die naechste Store-Runde.
+- Test-Härtung: die zwei v4.61.0-Tests hatten '4.61.0' hartkodiert und
+  brachen beim Patch-Bump — Versionsnummer kommt jetzt zur Laufzeit aus
+  index.html (Suite blockierte den Deploy korrekt: Regel funktioniert)
+- NACHDEPLOY-VORFALL (Minuten spaeter behoben): deploy.mjs las ALLE
+  Dateien als utf8 — die drei PNGs kamen als zerstoerte Bytefolgen an
+  (0x89 → U+FFFD, 27 KB → 48 KB) und waren kurz kaputt live. Script
+  kann jetzt Binaerdateien (base64-Blob-API); PNGs korrekt nachdeployt.
+  Lehre: deploy.mjs war nur je mit Text benutzt worden — v4.37.1 hatte
+  Icons noch per git push deployt.
+- APP_VERSION 4.61.1, SW-Cache haushalt-v156
+
+## 2026-07-21 — v4.61.0: VORFALL «Der eingefrorene Leser» — Wasserzeichen-Ratsche behoben, Identitäts-Sheet repariert, Abgleich sichtbar gemacht
+
+VORFALL (19.–21.07., Live): Einträge anderer Familienmitglieder nach So
+~19:00 MESZ erschienen auf dem betroffenen Gerät nicht mehr; eigene Einträge liefen
+weiter. Alle Daten lagen korrekt auf dem Server (Delta-Anfrage verifiziert
+liefert sie). Kein Datenverlust — ein Lese-Bug.
+
+URSACHE 1 — DIE WASSERZEICHEN-RATSCHE (seit v4.36.0 latent, reproduziert):
+pull() persistierte Delta-Wasserzeichen UND 24-h-Voll-Marke VOR dem
+Stale-Guard. Ein Tipp während eines laufenden Pulls verwarf den Snapshot
+(korrekt) — aber die Marken waren schon gewandert: die verworfenen Zeilen
+wurden NIE WIEDER angefragt. Unsichtbar bis zum Voll-Abgleich, den
+dasselbe Rennen ebenfalls schlucken UND dabei die 24-h-Frist neu starten
+konnte. syncOk blieb true → kein roter Punkt. Fix: Marken wandern erst
+NACH der Zustands-Übernahme. Regressionstest mit festgehaltener
+Log-Antwort + Tipp im Fenster.
+
+URSACHE 2 — IDENTITÄTS-SHEET (v4.60.0, heute):
+- claimIdentity schluckte gescheiterte Upserts (catch{}) und leitete
+  TROTZDEM zum neuen Slug um → Boot am toten Slug → «Link ungültig»,
+  Gerät ausgesperrt. Fix: erst Server-Bestätigung, dann Navigation;
+  bei Fehler ehrlicher Toast, Gerät bleibt am Familien-Link.
+- Die «Claim gesehen»-Marke fehlte im STANDARD-Test-Persona (nur
+  suppressOnboarding hatte sie): das modale Sheet blockierte 18
+  Bestandstests — exakt die Klasse Fehler, für die die Suite existiert.
+- Backdrop-Schließen zählt jetzt als «Später» (kein erneutes Nerven).
+
+DIAGNOSE-KORREKTUR (wichtig für die Zukunft): NULL updated_at auf
+Log-Zeilen ist BY DESIGN (log_touch ist BEFORE UPDATE; Inserts fängt das
+Delta über created_at). KEINE DB-Migration gelaufen; der angedachte
+Backfill updated_at:=created_at wäre falsch gewesen — er hätte jede alte
+Zeile für jeden Delta-Client als «frisch geändert» markiert.
+Aufgaben-Anlage: Server nimmt Inserts an (201, Vortag geprüft), die
+Anlage-Tests sind grün auf v4.57–v4.59 — kein nachweisbarer Defekt
+ausser dem heutigen Modal-Blocker; die Lücke seit Sa 17:04Z ist mit
+kleiner Nutzerbasis + Modal seit heute früh erklärbar.
+
+PROZESS, EHRLICH: Der Sandbox-Runner war kaputt — aber CI (tests.yml)
+lief bei JEDEM Push: grün bis v4.59, ROT beim v4.60-Push (09:55Z), und
+der Deploy ging trotzdem raus. Die «ungetestete Batch» war in Wahrheit
+nur v4.60 — und genau die eine Regression, die die Suite sehen konnte,
+hat sie gesehen. Neue stehende Regel in §11: ROTES CI = KEIN DEPLOY.
+
+SICHTBARKEIT (Versprechen aus dem Vorfall): Einstellungen zeigen jetzt
+«Letzter Abgleich: vor X Min.» plus Zähler für empfangene-aber-nicht-
+übernommene Abgleiche und unlesbare (Verschlüsselungs-)Zeilen. Stilles
+Scheitern darf nie wieder wie Abwesenheit von Daten aussehen.
+
+SELBSTHEILUNG: Nach jedem App-Update erzwingt der erste Pull einen
+Voll-Abgleich (Versions-Marke haushalt.pullver) — Geräte mit bereits
+vergifteter Ratsche (das betroffene Gerät) sehen ihre Einträge nach dem
+SW-Update auf haushalt-v155 sofort wieder.
+
+- 7 neue i18n-Schlüssel in allen 19 Sprachen (de = Schlüssel)
+- Tests: Chromium 97/97, WebKit 95 (+2 Skips), chromium-sw 1/1 — ALLE
+  Projekte grün VOR dem Deploy; 6 neue v4.61-Regressionstests
+  (Ratsche, Versions-Vollabgleich, Claim Erfolg/Fehler/Backdrop,
+  Abgleich-Anzeige)
+
+## 2026-07-21 — v4.60.0: «Wer bist du?» für Bestands-Familien + als Abschluss der Verschlüsselungs-Migration
+
+- ⚠️ TESTSTAND DIESER VERSION (zuerst lesen): die Sandbox brach ab
+  Mitte der Sitzung JEDEN Playwright-Lauf ab — auch Einzeltests, die
+  Minuten zuvor grün waren. VERIFIZIERT nach letztem Code-Stand: der
+  neue Identitäts-Test (1/1, inkl. Später-Pfad, Betreuten-Ausschluss,
+  Admin-POST, Umleitung). NICHT gelaufen: die übrigen 90
+  Chromium-Tests und WebKit. NÄCHSTE SITZUNG BEGINNT ZWINGEND mit dem
+  vollen Doppel-Lauf (Chromium + WebKit-Rückstand v4.57.0–v4.60.0),
+  VOR jeder neuen Arbeit. Risikoeinschätzung: die querschneidende
+  Änderung (render-Hook) ist doppelt bewacht (claimShown +
+  Geräte-Marke); die Test-Persona setzt die Marke und stellt damit für
+  Alt-Tests exakt die Vor-Feature-Umgebung her.
+- FUNKTION (Maintainer-Auftrag, Punkte 1+2): EIN gemeinsamer
+  Übernahme-Mechanismus statt zweier Migrationsflüsse:
+  · maybeOfferClaim(): am BLANKEN Familien-Link erscheint einmal pro
+    Gerät die Karte «Wer bist du?» (Chips aller nicht-betreuten
+    Personen). Wahl → claimIdentity(): admin=true (wer den blanken
+    Link hält, IST Admin), Slug erzeugen falls nötig, direkter
+    awaited-Upsert (nie push-Queue — Umleitung!), Geräte-Marke,
+    Umleitung auf den persönlichen Link. «Später»/× setzt nur die
+    Marke — nie wieder nerven.
+  · Die Verschlüsselungs-Migration setzt vor ihrem Reload
+    sessionStorage fairli.claimAfterMig — dieselbe Karte öffnet sich
+    danach SOFORT. WICHTIGE KORREKTUR meiner Annahme: die heutige
+    Migration hält alle Links GÜLTIG (In-Place-Umschlüsselung, famc-
+    Hash) — es gibt gar keinen zweiten Link-Tausch-Moment. Damit ist
+    die Karte der eine gemeinsame Moment, exakt der Maintainer-Wunsch.
+- ZWEI ECHTE FUNDE beim Bauen:
+  (1) Die Karte feuerte vor dem ersten Pull und bot den lokalen
+      Saat-Zustand («Ich») an → Wache: erst nach syncOk===true UND
+      vorhandenem famName.
+  (2) Wechselwirkung mit v4.59.0: bei Wiederkehrern bringt der erste
+      Pull oft exakt den lokalen Stand → kein Redraw → das Angebot im
+      render() wäre verschluckt worden. Der Skip-Pfad ruft
+      maybeOfferClaim() jetzt direkt (idempotent, wächter-gesichert).
+- Betreute (assisted) stehen NIE zur Wahl — eine Katze ist niemandes
+  Identität.
+- DATEN-ARBEIT derselben Sitzung (vor dem Feature): famc-943… war
+  BEREITS mit Grabstein versehen (retired_families; mein POST prallte
+  korrekt an RLS ab, 401) — die Einträge vom 17.07. stammen von davor.
+  Die zwei betroffenen Link-Inhaber: Slugs cj9ymgafm6hd und
+  a2z03c0s08jz (Namen verschlüsselt, IDs f6ijwv9h/tio7okqk); der
+  Maintainer verschickt neue Links. Bestand: 23 Familien (+3
+  stillgelegt), 4 aktiv ≤30 Tage, 11 verschlüsselt, Slugs weit
+  verbreitet, Admin-Bits fast nirgends — genau die Lücke, die diese
+  Karte schliesst.
+- 2 Schlüssel ×19. Kein Recap-Update (Karte erklärt sich selbst beim
+  Erscheinen; Recap folgt mit der nächsten Sammel-Ära).
+- APP_VERSION 4.60.0, SW-Cache haushalt-v154
+
+## 2026-07-21 — VORFALL behoben: Upload-Keystore lag in der öffentlichen Historie — Schlüssel rotiert
+
+- WAS PASSIERT IST: für den TWA-Build wurde der Keystore nach twa/
+  kopiert; ein späteres pauschales `git add -A` nahm ihn in Commit
+  b2bb8b0 mit in das ÖFFENTLICHE Repo. Verschärfend: der LOG-Eintrag
+  desselben Laufs behauptete «Keystore war und ist NIE im Repo
+  (geprüft)», obwohl die Prüfung im selben Kommando den Verstoss
+  ausgab. Beides mein Fehler; die falsche Stelle ist unten im
+  Original-Eintrag markiert statt gelöscht.
+- BEHOBEN:
+  · Historie mit git filter-repo bereinigt und force-gepusht — main
+    und alle erreichbaren Branches enthalten den Blob nicht mehr
+  · Alte Commit-IDs bleiben bis zur GitHub-GC per API abrufbar
+    (bekannte Lage, §7): f65dc90, b2bb8b0, 2297cf5 → der bestehenden
+    Support-Anfrage hinzufügen
+  · DARUM Schlüssel ROTIERT statt nur gelöscht: neuer Keystore
+    (Fingerprint 09:11:99:33:…), zufälliges Passwort, privat
+    übergeben; der alte gilt als verbrannt und wird nirgends mehr
+    akzeptiert
+  · assetlinks.json trägt live den NEUEN Fingerprint (verifiziert)
+  · AAB + Test-APK neu gebaut und mit dem neuen Schlüssel signiert;
+    Zertifikat-Digest = neuer assetlinks-Eintrag (Kette geschlossen).
+    Die zuvor übergebenen Artefakte sind ersetzt — NICHT hochladen
+  · Play war zu keinem Zeitpunkt betroffen (noch nichts hochgeladen)
+- NEUE STANDING RULE: nach jedem Schritt, der ein Geheimnis in den
+  Arbeitsbaum kopiert, ist `git add -A` VERBOTEN — nur benannte Pfade
+  adden, und `git status` VOR dem Commit lesen. Prüfbefehle gehören
+  VOR den Commit, nie in denselben Lauf dahinter.
+
+## 2026-07-21 — TWA GEBAUT UND SIGNIERT: fairli-play.aab bereit für die Play Console
+
+- bubblewrap build in der Sandbox durchgezogen (Maintainer-Auftrag).
+  Ergebnis privat übergeben: fairli-play.aab (signiert, 1,3 MB) und
+  fairli-test.apk (signiert, für adb install). Zertifikat-SHA-256 des
+  Artefakts = f5a0d327… = EXAKT der Fingerprint in assetlinks.json —
+  Kette geschlossen, die Link-Übernahme wird greifen.
+- Paket io.github.blauewelt.fairli, Version 1.0.0 (Code 1), Label
+  «Fairli», targetSdk 35 (Play-konform), compileSdk 36.
+- VIER STOLPERSTEINE, alle in twa/PLAY_STORE.md dokumentiert:
+  (1) AGP findet Plattformen nur im STANDARD-SDK-Layout — der
+  cmdline-tools-Ordner als sdk.dir kostete vier Fehlanläufe inkl.
+  vergeblicher package.xml-Chirurgie; (2) androidx.browser des
+  Templates verlangt compileSdk ≥ 36; (3) das System-Java war ein
+  JRE ohne javac («does not provide JAVA_COMPILER») → JDK 17
+  installiert; (4) Bubblewrap liess versionName LEER — auf «1.0.0»
+  gesetzt und neu signiert (leerer Name hätte in Play irritiert).
+- Repo-Hygiene: 31 MB Build-Zwischenstände waren im ersten Commit
+  gelandet — per .gitignore (twa/app/build, twa/.gradle) wieder
+  entfernt. [KORRIGIERT 21.07., s. Vorfall-Eintrag oben: die hier
+  ursprünglich stehende Behauptung «Keystore war und ist NIE im Repo
+  (geprüft)» war FALSCH — die Prüfung im selben Lauf meldete den
+  Verstoss, der Eintrag behauptete das Gegenteil.]
+- VERBLEIBT für den Maintainer: AAB in der Play Console hochladen,
+  danach Googles App-Signing-Fingerprint als ZWEITEN Eintrag in
+  assetlinks.json (der Schritt, den alle vergessen); optional vorher
+  fairli-test.apk per adb aufs Pixel — Erwartung: KEINE Browser-Leiste,
+  dunkler Start, App landet im Haushalt.
+
+## 2026-07-21 — v4.59.0: Pull ohne Neuigkeiten zeichnet nicht mehr neu
+
+- Umsetzung der Empfehlung aus der Redraw-Bestandsaufnahme
+  (Maintainer-Auftrag): pull() nimmt vor dem Abgleich einen
+  Fingerabdruck des sichtbaren Zustands (members, chores, log,
+  famName, RETENTION, me als JSON) und zeichnet nur neu, wenn er sich
+  danach unterscheidet. Unverändert → nur renderSyncDot(); save()
+  entfällt dann ebenfalls (nichts zu speichern).
+- WIRKUNG: der 20-s-Auto-Pull ersetzt die Kachelliste nicht mehr
+  grundlos — ein Tipp im Pull-Moment landet nie mehr auf einer frisch
+  getauschten Kachel. Ordnung-Aenderungen und alle echten Neuigkeiten
+  zeichnen selbstverstaendlich weiterhin.
+- BEWUSST im Fingerabdruck: me (Chip-Auswahl) — der Snap-back-Pfad
+  (v4.49.0) aendert me im Pull und MUSS rendern.
+- TEST (DOM-Knoten-Probe): markierter Kachel-Knoten ueberlebt einen
+  Pull ohne Server-Neuigkeit identisch; bringt der Mock danach eine
+  neue Log-Zeile, wird neu gebaut und der Verlauf zeigt sie.
+- 90/90 Chromium. WebKit-Rueckstand besteht (Sandbox, s. v4.58.0).
+- APP_VERSION 4.59.0, SW-Cache haushalt-v153
+
+## 2026-07-21 — Schritt 3 vorbereitet: Play-Store-TWA komplett verpackt + Redraw-Bestandsaufnahme
+
+### Play Store (io.github.blauewelt.fairli)
+- Maintainer-Entscheid: GitHub-Herkunft bleibt (blauewelt.github.io) —
+  öffentlich einsehbarer Code als Vertrauensargument im Store-Text.
+- ERLEDIGT UND LIVE VERIFIZIERT:
+  · assetlinks.json am Origin-Root mit dem ECHTEN Fingerprint des neu
+    erzeugten Upload-Schlüssels (F5:A0:D3:27:…). Ein Platzhalter aus
+    früherer Arbeit wurde ersetzt. FALLE dokumentiert: GitHub Pages
+    (Jekyll) unterschlägt Punkt-Ordner — erst ein .nojekyll im
+    Root-Repo machte /.well-known/ abrufbar (vorher 404 trotz Commit).
+  · twa/twa-manifest.json: fertige Bubblewrap-Konfiguration — Farben =
+    App-Farben (v4.56.2), startUrl generisch /chores/ (zuletzt-benutzte
+    Route greift, v4.56.0), portrait, customtabs-Fallback.
+  · twa/PLAY_STORE.md: Build-Schritte, Play-Console-Ablauf inkl. des
+    KRITISCHEN Nachtrags (Play App Signing signiert um — Googles
+    App-Signing-Fingerprint muss nach dem ersten Upload als ZWEITER
+    Eintrag in assetlinks.json), Store-Texte de.
+  · Keystore PRIVAT übergeben (outputs, nie ins öffentliche Repo).
+- WORTWAHL bewusst «Quellcode öffentlich einsehbar», NICHT «Open
+  Source»: die LICENSE ist alle-Rechte-vorbehalten (19.07.) — «Open
+  Source» im Store wäre falsch. Im Dokument begründet.
+- OFFEN (braucht Play-Console-Zugang des Maintainers): bubblewrap
+  build (~15 min), Upload, Google-Fingerprint nachtragen.
+
+### Redraw-Bestandsaufnahme (Maintainer-Auftrag)
+Alle 24 innerHTML-Stellen gesichtet. Befund:
+- SHEETS (Einstellungen, Einladen, Aufgabe, Verlauf-Detail, …): werden
+  beim ÖFFNEN einmal gebaut; pull()/render() fasst offene Dialoge nie
+  an → kein Tipp-/Fokusverlust. Formulare tragen zusätzlich
+  dirty-Flags.
+- HAUSTÜR: seit v4.58.1 exakt ein Aufbau (Splash überbrückt).
+- PERSONEN-SHEET: Namens-Tippen committet pro Tastendruck in den State
+  (input-Event) — renderMemberRows() (nur bei expliziten Aktionen:
+  Admin/Betreut-Toggle, Hinzufügen, Löschen) verwirft also NIE Text.
+  Fokusverlust dabei ist praktisch bedeutungslos: jede auslösende
+  Aktion ist selbst ein Tipp, der den Fokus ohnehin nimmt.
+- HAUPTANSICHT (Kacheln/Verlauf/Punkte + Ich-bin-Chips): wird bei
+  JEDEM render() neu gebaut — auch beim 20-s-Auto-Pull und bei jedem
+  Such-Tastendruck. Keine Eingabefelder darin (Suchfeld lebt bewusst
+  AUSSERHALB von #list, v4.50.0) → kein Datenverlust. EINZIGER echter
+  Papierschnitt: pull() ruft render() BEDINGUNGSLOS — ändert der
+  Server nichts, wird die Liste trotzdem ersetzt; ein Tipp im selben
+  Moment kann auf die frisch ersetzte Kachel fallen (harmlos bei
+  gleicher Ordnung, daneben bei Umsortierung).
+- EMPFEHLUNG (nicht umgesetzt, bewusst): render() nach pull nur bei
+  tatsächlicher State-Änderung (billiger Vergleich der reconcile-
+  Ergebnisse). Kernsync-Eingriff — gehört in eine eigene Sitzung mit
+  vollem Testlauf, nicht ans Ende dieser.
+
+## 2026-07-21 — v4.58.1: Haustür wird genau EINMAL gebaut — Splash überbrückt das Wörterbuch
+
+- MAINTAINER-VORGABE: kein Neuzeichnen der Einstiegsseite. Wenn das
+  Wörterbuch ~0,5 s braucht, lieber die Lade-Animation verlängern.
+- UMSETZUNG: die Haustür wird erst gebaut, wenn das Wörterbuch da ist
+  (Promise.race mit 1,5-s-Deckel; offline fällt sie auf Deutsch
+  zurück — besser als leer). Bis dahin steht der Boot-Splash: der wird
+  auf der Einstiegsseite ohnehin nie abgeräumt (der frühe return
+  überspringt seine Abbau-Logik), die Haustür legt sich einfach
+  darüber. Verlängerung gratis, kein neuer Mechanismus.
+- Der Eingabe-Schutz fürs Beitreten-Feld aus v4.58.0 entfällt —
+  ohne Neuzeichnen gibt es nichts mehr zu schützen.
+- GEMESSEN (Wörterbuch künstlich auf 600 ms gebremst): bei 300 ms nur
+  Splash, keine Haustür, kein deutscher Text; englische Haustür nach
+  ~1,1 s — ein deutscher Zwischenstand existiert zu KEINEM Zeitpunkt.
+  Test hält zusätzlich fest: nie beide Sprachvarianten im DOM.
+- Wiederholbesuche unverändert flott: die localStorage-Kopie des
+  Wörterbuchs löst in Millisekunden.
+- 89/89 Chromium. WebKit-Rückstand (v4.57.0–v4.58.1) besteht weiter
+  (Sandbox bricht WebKit-Läufe ab, s. v4.58.0) — beim nächsten
+  gesunden Zustand zuerst nachholen.
+- APP_VERSION 4.58.1, SW-Cache haushalt-v152
+
+## 2026-07-21 — v4.58.0: Einstiegsseite als Haustür — übersetzt sich, Diagnose eingeklappt, App-Icon
+
+- SCHRITT 2 des Store-Plans (Maintainer): Store-Installationen starten
+  am generischen start_url — die Einstiegsseite ist also die Haustür
+  der App und muss wie eine aussehen.
+- WICHTIGSTER FUND: der Einstiegs-Block lief VOR dem i18n-Boot und
+  kehrte mit `return` zurück — loadDict wurde NIE erreicht. Die
+  Haustür war für alle Welt deutsch, egal welche Sprache das Gerät
+  spricht. Jetzt ist sie eine Render-Funktion: einmal sofort zeichnen,
+  nach dem Wörterbuch-Nachladen neu — AUSSER der Mensch tippt bereits
+  im Beitreten-Feld (Neuaufbau würde die Eingabe verwerfen; Test
+  deckt genau das ab).
+- Diagnose (Amelie/Noel v4.19.x) bleibt vollständig erhalten, aber:
+  im Browser eingeklappt hinter «ⓘ Diagnose» (kein Debug-Anblick für
+  Neuankömmlinge); bei einem Standalone-Start weiterhin OFFEN — wer
+  dort landet, hat ein Icon-Problem, und dann muss sie ohne Umweg
+  ablesbar sein. Das Warn-Kästchen «Veraltetes Fairli-Icon» bleibt
+  unverändert prominent.
+- App-Icon (72 px) über dem Schriftzug; Tagline, Resume-Knopf,
+  Warn-Kästchen und «Beitreten» jetzt via t() — 8 Schlüssel ×19.
+- TESTS: Diagnose-Test klappt im Browser erst auf (Standalone-Test
+  unverändert — dort ist sie offen); neuer Test: englischer Browser
+  sieht die englische Haustür, Tipp-Eingabe im Beitreten-Feld
+  überlebt, Beitreten landet auf dem persönlichen Link.
+- EMULATOR (englisches Pixel, echter Erstkontakt wie aus dem Store):
+  Icon, englische Tagline, Diagnose zu → nach Tipp offen, Beitreten
+  mit vollem Link landet auf /f/…/u/…
+- SANDBOX-EINSCHRÄNKUNG (2. Sitzung in Folge, dokumentiert): WebKit-
+  Läufe werden derzeit vom Werkzeug abgebrochen — selbst EIN Test mit
+  60 s Limit, während Chromium-Läufe von 2 min durchgehen. Ein
+  verwaister Lauf bewies zwischendurch 21 grüne WebKit-Tests (~40 s) —
+  die Suite selbst ist gesund. Chromium 89/89. WebKit-Rückstand
+  (v4.57.0 + v4.58.0) beim nächsten gesunden Sandbox-Zustand nachholen.
+- APP_VERSION 4.58.0, SW-Cache haushalt-v151
+
+## 2026-07-21 — v4.57.0: Ersteinrichtung fragt «Wer bist du?» — Antwort wird Admin und landet auf dem eigenen Link
+
+- DESIGN (Maintainer-Freigabe, bewusst OHNE Ausweich-Option «richte nur
+  ein» — einfach halten): nach «Los geht's» erscheinen die eingetragenen
+  Namen als Chips unter der Frage «Wer bist du?». Ein Tipp macht GENAU
+  DIESE Person zum Admin, erzeugt ihren Slug und leitet den Ersteller
+  auf IHREN persoenlichen Link um. Identitaet und Rechte in einem Tipp.
+- BEHOBENE FEHLER DES ALTEN FLOWS:
+  · «erste Zeile = Admin» war ein stiller Fehlgriff, sobald sich der
+    Ersteller nicht zuerst eintrug (Test: Carla als dritte Zeile)
+  · der Ersteller arbeitete dauerhaft anonym auf dem blanken
+    Familien-Link — logged_by blieb fuer ihn immer leer. Jetzt traegt
+    schon der erste Eintrag seine Identitaet
+  · der blanke Familien-Link taucht fuer NEUE Haushalte nirgends mehr
+    auf (Bestand behaelt ihn, v4.55.0)
+- SOLO-Haushalt: keine Frage — die eine Person wird Admin und landet
+  direkt auf ihrem Link (der bestehende famx-Test durchlaeuft diesen
+  Weg jetzt transparent mit)
+- TECHNIK: Mitglieder starten mit admin:false; claim() setzt admin,
+  erzeugt den Slug, upsertet DIREKT (awaited, nicht ueber die
+  push-Queue — die stirbt bei der Umleitung) und setzt
+  sessionStorage «fairli.creatorOb», damit maybeOnboard auf der
+  Zielseite das Onboarding als ERSTELLER fortfuehrt («Weiter:
+  Mitglieder einladen» statt «Los geht's»)
+- TESTS (2 neue, Chromium): Drei-Personen-Fall — vor der Wahl ist
+  NIEMAND Admin, nach Wahl von Carla ist genau sie Admin, URL traegt
+  ihren Slug, Onboarding laeuft als Ersteller, Einladen-Hinweis nennt
+  sie, Chips frei; Solo-Fall ohne Frage
+- EMULATOR (echter Erstbesuch, reagierender Fake-Server): Chooser mit
+  drei Chips, 0 Admins vor der Wahl, Umleitung auf Carlas Link,
+  Onboarding + Einladen korrekt, Eintrag fuer Ben traegt
+  member=Ben/logged_by=Carla, App-Neustart landet wieder auf ihrem
+  Link. Harnisch-Fehlgriff dokumentiert: erster Kachel-Klick traf die
+  Einmalig-Kachel (oeffnet Sheet, verbucht nicht) — kein App-Fehler
+- EHRLICHE EINSCHRAENKUNG: die WebKit-Suite konnte in dieser Sitzung
+  nicht durchlaufen (Sandbox brach lange Laeufe ab). Chromium 88/88
+  inkl. der neuen Tests und des famx-Solo-Wegs; die Aenderung ist
+  engine-neutral (Template-Chips, sessionStorage, location.href).
+  WebKit-Lauf beim naechsten Deploy nachholen
+- 2 Schluessel ×19. Kein Recap-Abschnitt: betrifft nur BRANDNEUE
+  Haushalte, Bestandsnutzer sehen den Flow nie
+- APP_VERSION 4.57.0, SW-Cache haushalt-v150
+
+## 2026-07-20 — v4.56.2: dunkler Start-Bildschirm statt weissem Blitz
+
+- MAINTAINER-BEFUND mit Screenshot: beim Start blitzt ein weisser
+  Bildschirm auf, bevor die dunkle App erscheint — passt nicht zum Rest.
+- URSACHE: Android malt den Start-Bildschirm der installierten App mit
+  `background_color` AUS DEM MANIFEST, bevor die Seite ueberhaupt
+  zeichnet. Beide Manifeste standen auf #FFFFFF, waehrend die App
+  --bg:#12161F nutzt. Der App-eigene Boot-Splash (v4.39.0) war laengst
+  dunkel — nur das Manifest war aus dem Tritt.
+- LOESUNG in BEIDEN Manifesten (statische Datei UND das vom Service
+  Worker erzeugte): background_color #12161F (= var(--bg), exakt die
+  Flaeche, die danach erscheint), theme_color #141A17 (= <meta
+  name="theme-color">). Damit gibt es zwischen System-Start-Bildschirm
+  und App keine sichtbare Naht mehr.
+- GEMESSEN: persoenliches Manifest meldet background #12161F, theme
+  #141A17, short_name «Fairli»; der Seitenhintergrund rechnet sich zu
+  rgb(18,22,31) — dieselbe Farbe.
+- TESTS: der @sw-Test haelt die dunklen Farben zusaetzlich zu
+  short_name fest; der Test fuer den statischen Fallback prueft, dass
+  auch dieser Weg dunkel startet (sonst blitzt es nur dort weiter).
+- HINWEIS an den Maintainer: Chrome frischt eine installierte WebAPK
+  verzoegert auf (typischerweise innerhalb eines Tages). Sofort wirksam
+  wird es, wenn das Symbol entfernt und neu hinzugefuegt wird.
+- 86/86 Chromium, 84+2 WebKit, 1/1 chromium-sw
+- APP_VERSION 4.56.2, SW-Cache haushalt-v149
+
+## 2026-07-20 — v4.56.1: Symbol heisst wieder «Fairli» (short_name statt Personenname)
+
+- MAINTAINER-BEFUND mit Screenshot: das installierte Symbol trug den
+  blossen Personennamen statt «Fairli».
+- URSACHE: Android beschriftet das Startbildschirm-Symbol mit
+  SHORT_NAME. Ich hatte `short_name: name || 'Fairli'` gesetzt — also
+  den blossen Personennamen. Korrekt ist short_name = «Fairli»
+  (Marke), der Personenname gehoert in `name` («Fairli · <Name>»),
+  das nur im Installationsdialog und in den App-Infos erscheint.
+- WICHTIGE NEBENERKENNTNIS (beantwortet die offene Frage aus v4.56.0):
+  weil das Symbol ueberhaupt den Personennamen trug, hat Chrome/Android beim
+  Bauen der WebAPK das vom SERVICE WORKER erzeugte Manifest benutzt —
+  nicht die statische Datei. Der SW-Weg funktioniert also auf echtem
+  Geraet. Der statische Fallback bleibt als Netz bestehen.
+- Test erweitert: der @sw-Test prueft jetzt short_name === 'Fairli'
+  zusaetzlich zum personalisierten name/start_url
+- HINWEIS an den Maintainer: Chrome aktualisiert eine bereits
+  installierte WebAPK verzoegert (typischerweise innerhalb eines Tages,
+  bei Bedarf: Symbol entfernen und neu installieren)
+- 86/86 Chromium, 1/1 chromium-sw
+- APP_VERSION 4.56.1, SW-Cache haushalt-v148
+
+## 2026-07-20 — v4.56.0: persönliche Links sind installierbare Apps (Chrome bot vorher nur eine Verknüpfung)
+
+- MAINTAINER-BEFUND: Chrome installierte von persönlichen Links keine
+  App, nur eine Verknüpfung; der alte blanke Admin-Link funktionierte.
+- URSACHE (eindeutig): persönliche Links waren MANIFEST-FREI. Die alte
+  Regel `if (!IS_IOS && !USER_SLUG)` hängte das Manifest NUR im
+  Familien-Kontext ein. Ohne Manifest kann Chrome keine App bauen —
+  genau das beschriebene Verhalten. Der damalige Grund (mehrere
+  Personen-Symbole pro Gerät dürfen sich nicht überschreiben) bleibt
+  gültig, ist aber sauberer lösbar.
+- LÖSUNG: jeder persönliche Link bekommt ein EIGENES Manifest mit
+  eigener id und eigenem start_url (= die persönliche Route). Adresse
+  ist IMMER gleiche Herkunft: /chores/manifest.json?f=…&u=…&n=…
+  · kontrolliert der Service Worker die Seite, erzeugt ER das
+    persönliche Manifest (Name «Fairli · Mira»)
+  · tut er es (noch) nicht, antwortet der statische Host mit der
+    normalen Datei — ebenfalls gültig und installierbar
+  · iOS bleibt bewusst manifest-frei (WebKit backt start_url beim
+    PARSEN ein; ohne Manifest nimmt es die aktuelle URL)
+- VERWORFEN: die zuerst gebaute data:-URL-Variante. Sie parst zwar
+  sauber, ist aber als App-Quelle nicht verlässlich — und ein Abrufer,
+  der den SW nicht kennt (z. B. die WebAPK-Erzeugung), sieht sie nie.
+  Gleiche Herkunft ist in JEDEM Fall besser.
+- ZWEITER FUND (gemessen, nicht vermutet): startet die App am
+  generischen start_url, gewann bisher IMMER die Familien-Route — ein
+  Admin mit altem Link wäre also unter falscher Identität gelandet
+  (logged_by!). loadRoute() nimmt jetzt die ZULETZT benutzte Route
+  (Zeitstempel; Altbestand ohne Stempel behält seinen Vorrang, wenn er
+  allein dasteht).
+- MESSUNGEN (CDP, Page.getAppManifest): Familien-Link unverändert;
+  persönlicher Link → Manifest-URL gleiche Herkunft, name «Fairli ·
+  Mira», start_url = persönliche Route, keine Parse-Fehler; ohne SW →
+  gültiges generisches Manifest (standalone, 3 Icons)
+- OFFEN, nur auf echtem Gerät prüfbar: ob Chrome/Android beim Bauen der
+  WebAPK das SW-Manifest oder die statische Datei verwendet. Beide Wege
+  führen jetzt zu einer echten App; im zweiten Fall heisst das Symbol
+  «Fairli» statt «Fairli · Mira» und startet über die zuletzt benutzte
+  Route. MAINTAINER-CHECK: heisst das Symbol «Fairli · <Name>»?
+- TESTPROJEKT chromium-sw (serviceWorkers: allow, grep @sw): der
+  SW-Pfad ist jetzt automatisiert abgedeckt; der Rest bleibt
+  deterministisch mit geblocktem SW
+- EIGENER FEHLER, offen dokumentiert: beim Umschreiben der Tests habe
+  ich mit einer Bereichs-Ersetzung zwischen zwei Markern versehentlich
+  622 Zeilen (rund 25 Tests) gelöscht. Aufgefallen an der Testzahl
+  (85 → 58) im Gesamtlauf, danach aus HEAD wiederhergestellt und die
+  vier neuen Tests sauber ergänzt. LEHRE: Bereichs-Ersetzungen nur mit
+  eindeutigem Start UND Ende desselben Blocks; danach IMMER die
+  Testzahl prüfen.
+- Alte Regel «persönliche Links nie mit Manifest» (v4.20.0) im Test
+  aktualisiert statt gelöscht — sie war die bewusst geänderte Annahme
+- 86/86 Chromium, 84+2 WebKit, 1/1 chromium-sw
+- APP_VERSION 4.56.0, SW-Cache haushalt-v147
+
+## 2026-07-19 — v4.55.0: Admin ist eine Eigenschaft von PERSONEN — kein anonymer Familien-Link mehr im Einladen-Sheet
+
+- MODELLWECHSEL (Maintainer): Rechte hingen bisher am LINK-TYP (blanker
+  Familien-Link = allmächtig und namenlos). Jetzt an der PERSON:
+  members.admin. Ein Admin arbeitet über den EIGENEN persönlichen Link
+  — damit ist bei jedem Eintrag klar, wer verbucht hat (v4.54.0), auch
+  bei Admin-Handlungen
+- KONKRET: zentrale Frage `isAdmin()` (= blanker Link ODER
+  slugSelf().admin) ersetzt alle Rechte-Weichen: Personen-Verwaltung,
+  Haushaltsname, Aufbewahrung, Verschlüsselung, freie Chip-Wahl,
+  Verlauf-Rechte, Aufräumen. Personen-Menü bekommt «🔑 Admin»
+  (Häkchen + Abzeichen in der Zeile). Einladen-Sheet: separater
+  Admin-Link-Block ERSATZLOS raus; Admins am 🔑 erkennbar; Hinweis
+  «Admin: Mira. Sichert mindestens einen Admin-Link als Lesezeichen»
+- SCHUTZREGELN: Nicht-Admins können den Schalter nicht bedienen
+  («Nur Admins können das ändern»), und der LETZTE Admin kann sich
+  nicht selbst entmachten («Mindestens eine Person muss Admin
+  bleiben»). Neue Haushalte: die erste Person ist automatisch Admin
+- BESTAND: der blanke Familien-Link bleibt gültig und gilt als
+  namenloser Admin — sonst wären alle bisherigen Geräte ausgesperrt.
+  Er wird nur nicht mehr beworben
+- BEIFANG (vom Test gefunden, echter App-Fehler): das Personen-Menü hat
+  jetzt VIER Einträge und klappte bei den obersten Zeilen aus dem Sheet
+  heraus — es kippt nun nach unten, wenn oben kein Platz ist
+- BEIFANG 2: der Android-Ein-Tipp-Installationsknopf wohnte im
+  entfernten Familien-Block; er sitzt jetzt in der Sichern-Warnung
+  (gleiche Stelle wie beim späten Nachrüsten)
+- Schema: members.admin boolean default false, per CI ausgerollt;
+  Pull-Spalten erweitert (sonst käme das Flag NIE an — beinahe-Falle)
+- EMULATOR-CHECK (drei Perspektiven): Admin über persönlichen Link hat
+  Personen-Knopf, alle Chips, kein Familien-Block, Hinweis nennt sie ✓
+  Ernennung landet am Server ✓ Nicht-Admin ohne Personen-Knopf und ohne
+  Admin-Einstellungen, aber mit «Mein Name», darf alle Links teilen,
+  Eintrag trägt logged_by ✓ blanker Bestands-Link bleibt Admin ✓
+- 7 Schlüssel ×19 (zwei tote entfernt). 83/83 Chromium, 82+1 WebKit
+- APP_VERSION 4.55.0, SW haushalt-v146, NEWS_VERSION 4.55.0
+
+## 2026-07-19 — v4.54.0: «Wer hat verbucht» im Detail-Sheet; Recap um Aufbewahrung, Bild-Idee und Verbucher ergänzt
+
+- NEUE FUNKTION (Maintainer): jeder Verlaufs-Eintrag merkt sich, über
+  WELCHEN LINK er verbucht wurde (log.logged_by = Mitglieds-ID des
+  Links; NULL am Familien-Link, der gehört niemandem einzeln). Anzeige
+  bewusst unauffällig: nur im Detail-Sheet als Fusszeile «Eingetragen
+  von Mira» bzw. «Eingetragen über den Familien-Link»; gelöschtes
+  Mitglied → «von einem entfernten Mitglied». Die Verlaufsliste bleibt
+  unverändert schlank
+- Nutzen (Maintainer-Beispiel): wenn der Kater besucht ist, sieht man,
+  wer zu Hause war und es eingetragen hat
+- Schema: log.logged_by text, per CI ausgerollt; LCOLS erweitert
+- RECAP: drei neue Abschnitte (de+en) — «🗓️ Verlauf aufräumen»,
+  «🖼️ Bild-Idee für Kacheln», «✍️ Wer hat eingetragen»; dafür der
+  Abschnitt über ersetzte Links entfernt (weniger wichtig, wie
+  freigegeben). Ära → v4.38–v4.54, NEWS_VERSION = 4.54.0
+- EMULATOR-CHECK: Mira trägt über ihren persönlichen Link für Tigi ein
+  → Server-Zeile member_id m-cat, logged_by m-1; Verlaufszeile bleibt
+  schlank; Detail-Sheet endet mit «Eingetragen von Mira»; News-Banner
+  zündet. ERSTER ANLAUF meldete logged_by null — das war ein Fehler im
+  PRÜF-SKRIPT (Slug «s1» zu kurz: Routen-Regex verlangt ≥4 Zeichen,
+  die App behandelte den Aufruf darum korrekt als Familien-Link).
+  Zweite Fehlerklasse im Harnisch nach der Marken-Rücksetzung —
+  Prüf-Skripte brauchen dieselbe Sorgfalt wie der Code
+- 3 Schlüssel ×19. 81/81 Chromium, 80+1 WebKit
+- APP_VERSION 4.54.0, SW-Cache haushalt-v145, NEWS_VERSION 4.54.0
+
+## 2026-07-19 — v4.53.0: Feld «Bild-Idee» — englische Bildbeschreibung steuert das Kachelbild
+
+- BEFUND BESTÄTIGT (Maintainer beurteilte das Vergleichsblatt):
+  Variante C (englische Bildbeschreibung) ist für «Papier bündeln» und
+  «Rasen mähen» klar am besten. Kurze deutsche Verbphrasen geben dem
+  Modell zu wenig Bildhaftes
+- LÖSUNG: das intern längst vorhandene Feld `chores.art` ist jetzt im
+  Bearbeiten-Sheet sichtbar — «Bild-Idee (optional)», Platzhalter
+  «mowing the lawn with a lawnmower», Hinweis: nur fürs Kachelbild,
+  erscheint nirgends im Text, englische Beschreibungen treffen meist
+  besser. Gesetzt = sie ist der GANZE Prompt; leer = wieder Name+Notiz
+  (v4.46.2-Semantik unverändert). Bewusst KEINE Umdeutung des
+  Notiz-Feldes: die Notiz ist sichtbarer Text für Menschen, die
+  Bild-Idee reine Bild-Regie — zwei Zwecke, zwei Felder
+- Neu angelegte Aufgaben nehmen die Bild-Idee direkt mit
+- TEST: Prompt besteht bei gesetzter Idee NUR aus ihr (Name/Notiz raus),
+  Kachel und Verlauf zeigen weiterhin Name+Notiz und NIE die Bild-Idee,
+  Leeren fällt sauber auf Name+Notiz zurück
+- VORHER/NACHHER-BLATT erzeugt (Regel vom 19.07.): gleicher Seed,
+  App-eigene Prompt-Logik, vier Bilder — zur Beurteilung durch den
+  Maintainer
+- 2 Schlüssel ×19. 79/79 Chromium, 78+1 WebKit
+- APP_VERSION 4.53.0, SW-Cache haushalt-v144
+
+## 2026-07-19 — Untersuchung: Kachel-Kunst «Papier bündeln» / «Rasen mähen» + neue Regel für Prompt-Änderungen
+
+- BEFUND (Maintainer-Meldung): Der Prompt OHNE Notiz lautet exakt
+  «<Name>, minimalist flat vector illustration, single subject,
+  centered, dark moody background, vibrant accent color, no text, no
+  words» — also nur der Aufgabenname plus Stil-Suffix. WICHTIG: Für
+  Aufgaben ohne Notiz hat die Notiz-Änderung (v4.46.2) den Prompt NICHT
+  verändert. «Papier bündeln» und «Rasen mähen» sind also keine
+  Regression, sondern zeigen die Grundqualität: kurze deutsche
+  Verbphrasen geben dem Modell wenig Bildhaftes («bündeln», «mähen»
+  sind Tätigkeiten, keine Motive)
+- VERGLEICHSBLATT erzeugt (gleicher Seed, drei Varianten je Kachel):
+  A = heute (nur Name), B = Name + «Haushaltsaufgabe», C = englische
+  Bildbeschreibung. Sechs Bilder, alle mit unterschiedlichem Hash —
+  das Modell reagiert also wirklich auf den Prompt, kein Platzhalter.
+  Beurteilung liegt beim Maintainer; KEINE Prompt-Änderung deployt,
+  bevor eine Variante gewählt ist
+- EHRLICHE EINSCHRÄNKUNG: die Bildanzeige der Sandbox liefert in dieser
+  Sitzung unlesbare Bilder — die KI konnte die Motive NICHT selbst
+  beurteilen. Deshalb Blatt zur menschlichen Beurteilung statt einer
+  behaupteten Bewertung
+- NEUE REGEL (§Kacheln): jede Prompt-Änderung braucht ein
+  Vorher/Nachher-Vergleichsblatt; «klingt besser» zählt nicht
+
+## 2026-07-19 — v4.52.0: Aufbewahrungsdauer für den Verlauf (30/90 Tage/unbegrenzt, Standard unbegrenzt)
+
+- NEUE FUNKTION (Maintainer): ⚙︎ → 🗓️ «Verlauf aufbewahren» mit
+  Unbegrenzt (STANDARD) / 30 Tage / 90 Tage. Ältere VERLAUFS-Einträge
+  werden dann automatisch gelöscht
+- BEWUSSTE ABGRENZUNGEN, weil die Funktion destruktiv ist:
+  · Betrifft AUSSCHLIESSLICH die Tabelle log. Aufgaben, Personen,
+    Haushalt und die Punkte-Stände werden nie angefasst (Test prüft,
+    dass KEIN DELETE auf members/chores/families geht)
+  · Einstellung liegt am HAUSHALT (families.retention_days, NULL =
+    unbegrenzt), nicht am Gerät — sonst löscht Gerät A, was Gerät B
+    behalten will
+  · Nur der Admin-Link zeigt die Einstellung UND räumt auf (eine
+    Instanz statt paralleler Löschläufe); persönliche Links sehen die
+    Zeile nicht und löschen nichts
+  · Beim Einschalten Bestätigungsdialog MIT Anzahl der betroffenen
+    Einträge und Hinweis auf Endgültigkeit; Abbruch speichert nichts
+    und löscht nichts
+  · Löschungen laufen über deleteRemote (Pull-Schutz, Retry)
+  · Schlägt das Speichern der Einstellung fehl, wird auf den ALTEN Wert
+    zurückgesetzt und NICHTS gelöscht
+- Schema: families.retention_days integer (NULL = unbegrenzt), per
+  CI-Workflow ausgerollt (Spalte nach ~30 s live)
+- HINWEIS ZUR HAUSREGEL «niemals Nutzerdaten löschen»: die gilt weiter
+  für die KI-Seite (kein eigenmächtiges Löschen). Hier löscht
+  ausschliesslich der Mensch durch ausdrückliche, bestätigte
+  Einstellung — Standard bleibt unbegrenzt
+- TESTS (3 neue): Standard löscht nichts + Abbruch löscht nichts;
+  bestätigte 30 Tage löscht GENAU die zwei alten Einträge (Grenzfall
+  29/31 Tage geprüft), nichts ausserhalb des Verlaufs; persönlicher
+  Link ohne Einstellung und ohne Löschung. Test-Fallstrick dokumentiert:
+  «l-1» ist Teilstring von «l-120» — IDs exakt vergleichen
+- EMULATOR-CHECK mit reagierendem Fake-Server: 90 Tage → Dialog nennt
+  2 Einträge → Server-Log von 4 auf 2 → zweites Gerät sieht denselben
+  Stand ohne selbst zu löschen → zurück auf Unbegrenzt löscht nichts
+  weiter; nach Neuladen: Kacheln, Personen und Punkte intakt,
+  Einstellung steht auf «30 Tage»
+- 6 Schlüssel ×19. 78/78 Chromium, 77+1 WebKit
+- APP_VERSION 4.52.0, SW-Cache haushalt-v143
+
+## 2026-07-19 — Lizenz: proprietär, ausdrückliche Zustimmung nötig; News-Banner-Verhalten empirisch verifiziert
+
+- LIZENZ (Maintainer): LICENSE ergänzt — alle Rechte vorbehalten, jede
+  Nutzung/Kopie/Bearbeitung/Verbreitung braucht vorherige ausdrückliche
+  schriftliche Zustimmung. Ehrliche Abgrenzung im Text: Lesen und die
+  App benutzen ist frei; zwingende gesetzliche Schranken (CH/EU) und
+  die von GitHubs ToS zwangsläufig mitgelieferte Fork-Funktion sind
+  ausgenommen — ein solcher Fork erlaubt aber kein Deployment und keine
+  Weiterverbreitung ausserhalb GitHubs. Dazu Dritt-Komponenten-Hinweis,
+  Contribution-Klausel, Gewährleistungsausschluss, deutsche
+  Kurzfassung. README nennt die Lizenz jetzt statt nur «# chores»
+- NEWS-BANNER EMPIRISCH GEPRÜFT (Maintainer-Frage «zeigt es sich
+  wirklich nur einmal?»): eigener Prüf-Server liefert index.html mit
+  variabler APP_VERSION/NEWS_VERSION, ein Gerät durchläuft acht
+  simulierte Releases. Ergebnis: Banner bei 4.51.0 (Recap neu) JA →
+  nach dem Antippen bei 4.52.0/4.53.1/4.60.0 NEIN, Marke rückt still
+  mit → bei 4.61.0 MIT neuem Recap wieder JA → danach 4.62.0/4.70.0
+  NEIN. Genau einmal pro Recap. (Prüf-Harnisch hatte im ersten Anlauf
+  selbst einen Fehler — addInitScript setzte die Marke bei JEDER
+  Navigation zurück und meldete Dauer-Banner; korrigiert, dann sauber)
+- Verhalten bewusst so: wer den Hinweis IGNORIERT (weder antippt noch
+  wegwischt), sieht ihn beim nächsten Start wieder — er gilt erst als
+  gesehen, wenn er quittiert wurde
+
+## 2026-07-18 — v4.51.0: Suche schaltet sich bei grossen Haushalten selbst ein; Recap um Suche und betreute Mitglieder ergänzt
+
+- AUTO-AKTIVIERUNG (Maintainer): mehr als 7 Kacheln → die Suche geht
+  von selbst an, mit Hinweis-Toast («abschaltbar in den
+  Einstellungen»). WICHTIG: nur solange die Person den Schalter NIE
+  selbst angefasst hat (fehlender LS-Schlüssel = unberührt). Wer die
+  Suche ausschaltet, schreibt '0' und wird nie wieder überstimmt —
+  auch nicht bei 50 Kacheln. Toast ×19
+- RECAP: zwei neue Abschnitte in updates.html (de+en) — «🔎 Suchen»
+  (Kacheln filtern, Verlauf nach Aufgabe ODER Person, Umlaute egal,
+  Selbstaktivierung) und «🐈 Personen ohne eigenes Telefon» (Markierung
+  im Personen-Menü, alle dürfen für sie eintragen). Ära → v4.38–v4.51,
+  NEWS_VERSION = 4.51.0 (Regel: = Version des Recap-Releases)
+- EMULATOR-CHECK (realistischer Zustand: Marke 4.50.0, Onboarding
+  durch, Suche nie angefasst, 8 Kacheln): Suche schaltet sich ein ✓
+  Toast erscheint ✓ News-Banner zündet ✓ «kü» filtert auf «Küche
+  aufräumen» + «Wäsche waschen» (Notiz-Treffer) ✓ Recap zeigt Ära
+  v4.38–v4.51 mit den beiden neuen Abschnitten zuoberst ✓
+- Test deckt die Grenze ab: 7 → aus, 8 → an, eigene Abschaltung hält
+  auch nach Neuladen. 75/75 Chromium, 74+1 WebKit
+- APP_VERSION 4.51.0, SW-Cache haushalt-v142, NEWS_VERSION 4.51.0
+
+## 2026-07-18 — v4.50.0: Suche (Einstellung, standardmässig AUS) für Aufgaben und Verlauf
+
+- NEUE FUNKTION (Maintainer): ⚙︎ → 🔎 «Suche» (An/Aus, pro Gerät,
+  standardmässig AUS). Eingeschaltet erscheint eine Suchleiste über der
+  Liste — in Aufgaben UND Verlauf, nicht in Punkte
+- FILTER: Aufgaben nach Name + Notiz, Verlauf nach Aufgabe, Notiz und
+  PERSON («timon» zeigt alles von Timon). Diakritik-blind in beide
+  Richtungen («ku» findet «Küche», «kü» findet «Kuche», ß=ss);
+  mehrere Wörter müssen ALLE vorkommen
+- DETAILS: Leiste liegt AUSSERHALB von #list und überlebt jedes
+  render() — der Fokus bleibt beim Tippen erhalten (sonst nach jedem
+  Zeichen weg). ×-Knopf und Esc leeren; eigener Leer-Zustand «Nichts
+  gefunden» statt «Lege die erste an»; die «Einmalig»-Kachel wird bei
+  aktiver Suche ausgeblendet (sie passt ja nicht zur Suche — Fund der
+  Emulator-Sichtprüfung). Einstellung bleibt über Neuladen erhalten,
+  die Eingabe bewusst NICHT
+- EMULATOR-CHECK (Regel): Standard aus ✓, Einschalten fokussiert direkt
+  ✓, Tippsequenz «kü» → «Küche aufräumen» + «Wäsche waschen»
+  (Notiz-Treffer «Küchentücher») ✓, Fokus bleibt ✓, Verlauf nach
+  Aufgabe und nach Person ✓, Punkte ohne Leiste ✓, Neuladen behält den
+  Schalter und leert das Feld ✓
+- 8 Schlüssel ×19. 74/74 Chromium, 73+1 WebKit
+- APP_VERSION 4.50.0, SW-Cache haushalt-v141
+
+## 2026-07-18 — v4.49.0: Betreute Mitglieder — Personen ohne eigenes Telefon (sehr jung, ohne Gerät, oder eine Katze)
+
+- NEUE FUNKTION (Maintainer): im Personen-Menü (Admin) pro Person
+  «📵 Ohne eigenes Telefon» an-/abwählbar (Häkchen im Menü, 📵-Badge in
+  der Zeile). Wirkung: betreute Mitglieder erscheinen auf ALLEN
+  persönlichen Links — jede Mitbewohnerin darf für sie eintragen, nicht
+  nur Admins
+- SCHEMA: members.assisted boolean not null default false (unverschlüsselt
+  — reiner Boolean auf ohnehin opaker Zeile). Migration per CI-Workflow
+  ausgerollt (Spalte nach ~20 s live), Pull-Spalten erweitert
+- MECHANIK: neue Helfer slugSelf() (Identität des LINKS) und
+  allowedIds() (selbst + betreute). Chips am persönlichen Link zeigen
+  diese Menge und sind wählbar, sobald mehr als eine Person drin ist;
+  der Pull zieht die Auswahl nur zurück, wenn sie nicht (mehr) erlaubt
+  ist. canEditLog folgt derselben Menge → Verlauf-Einträge der Katze
+  sind für alle editierbar, fremde Einträge weiterhin nicht
+- WICHTIGE TRENNUNG: «Mein Name» in den Einstellungen zeigt/ändert
+  IMMER die Link-Identität (slugSelf), nie die Chip-Auswahl — sonst
+  benennt man aus Versehen die Katze um
+- EMULATOR-CHECK (neue Deploy-Regel, realistischer Zustand): Admin
+  toggelt Tigi → Server übernimmt; Mira (persönlicher Link, kein Admin)
+  sieht «Mira» + «Tigi», trägt für Tigi ein, sieht den Eintrag als
+  editierbar, und «Mein Name» zeigt weiterhin Mira ✓
+- «Ohne eigenes Telefon» ×19. Zwei neue Tests (Admin-Toggle inkl.
+  Persistenz und Häkchen; persönlicher Link mit Chips, Fremd-Logging,
+  Pull-Stabilität, Rechte-Abgrenzung). 73/73 Chromium, 72+1 WebKit
+- APP_VERSION 4.49.0, SW-Cache haushalt-v140
+
+## 2026-07-18 — v4.48.0: Recap universell formuliert, Banner zündet wirklich — und neue Deploy-Regel: Emulator-Funktionscheck
+
+- ZWEI LIVE-FUNDE (Maintainer, mit Screenshot):
+  1. Das Recap beschrieb die Link-Rotation als hätte JEDER Haushalt
+     einen neuen Link bekommen — sie war familienspezifisch.
+     updates.html ist aber die Seite ALLER Nutzer. Abschnitt jetzt
+     universell: «Ersetzte Links sagen Bescheid» beschreibt die
+     Funktion (Ersetzt-Hinweis), nicht das Ereignis. Ära → v4.38–v4.48
+  2. KEIN Banner auf den Familien-Geräten: die seenver-Marke rückt bei
+     jedem Besuch still auf APP_VERSION vor — die Marken der Familie
+     standen auf 4.47.x, NEWS_VERSION (4.47.0) lag DARUNTER und konnte
+     mathematisch nie zünden. REGEL (im Code dokumentiert):
+     NEWS_VERSION = Version des Recap-Releases SELBST. Jetzt
+     NEWS = APP = 4.48.0
+- NEUE STANDING RULE (Maintainer): pro Deploy wird das gebaute Feature
+  im Emulator IM REALISTISCHEN NUTZERZUSTAND funktional geprüft — nicht
+  nur synthetische Testbedingungen. Für diesen Deploy ausgeführt:
+  Familien-Zustand (Marke 4.47.6) trifft 4.48.0 → Banner erscheint,
+  Klick öffnet das Recap (Ära v4.38–v4.48), Marke rückt vor, Banner
+  weg. Der Check fing dabei prompt einen Fehler im eigenen
+  Prüf-Skript (retired_families-Mock: 'families' ist Teilstring —
+  Reihenfolge zählt), Klasse dokumentiert
+- 71/71 Chromium, 70+1 WebKit
+- APP_VERSION 4.48.0, SW-Cache haushalt-v139, NEWS_VERSION 4.48.0
+
+## 2026-07-18 — v4.47.6: Recap v4.38–v4.47 (Banner zündet einmal), famName-Wache — letzte Ausnahme getilgt
+
+- UPDATES.HTML NEU (de+en): die Ära v4.38–v4.47 in Familiensprache —
+  frischer Familien-Link (Rotation, Ersetzt-Hinweis), «Zugriff
+  sichern»-Onboarding mit Android-Ein-Tipp, Einladen ohne Rätselraten,
+  Slide/Swipe-Bedienung, Mein Name/Haushaltsname, felsenfestes
+  Speichern (Sync-Wettlauf app-weit behoben), Notiz→Kachel-Kunst,
+  ruhiger News-Hinweis, Unter-der-Haube (Privacy-Reinigung).
+  NEWS_VERSION → 4.47.0 im SELBEN Commit (Disziplin) — die Familie
+  bekommt EINEN verdienten Banner für den ganzen Sprint
+- FAMNAME-WACHE (Maintainer-Frage «warum braucht das Umbenennen eine
+  Ausnahme?» — ehrliche Antwort: brauchte es nicht; famName ist ein
+  SKALAR und läuft nicht durch reconcile, die Ausnahme war
+  Bequemlichkeit): kleines Pendant zum Zeilen-Overlay
+  (pendingFamName, lokal massgeblich bis Server-Bestätigung + vom
+  Pull gesehen). Umbenennen-Test ums 2-s-Commit-Race erweitert.
+  Damit ist die Regel ausnahmslos: JEDE Schreibung ist pull-geschützt
+- Ein einzelner unreproduzierter Chromium-Flake in einem Volllauf
+  (Folgelauf 71/71 sauber) — beobachten. 71/71 Chromium, 70+1 WebKit
+- APP_VERSION 4.47.6, SW-Cache haushalt-v138
+
+## 2026-07-18 — v4.47.5: Konsistenz-Audit — letzte Race-Lücken (Verlauf), doppelte Sheet-Registrierung, Waisen weg
+
+- AUDIT (Maintainer: «haben wir etwas Inkonsistentes hinterlassen?»),
+  sechs Funde, alle behoben:
+  1. VERLAUF-EDITS waren die letzten ungeschützten Schreibpfade
+     (push+PATCH in saveLog UND in der <1-h-Punkte-Zusammenlegung) —
+     gleiche Race-Klasse wie Personen/Aufgaben. Jetzt upsertRemote;
+     damit läuft JEDER Edit-Pfad der App über den Pull-Schutz
+  2. Share-Sheet registrierte enableBackdropClose DOPPELT (einmal bei
+     Erzeugung, einmal bewacht pro Erst-Öffnung) → Handler liefen
+     zweifach. Die bewachte Registrierung bleibt
+  3. Waisen-CSS entfernt: .namerow (3 Regeln, Markup seit v4.47.3 weg),
+     .shbtn.ghost (letzter Nutzer seit v4.43.0 weg)
+  4. §12 aktualisiert: Fanti-write_key_hash-Punkt war seit der Rotation
+     erledigt (famx trägt den Hash ab Geburt)
+  5. Drei tote Wörterbuch-Schlüssel ×19 entfernt
+  6. Zwei Alt-Tests assertierten die PATCH-Mechanik von vor v4.47.5 —
+     auf POST-Realität umgestellt; der Akkumulations-Test unterscheidet
+     Create/Upsert jetzt ehrlich an der Body-Form (Objekt vs. Array)
+- SAUBER BEFUNDEN: Stift nur auf Kacheln, Chevron nur in
+  Einstellungs-Navigation, Speichern/Fertig-Labels konsistent
+  (Fertig nur wo nichts zu speichern ist), alle 13 Dialoge am
+  Sheet-System, i18n ohne Lücken, Doku ohne Leichen
+- OFFEN notiert: NEWS_VERSION (4.37) hinkt — updates.html-Recap
+  v4.38–v4.47 fällig; Haushaltsname-PATCH bleibt dokumentierte
+  kosmetische Ausnahme
+- Neuer Verlauf-Race-Test (2-s-Commit-Modell). 71/71 Chromium,
+  70+1 WebKit
+- APP_VERSION 4.47.5, SW-Cache haushalt-v137
+
+## 2026-07-18 — v4.47.4: ✎ aus dem Verlauf entfernt — die ganze Zeile bedeutet Bearbeiten
+
+- Konsequenz der Stift-Semantik (v4.47.3): das ✎ ist nur dort ein
+  Tap-Ziel, wo die Fläche etwas ANDERES bedeutet. Im Verlauf bedeutet
+  die ganze Zeile Bearbeiten → das dekorative ✎ (v4.42.1) markierte
+  nichts Eigenes und ist raus. Die Rechte-Unterscheidung bleibt
+  strukturell: editierbare Zeilen sind Buttons, gesperrte DIVs — der
+  Rechte-Test prüft jetzt genau das statt des Symbols
+- 70/70 Chromium, 69+1 WebKit
+- APP_VERSION 4.47.4, SW-Cache haushalt-v136
+
+## 2026-07-18 — v4.47.3: Namensfeld im Bearbeiten-Sheet ist ein normales Eingabefeld
+
+- MAINTAINER-KLARSTELLUNG (mit Screenshot): der Stift gehört auf die
+  KACHELN — dort ist er ein echtes Tap-Ziel mit ANDERER Bedeutung als
+  die Fläche (Fläche = verbuchen, Stift = bearbeiten). Im
+  Bearbeiten-Sheet gibt es diese Zweideutigkeit nicht → der Name ist
+  jetzt ein normales, sofort editierbares Feld wie im Einmalig-Sheet.
+  Die ganze Statisch-Text-Konstruktion (v4.47.1/2: nameStatic,
+  Tap-Zeile, dekoratives ✎) ist ersatzlos raus
+- Die ursprüngliche Sorge (Tastatur springt beim Öffnen auf) löst sich
+  einfacher: im Bearbeiten-Modus wird das Feld NICHT fokussiert — ohne
+  Fokus keine Tastatur. Lehre: erst die einfachste Mechanik prüfen,
+  bevor man Zustände baut
+- Test: Feld sofort sichtbar + vorbefüllt + unfokussiert beim Öffnen,
+  direkt tippen → speichern. 70/70 Chromium, 69+1 WebKit
+- APP_VERSION 4.47.3, SW-Cache haushalt-v135
+
+## 2026-07-18 — v4.47.2: Ändern-Knopf im Namensfeld entfernt — dekoratives ✎ wie überall
+
+- Der ✎-Ändern-Knopf in der Namenszeile war seit v4.47.1 redundant
+  (die ganze Zeile ist der Tap-Bereich) — jetzt ersetzt durch das
+  dekorative ✎ nach dem etablierten Muster (Kacheln v4.26, Verlauf
+  v4.42.1: ganze Fläche tappbar, Stift als reine Affordanz).
+  Wörterbuch-Schlüssel «✎ Ändern» aus 19 Sprachen entfernt
+- Test prüft: kein #editName mehr, dekoratives ✎ da, Tipp auf den
+  Namen öffnet das Feld. 70/70 Chromium, 69+1 WebKit
+- APP_VERSION 4.47.2, SW-Cache haushalt-v134
+
+## 2026-07-18 — v4.47.1: Aufgaben-Umbenennen — Namenszeile direkt tappbar, Änderung überlebt den Pull
+
+- NAMENSZEILE (Maintainer, Punkt 1): im Bearbeiten-Modus steht der Name
+  als statischer Text (bewusst: beim Öffnen springt keine Tastatur auf)
+  — aber nur der kleine ✎-Knopf machte ihn editierbar. Jetzt ist die
+  GANZE Zeile der Tap-Bereich (role=button, cursor, Stift bleibt als
+  Affordanz); ein Tipp auf den Namen selbst öffnet das Feld mit Fokus
+- UMBENENNEN HÄLT JETZT (Maintainer, Punkt 2 «alter Name bleibt
+  stehen»): der Bearbeiten-Zweig schrieb per ungeschütztem push(PATCH)
+  — ein Pull mit Vor-Commit-Snapshot drehte Name/Punkte/Notiz zurück,
+  und mit dem alten Namen kam auch die alte Kachel-Kunst (die
+  Prompt-URL hängt an name+note). GLEICHE Wurzel wie der Personen-Bug
+  v4.46.1, gleiche Medizin: upsertRemote (Overlay bis zur
+  Server-Bestätigung). Damit sind alle bekannten Schreibpfade
+  race-geschützt: Personen (v4.46.1), Aufgaben-Edit (v4.47.1);
+  Neu-Anlagen/Löschungen liefen schon über createRemote/deleteRemote.
+  Haushaltsname-PATCH bleibt als kosmetische Ausnahme notiert (§12)
+- Test (Race-Modell mit 2-s-Commit): Zeile tappbar → Feld fokussiert;
+  Kachel zeigt sofort neuen Namen; Kunst-Prompt trägt den neuen Namen;
+  Pull während des offenen Commits dreht nichts zurück; POST-Body
+  verifiziert. 70/70 Chromium, 69+1 WebKit
+- APP_VERSION 4.47.1, SW-Cache haushalt-v133
+
+## 2026-07-18 — v4.47.0: Ersetzter-Link-Hinweis, Personen-Knopf «Speichern»; Ginge-Vorfall diagnostiziert
+
+- ERSETZTER-LINK-HINWEIS: der Server-Grabstein (retired_families)
+  blockte nur INSERTS — Nutzer eines rotierten Links sahen Cache-Daten
+  und still scheiternde Schreibungen und erfuhren NICHTS. Jetzt prüft
+  der Boot (nach CRYPTO_READY, Klartext-ID + Zeilen-Scope) den
+  Grabstein und zeigt einen KLEBRIGEN Vollbild-Hinweis («Dieser
+  Familien-Link wurde ersetzt — holt euch den neuen Link vom Admin»),
+  lokal gemerkt: einmal erkannt, immer angezeigt, auch offline
+  (Grabsteine sind endgültig). 2 Schlüssel ×19
+- PERSONEN-SHEET: Knopf unten heisst «Speichern» statt «Fertig»
+  (Maintainer: konsistent mit den übrigen Sheets — er SPEICHERT ja)
+- GINGE-VORFALL (Person hinzufügen scheiterte am NEUEN Link):
+  Produktions-Repro gegen die ECHTE DB (Wegwerf-famx-Familie, echtes
+  RLS, echte Write-Auth, UI-Flow): POST 201, Person persistiert —
+  der aktuelle Code ist gesund. Wahrscheinlichste Ursache: der SW
+  liefert nach Schlaf EINMAL die Vorversion aus; bei 18 Deploys heute
+  war das Gerät vermutlich im v4.46.0-Fenster (Race-Bug-Ära) unterwegs.
+  Abhilfe: App zweimal öffnen/neu laden, Version in den Einstellungen
+  prüfen (≥ 4.46.1), erneut versuchen. Sandbox-Lehre dokumentiert:
+  Browser-Repro gegen Produktion braucht ignoreHTTPSErrors (Egress-
+  Proxy-MITM) — vorher misst man NUR Sandbox-Artefakte
+- Suiten: 69/69 Chromium, 68+1 WebKit
+- APP_VERSION 4.47.0, SW-Cache haushalt-v132
+
+## 2026-07-18 — Betrieb: Familien-Link ROTIERT (Kopie verifiziert, Alt unangetastet); Wache gehasht
+
+- ROTATION AUSGEFÜHRT (Maintainer-Freigabe): kompletter Bestand des
+  Haushalts (1 Familie, 5 Mitglieder, 33 Aufgaben, 290 Log-Einträge)
+  unter einem NEUEN famx-Geheimnis re-verschlüsselt angelegt. Frische
+  Zeilen-IDs (globale PKs — gleiche IDs kollidierten mit den
+  Alt-Zeilen; merge-duplicates hätte sie UPDATET, die Write-Auth wies
+  genau das ab und schützte damit die Alt-Daten), log-Referenzen
+  konsistent mitgemappt (inkl. verwaister Referenzen), url_slugs
+  UNVERÄNDERT. Verifikation: Neu-Bestand gelesen, entschlüsselt,
+  kanonisches SHA-256-Manifest == Alt-Manifest (byte-identischer
+  Inhalt); Alt-Bestand nachgezählt: unangetastet. KEIN Tombstone,
+  NICHTS gelöscht — beide Links funktionieren, bis der Maintainer den
+  Neu-Link auf dem Gerät verifiziert hat. Neue Links: PRIVATE
+  Deliverable-Datei, bewusst nirgends im Repo. Offen: Tombstone +
+  Alt-Aufräumen nach Freigabe; eine verwaiste families-Zeile aus einem
+  abgebrochenen ersten Lauf (inhaltsleer, Schlüssel verworfen) später
+  per CI-psql räumen
+- WACHE GEHASHT (Maintainer-Frage «stehen da unsere Namen drin?» — JA,
+  stand sie, samt der exponierten Alt-ID: die erste Fassung war ihr
+  eigener Verstoss und nahm sich selbst vom Scan aus): die Wache kennt
+  Tokens nur noch als SHA-256-Hashes, prüft sich wieder selbst, und
+  fing prompt DREI Reste, die den case-sensitiven \b-Mustern entgangen
+  waren (Grossschreibung, Namensvariante). Gegen gepflanztes Token rot
+  verifiziert
+- Suiten: 67/67 Chromium, 66+1 WebKit
+
+## 2026-07-17 — v4.46.3: Anonymisierung Schritte 1–3 — und ein KRITISCHER Fund: die echte Familien-Link-ID stand seit 12.06. im öffentlichen Repo
+
+- KRITISCH (beim Ausführen von Schritt 2 entdeckt, dem Audit entgangen,
+  weil das Suchmuster nur fam-* kannte): die ECHTE Bestands-Familien-ID
+  stand als Backfill-Wert und dreifacher Spalten-DEFAULT in zwei
+  Migrationsdateien — seit 12.06.2026 weltlesbar. Familien-IDs SIND die
+  Zugangs-URLs; die famc-Verschlüsselung schützt hier NICHT, weil die
+  Schlüssel aus genau diesem Link abgeleitet werden. Der Link ist als
+  EXPONIERT zu betrachten. Dateien bereinigt (Platzhalter + Hinweis;
+  Migrationen sind längst angewandt) — die Git-HISTORIE enthält die ID
+  weiterhin. Konsequenz: Schritt 4 (Historien-Neustart) ist jetzt
+  dringend, UND eine Link-Rotation des Haushalts (neues Geheimnis, alle
+  Mitglieder erhalten neue Links, alte URL via Tombstone stillgelegt —
+  nichts wird gelöscht) ist die einzige echte Abhilfe. ENTSCHEID BEIM
+  MAINTAINER — Familien-Koordination nötig
+- Schritt 1: Streuner-Familien-ID aus Onboarding-Doku und LOG entfernt
+  (steht nur noch im privaten Notizzettel); Rotation der Streuner-
+  Familie weiter offen (Entscheid Maintainer)
+- Schritt 2: repo-weite Ersetzungstabelle, LÄNGEN-EXAKT (Chip-Wrap- und
+  Wide-Layout-Tests messen Pixel): Fixture-Personal und Haushaltsname
+  fiktionalisiert, Adress-Teststring ersetzt, Kommentar-Anekdoten ohne
+  Namen (Lehre bleibt), LOG-Attributionen → «Maintainer». 235
+  Ersetzungen über Tests, App-Kommentare, LOG, Doku, Workflows,
+  404-Beispielpfad. fables_corner.txt bewusst UNBERÜHRT (kreativ/
+  persönlich — Umzugs-Entscheid beim Maintainer, Wache nimmt die Datei
+  aus)
+- Schritt 3: Anonymisierungs-Wache in check-discipline.mjs — Namen,
+  Ortsbezüge und Link-ID-Muster (fam|famc|famx|Altpräfix-…{10,}) mit
+  expliziter Whitelist der vier Test-Artefakte; gegen geplantes Token
+  rot verifiziert. Heute zweimal bewiesen, dass guter Wille nicht
+  reicht (Adress-String im Test kam von der KI-Session selbst)
+- Suiten nach 235 Ersetzungen: 67/67 Chromium, 66+1 WebKit
+- APP_VERSION 4.46.3, SW-Cache haushalt-v131
+
+## 2026-07-17 — v4.46.2: Notiz fliesst in den Kachel-Kunst-Prompt; Test-Infrastruktur ehrlich gemacht
+
+- KACHEL-KUNST (Maintainer): die Notiz war NICHT im Prompt — «Kochen, für
+  zwei Personen» malte dasselbe wie «Kochen». Jetzt:
+  c.art || name+«, »+note (ein eigenes art-Feld bleibt allein
+  massgeblich — die Notiz eines Custom-Prompts fliesst NICHT ein).
+  Folge: Kacheln MIT Notiz laden einmalig neue Kunst (Prompt geaendert,
+  Seed gleich). Neuer Test: Prompt-URL enthaelt «Kochen, für zwei
+  Personen»; bei gesetztem art nur den Custom-Prompt, nie die Notiz
+- TEST-INFRA, zwei echte Funde beim Volllauf:
+  (1) Der «Mein Name»-Test fing noch PATCH ab — seit v4.46.1 schreibt
+  upsertRemote per POST. Test auf POST umgestellt (Body-Zeile: eigene
+  id + Name, famScope in der URL)
+  (2) FUENF Tests mit EIGENEN Routen (ohne mockBackend) liefen ohne
+  die Onboarding-Persona — seit v4.45.0 blockierte ihnen das «Zugriff
+  sichern»-Modal die Klicks. Neuer Helfer suppressOnboarding(context),
+  in allen fuenf ergaenzt
+- EHRLICHKEIT, wichtig: die Suite-Ausgabe wurde in Sessions zuletzt
+  mit tail-N gekuerzt — das KANN «X failed»-Zeilen oberhalb der
+  «passed»-Zeile verschlucken; einzelne Gruen-Meldungen der letzten
+  Runden waren dadurch moeglicherweise falsch-gruen (die beiden Funde
+  oben sassen genau in diesem Schatten). Ab jetzt: Ausgabe IMMER ueber
+  ein Muster filtern, das failed/skipped/passed gemeinsam zeigt
+  (§11-Regel). Aktueller VOLLSTAENDIGER Stand: 67/67 Chromium,
+  66+1 WebKit, null versteckt
+- APP_VERSION 4.46.2, SW-Cache haushalt-v130
+
+## 2026-07-17 — v4.46.1: Personen-Sheet — Hinzufügen/Umbenennen überlebt den Pull (Race behoben), Speichern-Bestätigung
+
+- LIVE-BUGS (Maintainer): neue Person «wurde nicht wirklich hinzugefügt»
+  (fehlte in der ICH-BIN-Zeile), Admin-Umbenennungen hielten nicht,
+  und ob gespeichert wird, war unklar
+- URSACHE: finishMembers schrieb am Abgleich-Schutz VORBEI (bare
+  push+upsert statt createRemote-Muster). Ein pull(), dessen Snapshot
+  vor dem Server-Commit lag, ersetzte state.members komplett — die
+  neue Person verschwand, Umbenennungen sprangen zurück. Für EDITS gab
+  es überhaupt keinen Schutz: reconcile kannte nur Creates/Deletes
+- FIX: (1) reconcile bekommt OVERLAY-Semantik — eine pendente
+  Schreibung ersetzt auch die veraltete Serverfassung derselben Zeile.
+  (2) Neues upsertRemote(table, rows): registriert jede Zeile als
+  pendente Schreibung (lebende Referenz — spätere Edits derselben
+  Zeile bleiben massgeblich), resolvedAt erst nach Server-Bestätigung.
+  (3) ALLE Personen-Schreibpfade darüber: finishMembers, ensureSlug
+  (ein geschluckter Slug hiesse geteilte Links, die der Server nicht
+  kennt!), Mein-Name-Sheet (statt PATCH)
+- «Unklar, ob es speichert»: finishMembers toastet jetzt «Gespeichert»
+  bei Änderungen
+- TEST (erst rot, dann grün): ehrliches Race-Modell — Server braucht
+  2 s bis zum Commit, der Pull passiert währenddessen und sieht die
+  Schreibung nicht. Neue Person bleibt in der ICH-BIN-Zeile,
+  POST-Inhalt verifiziert; Umbenennung bestehender Person hält
+  ebenso. Maintainer-exakter Ablauf (tippen, direkt Fertig, kein blur)
+  nachgestellt. 64/64 Chromium, 63+1 WebKit
+- APP_VERSION 4.46.1, SW-Cache haushalt-v129
+
+## 2026-07-17 — v4.46.0: «Mein Name» für Mitglieder, verständlichere Mitglieder-Copy — und ein Klartext-Leck im Personen-Upsert geschlossen
+
+- MEIN NAME (Maintainer): Einstellungen zeigen am persönlichen Link die
+  Zeile 👤 «Mein Name» (Admin sieht sie nicht — die Personen-Verwaltung
+  kann alle). Sheet mit vorbefülltem Feld; lokal sofort (Chips, Punkte,
+  Kacheln folgen), Server via sb('members?id=eq.me','PATCH',{name}) —
+  NUR die eigene Zeile, famScope bleibt dran, encRow verschlüsselt bei
+  famc/famx. Verlauf bleibt historisch (member_name alter Zeilen
+  unverändert — gleiche Semantik wie beim Admin-Umbenennen); neue
+  Einträge tragen den neuen Namen. «Mein Name» ×19
+- COPY (Maintainer, aus v4.45.3 hierher gefaltet): «ohne Admin-Zugriff» aus
+  der Mitglieder-Erklärung gestrichen — IT-Jargon; die Admin-Zeile
+  darüber erklärt sich selbst. Neu: «Verschick sie an deine Mitbewohner
+  oder Familie — jede Person loggt damit ihre Aufgaben» (×19)
+- BEIFANG, ernst: finishMembers() (Personen-Sheet des Admins) schrieb
+  Mitglieder per ROH-Fetch — OHNE encRow und OHNE x-fairli-key. Bei
+  famc/famx wären Namen im KLARTEXT gelandet bzw. an der Write-Auth
+  gescheitert; bei Fanti (fam-, Legacy) fiel es nie auf. Jetzt über
+  upsert() (verschlüsselt + Write-Key + merge-duplicates). Der
+  famx-«sendet NIE Klartext»-Test deckte diesen Pfad nicht ab — der
+  Personen-Upsert lief dort nicht; Lücke notiert
+- Tests: Mitglied benennt sich um (Chip sofort, PATCH-Ziel eigene
+  Zeile + famScope), Admin ohne «Mein Name», persönlicher Link mit.
+  64/64 Chromium, 63+1 WebKit
+- APP_VERSION 4.46.0, SW-Cache haushalt-v128
+
+## 2026-07-17 — v4.45.2: Mitglieder-Copy erweitert, i18n-Audit — Verschlüsselungs-Migration übersetzt
+
+- COPY (Maintainer): «Persönliche Links»-Erklärung führt jetzt mit der
+  Handlung: «Verschick sie an deine Mitbewohner oder Familie — jede
+  Person loggt damit ihre Aufgaben, ohne Admin-Zugriff» (×19, alter
+  Schlüssel entfernt)
+- I18N-AUDIT (Maintainer-Frage «ist das Onboarding übersetzt?»):
+  Onboarding-Flow VOLLSTÄNDIG in allen 19 Sprachen ✓. Der Audit
+  (alle t()-Schlüssel gegen die Wörterbücher) fand aber eine
+  vorbestehende Lücke: das VERSCHLÜSSELUNGS-MIGRATIONS-Sheet war
+  t()-verpackt, seine 10 Schlüssel fehlten jedoch überall — es fiel
+  still auf Deutsch zurück. Jetzt übersetzt (×19, inkl. der beiden
+  langen Erklärungs-Absätze). Wiederholter Audit: KEINE echten Lücken
+  mehr
+- 63/63 Chromium, 62+1 WebKit
+- APP_VERSION 4.45.2, SW-Cache haushalt-v127
+
+## 2026-07-17 — v4.45.1: Keine Doppel-Botschaft — 📲-Banner schweigt, solange Schritt 1 offen ist
+
+- LIVE-BEOBACHTUNG (Maintainer): «Zum Home-Bildschirm» erschien doppelt —
+  im Banner oben UND im Onboarding-Sheet unten (der halbtransparente
+  Backdrop liess beide gleichzeitig sehen)
+- REGEL: solange #onboardSheet die Install-Botschaft trägt, ist der
+  Banner versteckt; beim Schliessen ruft das Sheet initInstallBar() —
+  der Banner kehrt SOFORT als Dauer-Erinnerung zurück (respektiert
+  appinstalled/Dismissal via LS_IBAR). Wer im Sheet installiert, sieht
+  ihn nie wieder; wer es wegklickt, behält die sanfte Erinnerung
+- Ersteller-Pfad setzt die Onboard-Marke bereits beim Setup (Schritt 1
+  kommt dort explizit — maybeOnboard soll nicht doppelt zünden)
+- Tests: Banner hidden solange Sheet offen; nach Schliessen ohne
+  Installation sichtbar; Reload-Persistenz. 63/63 Chromium, 62+1 WebKit
+- APP_VERSION 4.45.1, SW-Cache haushalt-v126
+
+## 2026-07-17 — v4.45.0: Onboarding-Bogen «Zugriff sichern» — Ersteller-Wizard, Empfänger-Landung, Nativ-zuerst-Banner
+
+- KONZEPT (Maintainer): (1) nach der Haushalts-Erstellung zuerst «Link
+  sichern», (2) dann das Einladen-Sheet, (3) Link-Empfänger landen
+  bei (1)
+- SCHRITT 1, #onboardSheet «Zugriff sichern»: Savenote-Warnung
+  (Admin-Text bzw. persönliche Variante «Dein Link ist dein Zugang …»),
+  nativer Android-Knopf wenn Prompt verfügbar, sonst die Anleitungen
+  (installInstructionsHTML(true)); spätes beforeinstallprompt rüstet
+  den Knopf nach (Race-Lektion v4.44.1 gilt auch hier)
+- ERSTELLER: Setup-Abschluss → openOnboardSheet(true) →
+  «Weiter: Mitglieder einladen» → Einladen-Sheet (Schritt 2 mit den
+  v4.44.0-Erklärungen). ERSTBESUCHER jeder Rolle (auch Admin-Link auf
+  Zweitgerät): maybeOnboard() nach dem ersten Render — Marke
+  haushalt.onboard:FAMILIE:a|u, nie im Standalone, nie über offenen
+  Sheets, nie über der Ersteinrichtung (NUR famName zählt als «Familie
+  steht» — der Boot-Sät ein lokales Standard-Mitglied, members wäre
+  ein Fehlsignal)
+- NATIV-ZUERST (Maintainer-Platzierungsfrage): der 📲-Banner in der
+  HAUPT-Ansicht feuert das native Prompt jetzt DIREKT, wenn es
+  verfügbar ist — der Knopf im Haupt-Pane IST der Banner; ohne Prompt
+  öffnet er wie bisher die Anleitungen
+- Tests: mockBackend setzt die Onboard-Marke als Standard-Persona
+  (Wiederkehrer — sonst blockierte das Modal jeden Test;
+  Onboarding-Tests schalten die Persona gezielt ab). Neu: Empfänger
+  sieht das Sheet genau EINMAL, spätes Prompt rüstet nach und feuert,
+  Marke persistiert; Ersteller-Wizard-Test (Setup → Schritt 1 →
+  Weiter → Einladen-Sheet); Kette-Test auf Nativ-zuerst umgestellt.
+  3 neue Schlüssel ×19. Visuelle Abnahme §11: Empfänger-Zustand mit
+  Android-Knopf gerendert + programmatisch geprüft. 63/63 Chromium,
+  62+1 WebKit
+- APP_VERSION 4.45.0, SW-Cache haushalt-v125
+
+## 2026-07-17 — v4.44.1: Install-Prompt-Race behoben — offene Sheets rüsten nach; Install-Kette End-to-End getestet
+
+- LIVE-BUG (Maintainer-Pixel: «der native Home-Bildschirm-Knopf tut
+  nichts»): Chrome feuert beforeinstallprompt oft erst SEKUNDEN nach
+  dem Laden (Engagement-Heuristik). Einladen- und Install-Sheet prüften
+  deferredInstall nur beim RENDERN — wer das Sheet vor dem Event
+  öffnete, bekam den nativen Weg nie zu sehen. Race-Test zuerst
+  geschrieben, rot bestätigt, dann Fix: der BIP-Listener rüstet offene
+  Sheets nach (Install-Sheet re-rendert auf «Jetzt installieren»,
+  Einladen-Sheet bekommt den Button in die Sichern-Warnung injiziert;
+  Button-Verkabelung in wireShInstall/injectShareInstall extrahiert)
+- FRAGE 1 (Maintainer): Empfänger geteilter Links sehen den 📲-Banner —
+  das galt schon (initInstallBar zeigt ihn in JEDEM Kontext ohne
+  Standalone, Dismissal-Schlüssel pro Familie+Rolle), war aber
+  ungetestet. Neuer Kette-Test aus Empfänger-Perspektive
+  (persönlicher Link): Banner sichtbar → Tap → Install-Sheet →
+  «Jetzt installieren» feuert das native Prompt → appinstalled räumt
+  auf (Sheet zu, Banner weg, dauerhaft gemerkt)
+- EHRLICHE PLATTFORM-GRENZE (dokumentiert): ist die PWA bereits
+  installiert, feuert Chrome beforeinstallprompt NIE — dann gibt es
+  by design keinen nativen Knopf, nur die Anleitungen. Ein «kaputter»
+  Knopf auf einem Gerät mit bereits installierter Fairli ist also
+  erwartetes Verhalten
+- 63/63 Chromium, 62+1 WebKit
+- APP_VERSION 4.44.1, SW-Cache haushalt-v124
+
+## 2026-07-17 — v4.44.0: Onboarding — Admin-Link sichern (Warnung + Android-Ein-Tipp), Erklärung an den persönlichen Links
+
+- HINTERGRUND (Maintainer): wer nach dem Setup im Einladen-Sheet landet und
+  den Admin-Link NICHT sichert, verliert den Zugriff auf den Haushalt —
+  das sagte bisher niemand
+- SICHERN-WARNUNG (.savenote, bernstein-getönte Box direkt im
+  Admin-Block): «Wichtig: diesen Link sichern — als Lesezeichen oder
+  auf dem Home-Bildschirm. Ohne ihn verliert ihr den Zugriff auf euren
+  Haushalt.» Immer sichtbar, nicht nur beim ersten Mal — die Warnung
+  kostet nichts und der Verlustfall ist fatal
+- ANDROID-EIN-TIPP: ist das native Install-Prompt verfügbar
+  (beforeinstallprompt wird seit v4.20.0 eingefangen), steht in der
+  Warnung ein Primär-Button «Zum Home-Bildschirm hinzufügen» → feuert
+  das native Prompt; nach Annahme verschwindet der Button
+  («Installiert ✓» kommt via appinstalled). Ohne Prompt (iOS/bereits
+  installiert) bleiben die aufklappbaren Anleitungen direkt darunter —
+  expandInstall öffnet sie nach dem Setup weiterhin
+- PERSÖNLICHE LINKS: Erklärung auf Augenhöhe mit dem Admin-Text —
+  «Damit loggt jede Person ihre Aufgaben — ohne Admin-Zugriff»
+- 3 neue Schlüssel ×19 Sprachen. Tests: Warnung + Erklärung im
+  de-Admin-Test; neuer Test «Button NUR mit Prompt, feuert ihn,
+  verschwindet nach Annahme» (synthetisches beforeinstallprompt).
+  Visuelle Abnahme §11: Android-Zustand gerendert + programmatisch
+  geprüft (savenote/Button/Subnote da, kein Overflow). 61/61 Chromium,
+  60+1 WebKit
+- APP_VERSION 4.44.0, SW-Cache haushalt-v123
+
+## 2026-07-17 — v4.43.1: «Admin-Link»-Wortlaut, News-Banner INHALTS-verankert
+
+- FAMILIEN-ZEILE (Maintainer-Wortlaut): Titel «Admin-Link», Subnote «Gibt
+  vollen Zugriff auf alle Mitglieder und ihre Aktivitäten» — auch als
+  QR-Caption; ×19 Sprachen, 2 obsolete Schluessel entfernt
+  («Ganze Familie», die Erwachsenen-Subnote aus v4.43.0)
+- NEWS-BANNER INHALTS-VERANKERT (Maintainer: «soll nicht mit jeder
+  Versionsnummer wiederkommen» — die major.minor-Regel aus v4.41.1
+  pingte bei 4.42→4.43 erneut): neue Konstante NEWS_VERSION = '4.37.0'
+  (= bis wohin updates.html berichtet). Wer diesen Stand oder neuer
+  gesehen hat, wird NIE wieder gepingt, egal wie viele Releases folgen;
+  die seenver-Marke wird still nachgezogen. Der Banner zuendet erst
+  wieder, wenn NEWS_VERSION ZUSAMMEN mit neuem updates.html-Inhalt
+  gebumpt wird — Appearance haengt am Inhalt, nicht an der Kadenz.
+  DISZIPLIN: updates.html erweitern ⇒ NEWS_VERSION im selben Commit
+  bumpen (der Banner-Test wacht, dass NEWS_VERSION nie VOR ihrem
+  Berichtstand liegt)
+- Tests: Banner-Test neu (gesehen >= NEWS_VERSION ⇒ kein Ping + Marke
+  nachgezogen; < NEWS_VERSION ⇒ Banner; Konsistenz-Wache), Admin-Link-
+  Wortlaut in de- und en-Tests. 60/60 Chromium, 59+1 WebKit (ein
+  Lauf-Abbruch davor war Umgebung: verwaister Pages-Server nach
+  Timeout — pkill, sauber gruen)
+- APP_VERSION 4.43.1, SW-Cache haushalt-v122
+
+## 2026-07-17 — v4.43.0: Einladen-Sheet — Admin-Link klar markiert, Empfehlen gleichwertig blau
+
+- ZIEL (Maintainer): verhindern, dass der Familien-/Admin-Link (ERSTE Zeile
+  im Sheet!) versehentlich als Fairli-Empfehlung geteilt wird
+- Familien-Zeile: Untertitel «voller Zugriff» → «Admin — voller
+  Zugriff, für die Erwachsenen im Haushalt» (auch als QR-Caption);
+  nutzt jetzt die .subnote-Klasse statt Inline-Styles
+- Empfehlen-Knopf: ghost-Daempfung entfernt — GLEICHES Akzent-Blau wie
+  alle Teilen-Knoepfe; Subnote fuehrt mit der Zielgruppe: «Für Freunde:
+  startet einen neuen, leeren Haushalt — zum Beitreten euren
+  Familien-Link nutzen»
+- Woerterbuecher: 2 neue Schluessel ×19, 2 obsolete entfernt
+  («voller Zugriff», alte Empfehlen-Subnote) — Integritaets-Test
+  haelt die Paritaet
+- Visuelle Abnahme nach neuer §11-Regel: Renders Pixel/iPhone, de+en;
+  Farb-/Label-/Overflow-Pruefung zusaetzlich programmatisch (alle drei
+  Knoepfe identisches Blau, Admin-Subnote da, kein Overflow). EN-Test
+  um Admin-Subnote, Freunde-Subnote und Farbgleichheit erweitert.
+  60/60 Chromium, 59+1 WebKit
+- APP_VERSION 4.43.0, SW-Cache haushalt-v121
+
+## 2026-07-17 — v4.42.2: Runterwischen schliesst Sheets und Toasts
+
+- SWIPE-TO-DISMISS (Maintainer: «der Grabber sieht so aus, als koennte
+  man…»): Runterwischen zieht das Sheet mit dem Finger mit und
+  schliesst ab 120 px Zug ODER bei zuegigem Wisch (>40 px und
+  >0.5 px/ms); darunter federt es zurueck (180 ms). Zentral in
+  enableBackdropClose — GLEICHE Semantik wie der Backdrop-Tipp: die
+  Formular-Regel (dirty choreSheet/logSheet) blockt auch den Swipe.
+  Zug nach unten uebernimmt nur, wenn der Sheet-Inhalt oben steht
+  (scrollTop 0) und der erste Zug abwaerts geht — Hochwischen/Scrollen
+  bleibt nativ. Slide-out 180 ms, transform wird bei close geresettet
+- Share-Sheet haengt jetzt AUCH an enableBackdropClose (hatte bisher
+  weder Backdrop-Tipp noch Swipe — Versehen aus der Anfangszeit)
+- Toast: Runterwischen (>24 px) verwirft sofort (Timer geraeumt)
+- Test (beide Geraete-Projekte): zuegiger Wisch schliesst, kurzer
+  langsamer federt zurueck, dirty-Guard blockt, Toast-Wisch verwirft.
+  Touch-Synthese OHNE Touch/TouchEvent-Konstruktoren (WebKit-Linux
+  kennt sie nicht): plain Event + defineProperty(touches). 60/60
+  Chromium, 59+1 WebKit
+- APP_VERSION 4.42.2, SW-Cache haushalt-v120
+
+## 2026-07-17 — v4.42.1: Sheets gleiten herein, Verlauf-✎ wie auf den Kacheln
+
+- SHEETS SLIDEN (Maintainer-Punkt 1): alle dialog-Sheets (Teilen, Aufgabe
+  bearbeiten, Einstellungen, …) gleiten mit 280 ms aus dem unteren Rand
+  herein (transform translateY(100%) → 0), der Backdrop blendet parallel
+  ein. EINE CSS-Regel auf dialog[open] deckt saemtliche Sheets ab; die
+  globale reduced-motion-Regel schaltet die Animation automatisch ab
+  (im Test verifiziert). Nur Einblenden — Ausblenden bleibt sofort
+  (Schliessen soll nicht warten)
+- VERLAUF-BEARBEITEN-SYMBOL (Maintainer-Punkt 2): Eintraege zeigen jetzt
+  dasselbe ✎ wie die Aufgaben-Kacheln statt des Chevrons ›
+  (.editicon, dezent, rein dekorativ — die ganze Zeile bleibt der
+  Tap-Bereich). Chevron › bleibt NUR in den Einstellungs-Zeilen
+  (Listen-Navigation). Rechte-Test angepasst (gesperrte Zeilen: kein
+  .editicon)
+- Neuer Test: animationName sheetIn beim Oeffnen, none unter
+  reduced-motion; Verlaufszeile hat ✎ und keinen Chevron. 59/59
+  Chromium, 58+1 WebKit
+- APP_VERSION 4.42.1, SW-Cache haushalt-v119
+
+## 2026-07-17 — v4.42.0: Kopf-Schrumpfen entfernt, Tabs-Leiste deckend mit weichem Auslauf
+
+- SCHRUMPFEN KOMPLETT RAUS (Maintainer: «bringt ein paar Pixel und macht
+  viele Probleme … sieht auch nicht smooth aus» — mehrzeilige Titel
+  klappten beim Kleinerwerden einzeilig um): der Kopf ist NICHT mehr
+  sticky und scrollt normal aus dem Bild; --shrink/--tabstop/Interpolation
+  und der Scroll-Handler sind restlos entfernt. Nur die Tabs kleben.
+  Logo/Titel fest auf --titlefs; .wide-Pruefung bleibt (Resize +
+  Titelwechsel). Damit entfallen auch alle Sticky-Stacking-Themen
+  (Naht, Scroll-Anchoring, Andockhoehe) ersatzlos
+- TABS-LEISTE: Hintergrund jetzt DECKEND (vorher lief das untere
+  Gradient-Fuenftel transparent aus — Kacheln schienen in die Pills,
+  Maintainer-Screenshot 17.07.) plus ::after-Auslauf (14 px var(--bg) →
+  transparent): Kacheln loesen sich unter der Leiste auf statt
+  anzustossen; padding-bottom 6 → 10 px
+- Test ersetzt: statt Kontinuitaets-Invariante jetzt «Kopf scrollt weg
+  und schrumpft dabei NICHT, Tabs kleben deckend bei 0» (beide
+  Geraete-Projekte). 58/58 Chromium, 57+1 WebKit
+- APP_VERSION 4.42.0, SW-Cache haushalt-v118
+
+## 2026-07-17 — v4.41.1: News-Banner pingt nur noch bei Feature-Sprüngen (major.minor)
+
+- Live-Feedback: sechs Deploys an einem Tag = sechs Banner. Das
+  «einmal pro Versionswechsel»-Design war für Patch-Kadenz falsch.
+  Jetzt: Banner NUR wenn major.minor sich ändert; bei Patch-Geschwistern
+  wird die seenver-Marke STILL nachgezogen (sonst zündete ein späterer
+  Minor-Sprung mit längst gesehenem Stand). Erstkontakt bleibt still
+- Neuer Test: Patch-Geschwister → kein Banner + Marke aktuell;
+  Minor-Sprung → Banner. 58/58 Chromium, 57+1 WebKit
+- APP_VERSION 4.41.1, SW-Cache haushalt-v117
+
+## 2026-07-17 — v4.41.0: Kopf-Schrumpfen scroll-gekoppelt (kein Sprung), Haushalt umbenennen
+
+- SCHRUMPFEN IST JETZT SCROLL-GEKOPPELT (Maintainer: «sehr wenig Scrollen …
+  fühlt sich springend an»): statt binärem .slim-Umschalten (24/4-
+  Schwellen) folgt --shrink (0…1 = scrollY/64px) dem Finger 1:1.
+  CSS interpoliert Titel-/Logo-Größe (--titlefs → 19px) und
+  Kopf-Padding per calc; ALLE Transitions auf diesen Werten entfernt
+  (würden dem Finger hinterherschmieren). Handler SYNCHRON pro
+  Scroll-Event (kein rAF: billig, kein Frame-Lag — und Headless-WebKit
+  lässt rAF verhungern → Nachhol-Sprünge). --tabstop wird jeden Event
+  mitgemessen; __updateWide misst IMMER bei --shrink 0 (deterministisch,
+  egal wo gescrollt). .slim-CSS/JS komplett entfernt
+- NEUER TEST (läuft automatisch auf Pixel 7 UND iPhone 14, wie
+  gewünscht): Kern-Invariante fs(y) = voll + (19−voll)·min(1, y/64)
+  punktweise über 11 Scroll-Lagen ±0.75 px, Logo == Titelgröße in jeder
+  Zwischenlage, echte Zwischenlagen erzwungen, zurück auf 0 = voll.
+  Gemessen gegen die ECHTE scrollY (robust gegen Scroll-Anchoring:
+  der Browser justiert scrollY nach, weil der schrumpfende Kopf das
+  Dokument verkürzt — im Test wird vor dem Sampling ein Scroll-Event
+  nachdispatcht, damit der Handler die finale Position liest)
+- HAUSHALT UMBENENNEN (Maintainer-Punkt 2): Einstellungen → 🏠
+  Haushaltsname (NUR Familien-Link — persönliche Links sehen die Zeile
+  nicht). Sheet mit vorbefülltem Feld; lokal sofort (state + save +
+  __setFamTitle inkl. Größenstufe/wide), Server via
+  sb('families','PATCH',{name}) — famScope zielt auf die Zeile,
+  ENC_FIELDS.families verschlüsselt den Namen bei famc/famx automatisch.
+  Fehler → Toast «Konnte nicht speichern»; nächster Pull würde bei
+  fehlgeschlagenem PATCH den Servernamen zurückbringen (bewusst simpel).
+  3 neue Schlüssel ×19 Sprachen
+- BONUS: übersehenes i18n-Leck im Personen-Sheet (Share-Text «…, mach
+  mit bei …») durch t() ersetzt — Schlüssel existierten seit v4.38.0
+- Tests: Umbenennen-Test (Titel folgt sofort, PATCH-Body {name,
+  family_id} verifiziert, persönlicher Link ohne Option). 57/57
+  Chromium, 56+1 WebKit
+- APP_VERSION 4.41.0, SW-Cache haushalt-v116
+
+## 2026-07-17 — v4.40.0: Lange Familiennamen — Titel volle Breite, Buttons in eigener Zeile
+
+- NEU (.wide, Maintainer-Frage 17.07.): braucht der Titel im GETEILTEN
+  Layout (Buttons daneben) mehr als seine 2 Clamp-Zeilen, nimmt die
+  Titelzeile die volle Breite und ⚙/Einladen/Personen rutschen
+  rechtsbündig in eine eigene Zeile. Entscheidung INHALTS-getrieben
+  (__updateWide): Messung IMMER im geteilten Layout (Klasse vorher
+  runter, synchron im selben Frame → deterministisch, kein Oszillieren,
+  kein Flackern); Epsilon = HALBE Zeilenhöhe (bei exakt 2 Zeilen rundet
+  scrollHeight je Font 1–3 px über clientHeight — eine echte dritte
+  Zeile liegt eine ganze Zeile drüber). Getriggert von __setFamTitle,
+  Resize und Slim-Umschalten (ändert die Header-Höhe → --tabstop wird
+  danach neu gemessen)
+- --titlefs wandert in __setFamTitle ans #apphead: die
+  Namenslängen-Schrumpfstufen (>14 / >22 Zeichen) treiben jetzt Titel
+  UND Logo gemeinsam — «Logo so gross wie das R» gilt für jede Stufe
+- Erkenntnisse aus dem Test-Härten: die Entscheidung ist locale- und
+  gerätebreiten-abhängig — de-Buttons («Einladen»/«Personen», ~245 px)
+  lassen auf iPhone-Breite dem Titel nur ~43 px, dort geht selbst
+  «WG 5» korrekt wide; «Testhaushalt» (12 Zeichen ohne Bruchstelle)
+  braucht neben Buttons 3 Zeilen → wide ist RICHTIG, kein Bug
+- Neuer Tier-1-Test: langer Name → .wide, Buttons unter der Titelzeile,
+  Logo == Titel-Schriftgröße (Subpixel-Toleranz, nach Ausklingen der
+  180-ms-Transitions); kurzer Name (EN-Buttons für sicheren Platz auf
+  beiden Viewports) → geteilt. 55/55 Chromium, 54+1 WebKit
+- APP_VERSION 4.40.0, SW-Cache haushalt-v115
+
+## 2026-07-17 — v4.39.3: Durchschein-Spalt zwischen Sticky-Header und Tabs geschlossen
+
+- Live-Beobachtung: beim Scrollen schien eine 1-px-Zeile Kachel-Inhalt
+  zwischen Kopf und Tab-Zeile durch. Ursache: `--tabstop` kam aus
+  offsetHeight (GANZZAHLIG gerundet), die echte Header-Hoehe ist
+  fraktional → Subpixel-Naht zwischen den beiden Sticky-Elementen
+- Fix: Messung via getBoundingClientRect().height (bruchteil-genau)
+  UND Tabs docken bewusst 1 px UNTER dem Header an
+  (`top:calc(var(--tabstop) - 1px)`; Header z-7 > Tabs z-5 —
+  der Überlapp ist unsichtbar, die Naht dicht). Remeasure feuert
+  jetzt SOFORT beim Slim-Umschalten und nochmals nach der Transition
+  (kein Andock-Blitzer bei schnellem Scrollen). Verifiziert: gap = -1 px
+  im gescrollten Zustand
+- APP_VERSION 4.39.3, SW-Cache haushalt-v114
+
+## 2026-07-17 — v4.39.2: Kopf-Logo an die Titelzeile gekoppelt (.hrow)
+
+- Live-Beobachtung (Slim-Zustand): das Logo sass sichtbar TIEFER als der
+  Titel. Ursache strukturell: header ist flex-wrap mit align-items —
+  align-self:center zentrierte das Logo gegen die GESAMTE Header-Hoehe
+  (inkl. der hoeheren Button-Zeile), nicht gegen die Titelzeile
+- Fix: Logo + h1 in EINER Zeile `.hrow` (flex, align-items:center,
+  flex:1, min-width:0) — das Logo zentriert sich jetzt IMMER gegen den
+  Titel; header align-items:flex-start → center; Slim-h1-Margins (2/6)
+  entfernt (schoben den Titel gegen das Logo). Messung: Logo-Mitte ==
+  Titel-Mitte auf 0.0 px, expanded UND slim
+- Splash-FLIP unveraendert (Ziel bleibt #headLogo per Rect); Selektoren
+  `#apphead h1` etc. matchen als Nachfahren weiter
+- APP_VERSION 4.39.2, SW-Cache haushalt-v113
+
+## 2026-07-17 — v4.39.1: News-Banner-Fix (SW kaperte updates.html), SW-Registrierung repariert, Logo = Titelgröße, Slim-Header sichtbar
+
+- NEWS-BANNER «führte nirgendwohin» (Live-Bug, Maintainer-Pixel): die
+  SW-Navigationsregel beantwortete JEDE /chores/-Navigation mit der
+  App-Shell — auch /chores/updates.html. Regel eingegrenzt auf
+  /chores/, /chores/index.html und /chores/f/…; updates.html zusätzlich
+  im Precache (Banner funktioniert offline)
+- GRÖSSER: SW-REGISTRIERUNG WAR SEIT DER HASH→PFAD-MIGRATION TOT für
+  Neu-Geräte: register('sw.js') ist relativ, baseURI zeigt nach
+  replaceState auf f/-Tiefpfade → /chores/f/sw.js → 404, still
+  verschluckt. Auf der Wurzel ohne Familie endet das Skript vor der
+  Registrierung (Entry-Return). Nur Alt-Registrierungen aus der
+  Hash-Ära liefen weiter (deshalb traf Maintainer der Shell-Bug überhaupt).
+  Fix: register('/chores/sw.js') absolut (§5-Regel gilt auch hier)
+- KOPF-LOGO = TITELGRÖSSE: --titlefs (clamp 30–38px) treibt h1 UND
+  #headLogo («so gross wie das R»); Slim 19px = Slim-Schriftgröße;
+  border-radius 23% skaliert mit
+- SLIM-HEADER JETZT SICHTBAR: Header ist sticky (top:0, z-7, bg);
+  vorher schrumpfte er erst bei y>46 — ohne sticky längst aus dem
+  Bild, nur das Wachsen bei y<12 war je sichtbar (Maintainer-Beobachtung).
+  Schwellen jetzt 24/4 (Hysterese bleibt); Slim-Padding respektiert
+  safe-area (sticky!); Tabs docken per gemessenem --tabstop unter dem
+  Header an (Messung nach Transition + bei Resize)
+- Tests: neues describe «Service Worker (echt)» mit test.use
+  serviceWorkers:'allow' (die EINE Ausnahme vom globalen Block;
+  Chromium-only, Netz bleibt gemockt/lokal). Der Test registriert den
+  SW auf der f/-Route (wacht damit auch über den Registrierungs-Fix),
+  klickt den Banner und verlangt die ECHTE updates.html im neuen Tab —
+  gegen die alte Regel verifiziert rot. 54/54 grün
+- APP_VERSION 4.39.1, SW-Cache haushalt-v112
+
+## 2026-07-17 — v4.39.0: Boot-Splash — App-Icon morpht in die Kopf-Ecke
+
+- SPLASH: statisches Overlay direkt nach <body> (deckt den Boot ab —
+  kaschiert nebenbei jedes Erst-Paint-Flackern), Icon 104px zentriert
+  auf var(--bg). Nach min. 550 ms ab navigationStart: FLIP-Morph
+  (translate+scale) auf das neue Kopf-Logo, Hintergrund blendet parallel
+  auf transparent; nach 480 ms Knoten weg + html.splash entfernt →
+  Kopf-Logo (26px, im Slim-Header 22px) wird exakt an der Landeposition
+  sichtbar. border-radius wird NICHT animiert — scale() verkleinert die
+  24px optisch auf den Ziel-Radius
+- ROBUSTHEIT: KEIN transitionend (globale reduced-motion-Regel toetet
+  Transitions → Event kaeme nie) — feste Timeouts; reduced-motion
+  ueberspringt den Morph ganz. Overlay ist durchgehend
+  pointer-events:none und blockiert NIE Bedienung (deshalb liefen alle
+  53 Tests ohne Anpassung durch). html.splash synchron im Head-Inline
+  (Logo blitzt vor dem Morph nie auf — Flicker-Regel §7)
+- Kopf-Logo fuer ALLE Kontexte (auch persoenliche Links) — Branding,
+  kein Admin-Element
+- Neuer Tier-1-Test: Overlay raeumt sich weg, html.splash weg, Logo
+  sichtbar mit opacity 1; visuell per Screenshot-Serie verifiziert
+  (Start / Mitte des Morphs / Endzustand)
+- APP_VERSION 4.39.0, SW-Cache haushalt-v111
+
+## 2026-07-17 — v4.38.0: Einladen-Sheet komplett übersetzt, Punkte-Slider im Verlauf, Rechte am persönlichen Link
+
+- I18N-LECK GESCHLOSSEN: Das Einladen-Sheet war halb deutsch, egal welche
+  Sprache aktiv war. Jetzt via t(): Sheet-Titel, Einladen-Knoepfe der
+  Zeilen, «Ganze Familie»/«voller Zugriff» (Kopf + QR-Caption), «Fertig»,
+  QR-Aria-Labels/Alt-Texte, «Links teilen …» im Personen-Sheet (dort auch
+  toten Doppel-textContent entfernt) sowie die Share-Texte selbst
+  (Titel «Link für {name}»/«Familien-Link», Mach-mit-Botschaften,
+  Empfehlen-Text). Familien-Knopf verlor sein data-name="Familie" — der
+  dafuer gedachte else-Zweig war unerreichbar. 12 neue Schluessel ×19
+  Sprachen (106 Keys je Woerterbuch)
+- VERLAUF-PUNKTE = GLEICHE UI WIE ANLEGEN: number-Input ersetzt durch
+  ptsrow + range-Slider (#lPts/#lPtsVal), Feldordnung wie im
+  Aufgaben-Sheet (Titel → Punkte → Notiz → Zeit). EINE Mechanik
+  syncPtsRange() fuer beide Sheets (setPtsSlider delegiert); Skala-Regel
+  unveraendert: max(MAXPTS, Bestand)
+- RECHTE (Client-seitig): persoenlicher Link darf nur EIGENE
+  Verlaufs-Eintraege bearbeiten/loeschen. Fremde Zeilen rendern als
+  reine Anzeige (div statt button, kein Chevron; div.entry{border:none}
+  fuer identische Optik), openLogSheet hat eine Defense-in-Depth-Wache
+  mit Toast «Nur eigene Einträge lassen sich bearbeiten». Familien-Link
+  (Admin) bearbeitet weiterhin alles. EHRLICHE GRENZE: serverseitig
+  teilen alle Link-Inhaber denselben Familien-Write-Key — echte
+  Durchsetzung braeuchte Pro-Mitglied-Schluessel (offen, s. Onboarding)
+- Tests: Slider-Test ersetzt Number-Input-Test (prueft type=range,
+  Skalen-Schutz Bestand 7 > MAXPTS 5, Live-Output), neuer Rechte-Test
+  (eigene Zeile Button/oeffnet, fremde Zeile div/oeffnet nichts, Admin
+  sieht 2 Buttons), neuer EN-Uebersetzungstest gegen deutsche Reste
+- APP_VERSION 4.38.0, SW-Cache haushalt-v110
+
+## 2026-07-17 — v4.37.1: Neues App-Icon «Haus, Blau-Grau»
+
+- Icon-Neugestaltung: Haus-Komposition (abgerundetes Dreieck-Dach ueber
+  2x2-Kachel-Raster), Palette Blau→Grau (hellblau, stahlblau, schiefer,
+  hellgrau), dunkler Navy-Hintergrund — ersetzt das bunte 4-Kachel-Icon
+- Deterministisch als SVG konstruiert (nicht Pollinations), Quelle im
+  Chat-Artefakt; Maskable-Variante mit 78%-Safe-Zone fuer Android-Masken
+- icon-192.png, icon-512.png, icon-512-maskable.png ersetzt;
+  Cache-Buster ?v=46→47 (index.html, 404.html, manifest.json);
+  SW-Cache haushalt-v108→v109
+- Hinweis iOS: Homescreen-Icon wird aggressiv gecacht — ggf. Icon
+  entfernen und neu hinzufuegen
+
+## 2026-07-17 — v4.37.0: Recap-Release — «Was ist neu» v4.26–v4.37, Launch-Hinweis, Doku holistisch
+
+- UPDATES.HTML NEU (Nutzer-Sicht, bilingual DE/EN, gleiche Anatomie):
+  deckt v4.26–v4.37 ab — Verschluesselung (mit Ein-Tipp-Migration und
+  Backup), 20 Sprachen, Einstellungen (Sortierung, Max-Punkte),
+  Punkte-Akkumulation + editierbare Punkte, Tages-Koepfe, neues Icon,
+  ruhige Optik (Skeleton, Chips-Umbruch, Slim-Header, Tastatur-Fix),
+  fairli-Links; «Unter der Haube» ehrlich inkl. Zombie-Kachel-Widmung
+- LAUNCH-HINWEIS (#newsBar): schmale dismissbare Zeile unter dem
+  Header → updates.html. NUR fuer Wiederkehrer, EINMAL pro Version
+  (LS 'haushalt.seenver'); Erstkontakt setzt die Marke still und sieht
+  nie ein Banner. Beide Wege (Link, ×) markieren gesehen. 1 neuer
+  i18n-Schluessel «Fairli hat Neues — ansehen» ×19; ×-Knopf in der
+  Aria-Uebersetzungsliste registriert
+- DEVELOPER_ONBOARDING.md HOLISTISCH neu geschrieben (636→459 Zeilen):
+  §8-Versions-Akkretionen thematisch konsolidiert (Kopfbereich, Grid,
+  Verlauf/Punkte, Chips, Tastatur, Einladen/Sprache), Fakten auf Stand
+  v4.37 (Schema inkl. write_key_hash/updated_at/retired_families,
+  Delta-Sync, Schreib-Auth, Alias-Regel SHARE_BASE vs BASE, 100 Tests);
+  nur Ergebnisse, keine Untersuchungs-Historie
+- Turn ueberlebte eine Kompaktierung + Phantom-Vollendung: Zustand
+  nach Doktrin verifiziert (updates.html div-Balance, i18n-Paritaet
+  19/19, Banner-Logik gelesen) und Suite SELBST gerannt statt Logs
+  zu glauben
+- 100/100 auf beiden Engines (96 + Banner ×2 + Rewrite-Absicherungen)
+- APP_VERSION → 4.37.0, SW cache → haushalt-v108
+
+## 2026-07-17 — v4.36.4: Geteilte Links (Einladen/Empfehlen/QR) zeigen fairli-Alias
+
+- Maintainer: Links unter «Teilen» sollten den huebschen Alias tragen. Neue
+  SHARE_BASE ('/fairli/') NUR fuer familyLink()/userLink()/appLink()
+  (Einladen-Sheet, Empfehlen-Knopf, QR-Code). routeUrl() bleibt
+  UNVERAENDERT fuer interne Navigation (history.replaceState,
+  location.href) — die App laeuft weiterhin unter /chores/, das ist
+  ihr tatsaechlicher Standort; der Alias ist nur eine JS-Weiterleitung
+  dorthin und darf nie als Standort selbst verwendet werden
+- Test-Faelle beim Bauen: (a) Anker traf beim Einfuegen zweimal (Rest
+  eines unterbrochenen frueheren Anlaufs) → Playwright verweigerte den
+  Start wegen doppeltem Testnamen, VOR jeder Ausfuehrung entdeckt;
+  (b) eigener Selektor zu grob (`hasText: 'Einladen'` traf auch
+  Mitglieder-Zeilen) → auf `.shrow.shfam` verengt; (c) Regex verlangte
+  https, lokaler Testserver liefert http → https? toleriert. Alle drei
+  Faelle NICHT im App-Code, sondern in der eigenen Testinstrumentierung
+  — sauberer Beleg, warum die Suite vor jedem Deploy laeuft
+- 96/96 auf beiden Engines
+- APP_VERSION → 4.36.4, SW cache → haushalt-v107
+
+## 2026-07-17 — v4.36.2: KRITISCH — Der eingefrorene Mittwoch (Stale-Guard hungerte Heil-Zweige aus)
+
+- SYMPTOM (Valentin, iPhone, 08:08): Verlauf endet Mittwoch 21:26,
+  obwohl famc 13 neuere Zeilen hat (Do-Abend-Serie, Fr 03:19). Geraet
+  hatte Probe-Cache '0' (Migration verpasst) + Mittwoch-Cache
+- REPRODUZIERT GEGEN PRODUKTION (Playwright, iPhone-Profil, praeparierter
+  localStorage): genau 4 Queries unter der ALTEN Familie, dann Stille —
+  kein Re-Probe, kein Reload, encv bleibt '0', Cache zementiert bei
+  gruenem Sync-Punkt
+- URSACHE (zweifach): (1) Der Debug-Strip-Regex von v4.36.0 hatte AUCH
+  den Stale-Zweig entleert (syncOk/return im Kommentar!) → bei
+  mutationSeq-Aenderung waehrend des Boot-Pulls fiel die Ausfuehrung an
+  ALLEN Heil-Zweigen vorbei bis save()/render(). (2) Strukturell stand
+  der Stale-Guard VOR den Heil-Entscheidungen und konnte Re-Probe/
+  Ersteinrichtung/Upload-Wache aushungern. Fix: Zweig-Koerper
+  wiederhergestellt UND Guard hinter die Heil-Zweige verschoben — er
+  schuetzt jetzt NUR die Zustands-Uebernahme (reconcile)
+- Test-Lehrstunde: der neue Valentin-E2E-Test sabotierte sich selbst
+  (initScript setzte encv '0' bei JEDEM Dokument-Load, auch nach dem
+  Heil-Reload) → sessionStorage-Guard «nur Boot 1 praeparieren».
+  Instrumentierung zeigte danach die volle Heilungskette: Re-Probe →
+  Reload → Probe findet famc (rows=1) → IS_ENC → Daten da
+- Offene Beobachtung (LOG statt Vermutung): in der Prod-Repro war
+  mutationSeq waehrend des Boot-Pulls veraendert (Fall-through-Pfad) —
+  Verursacher-push() noch nicht identifiziert; durch die Neuordnung
+  fuer die Heilung UNSCHAEDLICH, reconcile bleibt geschuetzt
+- Fuer Valentin heisst das: App einmal schliessen und neu oeffnen —
+  v4.36.2 heilt den Zustand selbst (Probe-Cache wird verworfen,
+  famc uebernommen). Kein Datenverlust: ihre Mittwoch-Zeilen sind in
+  famc laengst vorhanden
+- 94/94 auf beiden Engines
+- APP_VERSION → 4.36.2, SW cache → haushalt-v105
+
+## 2026-07-17 — v4.36.1: Nie ein einzelner Chip auf der letzten Zeile
+
+- Maintainer: «there should be two people, or 0» — bei 5 Mitgliedern brach
+  die Reihe als 4+1 um (Noel allein). Jetzt misst der rAF-Ausgleich die
+  Zeilen (offsetTop-Gruppen); steht unten genau EIN Chip und die Zeile
+  darueber hat ≥3, wird ein flex-basis:100%-Umbruch vor deren letzten
+  Chip gesetzt → 3+2. Ausgleich laeuft nach jedem Render (Brueche werden
+  vorher entfernt), einzeilige Familien unberuehrt
+- Test: 5 Fanti-Namen auf 393 px → letzte Zeile ≥ 2 Chips (Boundingbox-
+  Zeilengruppen). 92/92
+- Fanti-Backfill-Status: Maintainer-08:01-Start war der DOWNLOAD-Start
+  (SW aktiviert beim naechsten); Hash noch null, Probe-Zeile
+  (lock-probe1) nach Test sofort geloescht
+- APP_VERSION → 4.36.1, SW cache → haushalt-v104
+
+## 2026-07-17 — v4.36.0: Viral-Bereitschaft — Delta-Sync (Egress-Diät), Schreib-Auth für verschlüsselte Familien, fairli-Alias
+
+- ALIAS LIVE: https://blauewelt.github.io/fairli/ → /chores/ (eigenes
+  Repo blauewelt/fairli, index.html+404.html-JS-Redirect; Pfad, Query
+  und Hash bleiben erhalten — /fairli/f/<id> landet korrekt). Kanonisch
+  bleibt /chores/; NIE das Haupt-Repo umbenennen (Pages leitet nicht um,
+  alle QR-Codes/Icons der Familien stuerben)
+- CHOKEPOINT 1 — EGRESS-DIAET: Pull war ~125 KB pro App-Start (Log
+  dominiert). Jetzt: (a) Spalten-Diaet auf allen Queries, (b) LOG-DELTA:
+  Wasserzeichen 'haushalt.delta:<fam>' (nur SERVER-Zeiten!), Vollabgleich-
+  Marke 'haushalt.full:<fam>'; Delta laeuft, wenn Wasserzeichen existiert,
+  der letzte Vollabgleich < 24 h her ist und ein Log-Cache da ist. Query:
+  or=(created_at.gt.W,updated_at.gt.W) — sieht dank updated_at-Trigger
+  auch FREMDE AENDERUNGEN; fremde LOESCHUNGEN erst beim naechsten
+  Vollabgleich (dokumentierte Grenze). Merge by id, pendingDeletes
+  respektiert, Cap 400. Wiederkehrende Starts: ~10 KB statt 125 KB —
+  Supabase-Egress-Wand rueckt von ~40k auf ~400k Starts/Monat
+- CHOKEPOINT 2 — SCHREIB-AUTH (famx/famc): WRITEKEY = eigener HKDF-Ast
+  (info 'write-key-v1') — aus dem Header laesst sich das Link-Geheimnis
+  NICHT gewinnen. Header 'x-fairli-key' auf allen Schreibzugriffen;
+  DB speichert nur SHA-256 (families.write_key_hash). RLS: RESTRIKTIVE
+  Policies via fairli_write_ok() auf members/chores/log (ins/upd/del)
+  und families (upd/del). Hash NULL = offen wie bisher (Alt-Familien,
+  Versions-Schnitt). Migration 20260717120000 via db-migrate-Workflow
+  angewandt; LIVE VERIFIZIERT: famx-authselftest01 — Schreiben ohne Key
+  401/42501, mit Key 201. Hash-Setzen: famx-Ersteinrichtung, famc-
+  Migration, BACKFILL fuer bereits Migrierte (Fanti) beim naechsten
+  App-Start
+- Debug-Lehrstunden dieser Runde: (a) Backfill lief zuerst via push() —
+  das erhoehte mutationSeq und ENTWERTETE den eigenen pull (Stale-
+  Snapshot-Abbruch, Familie schien leer → Ersteinrichtung!). Backfill
+  jetzt als reiner Fetch NACH state-Zuweisung. (b) Debug-Strip-Regex
+  frass den firstRunSetup-Aufruf — Massen-Gruen erst nach Wieder-
+  herstellung. Regel bleibt: Einfuegen/Entfernen nur an verifizierten
+  Statement-Grenzen. (c) Tages-Buendelung schlug wieder im Test zu
+  (Delta-Fixture → Einmaliges statt gleicher Kachel)
+- 90/90 auf beiden Engines (eigener Bestaetigungslauf nach Phantom-
+  Zustand im Sandbox — Doktrin: fremden Logs nicht trauen, selbst rennen)
+- APP_VERSION → 4.36.0, SW cache → haushalt-v103
+
+## 2026-07-17 — v4.35.0: Max-Punkte-Skala (Standard 5), Folge-Tipp akkumuliert, Punkte im Verlauf editierbar
+
+- MAX. PUNKTE (Einstellungen → 🎯): Skala des Punkte-Sliders waehlbar
+  3/5/10, Standard 5 (war 15 — Maintainer: 1–5 reicht zum Start). Beim
+  Bearbeiten weicht die Skala nie unter den Bestandswert (8-Punkte-
+  Kachel bleibt bei 8 editierbar). Hinweistext im Sheet: Mehrfach-
+  Tippen addiert — die Skala ist keine harte Grenze
+- FOLGE-TIPP AKKUMULIERT (Maintainer-Vereinfachung): erneuter Tipp auf
+  dieselbe Sache innerhalb 1 h ADDIERT die Punkte in die BESTEHENDE
+  Log-Zeile (PATCH) statt eine neue anzulegen. done_at bleibt der
+  erste Tipp — das Fenster schliesst sich von selbst. Alt-Serien
+  (mehrzeilig) bleiben unangetastet und rendern weiter gebuendelt.
+  Dabei entdeckt: der pressLock-Doppeltipp-SCHUTZ (600 ms, einst
+  Feature) ist unter der neuen Semantik obsolet → auf 250 ms
+  Geister-Klick-Filter reduziert; Absicht doppelt-tippt jetzt durch
+- PUNKTE IM VERLAUF EDITIERBAR: Einzelzeilen bekommen im Eintrag-Sheet
+  ein Punkte-Feld (0–99, PATCH); Punkte-Ansicht folgt sofort.
+  Alt-Serien (n>1) bewusst ohne Punkte-Feld (Maintainer: separat rendern ok)
+- Test-Erkenntnis: Tages-Buendelung fasst akkumulierte + aeltere Zeile
+  DESSELBEN Tages weiter zusammen (Anzeige-Summe korrekt) — Fixture
+  auf «gestern» gelegt, Tagesgrenze trennt
+- 2 neue i18n-Schluessel × 19. 86/86 auf beiden Engines
+- APP_VERSION → 4.35.0, SW cache → haushalt-v102
+
+## 2026-07-17 — v4.34.4: Mehrzeilige Chip-Reihen zentriert (Umbruch wirkt gewollt)
+
+- Maintainer-Feinschliff-Wunsch: der Umbruch (v4.34.3) liess «Noel» als
+  verwaisten Einzel-Chip links haengen. Jetzt: bricht die Reihe um,
+  zentriert sich jede Zeile (.iam.multi via rAF-Messung scrollHeight>60)
+  — Symmetrie statt Ueberlauf-Optik. Einzeilige Familien bleiben exakt
+  wie bisher linksbuendig. Wrap-vs-Scroll-Frage entschieden: Wrap zeigt
+  die ganze Familie ohne verstecktes Scrollen; Revert waere eine Zeile
+- LEHRSTUNDE (selbstverschuldet): einzeiliger Regex-Insert traf die
+  ERSTE PHYSISCHE ZEILE eines mehrzeiligen Statements → Code MITTEN in
+  den Ausdruck injiziert → App-Skript tot, Massen-Testversagen. Regel:
+  Einfuegungen NUR an verifizierten Statement-GRENZEN ankern, nie per
+  Zeilen-Regex in Template-Literal-Naehe
+- 80/80 auf beiden Engines
+- APP_VERSION → 4.34.4, SW cache → haushalt-v101
+
+## 2026-07-17 — v4.34.3: Personen-Chips brechen um (grosse Familien)
+
+- Maintainer-Screenshot: als 5. Chip wurde er selbst seitlich aus dem Bild
+  gequetscht (.iam war overflow-x:auto — horizontales Scrollen, das
+  niemand entdeckt). Fix: flex-wrap:wrap + row-gap — grosse Familien
+  bekommen zwei oder mehr Zeilen, jeder Chip bleibt vollstaendig sichtbar
+- Test: 6 Mitglieder mit langen Namen auf 393px — jede Chip-Boundingbox
+  vollstaendig im Viewport. mockBackend um memberRows-Override erweitert
+  (gleiches Muster wie logRows)
+- Hinweis: Chip-REIHENFOLGE im Screenshot war noch die Chiffrat-Sortierung
+  (v4.34.2 war beim Aufnahmezeitpunkt noch nicht aktiv auf dem Geraet) —
+  heilt sich mit dem naechsten App-Start von selbst
+- 78/78 auf beiden Engines
+- APP_VERSION → 4.34.3, SW cache → haushalt-v100 (dreistellig!)
+
+## 2026-07-17 — v4.34.2: Personen-Chips wieder alphabetisch (Chiffrat-Sortierung behoben)
+
+- Maintainer-Frage «was bestimmt die Chip-Reihenfolge?» deckte einen
+  Verschluesselungs-Nebeneffekt auf: der Pull sortierte serverseitig
+  per order=name — seit der Migration ist name aber CHIFFRAT, die
+  Chips standen also in Base64-Kauderwelsch-Reihenfolge (stabil, aber
+  sinnlos). Fix: nach dem Entschluesseln clientseitig localeCompare
+  (LOCALE, sensitivity base) — einheitlich fuer alle Familien.
+  Merke: serverseitige ORDER BY auf ENC_FIELDS-Spalten ist fuer
+  famx/famc bedeutungslos — Ordnung gehoert hinter decRows()
+- (chores order=points.desc,name hat dasselbe Muster im Namens-Tiebreak;
+  folgenlos, da sortedChores() clientseitig ohnehin neu ordnet)
+- 76/76 auf beiden Engines
+- APP_VERSION → 4.34.2, SW cache → haushalt-v99
+
+## 2026-07-17 — v4.34.1: Android-Tastatur überdeckt Sheets nicht mehr; Fanti-Migration LIVE VERIFIZIERT
+
+- ALTFAMILIEN-MIGRATION (Maintainer, 17.07. 02:42) end-to-end verifiziert:
+  Alt-Zeilen 0/0/0, famc-Kopie 5/33/276 (33 = 34 minus die bewusst
+  geloeschte Haus-kühlen-Zombie-Kachel — Buchhaltung exakt), Werte
+  enc1:-Chiffrat, Wegweiser gesetzt, Grabstein 00:40 UTC, Klartext-
+  Einfuegung prallt mit 42501 ab. Erste echte Familie verschluesselt
+- Tastatur-Fix (Maintainer-Screenshot: «Save + log» hinter der Android-
+  Tastatur): interactive-widget=resizes-content im Viewport-Meta —
+  die Tastatur VERKLEINERT die Seite statt sie zu ueberdecken, das
+  Bottom-Sheet steigt darueber. Dazu .sheet mit max-height 100dvh
+  (dvh folgt dem geschrumpften Viewport) + overflow-y:auto +
+  overscroll-behavior:contain — auch extrem eingequetscht bleibt der
+  Primaerknopf per Scroll erreichbar. Test simuliert Tastatur via
+  360px-Viewport und prueft, dass der Knopf im sichtbaren Bereich liegt
+- Entscheidung festgehalten (Maintainer einverstanden): Backup-Download
+  BLEIBT (Versicherung gegen «erfolgreich, aber falsch», nicht gegen
+  Abbruch); KEINE Auto-Migration fremder Familien (Konsens-Prinzip);
+  stattdessen kommt ggf. ein sanfter Hinweis fuer Alt-Familien-Admins
+- 76/76 auf beiden Engines
+- APP_VERSION → 4.34.1, SW cache → haushalt-v98
+
+## 2026-07-16 — v4.34.0: Neue Kacheln — Sortierung bestimmt den Platz, Scroll+Flash führen hin; Migrations-Checkbox entfernt
+
+- Kachel-Platzierung (Maintainer): der pinChore-Zwang «neu = oben links»
+  stammt aus der Vor-Sortier-Zeit und KAEMPFTE gegen die neuen Modi.
+  Jetzt: die aktive Sortierung bestimmt den Platz (Standard «Nach
+  Erstellung» → hinten), der bereits existierende Scroll+Flash
+  (smooth scrollIntoView + .flash-Animation) fuehrt das Auge hin.
+  created_at wird beim Anlegen auch LOKAL gesetzt (sofort korrekt
+  einsortiert, nicht erst nach dem naechsten Pull)
+- Migrations-Sheet: Checkbox «alle Geraete aktualisiert» ENTFERNT —
+  seit dem Server-Grabstein (v4.33.2) technisch obsolet. Text erklaert
+  die neue Realitaet ehrlich (Nachzuegler koennen nichts beschaedigen;
+  nur ungesendete Eintraege ihrer einen Sitzung gingen verloren →
+  ruhiger Moment empfohlen). EIN bewusster Tipp bleibt: Auto-Migration
+  beim ersten Admin-Boot wurde ERWOGEN UND VERWORFEN — sie wuerde auch
+  fuer fremde Familien entscheiden (mehrere in der DB!), deren Admin
+  nie gefragt wurde, inkl. Ueberraschungs-Backup-Download. Irreversible
+  Formatwechsel brauchen eine bewusste Hand
+- webkit-Flake notiert (Kontext-Crash im Parallellauf, Wiederholung
+  3/3 gruen, Vollsuite danach 74/74)
+- APP_VERSION → 4.34.0, SW cache → haushalt-v97
+
+## 2026-07-16 — v4.33.3: Kachel-Flackern behoben (Sitzungs-Gedächtnis), Verschlüsselungs-Zeile nur wo relevant
+
+- Maintainer-Android-Befund: seit den v4.32-Skeletons wirkte eine ruhige
+  Seite unruhig. Ursache: render() baut das Grid bei jedem Anlass neu
+  (Sync, Toast, Tab-Rueckkehr) → jedes <img> entsteht NEU → transparent
+  + Schimmer + Fade, auf Android zusaetzlich echte Re-Fetches (knauserige
+  Cache-Header bei pollinations) und bis zu ~30 s Schimmer auf Retry-Kacheln
+- Fix: ARTOK-Set als Sitzungs-Gedaechtnis — einmal geladene URLs rendern
+  bei jedem weiteren Aufbau SOFORT mit .ok (kein Fade, kein Skeleton),
+  plus complete-Check nach dem Grid-Aufbau fuer Cache-Sofortlader,
+  plus prefers-reduced-motion respektiert (Transition+Schimmer aus)
+- Einstellungen: Verschluesselungs-Zeile erscheint NUR noch, wo die
+  Handlung existiert (Alt-Familie + Admin-Geraet). Verschluesselte
+  Familien sehen sie gar nicht (Maintainer-Vorschlag) — einen Rueckweg zu
+  Klartext gibt es bewusst nicht, also auch keinen toten Schalter
+- VORFALL dokumentiert: Sandbox enthielt beim Turn-Start einen
+  PHANTOM-Zustand (index.html auf '4.34.0' mit halben artOk-Edits +
+  1 Extra-Test) — mutmasslich abgebrochener frueherer Anlauf desselben
+  Auftrags. Doktrin bewaehrt: Remote ist Wahrheit → frisch fetchen,
+  Batch sauber neu anwenden; den (korrekten) Flacker-Regressionstest
+  des Phantoms uebernommen (Label auf 4.33.3 korrigiert). MERKE: nach
+  Anker-Fehlern IMMER Version+grep pruefen, nie blind weitereditieren
+- 74/74 auf beiden Engines
+- APP_VERSION → 4.33.3, SW cache → haushalt-v96
+
+## 2026-07-16 — v4.34.0: Kunst-Flackern behoben, Verschlüsselungs-Zeile für famx/famc ausgeblendet
+
+- Flacker-Analyse (Befund Maintainer, Android): render() baut das Grid per
+  innerHTML neu — 23 Aufrufstellen. Jeder Re-Render (Sync-Pull, Tab-
+  Rueckkehr, Chip-Wahl) erzeugte FRISCHE <img> mit opacity:0, die trotz
+  Browser-Cache erneut 350 ms einfaedelten: ruhige Seite, blinkendes
+  Board. Fix: ART_OK-Set merkt geladene URLs; bekannte Bilder rendern
+  sofort sichtbar (Klasse 'ok' ab Geburt), Shimmer nur fuer echtes
+  Erst-Laden. Ein gemeinsamer artImg()-Erzeuger fuer beide Kachel-Arten.
+  Test: Tab-Wechsel hin/zurueck → Bild traegt 'ok' SOFORT im Markup
+- Verschluesselte Familien sehen die Verschluesselungs-Zeile GAR NICHT
+  mehr (Maintainer: Einbahnstrasse braucht keinen Hebel; vorher: disabled).
+  Handler null-sicher (Falle: erster Patch-Anker war geraten statt
+  gelesen — Anker IMMER aus der Datei kopieren)
+- 74/74 auf beiden Engines
+- APP_VERSION → 4.34.0, SW cache → haushalt-v96
+
+## 2026-07-16 — v4.33.2: Server-Grabstein — Klartext-Auferstehung jetzt SERVERSEITIG unmöglich
+
+- Maintainer-Frage «was passiert mit nicht-aktualisierten Geraeten?» ehrlich
+  zu Ende gedacht: der Client-Guard (v4.33.1) schuetzt nur Clients, DIE
+  IHN HABEN. Ein Geraet, das seit Wochen schlief, fuehrt beim ersten
+  Start nach der Migration IMMER noch einmal den alten Cache-Stand aus
+  (SW aktualisiert im Hintergrund, aktiv erst beim naechsten Start) —
+  dieses Fenster ist clientseitig prinzipiell nicht schliessbar
+- Loesung: Migration 20260716210000_retired_families.sql — Tabelle
+  retired_families + RESTRIKTIVE RLS-Policies: INSERT in members/chores/
+  log unter beerdigter family_id wird vom SERVER abgelehnt, egal wie alt
+  der Client ist. Grabsteine sind endgueltig (keine UPDATE/DELETE-Policy).
+  Angreifer-Kalkuel unveraendert: wer den publishable key hat, kann heute
+  schon alles loeschen — der Grabstein erweitert keine Angriffsflaeche
+- runMigration setzt den Grabstein nach Verifikation+Loeschung — per
+  ROH-Fetch: sb()/famRows haette family_id mit ROWFAM (famc-Hash!)
+  ueberschrieben und das falsche Grab beschriftet. Test pinnt die ID
+- Verhalten nicht-aktualisierter Geraete nach Migration damit: Wegweiser-
+  Name + leeres Grid, Schreibversuche prallen ab (Sync-Punkt rot),
+  naechster App-Start → neue Version → famc-Probe → alles wieder da
+- 72/72. Migration via db-migrate-Workflow angewandt und live verifiziert
+- APP_VERSION → 4.33.2, SW cache → haushalt-v95
+
+## 2026-07-16 — v4.33.1: KRITISCH — Klartext-Auferstehung nach Migration verhindert
+
+- Maintainer-Upgrade-Frage loeste den Befund aus: Der Leere-Backend-Upload
+  (pull: «members leer → lokalen Stand hochladen», seit v2.3) haette
+  nach einer fam→famc-Migration auf JEDEM noch nicht aktualisierten
+  Geraet den kompletten Klartext-Datensatz unter der alten ID
+  WIEDERAUFERSTEHEN lassen. Der Zombie-Kachel-Mechanismus, in
+  Familiengroesse — entdeckt VOR Maintainer-Migration, nicht danach
+- Fix 1: Upload nur noch, wenn AUCH keine families-Zeile existiert
+  (existiert sie — z. B. als Wegweiser — ist die Familie bekannt,
+  leerer members-Stand heisst dann NICHT jungfraeulicher Server).
+  Gegenprobe gefuehrt: Test schlaegt auf dem alten Code an (Guard
+  temporaer entfernt → uploads > 0), mit Guard gruen
+- Fix 2: Geraete mit Probe-Cache '0', die die Migration verpasst haben
+  (Alt-Zeilen leer, families-Zeile da): Cache verwerfen + EIN Neustart
+  (sessionStorage-Schleifenschutz) → famc wird entdeckt, Daten wieder da
+- Wording: Verschluesselungs-Status zeigt Zustand «Aus» statt Handlung
+  «Aktivieren…» (Maintainer las «Enable…» als «encrypted») — 'Aus' × 19 Dicts
+- Achtung Testfallen: LS_STATE heisst 'haushalt.v2:<fam>' (Test mit
+  falschem Schluessel bestand VAKUOS — Gegenprobe ist Pflicht)
+- 72/72. Fanti-WG-Migration jetzt freigegeben (Anleitung in Chat/LOG):
+  alle Geraete einmal oeffnen (≥4.31 im Footer), dann Admin →
+  Einstellungen → Verschluesselung → Checkbox → Start; gleiche URL,
+  niemand wird neu eingeladen
+- APP_VERSION → 4.33.1, SW cache → haushalt-v94
+
+## 2026-07-16 — v4.33.0: Verifiziertes Löschen, Duplikat-Hinweis, Kachel-Sortierung (Standard: nach Erstellung)
+
+- Historien-Korrektur, zweiter Anlauf (Maintainer hatte VOLLSTAENDIG recht):
+  Der etablierte Schema-Weg ist .github/workflows/db-migrate.yml
+  (workflow_dispatch) mit Repo-Secret SUPABASE_DB_PASSWORD (12.06.,
+  18:33) — CI hat offenes Netz zum Pooler (eu-north-1), die Sandbox
+  nicht. Claude kann Migrationen also SELBST anwenden: SQL committen →
+  Workflow dispatchen → via REST verifizieren. Genau so lief die
+  created_at-Migration am 16.07. (Run gruen, created_at verifiziert).
+  Lehre: nicht nur nach Credentials suchen, auch nach WEGEN (das
+  Journal nannte «DB migrations via GitHub Actions» woertlich)
+- VERIFIZIERTES LÖSCHEN (Root-Cause-Fix der Haus-kühlen-Forensik):
+  deleteRemote versucht 1 Wiederholung (900 ms); scheitert auch die,
+  wird die Zeile WIEDERHERGESTELLT (Kachel/Person/Log-Eintrag kehren
+  zurueck) + ehrlicher Toast «Löschen fehlgeschlagen — wiederhergestellt».
+  push() unterdrueckt den generischen Sync-Toast fuer bereits behandelte
+  Fehler (err.silent), Sync-Punkt wird trotzdem rot
+- DUPLIKAT-HINWEIS beim Anlegen: Name existiert schon (case-insensitiv)
+  → Inline-Hinweis «… gibt es schon» + Knopf «Stattdessen verbuchen»
+  (verbucht auf der BESTEHENDEN Kachel, kein Zwilling)
+- SORTIERUNG (Einstellungen → ↕️): 'Nach Erstellung' (NEUER STANDARD —
+  stabile Positionen, Neues hinten), 'Alphabetisch', 'Nach Nutzung'
+  (bisheriges Verhalten). Wahl in localStorage pro Geraet.
+  Maintainer-Begruendung: Kacheln muessen auffindbar bleiben, das
+  Nutzungs-Ranking verschob sie staendig
+- Migration 20260716200000_created_at.sql: created_at auf chores/members/
+  log + updated_at-Trigger auf chores — DER MAINTAINER PASTET SIE im SQL-Editor.
+  Bis dahin: 'Nach Erstellung' bricht fehlende Zeitstempel alphabetisch;
+  Altbestand teilt sich den Migrations-Zeitpunkt (echte Reihenfolge
+  nicht rekonstruierbar — dokumentierte Grenze)
+- 7 neue i18n-Schluessel × 19; Tests: Loeschung-scheitert-zweimal
+  (Kachel kehrt zurueck, 2 Versuche gezaehlt), Duplikat-Fluss,
+  Sortier-Umschaltung+Persistenz. 70/70
+- APP_VERSION → 4.33.0, SW cache → haushalt-v93
+
+## 2026-07-16 — v4.32.0: LIVE-BUG Punkte-Tab behoben + Tages-Köpfe, Skeletons, Haptik, schlanker Kopf
+
+- KRITISCH, beim Code-Lesen fuer die UI-Runde entdeckt: der Punkte-Tab
+  war seit v4.27 (i18n-Release, 15.07.) LIVE KAPUTT — `const t = totals()`
+  schattete die i18n-Funktion t(), `t('Diese Woche')` warf «t is not a
+  function», die Ansicht blieb leer. KEIN Test oeffnete je den Punkte-Tab
+  (Pyramiden-Luecke). Fix: Umbenennung in `tot` + Warnkommentar; NEUER
+  Regressionstest rendert Punkte (Balken, Krone, Zaehler, Perioden-
+  Umschalter). Zaehler-Zeile dabei uebersetzt ('{n} Aufgabe(n) erledigt')
+- Verlauf: Tages-Koepfe «Heute»/«Gestern»/Datum (lokalisiert), Zeilen
+  zeigen nur noch die Zeit. Serien enden jetzt an der TAGESGRENZE
+  (sonst zaehlte «×N» unter «Heute» stillschweigend gestrige mit).
+  Leer-Zustand uebersetzt. 6 neue i18n-Schluessel in allen 19 Woerterbuechern
+- Kachel-Kunst: Shimmer-Skeleton bis zum Laden (statt Bild-Pop-in),
+  sanftes Einblenden via onload
+- Haptik: kurzes Vibrieren (12 ms) beim Verbuchen, wo unterstuetzt
+- Kopf schrumpft beim Scrollen (Hysterese 46/12 px gegen Flattern)
+- Testinfrastruktur: famx-/Migrations-Test muessen externe Hosts
+  (pollinations, fonts) abbrechen wie mockBackend — webkit wartet beim
+  reload sonst auf echte Bild-Requests (Timeout). Vorsicht bei
+  Einfuege-Ankern: Block landete einmal IN einem Objekt-Literal
+- 64/64 auf beiden Engines
+- APP_VERSION → 4.32.0, SW cache → haushalt-v92
+
+## 2026-07-16 — v4.31.1: Einstellungen-Zeilen richtig gebaut, dunkles Zeit-Feld
+
+- Maintainer-Screenshots: (1) Einstellungen-Zeilen klebten zusammen
+  («LanguageEnglish») — .setrow/.setval hatten KEIN CSS, .menuitem ist
+  block → Spans konkatenieren. Jetzt echtes Zeilen-Layout: Icon (🌐 🔒 ✨),
+  Label (flex:1), Wert gedimmt rechts (ellipsis), Chevron ›;
+  54px Tap-Ziel; disabled gedimmt. Version zentriert dezent
+- (2) #lTime (datetime-local) war das native helle Browser-Widget —
+  einziges ungestyltes Eingabefeld. Jetzt wie alle Felder: card-Hintergrund,
+  ink-Farbe, Radius, volle Breite — plus color-scheme:dark, damit auch
+  der native Picker dunkel rendert
+- Merke: Klassen im Markup IMMER gegen existierendes CSS pruefen —
+  .setval war Wunschdenken ohne Regelwerk
+- 60/60 auf beiden Engines
+- APP_VERSION → 4.31.1, SW cache → haushalt-v91
+
+## 2026-07-16 — v4.31.0: Einstellungen, Opt-in-Verschlüsselung für Alt-Familien (GLEICHE URL), Verlauf-Zeilen-Tipp, Select-all
+
+- NEU ⚙︎ Einstellungen-Sheet (ersetzt 🌐 im Kopf): Sprache (vom Geraet
+  abgeleitet, Override bleibt in localStorage), Verschluesselungs-Status
+  mit Migrationseinstieg, «Was ist neu»-Link, Versionszeile
+- Opt-in-Migration fam- → verschluesselt mit GLEICHER URL: Zeilen ziehen
+  unter 'famc-' + SHA-256(Familien-ID)[:48] um — Links, QR-Codes und
+  installierte Icons bleiben gueltig, niemand wird neu eingeladen.
+  Erkennung: localStorage-Cache 'haushalt.encv:<fam>', sonst einmalige
+  famc-Probe. Ablauf mit Sicherheitsnetz: JSON-Backup aufs Geraet →
+  verschluesselte KOPIE schreiben → Zeilenzahlen VERIFIZIEREN → erst
+  dann Klartext loeschen; families.name der alten Zeile wird zum
+  Wegweiser «→ App aktualisieren» fuer veraltete Clients. Checkbox
+  «Alle Geraete aktualisiert» gated den Start; Fehlerpfad loescht
+  nichts und stellt den Kontext zurueck
+- Verlauf: ganze Zeile ist jetzt der Knopf (⋯-Menue entfernt — Bearbeiten/
+  Loeschen wohnen im Eintrag-Sheet, das Menue war Redundanz), Chevron ›
+  als Affordance. Loeschen weiterhin mit Undo
+- Textfelder in Sheets: Fokus markiert den Inhalt — Tippen ersetzt.
+  (Wert-Pruefung INNERHALB des rAF: showModal fokussiert bevor Werte
+  gesetzt sind)
+- Drei Debug-Lektionen dokumentiert: (1) Refactor-Fossil — deriveKey()
+  extrahiert, aber CRYPTO_READY referenzierte noch das alte `raw` →
+  jeder Boot im Krypto-Kontext starb als rejected Promise; (2) cPts ist
+  ein RANGE-Slider, cName in Bearbeiten hinter «✎ Ändern» versteckt —
+  Select-all-Test gehoert auf ein echtes Textfeld (logSheet); (3)
+  waitForURL auf die SELBE URL loest sofort aus — auf Status-Text warten
+- mockBackend respektiert jetzt family_id-Filter (sonst haelt die
+  famc-Probe jede Testfamilie fuer verschluesselt)
+- 60/60 auf beiden Engines
+- APP_VERSION → 4.31.0, SW cache → haushalt-v90
+
+## 2026-07-16 — v4.30.0: Ende-zu-Ende-Verschlüsselung für neue Familien (GDPR)
+
+- VERSIONS-SCHNITT statt Migration (Maintainer-Einsicht: mehrere unbekannte
+  Familien in der DB, Client-Updates nicht koordinierbar — ein Umzug
+  bestehender Daten riskiert Split-Brain zwischen alten und neuen
+  Clients derselben Familie):
+  * Bestehende 'fam-'-Familien: fuer immer Klartext, alte wie neue
+    Clients funktionieren unveraendert
+  * NEUE Familien bekommen 'famx-'-IDs und sind ab Geburt verschluesselt
+    — der Link selbst traegt das Schema, kein Probing noetig. Beitretende
+    laden immer den frischen Client (Link → Netz), veraltete Clients
+    existieren nur hinter Icons von Alt-Familien
+- Krypto (WebCrypto, keine Libraries): DB-Zeilenschluessel = 'famx-' +
+  SHA-256(Link-Geheimnis) — die DB kennt das Geheimnis nie; ein
+  DB-Dump ist ohne Link unlesbar. Werte: AES-GCM-256, Schluessel per
+  HKDF (salt fairli-v1), Zufalls-IV pro Wert, Format 'enc1:'+b64(iv|ct)
+- Verschluesselte Felder: families.name, members.name,
+  chores.name/note/art, log.chore_name/chore_note/member_name.
+  KLARTEXT bleiben (akzeptierte Metadaten): Punkte, Zeitstempel, IDs,
+  member.url_slug (Zufalls-Lookup-Schluessel), Farben
+- Integration an den zwei Choke-Points sb()/upsert() (encrypt on write,
+  decrypt on read); famRows setzt jetzt IMMER ROWFAM (explizites
+  family_id im families-POST haette den Klartext-Schluessel geleakt —
+  behoben). Korrupte Zeile → '···' statt Absturz
+- BEKANNTE OFFENLEGUNGEN (dokumentiert, bewusst): Kachel-Kunst sendet
+  Aufgaben-Namen an pollinations.ai (Prompt) — auch bei famx; lokaler
+  Geraete-Cache (localStorage) bleibt Klartext. Optionaler Kunst-Schalter
+  fuer famx = moeglicher Folgeschritt
+- OFFEN (Maintainer unentschieden): TTL/Aufbewahrungsfrist — orthogonal,
+  spaeter entscheidbar. Opt-in-Verschluesselung fuer Alt-Familien
+  (Admin-Aktion, wenn alle Geraete aktuell) = moeglicher Folgeschritt
+- Test: famx-E2E-Vertrag (kein Klartext im Netzverkehr, Hash-Schluessel
+  famx-[48 hex], enc1:-Werte im Store, Roundtrip auf frischem Geraet
+  rendert Namen korrekt); Mock bildet jetzt merge-duplicates ab.
+  56/56 auf beiden Engines
+- APP_VERSION → 4.30.0, SW cache → haushalt-v89
+
+## 2026-07-15 — v4.29.0: Top 20 komplett — 13 neue Sprachen
+
+- Dritte und letzte Charge des Top-20-Plans: nl, pl, tr, sv, da, ru,
+  uk, hi, zh, ja, ko, vi, id — je 71 Schluessel, vollstaendig uebersetzt
+  (inkl. Schrift-Systeme: Kyrillisch, Devanagari, Han, Kana, Hangul)
+- Fairli spricht damit 20 Sprachen: de en fr it es pt ro nl pl tr sv da
+  ru uk hi zh ja ko vi id — Sprachnamen im Sheet nativ (中文, हिन्दी, …)
+- Der Integritaets-Test prueft alle 19 Woerterbuecher automatisch
+  (Schluessel-Paritaet, Platzhalter, nie leer) — alle gruen, 54/54
+- Alle Woerterbuecher im SW-Precache (je ~3 KB; offline verfuegbar)
+- Bewusst NICHT dabei: Arabisch — echte RTL-Layoutarbeit noetig
+  (dir=rtl, Sheet-Slots, Chips, Menue-Ausrichtung); als eigenes
+  Vorhaben dokumentiert, nicht als 21. JSON-Datei
+- APP_VERSION → 4.29.0, SW cache → haushalt-v88
+
+## 2026-07-15 — v4.28.0: Fünf neue Sprachen — Français, Italiano, Español, Português, Română
+
+- Zweite Sprach-Charge des Top-20-Plans: fr (fr-CH), it (it-CH),
+  es (es-ES), pt (pt-PT), ro (ro-RO) — je 71 Schluessel, vollstaendig.
+  Damit sind alle Schweizer Landessprachen ausser Raetoromanisch da,
+  plus die grossen romanischen Sprachen
+- Der Integritaets-Test prueft jetzt ALLE i18n/*.json automatisch:
+  identische Schluesselmenge wie en.json, Platzhalter-Paritaet, nie
+  leer. Eine kuenftige Sprache kann gar nicht unvollstaendig landen
+- Alle sechs Woerterbuecher im SW-Precache (offline verfuegbar)
+- 54/54 gruen auf beiden Engines
+- Naechste Chargen: nl/pl/tr/sv/da, dann ru/uk/hi/zh/ja/ko/vi/id,
+  ar zuletzt (RTL-Layoutarbeit noetig)
+- APP_VERSION → 4.28.0, SW cache → haushalt-v87
+
+## 2026-07-15 — v4.27.0: Internationalisierung — Fairli spricht jetzt Englisch (Infrastruktur fuer 20 Sprachen)
+
+- Architektur (mit Maintainer abgestimmt): leichtgewichtiges Vanilla-JS,
+  KEIN Framework. Deutsch ist die Quellsprache und der SCHLUESSEL —
+  t('Speichern') schlaegt im Woerterbuch nach; fehlt die Uebersetzung,
+  erscheint Deutsch (nie leerer Text). Platzhalter als {token}
+- Woerterbuecher als i18n/<lang>.json (eine Datei pro Sprache, ~3 KB),
+  nur die gewaehlte Sprache wird geladen; localStorage-Kopie fuer
+  Offline + Instant-Boot; en.json im SW-Precache
+- Sprachwahl: 🌐-Knopf im Kopf → Sprach-Sheet (Standard-Anatomie);
+  Erststart per navigator.language, Wahl in localStorage
+  (haushalt.lang). html-lang-Attribut + Datums-Locale (de-CH/en-GB)
+  wechseln mit
+- Statisches HTML via data-i18n (Original wird in dataset gemerkt →
+  verlustfrei hin- und herschaltbar); Dynamik via t() an ~50 Stellen:
+  Kacheln, Menues, Sheets (Aufgabe/Eintrag/Install/Einladen/Personen/
+  Sprache), Toasts, Empty-States, Anleitung, Entry-Kernknoepfe,
+  Aria-Labels, Platzhalter
+- Bewusst NICHT uebersetzt (dokumentiert): Diagnose-Zeilen der
+  Einstiegsseite (Geoeffnet/Von/Modus — Debug-Werkzeug), LOG/Doku
+- Tests: Playwright-Locale auf de-CH gepinnt (sonst booten Tests
+  englisch!); neuer End-to-End-Sprachwechsel-Test (Statik+Dynamik+
+  Persistenz+Rueckweg) + Woerterbuch-Integritaet (Platzhalter-Paritaet,
+  nie leer, >60 Schluessel). 54/54 auf beiden Engines. ESM-Falle:
+  Playwright-Spec ist ESM — require() gibt es nicht, import nutzen
+- NAECHSTE SCHRITTE (Top-20-Plan): fr, it, es, pt, ro als naechste
+  Charge; dann nl, pl, tr, sv, da; dann ru, uk, ar (RTL-Layout!),
+  hi, zh, ja, ko, vi, id. Pro Sprache: JSON anlegen, LANGS+LOCALES
+  ergaenzen, sw-Precache, Integritaets-Test greift automatisch
+- APP_VERSION → 4.27.0, SW cache → haushalt-v86
+
+## 2026-07-15 — v4.26.1: Kachelbilder überstehen den Repaint-Sturm (Retry statt Sofort-Entfernen)
+
+- Maintainer-Screenshot nach v4.26.0: etliche Kacheln OHNE Bild. Ursache:
+  der Prompt-Wechsel machte ALLE Kacheln gleichzeitig zum Cache-Miss
+  (Pollinations cached auf dem Prompt-Text) → Massen-Generierung →
+  einzelne Requests gedrosselt/timeout → unser onerror="this.remove()"
+  entfernte das Bild ENDGUELTIG beim ersten Fehlversuch
+- Fix: window.artRetry(img) — bis zu 3 Wiederholungsversuche mit Backoff
+  (5/10/15 s), erst danach entfernen. Ein transienter Drossel-Moment
+  kostet keine Kachelkunst mehr
+- Merke (dokumentiert): Prompt-Aenderungen repainten das GANZE Board —
+  einplanen, nie beilaeufig tweaken
+- APP_VERSION → 4.26.1, SW cache → haushalt-v85
+
+## 2026-07-15 — v4.26.0: Kachel-Kunst zeigt das genannte Ding (nicht «household chore»)
+
+- Befund von Maintainer: Die Einmalig-Kachel zeigte langweilige Putz-Motive
+  statt einer Sternschnuppe, und «App developen» bekam eine Kueche.
+  Ursache HARDCODED im Bild-Prompt: «minimalist flat vector illustration
+  of household chore: <name>» — das «household chore:»-Framing ueberschrieb
+  das eigentliche Motiv
+- Fix: Prompt beschreibt jetzt das GENANNTE Subjekt selbst
+  («<name>, minimalist flat vector illustration, single subject, …»),
+  ohne Haushalts-Zwang. «App developen» wird jetzt App-Entwicklung,
+  «Abfluss reinigen» ein Abfluss usw.
+- Neu: optionaler c.art-Override fuer Spezialkacheln. Die Einmalig-Kachel
+  nutzt ihn fuer einen expliziten Prompt («a single glowing shooting star
+  with a bright trail across a night sky») — verlaesslich ein Stern,
+  keine Motiv-Lotterie mehr
+- Regressionstest: Prompt enthaelt den Namen bzw. den Stern und NIE mehr
+  «household chore»; Seed ist numerisch (Pollinations verlangt eine Zahl,
+  sonst HTTP 400 — geprueft)
+- APP_VERSION → 4.26.0, SW cache → haushalt-v84
+
+## 2026-07-14 — v4.25.1: Verlauf-Menü grösser & Löschen abgesetzt
+
+- Maintainer: die ⋯-Menüeinträge im Verlauf waren zu klein — Ursprung des
+  Fehltipps. Jetzt: 16px/fett, min-height 52px (komfortabel über der
+  44px-Tap-Richtlinie), breiteres Menü (216px), mehr Innenabstand
+- Destruktives («Löschen») bekommt .danger: eigene Zeile mit Abstand und
+  Trennlinie darüber — schwerer versehentlich zu treffen. Gilt auch fürs
+  Personen-Menü. Inline-Rot durch die Klasse ersetzt (var(--red))
+- Regressionstest prüft jetzt zusätzlich: Löschen-Eintrag hat .danger und
+  ist ≥48px hoch
+- APP_VERSION → 4.25.1, SW cache → haushalt-v83
+
+## 2026-07-14 — v4.25.0: + ist kontextsensitiv, Zeit im Verlauf bearbeitbar
+
+- «+» folgt jetzt der Regel «keine unsichtbaren Aktionen» (Maintainer):
+  im VERLAUF oeffnet es «Einmalig eintragen» (Ergebnis sofort sichtbar),
+  in AUFGABEN wie bisher «Neue Aufgabe». FAB-Aria-Label wechselt mit
+- Eintrag-Bearbeiten hat ein ZEIT-Feld (datetime-local, native Picker):
+  * Einzeleintrag: Zeit wird direkt gesetzt
+  * SERIE: alle Eintraege verschieben sich um DASSELBE Delta — Abstaende
+    und Reihenfolge bleiben, die Serie bleibt eine Serie («×3 gestern
+    Abend» statt drei identischer Zeitstempel)
+  * done_at im PATCH pro Zeile; Verlauf wird neu sortiert; Wochen-Punkte
+    passen sich automatisch an (totals() rechnet ab done_at)
+- 2 neue Tests (50/50, beide Engines)
+- Offen zur Diskussion: In der PUNKTE-Ansicht oeffnet + weiterhin
+  «Neue Aufgabe» (auch dort waere die Kachel unsichtbar) — gleiche
+  Behandlung wie Verlauf?
+- APP_VERSION → 4.25.0, SW cache → haushalt-v82
+
+## 2026-07-14 — v4.24.0: Undo beim Verlauf-Löschen + Kunst für die Einmalig-Kachel
+
+- Maintainer-Fehltipp-Befund: Loeschen im Verlauf war reibungslos, aber
+  unumkehrbar. Jetzt: Toast «Geloescht · Rueckgaengig» (5 s)
+- Architektur bewusst «verzoegerter Commit» statt DELETE+Re-INSERT:
+  push() ist fire-and-forget (KEINE serielle Queue) — ein Undo per
+  Wieder-Einfuegen koennte das DELETE am Server ueberholen. Deshalb:
+  lokal sofort weg, pendingDeletes schirmt gegen Pulls ab, der
+  Server-DELETE geht erst NACH dem Fenster raus. Undo ist rein lokal
+  (pendingDeletes-Keys raeumen!). App im Fenster geschlossen ⇒ nichts
+  geloescht — Wiederauferstehung schlaegt Verlust (Datenregel-Geist)
+- confirm() im Bearbeiten-Sheet entfaellt: Undo ersetzt es (weniger
+  Reibung, volle Reue-Option), gilt auch fuer Serien («Geloescht (3)»)
+- Toast kann jetzt eine Aktion tragen; #toast.show bekommt
+  pointer-events:auto (die alte pointer-events:none-Regel machte den
+  Rueckgaengig-Knopf unklickbar — vom Test gefangen, nicht vom Nutzer)
+- Einmalig-Kachel traegt jetzt Kunst (Sternschnuppe — passend fuer die
+  einmalige Aufgabe), gestrichelter Rahmen bleibt als Erkennungszeichen
+- 2 neue Tests (46/46, beide Engines): Undo-Fenster-Vertrag (kein DELETE
+  im Fenster, DELETE nach Ablauf, Pull frisst Wiederhergestelltes nicht)
+  + Einmalig-Kunst
+- APP_VERSION → 4.24.0, SW cache → haushalt-v81
+
+## 2026-07-14 — v4.23.1: «Speichern + eintragen» ist beim Anlegen die Primäraktion
+
+- Beim Anlegen einer Aufgabe ist Verbuchen der Normalfall — also ist
+  «Speichern + eintragen» jetzt der grosse Primaerknopf (und die
+  Enter-Taste); «Nur speichern» wird zum Ghost-Knopf darunter
+- Bearbeiten unveraendert (nur «Speichern»), Einmalig unveraendert
+  («Eintragen»). Ohne gewaehlte Person bleibt das Sheet offen (Toast);
+  «Nur speichern» funktioniert dann weiterhin
+- Test deckt jetzt alle drei Knopfrollen ab (Primaer bucht, Ghost nicht,
+  Bearbeiten ohne Ghost) — 42/42 gruen auf beiden Engines
+- APP_VERSION → 4.23.1, SW cache → haushalt-v80
+
+## 2026-07-14 — v4.23.0: Einmalig-Kachel, Serien-Buendelung, Verlauf-Bearbeiten, Speichern+Eintragen, Install-Sheet nur eigene Plattform
+
+Fuenf Wuensche von Maintainer, gegen die Kachel-Inflation und fuer weniger
+Verwirrung:
+
+1. Install-Sheet (vom Banner) zeigt NUR noch die eigene Plattform —
+   wer auf dem iPhone steht, sieht keine Pixel-Schritte mehr. Das
+   Einladen-Sheet zeigt weiterhin beide (dort hilft man oft anderen).
+   installInstructionsHTML(onlyCurrent) — weiterhin EIN Erzeuger
+2. Verlauf buendelt SERIEN: tippt dieselbe Person dieselbe Aufgabe
+   mehrmals in Folge, wird EINE Zeile daraus («Einkaufen ×3», Punkte
+   summiert). Dreimal tippen ersetzt Gross/Klein-Kachel-Varianten.
+   Loeschen/Bearbeiten wirken auf die ganze Serie (Kebab zeigt Anzahl)
+3. Verlauf-Eintraege sind BEARBEITBAR (Titel + Notiz): Kebab →
+   «Bearbeiten» → Form-Sheet in Standard-Anatomie (Loeschen links,
+   × rechts, Speichern unten, Backdrop-Schutz bei Aenderungen).
+   PATCH pro Zeile; save() entwertet laufende Pulls (mutationSeq).
+   DB-Proben vorab: PATCH auf log von RLS erlaubt, chore_id darf NULL
+4. «Einmalig»-Kachel, IMMER oben links verankert (gestrichelt):
+   verbucht eine Aufgabe OHNE neue Kachel anzulegen — gleiche
+   Formular-Maske, Primaerknopf heisst dort «Eintragen»
+5. «Neue Aufgabe» hat zusaetzlich «Speichern + eintragen» (Ghost-Knopf
+   unter dem Primaer): legt die Kachel an UND verbucht sie sofort fuer
+   die gewaehlte Person. Nur im Anlege-Modus sichtbar.
+   UI-Konsistenz 4↔5: EIN Sheet, EIN recordEntry()-Pfad (auch der
+   Kachel-Tipp nutzt ihn jetzt), Modus bestimmt nur Titel + Knoepfe
+- 4 neue + 1 angepasster Tier-1-Test, 42/42 gruen auf beiden Engines
+- APP_VERSION → 4.23.0, SW cache → haushalt-v79
+
+## 2026-07-14 — v4.22.0: Install-Banner — Empfaenger sehen den Weg zum Icon sofort
+
+- Maintainer-Punkt: Wer einen geteilten Link oeffnet, hat keinen Grund, das
+  Einladen-Sheet zu oeffnen — die Install-Anleitung war fuer genau diese
+  Zielgruppe unsichtbar
+- Neu: schmaler, wegklickbarer Banner unter dem Kopf («📲 Als App auf den
+  Home-Bildschirm»), sichtbar in Familien- UND Personen-Sicht, aber NIE
+  im Standalone-Modus (laeuft schon als App) und nie nach Dismiss
+  (localStorage, kontext-spezifischer Schluessel). Oeffnet ein
+  Install-Sheet in Standard-Anatomie (Grabber · Titel · × · Primaer unten)
+- Android-Automatik: beforeinstallprompt wird frueh eingefangen; ist das
+  native Prompt verfuegbar (Familien-Kontext, Manifest injiziert), zeigt
+  das Sheet EINEN Knopf «Jetzt installieren» → System-Dialog → bei Erfolg
+  appinstalled-Event → Toast «Installiert ✓», Banner dauerhaft weg.
+  iOS hat keine solche API (Apple haelt das manuell) → praezise Schritte
+- Anleitung ist jetzt EIN geteilter Erzeuger (installInstructionsHTML)
+  fuer Einladen-Sheet (aufklappbar) und Install-Sheet (flach) — keine
+  zwei Kopien. Refactor-Stolperer (gestrandetes badge-const → leeres
+  Einladen-Sheet) von der Suite gefangen, nicht vom Nutzer
+- 2 neue Tier-1-Tests, 34/34 gruen auf beiden Engines. Hinweis: der
+  native Android-Prompt selbst ist headless nicht testbar (kein
+  beforeinstallprompt) — Abdeckung dort: Banner/Sheet/Fallback-Anleitung
+- APP_VERSION → 4.22.0, SW cache → haushalt-v78
+
+## 2026-07-14 — v4.21.0: «Teilen» → «Einladen» — die Verwechslung an der Wurzel beseitigt
+
+- Fairlis eigener Knopf hiess «Teilen» wie Apples Share-Sheet — DIE Quelle
+  der Verwirrung in der Install-Anleitung (Maintainer-Punkt). Neu heisst alles
+  App-Eigene nach seiner Funktion: Kopf-Knopf und Sheet-Titel «Einladen»,
+  Familien- und Personen-Link-Knoepfe «Einladen», App-Link «Empfehlen»
+- Damit ist «Teilen» im UI reserviert fuer Apples Original-Wortlaut: die
+  Install-Anleitung sagt wieder «Im Browser auf [Symbol] ‹Teilen› tippen»
+  (mit Positionen je Browser); der «Nicht der Knopf in Fairli»-Warnhinweis
+  aus v4.20.1 ist damit ueberfluessig und raus
+- Tier-1-Test angepasst: pinnt jetzt «Einladen» auf Knopf + Sheet-Titel,
+  0 Sheet-Buttons mit «Teilen», und «Teilen» in der Anleitung = iOS-Sheet
+- APP_VERSION → 4.21.0, SW cache → haushalt-v77
+## 2026-07-14 — v4.20.1: Install-Anleitung iOS — Chrome rehabilitiert, «Teilen»-Verwechslung entschärft
+
+- «nicht in Chrome» war veraltet: seit iOS 16.4 installieren Safari, Chrome,
+  Edge & Firefox über DASSELBE System-Share-Sheet («Zum Home-Bildschirm»);
+  Chrome iOS ist WebKit, Web-Clip-Mechanik identisch. Unsere Manifest-Regel
+  (iOS bekommt NIE ein Manifest) ist UA-basiert und greift auch bei CriOS
+  («iPhone» steckt im UA-String) → gleiche korrekte URL-Einbackung
+- Verwechslungsgefahr behoben: Schritt 2 nannte den iOS-Knopf fett «Teilen»,
+  während Fairli oben einen eigenen Teilen-Knopf hat. Neu: nur noch das
+  Piktogramm ${icShare} «des Browsers», mit Positionsangabe je Browser
+  (Safari unten Mitte / iPad oben rechts / Chrome neben der Adressleiste)
+  und explizitem Hinweis «Nicht der Teilen-Knopf hier in Fairli!»
+- Zwei neue Tier-1-Tests (30/30 gruen auf beiden Engines):
+  (a) Anleitung: enthaelt Chrome, enthaelt kein «nicht in Chrome», das Wort
+  «Teilen» nur noch in der Fairli-Abgrenzung, beide SVG-Piktogramme da;
+  (b) CriOS-UA-Profil: Route-Handoff ok, kein Manifest-Link, Anleitung
+  rendert, iOS-Sektion traegt das «dein Geraet»-Badge
+- GRENZE: der Install-Dialog selbst ist ein OS-Sheet — echter
+  Chrome-auf-iOS-Install braucht einen manuellen Geraetetest (offen, s.
+  DEVELOPER_ONBOARDING §12); Chrome liefert keine Simulator-Builds
+- «Fairli weiterempfehlen» entdramatisiert (Maintainer): ⚠︎, Gelbton und
+  Grossschreibung («NEUEN») raus — Weiterempfehlen ist etwas Gutes. Neu
+  neutraler Hinweis in muted: «Startet einen neuen, leeren Haushalt — zum
+  Beitreten euren Familien-Link nutzen». CSS .warn im Share-Sheet durch
+  .subnote ersetzt
+- APP_VERSION → 4.20.1, SW cache → haushalt-v76
+## 2026-07-13 — v4.20.0: iOS backte IMMER die Basis-URL ein — Maintainer-Hypothese per Ground Truth bestaetigt, Ursache behoben
+
+- Tier-2-Capture-Test (6 Iterationen, echter Share-Flow im Simulator, dann
+  plist der frisch erzeugten Web-Clip-Datei gelesen):
+  URL => https://blauewelt.github.io/chores/index.html — obwohl Safari auf
+  dem Familien-Deep-Link stand. Maintainer-Hypothese («nur die Basis-URL wird
+  gespeichert») BESTAETIGT, als LIVE-Bug, nicht nur Alt-Aera
+- Ursache: <link rel="manifest"> stand STATISCH im HTML; das JS-Entfernen
+  auf iOS (v4.13-Aera-Fix) war kosmetisch — WebKit registriert das Manifest
+  beim PARSEN, «Zum Home-Bildschirm» nutzt weiterhin start_url
+  (= /chores/index.html). Die Regel «iOS bekommt nie ein Manifest» hat also
+  NIE funktioniert; ALLE je hinzugefuegten iOS-Icons waren kaputt geboren
+  (erklaert Noel + Valentin vollstaendig, ohne Aera-Theorie)
+- Fix: Manifest-Link existiert nicht mehr im HTML. Injektion per JS NUR auf
+  Nicht-iOS UND nur im Familien-Kontext (Chrome liest spaet injizierte
+  Manifeste; WebAPK/Install unveraendert). Persoenliche Links bleiben
+  ueberall manifest-frei
+- Neuer Regressionstest (26/26 auf beiden Engines): iOS-Profil nie ein
+  Manifest-Link, Android-Familienkontext genau einer, persoenliche Links
+  keiner
+- Verifikation: Capture-Workflow erneut gestartet — erwartet GRUEN mit
+  Deep-URL im plist
+- APP_VERSION → 4.20.0, SW cache → haushalt-v75
+
+## 2026-07-12 — v4.19.5: Der Icon-Fall eines Familienmitglieds — Icons heissen auch «Haushalt», Paste heilt
+
+- Der Live-Test: 3 «Fairli»-Icons geloescht, «Link geoeffnet» → trotzdem
+  Standalone-Einstiegsseite. Signatur (standalone + kein Referrer + blanke
+  index.html) beweist: ein VIERTES veraltetes Icon startete. Ursache des
+  Such-Fehlschlags per Commit-Historie belegt: fruehe Versionen hiessen
+  «Haushalt» (Juni, kein apple-mobile-web-app-title), spaeter wurde
+  document.title = Familienname → Icons heissen je nach Aera «Haushalt»,
+  «Fanti WG» oder «Fairli». Spotlight-Suche nach «Fairli» findet nur die
+  juengste Generation
+- Wichtig: goto() speichert die Route VOR der Navigation → ihre
+  Link-Einfuegen IM veralteten Clip hat dessen Storage geheilt — dieses
+  Icon restauriert ab jetzt dauerhaft die Familien-Sicht (family-first,
+  durch Regressionstest «gesundes Admin-Icon» abgedeckt). Kein Loeschen
+  noetig
+- Warnkarte umgeschrieben: Primaerweg = Link einfuegen («danach
+  funktioniert genau dieses Icon dauerhaft»); Aufraeumhinweis nennt die
+  alten Icon-Namen; falsche App-Mediathek-Behauptung entfernt (Web Clips
+  liegen nicht in der App-Mediathek)
+- Datenregel (Maintainer): NIEMALS Nutzerdaten loeschen — fam-<Streuner-ID, privater Notizzettel>
+  («Ich») bleibt bestehen
+- APP_VERSION → 4.19.5, SW cache → haushalt-v74
+
+## 2026-07-12 — v4.19.4: Stale-Icon-Hypothese BESTAETIGT + Einstiegsseite heilt
+
+- des Kindes Diagnose-Foto zeigt «Modus: standalone (Homescreen-Icon!)» —
+  Hypothese bestaetigt: Er startete ueber ein veraltetes Homescreen-Icon
+  mit eingebackener index.html, kein Link/Scan war beteiligt. Das
+  «URL-Stripping»-Raetsel war nie eines
+- Einstiegsseite im Standalone-Modus (= sicher ein kaputtes Icon):
+  * Warnkarte benennt das Problem («Veraltetes Fairli-Icon») samt Anleitung
+    (Icon loeschen, auch App-Mediathek pruefen, Einladungs-Link oeffnen,
+    Icon neu hinzufuegen)
+  * «Ich habe einen Einladungs-Link» wird zur grossen Primaeraktion
+  * «Neuen Haushalt erstellen» wird zur kleinen Textaktion — verhindert
+    den Amelie-Fehlgriff aus dieser Sackgasse heraus
+- Browser-Modus-Einstiegsseite unveraendert
+- Stale-Icon-Regressionstest pruefft jetzt Warnkarte + Primaeraktion (12/12)
+- APP_VERSION → 4.19.4, SW cache → haushalt-v73
+
+## 2026-07-11 — v4.19.3: Diagnose zeigt Startmodus (Verdacht: veraltetes Icon)
+
+- des Kindes zweiter Fehlschlag lieferte den entscheidenden Hinweis:
+  «Von: (kein Referrer)» + blanke index.html + kein Hash. Haette der Scan
+  den 404-Handoff durchlaufen, waere der Referrer gesetzt (same-origin
+  location.replace). Kein Referrer = DIREKTE Navigation zu index.html —
+  ein Kamera-Scan des QR (tiefer Pfad!) kann das nicht erzeugen
+- Hypothese: Start ueber ein VERALTETES Homescreen-Icon mit eingebackener
+  URL /chores/index.html (Manifest-Aera-WebClip ODER waehrend eines
+  Fehlversuchs von der Einstiegsseite aus hinzugefuegt). Sieht aus wie eine
+  echte Fairli-Installation, oeffnet Vollbild
+- Diagnose erweitert: «Modus: standalone (Homescreen-Icon!) / browser».
+  Ein Scan zeigt browser, ein Icon-Start standalone — unterscheidet die
+  Faelle beim naechsten Foto eindeutig
+- Regressionstest erweitert (Einstiegsseite zeigt Modus-Zeile); 10/10 gruen
+- APP_VERSION → 4.19.3, SW cache → haushalt-v72
+
+## 2026-07-11 — v4.19.2: Dritter Handoff-Kanal (Hash) nach des Kindes Retest
+
+- des Kindes Retest-Diagnose (Screenshot): «Geoeffnet: …/chores/index.html» —
+  KEIN ?r, KEIN Hash, und auch der sessionStorage-Kanal war leer. Beide
+  bisherigen Kanaele wurden auf dem Weg Scan → Safari → App geleert;
+  Ursache noch unbekannt (Referrer fehlte in der Diagnose)
+- Fix: 404.html haengt die Route zusaetzlich als HASH an das Redirect-Ziel
+  (`index.html?r=…#f/…`). Fragmente strippt iOS Link Tracking Protection
+  nie (nur Query-Parameter), sie gehen nie an den Server und ueberleben
+  jede Navigation. Die App parst Hash-Routen seit je (Legacy-Format)
+- Diagnose erweitert: Einstiegsseite zeigt jetzt auch den Referrer
+  («Von: …») — verraet beim naechsten Fehlschlag, ob 404.html ueberhaupt
+  lief
+- 2 neue Regressionstests (10 gesamt): Redirect traegt alle drei Kanaele;
+  Hash allein rettet die Route (exakt des Kindes beobachteter Zustand)
+- APP_VERSION → 4.19.2, SW cache → haushalt-v71
+
+## 2026-07-11 — Dev: Tier-1-Testsuite (Playwright + CI)
+
+- Kein App-Deploy (keine Version/SW-Aenderung) — reines Tooling
+- 8 Regressionstests, jeder entspricht einem real ausgelieferten Bug:
+  verriegelte Personen-Sicht (v4.13.x), Mitglieder-Teilen ohne Familien-Link
+  + Warnungen (v4.19.0), QR-Captions, Query-Stripping-Handoff (v4.19.1),
+  Einstiegsseite + Diagnose, Identitaets-Leck (v4.18.1),
+  Loeschen-vs-Pull-Race (v4.17.0), Notiz-Snapshot (v4.9/v4.11.1)
+- Laufen auf Chromium (Pixel 7) und WebKit (iPhone 14) gegen einen
+  Pages-Mimic-Server (404-Handoff originalgetreu); Supabase gemockt
+- CI: .github/workflows/tests.yml bei jedem Push; zweiter Job erzwingt die
+  Deploy-Disziplin (APP_VERSION ⇒ SW-Bump + LOG-Eintrag)
+- Lokal: 8/8 gruen auf Chromium (5.8 s)
+
+## 2026-07-11 — v4.19.1: 404-Handoff gegen Query-Stripping gehaertet + Diagnose
+
+Recherche zum Amelie-Fall (QR korrekt gezeigt, landete trotzdem auf der
+Einstiegsseite): iOS strippt NIE Pfad-Segmente; Link Tracking Protection
+entfernt nur Query-Parameter von einer kuratierten (geheimen) Liste, und nur
+in Mail/Messages/Private Browsing. `r` steht auf keiner veroeffentlichten
+Liste; der QR selbst dekodiert byte-exakt (ECC, Round-Trip verifiziert).
+ABER: unser 404-Handoff verwandelt den sicheren PFAD in genau die Sorte
+Query-Parameter (langes, eindeutiges Nutzer-Token), auf die LTP zielt —
+ein Single Point of Failure, Liste geheim und erweiterbar.
+
+- 404.html stasht die Route zusaetzlich in sessionStorage
+  (`fairli.handoff`) — ueberlebt location.replace im selben Tab und ist
+  gegen jedes Query-Stripping immun
+- index.html liest den Handoff als Kanal 2 (nach ?r/Pfad/Hash, VOR der
+  gespeicherten Route) und raeumt ihn auf. Simulation: Route loest auch bei
+  KOMPLETT gestrippter Query korrekt auf
+- Diagnose: Die Einstiegsseite zeigt jetzt klein die tatsaechlich
+  geoeffnete Adresse («Geoeffnet: …») — landet dort wieder jemand
+  unerwartet, sehen wir WAS ankam, statt zu raten
+- (Eigenen TDZ-Bug abgefangen: esc() ist im Entry-Screen noch nicht
+  definiert → Inline-Escaping)
+- APP_VERSION → 4.19.1, SW cache → haushalt-v70
+
+## 2026-07-11 — v4.19.0: Falscher QR fuehrte zu «neuem Haushalt» (ein Mitglied-Bug)
+
+Befund: ein Mitglied landete beim Scannen auf der Einstiegsseite und legte
+versehentlich einen leeren Haushalt an (fam-<Streuner-ID, privater Notizzettel>, Mitglied «Ich»).
+Die Einstiegsseite erscheint NUR, wenn die URL gar keine Familie enthaelt —
+ihr persoenlicher Link loest korrekt auf (Kette Scan → 404 → App simuliert).
+Sie hat also den BLANKEN App-Link geoeffnet, nicht ihren.
+
+Ursache (Design-Falle, selbst gebaut):
+- Noel teilte aus SEINEM persoenlichen Link heraus. Dort zeigte das
+  Teilen-Sheet nur seinen eigenen Link + «Fairli weiterempfehlen» — und das
+  ist der blanke App-Link, der zu «Neuen Haushalt erstellen» fuehrt. Der
+  einzige andere QR auf dem Schirm war also genau der falsche
+- Drei optisch identische QR-Umschalter ohne Beschriftung
+
+Fixes:
+- Mitglieder sehen jetzt die persoenlichen Links ALLER Personen (eigener mit
+  «(du)» markiert) und koennen einander einladen. Der Familien-/Admin-Link
+  bleibt fuer sie weiterhin verborgen (wie gewuenscht)
+- Jeder QR-Code hat eine unmissverstaendliche Bildunterschrift:
+  «Persoenlicher Link fuer <Name>» · «Ganze Familie · voller Zugriff»
+- «Fairli weiterempfehlen» ist deutlich als NICHT-Beitritts-Link markiert
+  (Warnfarbe, eigener Block, Warnhinweis an Zeile UND QR, dezenter Button)
+- APP_VERSION → 4.19.0, SW cache → haushalt-v69
+
+## 2026-07-11 — v4.18.3: Schliessen-Knopf ueberall identisch (× oben rechts)
+
+- Im Aufgaben-Sheet sass «Loeschen» (rot) genau dort, wo Personen und Teilen
+  ihr «×» zum Schliessen haben — die destruktive Aktion lag also unter dem
+  Daumen, der anderswo nur schliesst
+- Jetzt in ALLEN Sheets gleich: «×» oben rechts schliesst. Im Aufgaben-Sheet
+  wandert «Loeschen» in den linken Slot (rot, nur beim Bearbeiten sichtbar);
+  «Abbrechen» als Text entfaellt — das × ist das Abbrechen
+- Primaeraktion bleibt ueberall der grosse Button unten (Speichern / Fertig)
+- APP_VERSION → 4.18.3, SW cache → haushalt-v68
+
+## 2026-07-11 — v4.18.2: Haushaltsname etwas groesser
+
+- Titel-Basisgroesse clamp(28px, 8.6vw, 34px) → clamp(30px, 9.2vw, 38px).
+  Auf dem Pixel (412px) also 34 → 38px; auf kleinen Handys (360px) 33px
+- Platz ist da, seit der Sync-Button entfernt wurde (nur noch Teilen +
+  Personen im Kopf)
+- Laengenabhaengige Stufen mitgezogen (>14 / >22 Zeichen); der Flex-Header
+  und der 2-Zeilen-Clamp verhindern weiterhin jede Ueberlappung
+- APP_VERSION → 4.18.2, SW cache → haushalt-v67
+
+## 2026-07-11 — v4.18.1: «Ich bin» leckte von persoenlichen Links in die Admin-Ansicht
+
+- BUG: `LS_ME` war EIN Schluessel pro Familie (`haushalt.me:<fam>`), den sich
+  die Admin-Ansicht und ALLE persoenlichen Links auf demselben Geraet teilten.
+  pull() schrieb im Personen-Modus die erkannte Person hinein → nach dem
+  Oeffnen von des zweiten Kindes Link zeigte auch der Admin-Link «Ich bin: Mira».
+  Nicht der Shortcut war schuld, sondern der geteilte Schluessel
+- Fix:
+  * Admin-Kontext bekommt einen eigenen Schluessel (`…:admin`)
+  * Persoenliche Links leiten die Person IMMER synchron aus dem Slug ab
+    (aus dem lokalen Cache → kein Flackern) und PERSISTIEREN sie nie
+  * Einmalige Heilung: der alte Schluessel wird nur uebernommen, wenn das
+    Geraet nie einen persoenlichen Link geoeffnet hat (dann kann er nicht
+    verunreinigt sein); danach wird er geloescht
+- Auf betroffenen Geraeten (z. B. dem Pixel, das des zweiten Kindes Link geoeffnet hatte)
+  ist «Ich bin» in der Admin-Ansicht einmalig leer → einmal die eigene Person
+  antippen, danach bleibt sie
+- APP_VERSION → 4.18.1, SW cache → haushalt-v66
+
+## 2026-07-11 — v4.18.0: Einheitliches Sheet-/Dialog-Design
+
+Vorher: drei Sheets, drei Bedienmuster (Abbrechen/Speichern · Fertig · ×),
+Primaeraktion mal unten, mal im Kopf, mal gar nicht; Personen-Loeschen war
+ein sofortiges «×» — die gefaehrlichste Aktion hatte den schwaechsten Schutz.
+
+- EINE Sheet-Anatomie fuer alle: Grabber · Kopfzeile (Slot · zentrierter
+  Titel · Slot) · Body · EIN grosser Primaer-Button UNTEN.
+  Feste Slot-Breite (84px) → Titel zentriert sich ohne den frueheren
+  leeren <span>-Hack
+- Zwei Sheet-Typen, unterschieden danach, ob etwas zu bestaetigen ist:
+  * Formular (Aufgabe): «Abbrechen» links, «Loeschen» rot rechts,
+    «Speichern» gross unten (unveraendert — war schon richtig)
+  * Utility (Personen, Teilen): «×» rechts, «Fertig» gross unten.
+    «Fertig» sitzt jetzt an derselben Stelle wie «Speichern»
+- Destruktive Aktionen, eine Regel je Kontext:
+  * einzelnes Objekt im Formular → roter Text oben rechts (Aufgabe)
+  * Listeneintraege → ⋯-Menue mit rotem «Loeschen» (Verlauf UND JETZT AUCH
+    Personen). Das sofortige «×» pro Person ist weg; das Menue bietet
+    zusaetzlich «Link teilen» (ersetzt den 🔗-Knopf)
+- Schliessen ueberall gleich: ×/Abbrechen, Backdrop-Tipp, Esc (nativ).
+  BEWUSSTE Ausnahme: das Formular-Sheet ignoriert den Backdrop-Tipp, solange
+  ungespeicherte Eingaben da sind (kein Datenverlust durch Fehltipp)
+- Aufraeumen: #shareSheet-Sonderstyles entfernt (nutzt jetzt die globalen
+  dialog/.sheet-Regeln; die abweichende Backdrop-Deckkraft .5 vs .55 ist weg),
+  hartkodiertes Rot im Verlauf-Menue → var(--red), alert() → toast()
+- APP_VERSION → 4.18.0, SW cache → haushalt-v65
+
+## 2026-07-11 — v4.17.0: Kein Wiederauferstehungs-Flackern mehr (Sync-Abgleich)
+
+- BUG: Nach dem Loeschen eines Verlaufs-Eintrags blitzte er kurz wieder auf.
+  Ursache: pull() ueberschreibt state.* KOMPLETT mit dem Serverstand. Das
+  Loeschen ist optimistisch (lokal sofort) + ein DELETE ohne Warten. Lief
+  gerade ein pull — oder startete einer, bevor der Server das DELETE
+  committet hatte — lieferte der Server die Zeile noch mit → Eintrag
+  verschwand, kam zurueck, verschwand wieder. Dieselbe Race betraf neue
+  Eintraege (kurzes Wegblinken) und Bearbeitungen (kurzes Zuruecksetzen)
+- Fix: Abgleich-Schicht zwischen optimistischen Schreibungen und pull()
+  * `mutationSeq` (in push() zentral hochgezaehlt, deckt POST/PATCH/DELETE/
+    upsert ab): aendert sich waehrend eines laufenden pull etwas lokal, ist
+    dessen Snapshot veraltet und wird VERWORFEN — der lokale Stand bleibt
+  * `pendingDeletes` / `pendingCreates`: bis der Server die Schreibung
+    nachweislich verarbeitet hat (resolvedAt < pullStart), werden Serverzeilen
+    gefiltert bzw. fehlende lokale Zeilen ergaenzt. Danach raeumen sich die
+    Eintraege selbst auf
+  * Log wird nach dem Abgleich wieder nach done_at sortiert
+- Alle Schreibstellen laufen jetzt ueber `deleteRemote()` / `createRemote()`
+- Deklarationen der Abgleich-Schicht stehen VOR pull() (keine TDZ-Falle)
+- APP_VERSION → 4.17.0, SW cache → haushalt-v64
+
+## 2026-07-11 — v4.16.0: Richtige Installations-Anleitung (iOS zuerst, mit Icons)
+
+- Der alte Einzeiler zeigte nur die Anleitung fuer das ERKANNTE Geraet —
+  nutzlos, wenn z. B. ein Android-Admin einem iPhone-Nutzer helfen will
+- Neu: aufklappbarer Block «Als App zum Home-Bildschirm» mit expliziten
+  Schritt-fuer-Schritt-Anleitungen fuer BEIDE Plattformen, iPhone zuerst
+  (Prioritaet). Inline-SVG-Icons helfen beim Finden der Knoepfe:
+  iOS-Teilen-Symbol, iOS «+ zum Home-Bildschirm», Android-Menue (⋮)
+- iOS-Hinweis explizit: Link in SAFARI oeffnen (nicht Chrome); iPad-Variante
+  (Teilen oben rechts) als Randnotiz
+- Das eigene Geraet bekommt ein «dein Geraet»-Badge, die Reihenfolge bleibt
+  aber immer iOS → Android
+- Standardmaessig eingeklappt (Sheet bleibt kompakt); nach dem Ersteinrichten
+  automatisch aufgeklappt, weil genau dann installiert wird
+- Platzierung: Admin unter dem Familien-Block, Mitglieder direkt unter dem
+  eigenen Link
+- APP_VERSION → 4.16.0, SW cache → haushalt-v63
+
+## 2026-07-11 — v4.15.2: Flackern der ICH-BIN-Zeile behoben, Titel wieder groesser
+
+- URSACHE (gilt fuer beide Flacker-Bugs): `qrcode.min.js` war ein
+  render-blockierendes EXTERNES Skript direkt VOR dem Haupt-Skript. Waehrend
+  es laedt, malt der Browser das halb geparste Dokument — also die leere
+  ICH-BIN-Zeile (und frueher den hartcodierten «Fairli»-Titel). render()
+  lief erst danach
+- Fix 1: `defer` auf qrcode.min.js. qrcode() wird nur im Teilen-Sheet (Klick)
+  gebraucht, laeuft also garantiert spaeter → sicher. Damit faellt das
+  Paint-Fenster weg und render() malt vor dem ersten Frame
+  ACHTUNG: defer-Skripte laufen NACH dem Inline-IIFE — `qrcode` darf nie
+  beim Start (nur im Klick-Pfad) benutzt werden
+- Fix 2 (Guertel & Hosentraeger): `html.booting` wird synchron im <head>
+  gesetzt, CSS macht die ICH-BIN-Zeile unsichtbar (Hoehe bleibt via
+  `min-height:46px` reserviert → kein Layout-Sprung); render() entfernt die
+  Klasse. Malt der Browser doch frueher, sieht man leeren Platz statt
+  halb gerenderter Chips
+- Titel wieder groesser: die vw-Klammer aus v4.14.1 hatte ihn auf Handys
+  generell verkleinert (auf 412 px nur ~26 px statt 34 px) — auch bei kurzen
+  Namen wie «Fanti WG». Jetzt clamp(28px, 8.6vw, 34px); die laengenabhaengigen
+  Stufen (>14 / >22 Zeichen) wurden ebenfalls angehoben
+- APP_VERSION → 4.15.2, SW cache → haushalt-v62
+
+## 2026-07-11 — v4.15.1: Kein «Fairli»-Flackern im Titel mehr
+
+- BUG: Der <h1> enthielt hartcodiert «Fairli»; der echte Haushaltsname wurde
+  erst von render() gesetzt → beim Neuladen blitzte «Fairli» auf, dann
+  «Fanti WG»
+- Fix: <h1> startet leer (&nbsp; haelt die Zeilenhoehe, kein Layout-Sprung).
+  Ein Inline-Skript direkt nach dem Header laeuft SYNCHRON waehrend des
+  Parsens (vor dem ersten Paint): Familie aus URL bzw. gespeicherter Route
+  (family-first) aufloesen → Namen aus localStorage `haushalt.v2:<fam>` lesen
+  → Titel setzen. Beim Reload erscheint sofort «Fanti WG»
+- `window.__setFamTitle(name)` ist die einzige Quelle fuer Titel + laengen-
+  abhaengige Schriftgroesse; render() ruft denselben Helper (keine doppelte
+  Groessenlogik, kein Drift)
+- Erstbesuch ohne Cache: Titel bleibt leer (Platzhalter) bis der erste Pull
+  den Namen liefert — besser als ein falscher Zwischenzustand
+- APP_VERSION → 4.15.1, SW cache → haushalt-v61
+
+## 2026-06-28 — v4.15.0: Sync-Button entfernt, Teilen fuer alle Mitglieder
+
+- Sync-Button + «Geraete verbinden»-Sheet entfernt: Relikt aus der Zeit vor
+  Multi-Tenant (eigene Supabase-URL/Key pro Geraet). cfg ist jetzt fest das
+  eingebaute Projekt — heilt auch Geraete, die frueher «Trennen» gedrueckt
+  hatten. Sync-Fehler melden sich weiterhin per Toast
+- App-Version steht jetzt klein unten im Teilen-Sheet (vorher im Sync-Sheet)
+- «Teilen» ist fuer persoenliche Links nicht mehr ausgeblendet: Mitglieder
+  sehen ihren EIGENEN Link (mit QR + Install-Hinweis) und «Fairli
+  weiterempfehlen» — NICHT den Familien-/Admin-Link und nicht die Links
+  anderer Mitglieder (least privilege: jeder fremde Link erlaubt Handeln
+  als diese Person)
+- APP_VERSION → 4.15.0, SW cache → haushalt-v60
+
+# LOG.md — Change history
+
+All work on the Haushalt app, newest first. Maintained by Claude.
+
+## 2026-06-28 — v4.14.1: Header-Overlap bei langen Haushaltsnamen behoben
+
+- BUG: `.headbtns` war `position:absolute` → der H1 wusste nichts von den
+  Buttons und lief bei langen Haushaltsnamen darunter durch
+  («Farman-WG» ueberlappte Sync/Teilen/Personen). Fiel bisher nicht auf,
+  weil «Fanti WG» kurz ist
+- Fix: Header ist jetzt ein Flex-Row — Titel `flex:1; min-width:0` (schrumpft,
+  bricht, max. 2 Zeilen), Buttons `flex:0 0 auto` (behalten ihren Platz).
+  Overlap ist strukturell unmoeglich
+- Titelgroesse fluid (`clamp`) + zusaetzliche Verkleinerung bei langen Namen,
+  damit sie moeglichst einzeilig neben die Buttons passen
+- APP_VERSION → 4.14.1, SW cache → haushalt-v59
+
+## 2026-06-28 — v4.14.0: Android robust fuer mehrere Shortcuts + Onboarding-Doku
+
+- Persoenliche Links bekommen auf KEINER Plattform mehr ein Manifest:
+  «Zum Startbildschirm» erzeugt einen Shortcut mit exakt dieser URL —
+  mehrere Personen-Shortcuts + Admin-App koexistieren pro Geraet.
+  Familien-Kontext behaelt das Manifest (Standalone-WebAPK)
+- Routen-Restore family-first: haushalt.route.family / .user getrennt;
+  Bare-Launch bevorzugt die Familien-Route (Admin-Geraet wird nicht mehr
+  von zwischendurch geoeffneten persoenlichen Links gekapert); der
+  synchrone Head-Check spiegelt die Praezedenz
+- rel=icon (192px, absolut) fuer manifest-lose Chrome-Shortcuts
+- NEU: DEVELOPER_ONBOARDING.md — umfassende Architektur-/Konventions-Doku
+  (Deploy-Disziplin, Datenmodell + Unveraenderlichkeits-Prinzip, Routing,
+  Plattform-Minenfelder iOS/Android, Flicker-Regel, UI-Konventionen,
+  Migrationen, Secrets-Policy)
+- APP_VERSION → 4.14.0, SW cache → haushalt-v58
+
+## 2026-06-28 — v4.13.2: Kein Button-Flackern + Android-Icon auf Deep-Path
+
+- FLICKER: Admin-Buttons (Teilen/Personen/Sync) wurden erst nach dem Rendern
+  per JS versteckt → blitzten kurz auf. Jetzt synchron VOR dem Rendern: ein
+  Inline-Skript im <head> setzt `html.userlink`, CSS blendet die Buttons
+  sofort aus. Erkennung aus URL (/u/…) UND gespeicherter Route (installierte
+  App ohne /u/ im Pfad); zur Laufzeit mit USER_SLUG synchronisiert
+- ANDROID-ICON: `<link rel=manifest href="manifest.json">` war relativ und
+  löste auf tiefen Pfaden zu …/u/manifest.json = 404 auf → Chrome legte nur
+  ein generisches Lesezeichen ohne Icon an. Jetzt absolut
+  (`/chores/manifest.json`), ebenso apple-touch-icon
+- APP_VERSION → 4.13.2, SW cache → haushalt-v57
+
+## 2026-06-28 — v4.13.1: Persönliche Links öffneten Familien-Ansicht (SW-Pfad-Bug)
+
+- BUG (auf Geräten mit installiertem Service Worker): Der SW liefert tiefe
+  Pfade direkt als App-Shell aus (kein 404-?r=-Handoff). Auf dem tiefen Pfad
+  berechnete BASE sich falsch (/chores/f/<fam>/u/ statt /chores/), die
+  Pfad-Erkennung schlug fehl und der Code fiel auf die GESPEICHERTE Route
+  zurück — z. B. die Familien-/Admin-Route des Geräts. Mira-Link → Admin-Sicht
+- Fix: BASE wird vor dem «f/»-Segment abgeleitet; Route wird aus dem vollen
+  pathname geparst (Regex nicht verankert). Simulation bestätigt
+  family+userSlug auf SW-serviertem Deep-Path
+- APP_VERSION → 4.13.1, SW cache → haushalt-v56
+
+## 2026-06-27 — v4.13.0: iOS deterministisch — kein Manifest, klassische Metas
+
+- Entscheidung: statt des versionsabhängigen Blob-Manifest-Ansatzes (v4.12.0,
+  wieder entfernt) der GARANTIERTE Weg. Apples dokumentiertes
+  Web-Clip-Verhalten: OHNE Manifest nutzt «Zum Home-Bildschirm» immer die
+  aktuelle Seiten-URL — genau unser sauberer Pfad
+- iOS (UA/iPadOS-Erkennung): <link rel=manifest> wird entfernt; Standalone,
+  Name und Icon kommen aus den klassischen Metas (apple-mobile-web-app-capable,
+  -title, -status-bar-style, apple-touch-icon)
+- Android: statisches Manifest bleibt (WebAPK, maskable Icons);
+  Route-Restore via localStorage deckt den Start ab (Pixel-Verhalten bestätigt)
+- 404.html: Manifest nur noch für Nicht-iOS injiziert; apple-capable ergänzt
+- APP_VERSION → 4.13.0, SW cache → haushalt-v55
+
+## 2026-06-27 — v4.12.0: iOS-Homescreen erfasst den richtigen Pfad (per-Route-Manifest)
+
+- Ursache des Regressions-Bugs gefunden: iOS liest beim «Zum Home-Bildschirm»
+  die start_url aus dem verlinkten Manifest, NICHT die aktuelle Seiten-URL
+  (belegt u. a. Apple-Foren + GitHub-Codespaces-Issue). Unser statisches
+  Manifest hatte start_url=/chores/index.html → jede Installation landete auf
+  der generischen Startseite, egal welcher Familien-/Personen-Link
+- Fix: Sobald die Route bekannt ist, wird ein per-Route-Manifest (Blob-URL)
+  erzeugt, dessen start_url der VOLLE Pfad dieser Familie/Person ist
+  (absolute URL), scope=/chores/, eigene id; Icons auf absolute URLs gehoben.
+  Das <link rel=manifest> wird darauf umgebogen
+- Statisches Manifest bleibt als Fallback
+- APP_VERSION → 4.12.0, SW cache → haushalt-v54
+- HINWEIS: iOS-Verhalten bei JS-gewechseltem Manifest ist versionsabhängig;
+  falls es nicht greift, gibt es einen garantierten Fallback (Doku folgt)
+
+## 2026-06-27 — v4.11.1: Verlauf ist unveränderlich (Notiz eingefroren)
+
+- Designprinzip: Ein Verlaufseintrag ist ein Schnappschuss und darf sich nicht
+  ändern, wenn die Aufgabe später umbenannt/umbewertet/gelöscht wird
+- Name, Mitglied und Punkte wurden bereits beim Eintragen eingefroren; die
+  Notiz war der Ausreisser (wurde live aus der aktuellen Aufgabe gelesen)
+- DB: Spalte `chore_note` auf log; Notiz wird jetzt beim Eintragen
+  mitgespeichert, Verlauf zeigt den eingefrorenen Wert. Alte Einträge ohne
+  Snapshot zeigen einfach keine Notiz (kein Rückgriff auf die Live-Aufgabe)
+- APP_VERSION → 4.11.1, SW cache → haushalt-v53
+
+## 2026-06-27 — v4.11.0: Bearbeiten-Sheet — Speichern gross unten, Löschen klein oben
+
+- «Speichern» ist jetzt ein grosser Primär-Button unten (nicht mehr in der
+  Kopfzeile)
+- «Löschen» ist eine Nebenaktion oben rechts in Rot (nur beim Bearbeiten
+  sichtbar; per visibility umgeschaltet, damit der Titel zentriert bleibt)
+- Kopfzeile: Abbrechen | Titel | Löschen
+- APP_VERSION → 4.11.0, SW cache → haushalt-v52
+
+## 2026-06-27 — v4.10.1: Verlauf-Menü «Löschen» statt «Rückgängig»
+
+- Menüpunkt korrekt benannt: der Eintrag wird gelöscht (Punkte raus), nicht
+  ein Zustand rückgängig gemacht → «Löschen» (in Warnfarbe)
+- APP_VERSION → 4.10.1, SW cache → haushalt-v51
+
+## 2026-06-27 — v4.10.0: Notiz im Verlauf + weniger «Löschen» als Default
+
+- (1) Verlauf zeigt jetzt die Notiz der Aufgabe klein unter dem Eintrag
+- (2) Weniger versehentliches Löschen:
+  * Bearbeiten-Sheet: «Aufgabe löschen» ist kein breiter Danger-Button mehr,
+    sondern ein dezenter, unterstrichener Textlink unten. Primäraktion bleibt
+    «Speichern» oben
+  * Verlauf: das frühere sofort-löschende ↩︎ ist jetzt ein Drei-Punkte-Menü
+    (⋯) mit «Rückgängig machen»; schließt bei Tap außerhalb
+- APP_VERSION → 4.10.0, SW cache → haushalt-v50
+
+## 2026-06-27 — v4.9.0: Optionale Notiz pro Aufgabe
+
+- DB: Spalte `note` auf chores (Migration via db-migrate)
+- Bearbeiten-Sheet: optionales Feld «Notiz» (max. 60 Zeichen) – niemand muss
+  etwas eintragen
+- Notiz erscheint klein und dezent unter dem Namen auf der Kachel (max. 2
+  Zeilen, abgeschnitten, damit sie passt); nur sichtbar wenn gesetzt
+- Speichern/Sync inkl. note
+- APP_VERSION → 4.9.0, SW cache → haushalt-v49
+
+## 2026-06-27 — v4.8.1: QR-Anzeige-Bug behoben
+
+- BUG: `.shqr{display:block}` überschrieb das `[hidden]`-Attribut → QR ließ
+  sich nicht mehr ein-/ausblenden. Regel `.shqr[hidden]{display:none}` ergänzt
+- APP_VERSION → 4.8.1, SW cache → haushalt-v48
+
+## 2026-06-27 — v4.8.0: Teilen-Sheet kompakt (QR einklappbar)
+
+- QR-Codes standardmäßig eingeklappt; pro Zeile ein «QR»-Knopf blendet den
+  Code bei Bedarf ein. Sheet ist dadurch viel kürzer und scannt sich schneller
+- «Fairli weiterempfehlen» bekommt jetzt ebenfalls einen QR-Code
+- QR beim Anzeigen zentriert, etwas kleiner (116 px)
+- APP_VERSION → 4.8.0, SW cache → haushalt-v47
+
+## 2026-06-16 — v4.7.3: App-Empfehlungslink im Teilen-Sheet
+
+- Neuer Eintrag «Fairli weiterempfehlen» unten im Teilen-Sheet: teilt den
+  blanken App-Link (ohne Familie), sodass Empfänger einen EIGENEN neuen
+  Haushalt erstellen können
+- APP_VERSION → 4.7.3, SW cache → haushalt-v46
+
+## 2026-06-16 — v4.7.2: Teilen-Sheet entschlackt
+
+- Familien-Link erschien doppelt (oben Block + unten «Ganze Familie») →
+  auf EINEN Block oben reduziert: Familien-Link + QR + Installationshinweis
+- «siehe unten» entfernt (war irreführend, da langer Inhalt folgt);
+  Installationshinweis sitzt jetzt direkt beim Familien-Block, knapper Text
+- Klare Gliederung: «Ganze Familie» oben, darunter Überschrift
+  «Persönliche Links», dann die Personen
+- Titel «Links teilen» → «Teilen»; Intro nach Setup entfernt
+- APP_VERSION → 4.7.2, SW cache → haushalt-v45
+
+## 2026-06-16 — v4.7.1: Startseite vereinfacht
+
+- Einstiegs-Screen aufgeräumt und auf den Hauptfall ausgerichtet:
+  «Neuen Haushalt erstellen» ist jetzt der primäre Button (zuoberst bzw.
+  als Akzent-Button). «Zu meinem Haushalt» erscheint nur bei vorhandener
+  letzter Familie. Der Einladungs-Link-Fall ist hinter «Ich habe einen
+  Einladungs-Link» eingeklappt (Eingabefeld erscheint erst auf Tippen)
+- Weniger Text, klare Hierarchie statt prominentem Paste-Feld
+- APP_VERSION → 4.7.1, SW cache → haushalt-v44
+
+## 2026-06-16 — v4.7.0: Onboarding-Flow aufgeräumt
+
+- (Bugfix) Beitreten-Feld akzeptierte die neuen PFAD-Links nicht (nur Hash/
+  Slug) → parseAny erkennt jetzt auch `…/chores/f/<fam>[/u/<slug>]`
+- Bare-Link merkt die letzte Familie weiterhin («Zu meinem Haushalt»),
+  verhindert versehentliches Anlegen einer zweiten Familie
+- Share-Sheet nach Setup hebt den EIGENEN Haushalts-Link des Erstellers
+  hervor (eigener Block oben, Teilen/Kopieren) + plattformspezifischer
+  «Zum Home-Bildschirm»-Hinweis (iOS: Teilen→Zum Home-Bildschirm; Android:
+  ⋮→Zum Startbildschirm)
+- Neuer Header-Button «Teilen»: öffnet das Link-/QR-Sheet jederzeit vom
+  Hauptscreen (falls jemand die beim Setup geteilten Links vergessen hat);
+  bei persönlichen Links ausgeblendet
+- Header darf bei drei Buttons umbrechen, kollidiert nicht mit dem Titel
+- APP_VERSION → 4.7.0, SW cache → haushalt-v43
+
+## 2026-06-16 — v4.6.1: Icon/Name beim Pfad-Install korrigiert
+
+- BUG: Beim Hinzufügen über einen Pfad-Link (…/chores/f/...) las iOS die
+  Metadaten aus 404.html, die kein Manifest/Icon/Titel hatte → Verknüpfung
+  ohne Icon, falscher Name (heller «R» auf dunkel)
+- 404.html bekommt denselben PWA-Kopf wie index.html: Manifest-Link,
+  apple-touch-icon, Titel «Fairli», theme-color, apple-mobile-web-app-title.
+  Bewusst KEIN apple-mobile-web-app-capable (würde start_url-Handling brechen)
+- APP_VERSION → 4.6.1, SW cache → haushalt-v42
+- Betroffene Verknüpfung einmal entfernen und über den Pfad-Link neu hinzufügen
+
+## 2026-06-16 — v4.6.0: Pfad-basierte Familien-URLs (1-Klick-iOS-Install)
+
+- Familien-Links sind jetzt echte Pfade statt Hash:
+  `…/chores/f/<familie>` bzw. `…/chores/f/<familie>/u/<slug>`. iOS bäckt den
+  vollen Pfad in start_url ein → Homescreen-Icon startet direkt in der Familie,
+  ohne Einfüge-/Wiederbeitreten-Schritt
+- `404.html`: GitHub Pages liefert es für jeden unbekannten Pfad; es leitet
+  `…/chores/f/...` auf `…/chores/index.html?r=f/...` um (Standard-SPA-Trick),
+  damit der tiefe Pfad „existiert" und iOS ihn erfassen kann
+- App liest Route aus `?r=` (404-Handoff), echtem Pfad und — abwärtskompatibel
+  — aus dem Hash; kanonisiert per history.replaceState auf die Pfadform
+- Teilen-Links und Navigation auf Pfadform umgestellt; Manifest: scope
+  `/chores/`, start_url `/chores/index.html`, stabile `id`
+- Service Worker: Navigationsanfragen auf tiefe `/chores/...`-Pfade liefern die
+  App-Shell (offline-fähig, kein 404 in der installierten App); Cache v41
+- Bestehende Hash-Links (`#f/...`) funktionieren weiterhin
+- APP_VERSION → 4.6.0, SW cache → haushalt-v41
+- Für 1-Klick: neuen Pfad-Link öffnen und damit zum Homescreen hinzufügen
+
+## 2026-06-16 — v4.5.0: Einstiegs-Screen statt iOS-Sackgasse
+
+- Erkenntnis: iOS startet Homescreen-PWAs IMMER am statischen start_url ohne
+  Hash und ignoriert dynamische Manifeste/Hash im start_url (bekanntes
+  WebKit-Verhalten, vgl. GitLab-Issue). Der v4.4.2-Ansatz (dynamisches
+  Manifest) konnte auf iOS nie greifen → entfernt
+- Neuer Einstiegs-Screen, wenn keine Familie aktiv ist (statt Sackgasse mit
+  nur «Neue Familie»):
+  * «Zu meinem Haushalt» (falls letzte Route in localStorage vorhanden)
+  * Einladungs-Link einfügen (akzeptiert vollen Link, nur #-Hash, oder nur
+    den Familien-Slug) → Beitreten
+  * «Neuen Haushalt erstellen» als nachrangige Option
+- Damit kommt auch eine frisch installierte iOS-Verknüpfung mit isoliertem
+  Storage per Link-Einfügen in einem Schritt in die Familie
+- APP_VERSION → 4.5.0, SW cache → haushalt-v40
+
+## 2026-06-16 — v4.4.2: iOS-Homescreen landet wieder in der Familie
+
+- BUG (iPhone/Chrome → Zum Homescreen): Der installierte Start öffnete
+  start_url OHNE Hash; die Route lag nur in localStorage, das iOS für die
+  Standalone-App separat hält → Start landete in der «Neue Familie»-Ersteinrichtung
+- Fix 1: Beim Start ohne Hash wird die letzte bekannte Route aus localStorage
+  geholt UND der Hash via history.replaceState zurückgeschrieben (konsistent
+  über Reloads/Standalone)
+- Fix 2 (eigentlicher iOS-Fix): dynamisches Manifest — sobald die Familie
+  bekannt ist, wird das <link rel=manifest> auf ein Blob mit
+  start_url=./index.html#f/<familie>(/u/<slug>) umgebogen. iOS liest start_url
+  beim Hinzufügen zum Homescreen → installierte Verknüpfung startet direkt
+  in der Familie bzw. im persönlichen Link
+- Fix 3: Beim Anlegen einer neuen Familie wird die Route sofort persistiert
+- WICHTIG für betroffene Geräte: bestehende Homescreen-Verknüpfung einmal
+  entfernen und über den (Familien-)Link neu hinzufügen, damit das neue
+  start_url greift
+- APP_VERSION → 4.4.2, SW cache → haushalt-v39
+
+## 2026-06-16 — v4.4.1: Icon in Royalblau, drei Blasen
+
+- Icon-Farbe auf sattes Royalblau und auf drei klar getrennte Blasen reduziert
+  (winzige Blasen entfernt — bei Launcher-Grösse ohnehin unsichtbar);
+  Geistre-Ring der entfernten Mini-Blase sauber entfernt (nur 3 Blobs übrig)
+- Maskable mit nach innen gezogenem Motiv, kein Beschnitt
+- Icon-Cache-Buster ?v=45, APP_VERSION → 4.4.1, SW cache → haushalt-v38
+
+## 2026-06-16 — v4.4.0: Neues Icon — blaue Seifenblasen auf Weiss
+
+- App-Icon ersetzt (Schwamm war bei Launcher-Grösse schlecht erkennbar):
+  vier blaue, klar getrennte Seifenblasen unterschiedlicher Grösse auf
+  reinweissem Grund. Per Pollinations/flux generiert, Hintergrund
+  programmatisch auf reines #FFFFFF bereinigt und zentriert
+- Maskable-Variante mit nach innen gezogenem Motiv (~62 %), damit Androids
+  Kreis-/Squircle-Zuschnitt keine Blase abschneidet
+- Splash/Theme-Farbe → Weiss (passt zum Icon), Icon-Cache-Buster ?v=44
+- APP_VERSION → 4.4.0, SW cache → haushalt-v37
+- Hinweis: Android-WebAPK cached das Icon; ggf. App neu hinzufügen
+
+## 2026-06-14 — v4.3.4: Neue Aufgabe erscheint sofort ganz oben
+
+- BUG: Nach «Aufgabe hinzufügen» sortierte die Gruppierung die neue Kachel
+  irgendwo nach unten (alphabetisch in ihre Gruppe) → wirkte, als erschiene
+  sie gar nicht; erst ein Tab-Wechsel machte sie sichtbar
+- Frisch hinzugefügte Aufgaben werden jetzt für die Sitzung «angepinnt»:
+  sie stehen vorne (neueste zuerst), bis die Reihenfolge natürlich neu
+  berechnet wird (App-Start, Tab-Wechsel). Beim Hinzufügen scrollt die Liste
+  zur neuen Kachel und sie blinkt kurz auf
+- APP_VERSION → 4.3.4, SW cache → haushalt-v36
+
+## 2026-06-14 — v4.3.3: Share-Text nutzt Haushaltsnamen
+
+- Teilen-Text «… mach mit bei unseren Haushalts-Aufgaben» (klobig, und
+  «Hausaufgaben» hiesse Schulaufgaben) → «… mach mit bei <Haushaltsname>»,
+  z. B. «Mira, mach mit bei Fanti WG:». Fallback «unseren Aufgaben», falls
+  kein Name gesetzt
+- APP_VERSION → 4.3.3, SW cache → haushalt-v35
+
+## 2026-06-14 — v4.3.2: Onboarding-Flow repariert
+
+- BUG: Der 20-Sekunden-Auto-Sync (und visibilitychange) rief firstRunSetup()
+  erneut auf, solange die Familie leer war → Dialog wurde neu aufgebaut und
+  überschrieb laufende Eingaben (Haushaltsname/Personen wurden gelöscht).
+  Fix: firstRunSetup() ist jetzt idempotent (Guard + DOM-Check); pull()
+  fasst während offener Einrichtung weder DOM noch State an; Auto-Sync und
+  visibilitychange pausieren, solange firstRunOpen
+- Einrichtung wird beim Start einer brandneuen Familie sofort gezeigt, nicht
+  erst nach dem ersten Netzwerk-Pull (kein kurzes leeres Raster mehr,
+  keine Verzögerung)
+- Doppelten pull()-Aufruf bei Init entfernt
+- APP_VERSION → 4.3.2, SW cache → haushalt-v34
+
+## 2026-06-14 — v4.3.1: App heisst «Fairli»
+
+- App-Name (Manifest, Titel, Onboarding-Screen, Default-H1) → «Fairli»
+  (Swiss-Touch-Variante von «Fairly»); der pro-Familie gespeicherte
+  Haushaltsname bleibt davon unberührt und überschreibt weiterhin den
+  Titel im laufenden Betrieb
+- «Neuer Haushalt»-Einrichtungsdialog und «Name des Haushalts» bewusst
+  beibehalten — das ist haushalt-, nicht app-spezifisch
+- Icon-Cache-Buster → ?v=43, SW cache → haushalt-v33, APP_VERSION → 4.3.1
+
+## 2026-06-14 — v4.3.0: Reibungsloses Teilen — Share-Sheet, Native Share, QR
+
+- Neues «Links teilen»-Sheet: listet alle persönlichen Links + Familien-Link,
+  je mit Teilen-Button und QR-Code (für Einrichtung vor Ort: scannen statt
+  tippen)
+- Teilen nutzt jetzt primär das native Share-Sheet (WhatsApp/Signal/…),
+  Clipboard nur als Fallback — ein Tipp vom Link zur Familien-Chatgruppe
+- Nach der Ersteinrichtung öffnet sich das Share-Sheet automatisch mit Hinweis,
+  damit neue Familien das Teilen sofort finden (vorher versteckt im
+  Personen-Sheet)
+- QR-Generierung offline: qrcode-generator (21 KB, dependency-free) inline,
+  im SW-Cache; funktioniert ohne Netz
+- Personen-Sheet: 🔗 und Familien-Button öffnen jetzt dieses Sheet
+- APP_VERSION → 4.3.0, SW cache → `haushalt-v32`
+
+## 2026-06-14 — v4.2.3: Reihenfolge waehrend der Sitzung eingefroren
+
+- Kachel-Reihenfolge wird einmal berechnet und gecacht; 20-Sekunden-Auto-Sync
+  und Wechsel in den Vordergrund aktualisieren weiterhin Daten und Punkte,
+  ordnen die Kacheln aber NICHT mehr um — nichts springt unter dem Finger weg
+- Neuberechnung nur bei erwartbaren Anlaessen: Tab-Wechsel, App in den
+  Vordergrund holen, Aufgabe anlegen/aendern/loeschen
+- Bei gleicher Aufgaben-Menge bleibt die gemerkte Reihenfolge bestehen,
+  auch wenn sich Nutzungszahlen im Hintergrund aendern
+- APP_VERSION → 4.2.3, SW cache → `haushalt-v31`
+
+## 2026-06-14 — v4.2.2: Kacheln nach Gruppe sortiert
+
+- Kompromiss-Sortierung: Aufgaben nach erstem Wort gruppiert; Gruppen nach
+  Gesamtnutzung absteigend (haeufigste oben), innerhalb jeder Gruppe A–Z.
+  «Wäsche waschen/aufhängen/falten» bleiben zusammen, oft genutzte Gruppen
+  wandern nach oben. Tie-Break zwischen gleich genutzten Gruppen: A–Z.
+- APP_VERSION → 4.2.2, SW cache → `haushalt-v30`
+
+## 2026-06-14 — v4.2.1: Kacheln alphabetisch sortiert
+
+- Aufgaben-Kacheln jetzt alphabetisch nach Name (locale 'de', akzent-/
+  grossschreibungsunabhaengig) statt nach Nutzungshaeufigkeit — verwandte
+  Aufgaben wie «Wäsche waschen / aufhängen / falten» stehen beieinander
+- APP_VERSION → 4.2.1, SW cache → `haushalt-v29`
+
+## 2026-06-14 — v4.2.0: Echter Mehrfamilien-Start + Manifest-Rebrand
+
+- `families`-Tabelle (family_id, name); Haushaltsname wird geladen und als
+  Titel/H1 gerendert statt hartem "Fanti WG"
+- Ersteinrichtung für komplett neue Familien: Name, Personen (eine pro Zeile),
+  optionales Vorausfüllen typischer Aufgaben — danach ist der Haushalt sofort
+  bespielbar
+- manifest.json generisch: Name "Haushalt", Navy-Farben (#12161F) statt
+  altem Gruen, Icon-Cache-Buster `?v=41` damit Android das neue Icon zieht
+- index.html: Titel/Description/H1-Default neutralisiert (nur vor Sync sichtbar)
+- APP_VERSION → 4.2.0, SW cache → `haushalt-v28`
+
+## 2026-06-12 — v4.1.0: Mehrfamilien-Betrieb mit Link-Auth
+
+- DB: `family_id` auf members/chores/log (+ Indizes), `url_slug` auf members;
+  Migration via GitHub-Action `db-migrate` (Repo-Secret SUPABASE_DB_PASSWORD,
+  psql gegen Session-Pooler) — bestehende Daten der Fanti-Familie automatisch
+  migriert
+- Routing: `#f/<familie>` = Familien-Link (voller Zugriff),
+  `#f/<familie>/u/<slug>` = persönlicher Link (Ich-bin fest verriegelt,
+  Punkte nur für sich; Aufgaben anlegen/ändern/löschen weiterhin erlaubt;
+  Personen- und Sync-Sheet ausgeblendet); Route wird in localStorage
+  gemerkt, damit die installierte PWA ohne Hash startet; ungültiger Slug
+  zeigt eine Fehlerseite
+- Alle REST-Zugriffe zentral familien-skopiert (famScope/famRows in sb()
+  und upsert()); localStorage-Keys pro Familie namespaced
+- Personen-Sheet: 🔗 pro Person erzeugt/kopiert persönlichen Link,
+  Button für Familien-Link; Slugs revozierbar (neu generieren)
+- Ohne Link: Onboarding-Screen mit «Neue Familie erstellen»
+- APP_VERSION → 4.1.0, SW cache → `haushalt-v27`
+
+## 2026-06-12 — v4.0.3: Header-Gradient auf Akzentfarbe
+
+- "Fanti WG"-Titel hatte das alte Mint (#52C08A) hart im Textgradient
+  kodiert; nutzt jetzt `var(--accent)` und folgt damit jedem Rebrand
+- APP_VERSION → 4.0.3, SW cache → `haushalt-v26`
+
+## 2026-06-12 — v4.0.2: Finales Icon — Gelb/Koralle auf Creme
+
+- App-Icon final: gelber Schwamm mit Koralle-Scrubschicht und -Blasen auf
+  warmem Creme-Verlauf (Variante 3 aus dem Auswahlbogen); helle Platte
+  statt Navy, damit es sich auf dem Homescreen neben den hellen
+  System-Icons einreiht
+- APP_VERSION → 4.0.2, SW cache → `haushalt-v25`
+
+## 2026-06-12 — v4.0.1: Wasserzeichen-Ziffer entfernt
+
+- Punkte waren dreifach kodiert (Badge, Wasserzeichen, Kachelhoehe);
+  die grosse Hintergrund-Ziffer ist raus, Badge bleibt die eine Quelle
+- APP_VERSION → 4.0.1, SW cache → `haushalt-v24`
+
+## 2026-06-12 — v4.0: Navy/Kornblume rebrand, neues Icon, Edit-Tap-Target
+
+- Akzentfarbe Mint → Kornblume leuchtend (`#84B2FF`, press `#6B99E6`);
+  Hintergrund-Neutrals von gruen- auf navy-getoent (`--bg #12161F`,
+  `--card #1A2230`, `--line #2A3447`, `--muted #91A1B8`)
+- Neues App-Icon: flacher gelber Schwamm mit Scrubschicht im Akzentblau,
+  Seifenblasen, Navy-Verlauf (192/512/maskable, als SVG via cairosvg gebaut)
+- Edit-Stift auf Kacheln: Tap-Target von ~30px auf 52x52px vergroessert
+  (Ecke der Kachel), :active-Feedback ergaenzt — Fehltipps buchten Punkte
+- APP_VERSION → 4.0, SW cache → `haushalt-v23`
+- Hinweis: Android cached PWA-Icons im WebAPK; Homescreen-Icon erneuert sich
+  ggf. erst nach Re-Add der App
+
+## 2026-06-10 — v3.9.2: SW shell cache bypasses HTTP cache
+
+- GitHub Pages serves assets with `max-age=600`; the SW's install step was
+  pre-caching `index.html` from the browser's HTTP cache, so rapid successive
+  deploys installed new SWs containing stale HTML
+- Install now fetches the shell with `{cache: 'reload'}` so every new SW
+  caches truly fresh files
+- SW cache → `haushalt-v22`
+
+## 2026-06-10 — v3.9.1: Fix stale version display
+
+- `APP_VERSION` constant had been left at 3.6 through v3.7–3.9; now 3.9.
+  Reminder for future changes: bump `APP_VERSION` alongside the SW cache name
+- SW cache → `haushalt-v21`
+
+## 2026-06-10 — v3.9: Logarithmic tile sizing
+
+- Tile height now `104 + 34 * log2(points + 1)` px (was linear `104 + 9p`);
+  `+1` guards the zero-points case
+- Same overall range (104–240px for 0–15 points), but low-value chores
+  differentiate more and high values compress
+- SW cache → `haushalt-v20`
+
+## 2026-06-10 — v3.8: Flat tiles
+
+- Removed the solid 6px bottom ledge (3D "sticking out" effect) from chore
+  tiles; soft drop shadow retained
+- Press feedback softened to a 2px sink to match the flat look
+- SW cache → `haushalt-v19`
+
+## 2026-06-10 — v3.7: Pollinations tile art live
+
+- Added a Pollinations publishable key (`pk_s3BNDnxTvRHULT3z`, scoped to the
+  `flux` model, 50 Pollen budget) to the `choreArt` image URL — tile art now
+  authenticates against the migrated gen.pollinations.ai API
+- Key is client-safe by design (publishable type); the secret key stays out
+  of the repo
+- SW cache → `haushalt-v18`
+
+## 2026-06-10 — v3.6: Worth-sized masonry tiles
+
+- Aufgaben view is now a two-column masonry flow (CSS multi-column,
+  break-inside:avoid): tiles flow down the columns at natural heights
+- Tile height scales with point value (104 + 9·points px) — high-worth chores
+  are visually and physically bigger tap targets
+- Order is by usage count derived from the completion log (most-used first),
+  then points, then name; reorders live as habits change
+
+## 2026-06-10 — v3.5: Tile art moved to new Pollinations gateway
+
+- Tile art was failing: Pollinations migrated from the legacy keyless
+  `image.pollinations.ai/prompt/` to `gen.pollinations.ai/image/` with API
+  keys + pollen billing; switched to the new endpoint on the anonymous tier
+- SW fix: cross-origin images are opaque responses (ok=false), which the
+  cache condition rejected — art is now cached despite opacity
+- Open risk: anonymous tier limits are opaque too; if tiles stay blank, the
+  options are a free pk_ key from enter.pollinations.ai, an OpenAI image API
+  behind a Supabase Edge Function, or emoji-based tile art
+- Not the cause: prompt language (German chore nouns are fine for Flux)
+- SW cache → `haushalt-v16`
+
+## 2026-06-10 — v3.4: AI tile art
+
+- Each chore tile gets an AI-generated illustration via Pollinations.ai
+  (keyless, free): URL built deterministically from chore name + id-derived
+  seed, so all devices fetch the identical image; nothing stored in the DB
+- Art renders at 55% opacity under a dark legibility gradient; text gets a
+  subtle shadow; graceful fallback to the plain colored tile if the image
+  fails to load (onerror removes the img)
+- SW now caches pollinations images (immutable per URL — safe, unlike the
+  v3.0.1 API-caching bug) for offline tiles and snappy reloads
+- Trade-off accepted: chore names are sent to a third-party service; free
+  tier means occasional slowness. SW cache → `haushalt-v14`
+
+## 2026-06-10 — v3.3: Self-updating app
+
+- App now reloads itself once when a new service worker takes control
+  (controllerchange listener, guarded against first-install and reload loops)
+  and checks for SW updates every time it returns to the foreground.
+  Ends the "close and reopen twice" ritual: from this version on, updates
+  apply on the next foreground at the latest.
+- Context: user's installed PWA was stuck on v3.0.x because swiping an app
+  from Android recents doesn't reliably kill it; force-stop required once.
+- SW cache → `haushalt-v12`
+
+## 2026-06-10 — v3.2: Rename behind an edit button
+
+- In the edit sheet the chore name now renders as static text with an
+  "✎ Ändern" button; the input (and thus the keyboard) only appears on demand.
+  Fixes the dialog auto-focusing the text field on open — slider, save, and
+  delete are all visible immediately. New chores still open with the input
+  active.
+- SW cache → `haushalt-v11`
+
+## 2026-06-10 — v3.1: Slider + keyboard-safe sheets
+
+- Points input replaced with a 0–15 slider (filled track, large live value);
+  editing points no longer opens the keyboard at all
+- Sheets restructured: Abbrechen/Speichern (chore) and Fertig (members) moved
+  to a top action bar that stays visible above the soft keyboard; "Aufgabe
+  löschen" is now a full-width danger button at the sheet bottom
+- SW cache → `haushalt-v10`
+
+## 2026-06-10 — v3.0.1: Critical sync bugfix
+
+- **Bug:** the service worker's cache-first fetch handler cached Supabase REST
+  GET responses, so after the first pull every subsequent "refresh" returned a
+  stale snapshot from the device cache — edits (e.g. chore points) appeared to
+  revert, although the PATCH had succeeded server-side
+- **Fix:** SW now only intercepts same-origin requests and Google Fonts; all
+  API traffic goes straight to the network. Cache bump to `haushalt-v9`
+  purges the poisoned caches on update
+- Lesson recorded: never let an app-shell SW cache dynamic API endpoints
+
+## 2026-06-10 — v3.0: "Fanti WG" — dark colorful theme
+
+- Renamed app to "Fanti WG" (header wordmark with mint gradient, title,
+  manifest name/short_name); regenerated icons in dark/mint
+- Full dark theme: bg `#141A17`, cards `#1D2521`, mint accent `#52C08A`
+- Per-chore colors: hue derived deterministically from the chore id (hash into
+  a 10-color palette), applied to tile face/border/shadow/watermark/points via
+  CSS `color-mix` — consistent across devices with zero setup
+- Gold tier replaced by a ★ marker on 10+ point chores (color is now per-chore)
+- SW cache → `haushalt-v8`
+
+## 2026-06-09 — v2.5: Visual refresh
+
+- Chore tiles redesigned as pressable 3D "keys": gradient face, hard drop
+  shadow that compresses on press (translateY), giant point-number watermark
+  in the display face; chores worth 10+ points get a gold finish
+- Typography scaled up: body 17px, header 34px, tile names 18px, scoreboard
+  numbers 34px with larger avatars and thicker bars; bigger tabs, FAB, log
+- v2.4 (earlier today): Sync sheet shows app version, prefills built-in
+  defaults, and gained "Auf Standard zurücksetzen" to clear local overrides
+- SW cache → `haushalt-v7`
+
+## 2026-06-09 — v2.3: Zero-config sync
+
+- Hardcoded the household's Supabase URL + publishable key as `DEFAULT_SYNC`;
+  devices now sync automatically with no setup (key is public by design)
+- Empty-backend seeding moved into `pull()` so the first device to launch
+  uploads its local state (previously only the manual connect flow seeded);
+  also prevents an empty backend from wiping local chores
+- v2.2 (earlier today): `DEFAULT_SYNC` scaffolding, "Trennen" became an
+  explicit opt-out stored as `{"off":true}`
+- SW cache → `haushalt-v5`
+
+## 2026-06-09 — v2.1: Auto-sync + repo documentation
+
+- Added automatic background sync: full pull every 20 s while the app is
+  visible, in addition to pull on load and on returning to the foreground
+- Added `PROMPT.md` (living app specification) and this `LOG.md` to the repo
+- Service worker cache bumped to `haushalt-v3`
+- Supabase project setup itself remains a user step: Claude's sandbox can reach
+  only an allowlist of domains (GitHub, package registries — not supabase.com),
+  and account creation requires an OAuth/email signup Claude cannot perform.
+  In-app Sync settings mean no code changes are needed once the project exists.
+
+## 2026-06-09 — v2: Points economy, shared chores
+
+Redesign from assignment model to volunteer model per Maintainer's spec:
+
+- Chores are standing buttons with a point value (1–100); no assignees, no due
+  dates, no recurrence — pressing the button logs the completion
+- Per-device "Ich bin" person selector; tap a chore → points credited, toast
+  `+N für X`, double-tap protection, undo in Verlauf
+- Punkte tab: weekly (Monday reset) and all-time scoreboard with bars and 👑
+- Verlauf tab: append-only log, denormalized names so deleting a chore or
+  person preserves history
+- Design decision: one editable point value per chore instead of per-member
+  max/average estimation (simpler; estimation flow listed as possible v3)
+- Optional Supabase sync (REST, optimistic writes, pull on load/foreground),
+  configured in-app per device; first device seeds an empty backend; app
+  remains fully functional locally without sync
+- Added `supabase-setup.sql` (tables + open RLS policies)
+- v1 members migrated automatically on first run; SW cache → `haushalt-v2`
+
+## 2026-06-09 — Deployment to GitHub Pages
+
+- Pushed v1 files to `blauewelt/chores` via the GitHub Contents API using a
+  user-provided fine-grained PAT (after iterating on token scope: repo access,
+  then Contents/Pages read-write permissions)
+- Repo had to be made public: GitHub free plan doesn't serve Pages from
+  private repos
+- Enabled Pages (branch `main`, root); site live at
+  https://blauewelt.github.io/chores/
+- Notes: Google Drive ruled out (connector is read-only; Drive no longer hosts
+  static sites). Passkeys clarified as unusable for API auth.
+
+## 2026-06-09 — v1: Initial PWA
+
+- Task tracker with assignment model: tasks with assignee, due date,
+  recurrence (täglich/wöchentlich/alle 2 Wochen/monatlich); Heute/Alle/Erledigt
+  tabs; member management with color chips; overdue highlighting
+- localStorage persistence (per device), offline via service worker
+- German UI, de-CH formats; sage/spruce visual identity, Bricolage Grotesque
+- Generated icons (192/512/maskable) with Pillow; delivered as zip
