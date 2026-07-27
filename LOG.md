@@ -1,3 +1,34 @@
+## 2026-07-27 — tests: the v4.73.0 device checks became assertions (no version bump)
+
+- Question was «can you run those install checks in the emulator?».
+  Answer: not here — no /dev/kvm, no virtualisation extensions, no
+  Android SDK, and the iOS Simulator needs macOS. WebAPK minting is also
+  server-side at Google, so even a slow software-emulated Android would
+  not have proven the interesting part.
+- But the emulator was the detour, not the evidence. Installation depends
+  ONLY on the manifest, and every start_url here is built from the route
+  VARIABLES, never from location.href:
+  * family → the STATIC /chores/manifest.json, whose start_url has been
+    generic since forever (/chores/index.html, household via loadRoute()).
+    The Android family WebAPK never carried the secret, so stripping the
+    address bar cannot affect it. That was true before v4.73.0 too.
+  * personal → manifest.json?f=<fam>&u=<slug>, assembled from
+    FAMILY/USER_SLUG for the service worker to answer.
+- So all three checks became deterministic tests, running on BOTH engines
+  in CI instead of once on a device: family manifest unchanged after
+  stripping; personal manifest still carries family and slug; and a
+  simulated icon launch (blank /chores/ with a stored route) finds the
+  household and stays stripped. Negative control: build the manifest from
+  location.href instead of the variables → red.
+- What still genuinely needs a device is untouched by this change: does
+  Chrome mint the WebAPK, does iOS create the web clip. Both paths are
+  unchanged and were working before.
+- What is left is therefore NOT a test but a decision: with the secret
+  gone from the address bar, a device that loses localStorage has no
+  fallback in bookmark or history. Entry screen + QR are the documented
+  rescue. §12 rewritten accordingly.
+- No APP_VERSION/SW bump: tests and docs only, no client change.
+
 ## 2026-07-27 — v4.74.0 (SW haushalt-v176): the weekly goal ships to everyone
 
 - Maintainer call: the beta is ready. The goal is now STANDARD for every

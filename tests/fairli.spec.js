@@ -2898,6 +2898,59 @@ test.describe('Fairli', () => {
     });
   });
 
+  // Was die Geraete-Abnahme fuer v4.73.0 eigentlich prueft, laesst sich hier
+  // entscheiden — der Emulator waere nur der Umweg. Die Installation haengt
+  // AUSSCHLIESSLICH am Manifest, und dessen start_url kommt aus den Routen-
+  // VARIABLEN, nie aus location.href. Also: nach dem Strippen nachsehen.
+  test('Nach dem Strippen ist das Familien-Manifest unveraendert — der WebAPK-Start haengt nicht an der URL (v4.73.0)', async ({ browser }) => {
+    await withUA(browser, UA_ANDROID, async ctx => {
+      await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] });
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/f/${FAM}`);
+      await expect.poll(() => page.url()).not.toContain(FAM);      // gestrippt
+      const href = await page.getAttribute('link[rel="manifest"]', 'href');
+      expect(href).toContain('/chores/manifest.json');
+      // Der Familien-WebAPK startet SEIT JEHER generisch (/chores/index.html)
+      // und findet den Haushalt ueber loadRoute() — genau der Pfad, den das
+      // Homescreen-Symbol schon immer geht. Das Strippen aendert daran nichts.
+      const man = await page.evaluate(async u => (await (await fetch(u)).json()), href);
+      expect(man.start_url).not.toContain(FAM);
+      expect(man.scope).toContain('/chores/');
+    });
+  });
+
+  test('Nach dem Strippen traegt das PERSOENLICHE Manifest weiter Familie und Slug (v4.73.0)', async ({ browser }) => {
+    // Der persoenliche start_url wird aus FAMILY/USER_SLUG gebaut (der SW
+    // macht daraus /chores/f/<fam>/u/<slug>), nicht aus der Adressleiste.
+    await withUA(browser, UA_ANDROID, async ctx => {
+      await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] });
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+      await expect.poll(() => page.url()).not.toContain(FAM);      // gestrippt
+      const href = await page.getAttribute('link[rel="manifest"]', 'href');
+      expect(href).toContain('manifest.json?');
+      expect(decodeURIComponent(href)).toContain('f=' + FAM);
+      expect(decodeURIComponent(href)).toContain('u=slugmira1');
+    });
+  });
+
+  test('Symbol-Start simuliert: blanke /chores/ mit gespeicherter Route findet den Haushalt und bleibt gestrippt (v4.73.0)', async ({ browser }) => {
+    // Das ist der Installations-Pfad in Reinform: der WebAPK oeffnet den
+    // generischen start_url, die Route kommt aus localStorage. Genau das
+    // wuerde die Emulator-Abnahme beobachten.
+    await withUA(browser, UA_ANDROID, async ctx => {
+      await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] });
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/f/${FAM}`);                 // einmal regulaer oeffnen …
+      await expect.poll(() => page.url()).not.toContain(FAM);
+      await page.goto(`${BASE}/`);                         // … dann wie das Symbol starten
+      await expect(page.locator('.chip', { hasText: 'Mira' })).toBeVisible();
+      expect(page.url()).not.toContain(FAM);
+      const href = await page.getAttribute('link[rel="manifest"]', 'href');
+      expect(href).toContain('/chores/manifest.json');     // installierbar bleibt es auch
+    });
+  });
+
   // ---------- v4.72.0: app_version je Eintrag (Schreib-Telemetrie) ----------
 
   test('Neuer Eintrag traegt die App-Version — im Klartext, nur beim ANLEGEN (v4.72.0)', async ({ context, page }) => {

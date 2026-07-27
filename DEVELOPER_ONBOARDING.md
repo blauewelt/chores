@@ -959,14 +959,26 @@ live incidents (weekly goal «had to be saved twice»,
   (backup → encrypted copy → VERIFY → only then delete) — it already
   does the hard part. Watch the invariant: never delete user data, and
   tombstone BOTH IDs.
-- **Un-gate v4.73.0 URL stripping** once the device checks pass: (a)
-  Android — install to homescreen from a STRIPPED family URL, then open
-  the icon and confirm the household loads; (b) Android — an existing
-  personal-link shortcut still opens correctly, and a NEW one created
-  after stripping does too (personal links rely on the SW-served
-  manifest, §6.4 is out of date since v4.56.0); (c) iPhone — the URL is
-  unchanged and Add-to-Home-Screen still carries the household. Until
-  then it stays behind families.beta.
+- **Un-gate v4.73.0 URL stripping** — the emulator checks turned out to
+  be unnecessary, and the reason is worth keeping. Installation depends
+  ONLY on the manifest, and every start_url in this app is built from
+  the route VARIABLES (`FAMILY`/`USER_SLUG`), never from `location.href`:
+  the family case points at the STATIC `/chores/manifest.json` whose
+  start_url has always been generic (`/chores/index.html` + loadRoute()),
+  and the personal case builds `manifest.json?f=…&u=…` from the same
+  variables for the SW to answer. Stripping the address bar therefore
+  cannot reach either one. All three checks are now assertions that run
+  on both engines in CI: family manifest unchanged after stripping,
+  personal manifest still carries family + slug, and a simulated icon
+  launch (blank `/chores/` with a stored route) finds the household and
+  stays stripped. Negative control: build the manifest from
+  `location.href` → red. What genuinely still needs a device — does
+  Chrome mint the WebAPK, does iOS create the clip — is untouched by
+  this change and was working before it. **The remaining question is not
+  a test but a trade-off:** with the secret gone from the address bar, a
+  device that loses localStorage has no fallback in bookmark or history
+  any more. Entry screen + QR are the documented rescue path. Decide
+  that, then remove the `BETA &&` guard.
 - **Art privacy switch** for encrypted families (Pollinations
   sees tile names as prompts).
 - **Nudge for old-family admins** about the encryption migration
