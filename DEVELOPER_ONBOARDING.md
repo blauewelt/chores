@@ -959,26 +959,22 @@ live incidents (weekly goal «had to be saved twice»,
   (backup → encrypted copy → VERIFY → only then delete) — it already
   does the hard part. Watch the invariant: never delete user data, and
   tombstone BOTH IDs.
-- **Un-gate v4.73.0 URL stripping** — the emulator checks turned out to
-  be unnecessary, and the reason is worth keeping. Installation depends
-  ONLY on the manifest, and every start_url in this app is built from
-  the route VARIABLES (`FAMILY`/`USER_SLUG`), never from `location.href`:
-  the family case points at the STATIC `/chores/manifest.json` whose
-  start_url has always been generic (`/chores/index.html` + loadRoute()),
-  and the personal case builds `manifest.json?f=…&u=…` from the same
-  variables for the SW to answer. Stripping the address bar therefore
-  cannot reach either one. All three checks are now assertions that run
-  on both engines in CI: family manifest unchanged after stripping,
-  personal manifest still carries family + slug, and a simulated icon
-  launch (blank `/chores/` with a stored route) finds the household and
-  stays stripped. Negative control: build the manifest from
-  `location.href` → red. What genuinely still needs a device — does
-  Chrome mint the WebAPK, does iOS create the clip — is untouched by
-  this change and was working before it. **The remaining question is not
-  a test but a trade-off:** with the secret gone from the address bar, a
-  device that loses localStorage has no fallback in bookmark or history
-  any more. Entry screen + QR are the documented rescue path. Decide
-  that, then remove the `BETA &&` guard.
+- **Un-gate the address-bar stripping** (v4.73.0/v4.75.0). The emulator
+  checks turned out to be unnecessary and are now assertions: installation
+  depends ONLY on the manifest, and every start_url is built from the route
+  VARIABLES (`FAMILY`/`USER_SLUG`), never from `location.href` — the family
+  case points at the STATIC `/chores/manifest.json` (generic start_url +
+  loadRoute(), always was), the personal case at `manifest.json?f=…&u=…`
+  for the SW to answer. Three tests cover it on both engines; negative
+  control: build the manifest from `location.href` → red. **The real
+  question was never the install but the BACKUP:** the address bar,
+  bookmarks and history are a copy of the link that most people do not
+  know they have, and `family_id = SHA-256(secret)` means the server can
+  never hand it back. Since v4.75.0 the app therefore does not strip on
+  its own — it asks, and the answer is revocable at any time
+  (`haushalt.linksafe:<fam>`, settings row «Adressleiste aufräumen»).
+  Remaining step: drop the `BETA &&` guard so every household can make
+  that choice; the default (off) is exactly today's behaviour.
 - **Art privacy switch** for encrypted families (Pollinations
   sees tile names as prompts).
 - **Nudge for old-family admins** about the encryption migration

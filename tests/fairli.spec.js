@@ -2814,6 +2814,10 @@ test.describe('Fairli', () => {
     + '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
   const UA_IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
     + 'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+  // v4.75.0: Das Strippen braucht die ausdrueckliche Zustimmung des Nutzers.
+  async function linkSafe(ctx) {
+    await ctx.addInitScript(f => { try { localStorage.setItem('haushalt.linksafe:' + f, '1'); } catch {} }, FAM);
+  }
   async function withUA(browser, userAgent, fn) {
     const ctx = await browser.newContext({ userAgent });
     try {
@@ -2835,6 +2839,7 @@ test.describe('Fairli', () => {
     // die App laeuft ohne URL weiter (Homescreen-Pfad).
     await withUA(browser, UA_ANDROID, async ctx => {
       await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] });
+      await linkSafe(ctx);                       // v4.75.0: nur MIT Zustimmung
       const page = await ctx.newPage();
       await page.goto(`${BASE}/f/${FAM}`);
       await expect.poll(() => page.url()).not.toContain(FAM);
@@ -2865,6 +2870,7 @@ test.describe('Fairli', () => {
     // Eindaemmung. Also gleiche Behandlung.
     await withUA(browser, UA_ANDROID, async ctx => {
       await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] });
+      await linkSafe(ctx);
       const page = await ctx.newPage();
       await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
       await expect.poll(() => page.url()).not.toContain(FAM);
@@ -2905,6 +2911,7 @@ test.describe('Fairli', () => {
   test('Nach dem Strippen ist das Familien-Manifest unveraendert — der WebAPK-Start haengt nicht an der URL (v4.73.0)', async ({ browser }) => {
     await withUA(browser, UA_ANDROID, async ctx => {
       await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] });
+      await linkSafe(ctx);
       const page = await ctx.newPage();
       await page.goto(`${BASE}/f/${FAM}`);
       await expect.poll(() => page.url()).not.toContain(FAM);      // gestrippt
@@ -2924,6 +2931,7 @@ test.describe('Fairli', () => {
     // macht daraus /chores/f/<fam>/u/<slug>), nicht aus der Adressleiste.
     await withUA(browser, UA_ANDROID, async ctx => {
       await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] });
+      await linkSafe(ctx);
       const page = await ctx.newPage();
       await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
       await expect.poll(() => page.url()).not.toContain(FAM);      // gestrippt
@@ -2940,6 +2948,7 @@ test.describe('Fairli', () => {
     // wuerde die Emulator-Abnahme beobachten.
     await withUA(browser, UA_ANDROID, async ctx => {
       await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] });
+      await linkSafe(ctx);
       const page = await ctx.newPage();
       await page.goto(`${BASE}/f/${FAM}`);                 // einmal regulaer oeffnen …
       await expect.poll(() => page.url()).not.toContain(FAM);
@@ -2948,6 +2957,59 @@ test.describe('Fairli', () => {
       expect(page.url()).not.toContain(FAM);
       const href = await page.getAttribute('link[rel="manifest"]', 'href');
       expect(href).toContain('/chores/manifest.json');     // installierbar bleibt es auch
+    });
+  });
+
+  test('OHNE Zustimmung bleibt der Link stehen — die Adressleiste ist fuer viele die einzige Sicherung (v4.75.0)', async ({ browser }) => {
+    // Kern der Aenderung: die App nimmt niemandem ungefragt eine
+    // Sicherungskopie weg. family_id = SHA-256(Geheimnis) — ist der Link
+    // ueberall weg, kann auch der Server ihn nicht zurueckgeben.
+    await withUA(browser, UA_ANDROID, async ctx => {
+      await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] });
+      const page = await ctx.newPage();                      // KEIN linkSafe()
+      await page.goto(`${BASE}/f/${FAM}`);
+      await expect(page.locator('.chip', { hasText: 'Mira' })).toBeVisible();
+      await page.waitForTimeout(700);
+      expect(page.url()).toContain(FAM);
+    });
+  });
+
+  test('Zustimmen und widerrufen: der Schalter raeumt auf und stellt den Link SOFORT wieder her (v4.75.0)', async ({ browser }) => {
+    await withUA(browser, UA_ANDROID, async ctx => {
+      await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+        memberRows: () => [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: true, goal: null }] });
+      const page = await ctx.newPage();
+      page.on('dialog', d => d.accept());                    // die Rueckfrage bejahen
+      await page.goto(`${BASE}/f/${FAM}`);
+      await expect(page.locator('.chip', { hasText: 'Mira' })).toBeVisible();
+      expect(page.url()).toContain(FAM);                     // vorher: Link steht da
+      await page.locator('#openSettings').click();
+      await expect(page.locator('#setStripUrl')).toContainText('Aus');
+      await page.locator('#setStripUrl').click();
+      await expect.poll(() => page.url()).not.toContain(FAM);   // aufgeraeumt
+      // Widerruf: der Link muss SOFORT zurueck sein, nicht erst beim Neustart
+      await page.locator('#openSettings').click();
+      await expect(page.locator('#setStripUrl')).toContainText('An');
+      await page.locator('#setStripUrl').click();
+      await expect.poll(() => page.url()).toContain(FAM);
+      // und er bleibt auch ueber einen Neustart hinweg sichtbar
+      await page.reload();
+      expect(page.url()).toContain(FAM);
+    });
+  });
+
+  test('Rueckfrage abgelehnt = nichts passiert (v4.75.0)', async ({ browser }) => {
+    await withUA(browser, UA_ANDROID, async ctx => {
+      await mockBackend(ctx, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
+        memberRows: () => [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: true, goal: null }] });
+      const page = await ctx.newPage();
+      page.on('dialog', d => d.dismiss());                   // ablehnen
+      await page.goto(`${BASE}/f/${FAM}`);
+      await expect(page.locator('.chip', { hasText: 'Mira' })).toBeVisible();
+      await page.locator('#openSettings').click();
+      await page.locator('#setStripUrl').click();
+      await page.waitForTimeout(400);
+      expect(page.url()).toContain(FAM);                     // unveraendert
     });
   });
 
@@ -3204,21 +3266,24 @@ test.describe('Fairli', () => {
     await expect(page.locator('#setBetaOff')).toHaveCount(0);
   });
 
-  test('Der Beta-Schalter heisst jetzt «Adressleiste» und schaltet NICHT das Wochenziel ab (v4.74.0)', async ({ context, page }) => {
-    // Regressionswache gegen die Kopplung: waere das Wochenziel weiter an
-    // BETA gehaengt, haette «Beta beenden» es einem Haushalt weggenommen.
+  test('Der Adressleisten-Schalter nimmt NICHT das Wochenziel weg (v4.74.0/v4.75.0)', async ({ context, page }) => {
+    // Regressionswache gegen die Kopplung: haenge das Wochenziel je wieder an
+    // BETA, dann nimmt der Schalter einem Haushalt ein ausgeliefertes Feature
+    // weg. Seit v4.75.0 heisst der Schalter «Adressleiste aufräumen» und
+    // steuert ausschliesslich die URL.
     await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }],
       memberRows: () => [
         { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: true, goal: 8 },
       ] });
+    page.on('dialog', d => d.accept());
     await page.goto(`${BASE}/f/${FAM}`);
     await page.waitForTimeout(700);
     await page.locator('#openSettings').click();
-    await expect(page.locator('#setBetaOff')).toContainText('Adressleiste');
-    await expect(page.locator('#setBetaOff')).not.toContainText('Wochenziel');
-    await page.locator('#setBetaOff').click();
+    await expect(page.locator('#setStripUrl')).toContainText('Adressleiste');
+    await expect(page.locator('#setStripUrl')).not.toContainText('Wochenziel');
+    await page.locator('#setStripUrl').click();
     await page.waitForTimeout(300);
-    // Beta aus — das Ziel bleibt trotzdem da
+    // Schalter betaetigt — das Ziel ist trotzdem noch da
     await page.getByRole('tab', { name: 'Punkte' }).click();
     await expect(page.locator('.score .num.pct').first()).toBeVisible();
     await page.evaluate(() => document.getElementById('openMembers').click());

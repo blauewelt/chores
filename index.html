@@ -569,7 +569,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.74.0';
+  const APP_VERSION = '4.75.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -631,7 +631,15 @@
   // Sekunden sind die, in denen jemand einen Screenshot macht.
   // Die Marke haengt am Geraet und an der Familie, nicht am Beta-Schalter:
   // BETA kennt erst der erste Abgleich, der Boot muss vorher entscheiden.
-  const stripKey = f => 'haushalt.stripurl:' + f;
+  // v4.75.0: Die Marke ist die ZUSTIMMUNG des Nutzers, nicht mehr eine
+  // Nebenwirkung des Strippens. Vorher raeumte die App die Adressleiste von
+  // selbst auf — und nahm damit still eine Sicherungskopie weg, von der die
+  // meisten gar nicht wussten, dass sie eine ist (Lesezeichen, Verlauf,
+  // Adressleiste). Wer den Link nirgends sonst hat, verliert dann bei einem
+  // geleerten Speicher den Zugang, und da family_id = SHA-256(Geheimnis) ist,
+  // kann ihn auch der Server nicht zurueckgeben. Also: erst fragen, dann
+  // aufraeumen — und jederzeit widerrufbar.
+  const stripKey = f => 'haushalt.linksafe:' + f;
   function wantStripped(f) {
     if (IS_IOS || !f) return false;                 // iOS: Web-Clip braucht die URL (§6.2)
     try { return localStorage.getItem(stripKey(f)) === '1'; } catch { return false; }
@@ -953,19 +961,34 @@
           pullDiscards > 0 ? `<br>${t('Empfangen, noch nicht übernommen: {n} Abgleiche', { n: pullDiscards })}` : ''}${
           unread > 0 ? `<br>${t('{n} Einträge nicht lesbar (Verschlüsselung)', { n: unread })}` : ''}</p>`;
       })()}
-      ${!BETA ? '' : `<button class="menuitem setrow" id="setBetaOff" style="border-radius:12px">
-        <span class="seticon">🧪</span><span class="setlabel">${t('Beta: Adressleiste')}</span><span class="setval">${t('An')}</span><span class="chev">›</span></button>`}
+      ${!BETA ? '' : `<button class="menuitem setrow" id="setStripUrl" style="border-radius:12px">
+        <span class="seticon">🧪</span><span class="setlabel">${t('Adressleiste aufräumen')}</span><span class="setval">${
+          wantStripped(FAMILY) ? t('An') : t('Aus')}</span><span class="chev">›</span></button>`}
       <p style="color:var(--muted);font-size:12.5px;margin:4px 4px 2px;text-align:center">Fairli ${APP_VERSION}</p>
     </div>`;
     sh.querySelector('#closeSettings').onclick = () => sh.close();
     sh.querySelector('#setTrash').onclick = () => { sh.close(); openTrashSheet(); };
     sh.querySelector('#setSyncDiag').onclick = () => { sh.close(); openSyncDiag(); };
-    const bo = sh.querySelector('#setBetaOff');       // v4.67.0: Selbst-Ausstieg aus der Beta
-    if (bo) bo.onclick = async () => {
-      if (!isAdmin()) { toast(t('Nur Admins können das ändern')); return; }
-      BETA = false;
-      try { await sb('families', 'PATCH', { beta: false }); } catch { BETA = true; toast(t('Gerade keine Verbindung — bitte später noch einmal versuchen')); return; }
-      sh.close(); render(); toast(t('Beta beendet'));
+    // v4.75.0: Zustimmungs-Schalter fuers Aufraeumen der Adressleiste.
+    // Einschalten fragt vorher nach — es nimmt eine Sicherungskopie weg.
+    // Ausschalten stellt den Link SOFORT wieder her, nicht erst beim Neustart:
+    // wer es zurueckdreht, will die Adresszeile jetzt sehen, nicht spaeter.
+    const su = sh.querySelector('#setStripUrl');
+    if (su) su.onclick = () => {
+      const on = wantStripped(FAMILY);
+      if (!on) {
+        if (!confirm(t('Der Haushalts-Link verschwindet dann aus der Adressleiste — er steht dann nur noch auf diesem Gerät. Sichere ihn vorher als Lesezeichen, Home-Bildschirm-Symbol oder QR-Code. Fortfahren?'))) return;
+        try { localStorage.setItem(stripKey(FAMILY), '1'); } catch {}
+        urlStripped = true;
+        if (location.pathname !== BASE) { try { history.replaceState(null, '', BASE); } catch {} }
+        toast(t('Adressleiste aufgeräumt'));
+      } else {
+        try { localStorage.removeItem(stripKey(FAMILY)); } catch {}
+        urlStripped = false;
+        try { history.replaceState(null, '', routeUrl(FAMILY, USER_SLUG)); } catch {}
+        toast(t('Der Link steht wieder in der Adressleiste'));
+      }
+      sh.close(); render();
     };
     const sn = sh.querySelector('#setName');
     if (sn) sn.onclick = () => { sh.close(); openRenameSheet(); };
@@ -1746,9 +1769,11 @@
         // localStorage — auf genau der Plattform, die Storage bei Platzdruck
         // raeumt. Safari zeigt ohnehin nur die Domain; der Screenshot-Schaden
         // ist dort klein, der Lockout-Schaden waere gross.
-        if (BETA && !IS_IOS && FAMILY && !urlStripped) {
+        // v4.75.0: NUR mit ausdruecklicher Zustimmung (Einstellungen). Ohne sie
+        // bleibt der Link stehen — die Adressleiste ist fuer viele die einzige
+        // Sicherungskopie, und die nimmt man niemandem ungefragt weg.
+        if (BETA && wantStripped(FAMILY) && !urlStripped) {
           urlStripped = true;
-          try { localStorage.setItem(stripKey(FAMILY), '1'); } catch {}
           if (location.pathname !== BASE) {
             try { history.replaceState(null, '', BASE); } catch {}
           }

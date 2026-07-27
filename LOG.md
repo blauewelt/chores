@@ -1,3 +1,41 @@
+## 2026-07-27 — v4.75.0 (SW haushalt-v177): the address bar is only tidied WITH consent
+
+- Maintainer, on reading v4.73.0: «losing access via losing local storage
+  sounds scary». Correct, and the objection is sharper than the feature.
+- What v4.73.0 got wrong was not the mechanism but the ASKING. The address
+  bar, bookmarks and browser history are a copy of the household link that
+  most people do not know they have. Stripping the URL silently removes
+  that copy, and because family_id = SHA-256(secret) the server can never
+  hand it back: lose every copy and the data still exists but is
+  unreachable forever. An app must not take away a backup unasked.
+- So the mark changed meaning: `haushalt.linksafe:<fam>` is now the user's
+  CONSENT, not a side effect of stripping. No consent → the link stays in
+  the address bar, exactly as before v4.73.0. Settings row «Adressleiste
+  aufräumen» (19 languages), off by default, with a confirmation that
+  names the trade-off and tells you to save the link as a bookmark, home
+  screen icon or QR code first.
+- Revoking restores the link IMMEDIATELY, not on the next start — whoever
+  turns it back wants to see the address bar now, not later. Tested, and
+  negative-controlled (drop the immediate replaceState → red).
+- Three tests: without consent the link stays; consent + revoke round trip
+  incl. persistence across a reload; declining the prompt changes nothing.
+  Negative control on the gate itself: let the sync strip without checking
+  consent → 3 red.
+- Worth recording as a judgement, not just a diff: the honest reading of
+  «only strip once the link is saved» is that the APP CANNOT KNOW whether
+  a link is saved. Completing «Zugriff sichern» only means the sheet was
+  dismissed; being installed does not help either, because the family
+  WebAPK starts at the generic start_url and finds the household through
+  localStorage anyway. The only truthful signal is the user saying so —
+  so the app asks instead of guessing, and makes the trade-off visible in
+  the question.
+- The suite caught a rename of mine: the v4.74.0 coupling guard still
+  pointed at #setBetaOff, which no longer exists. Repointed at
+  #setStripUrl rather than deleted — the intent (the switch must never
+  take the weekly goal away) is exactly as valid under the new name.
+- NOT changed: iOS still never strips (§6.2, the web clip bakes in the
+  current URL), and households without the beta flag see none of this.
+
 ## 2026-07-27 — tests: the v4.73.0 device checks became assertions (no version bump)
 
 - Question was «can you run those install checks in the emulator?».
