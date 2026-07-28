@@ -1,3 +1,23 @@
+## 2026-07-28 — v4.94.0 (SW haushalt-v198): Aufgabe-Bearbeiten zeigt die Kachel in echter Kachel-Größe
+
+Maintainer-Entscheid (28.07., aus zwei gerenderten Varianten gewählt —
+«volle Fläche klar» vs. «Kachel-Replik»): die REPLIK gewinnt.
+
+- Das Aufgaben-Edit-Sheet (choreSheet) zeigt die Vorschau jetzt als echte
+  Kachel: volle Sheet-Breite, 118px hoch, Bild gedimmt (.55) mit demselben
+  Gradient wie .chore, NAME oben links + PUNKTE unten links im Overlay.
+  Eine Live-Vorschau «so sieht die Kachel aus» — passt zum Bild-Idee-Feld.
+- Overlays ziehen live mit: Name-Feld tippen → Overlay-Name sofort;
+  Punkte-Slider → Overlay-Punkte sofort. Das Bild folgt debounced (jede
+  Prompt-Variante ist eine eigene Erzeugung, unverändert seit v4.78.0).
+- Der EINTRAG-Edit (logSheet) bleibt die kleine zentrierte 96×64-Vorschau
+  aus v4.93.0 — nur das Aufgaben-Sheet wächst auf Kachel-Größe.
+- Der busy-Funke sitzt bei der grossen Kachel unten rechts (::before, damit
+  er nicht mit dem Gradient-::after kollidiert).
+- 1 neuer Test (volle Breite, Banner-Verhältnis, gedimmt, Name+Punkte,
+  Live-Name; Negativ-Kontrolle: keine Kachel-Overlays im logSheet).
+- APP_VERSION 4.94.0, SW-Cache haushalt-v198.
+
 ## 2026-07-28 — v4.93.0 (SW haushalt-v197): Verlauf-Kachel 90×60 & Edit-Vorschau zentriert — durchgehend OHNE Overscan
 
 Maintainer-Entscheid (28.07.), mit Messung statt Bauchgefühl:

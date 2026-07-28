@@ -3142,6 +3142,39 @@ test.describe('Fairli', () => {
     await expect(page.locator('#logSheet #lArtPrev')).toHaveCount(0);
   });
 
+  test('Aufgabe-bearbeiten zeigt die Kachel in ECHTER Kachel-Groesse — volle Breite, gedimmt, Name + Punkte im Overlay (v4.94.0)', async ({ context, page }) => {
+    await mockBackend(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    // Aufgaben-Tab, Stift auf der Kachel öffnet das Bearbeiten-Sheet
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await page.locator('[data-edit="c-1"]').first().click();
+    await expect(page.locator('#choreSheet')).toBeVisible();
+    const w = page.locator('#cArtPrevW');
+    await expect(w).toBeVisible();
+    // Bild da …
+    await expect(page.locator('#cArtPrev')).toHaveAttribute('src', /gen\.pollinations\.ai/);
+    const g = await w.evaluate(el => {
+      const r = el.getBoundingClientRect();
+      const sheet = el.closest('.sheet').getBoundingClientRect();
+      return { ww: r.width, wh: r.height, fillsWidth: (r.width / sheet.width),
+               op: getComputedStyle(el.querySelector('img')).opacity,
+               name: el.querySelector('.tpName') && el.querySelector('.tpName').textContent,
+               pts: el.querySelector('.tpPts') && el.querySelector('.tpPts').textContent };
+    });
+    expect(g.fillsWidth).toBeGreaterThan(0.9);               // volle Sheet-Breite (Kachel-Groesse)
+    expect(g.ww).toBeGreaterThan(g.wh * 2);                  // Banner, deutlich breiter als hoch
+    expect(parseFloat(g.op)).toBeLessThan(0.8);              // Bild GEDIMMT (wie die echte Kachel)
+    expect(g.name).toBe('Müll rausbringen');                 // Name-Overlay = Aufgabenname
+    expect(g.pts).toBe('+2');                                // Punkte-Overlay
+    // Live: Name im Feld ändern → Overlay zieht sofort mit
+    await page.locator('#cName').fill('Küche wischen');
+    await expect(page.locator('#cArtPrevW .tpName')).toHaveText('Küche wischen');
+    // Der Eintrag-Edit (logSheet) bleibt die kleine zentrierte Vorschau —
+    // KEINE Kachel-Overlays dort (Negativ-Kontrolle gegen versehentliche
+    // Wiederverwendung der Klassen).
+    await expect(page.locator('#logSheet .tpName')).toHaveCount(0);
+  });
+
   test('Kachelbilder im Verlauf: Standard AUS (Farbband), Einschalten pro Gerät, überlebt den Reload (v4.92.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);

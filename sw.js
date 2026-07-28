@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v197';   // v4.93.0 Verlauf 90x60 + Edit zentriert
+const CACHE = 'haushalt-v198';   // v4.94.0 Aufgaben-Edit Kachel-Vorschau
 const SHELL = [
   './',
   './index.html',
