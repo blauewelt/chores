@@ -1,3 +1,41 @@
+## 2026-07-28 — v4.88.0 (SW haushalt-v191): device heartbeat — silent readers become visible
+
+- Maintainer question the log stamp (v4.72.0) cannot answer: «is anyone
+  besides me updating?» The stamp sees only WRITERS; a device that just
+  reads the scoreboard never reveals its build. Tonight's live case: the
+  family-link device (no logged_by, no member identity) last wrote before
+  the stamp existed — unclassifiable by design.
+- New additive table `devices` (migration 20260728030000): device_id
+  (client-minted, localStorage), family_id, member_id (nullable —
+  EMPTY on the family link: the chip is a selection, not an identity),
+  app_version, last_seen. Written once per day at boot, and immediately
+  after a version change. WRITE-ONLY for clients: RLS has no select
+  policy, so the publishable key reads an empty table — adoption data is
+  dashboard-only (privacy stance of 20260727080000, sharpened). Writes
+  gated by the same per-family write key as every table. No user agent,
+  no model, nothing IP-adjacent — the version string and nothing else.
+- Boot stays unimpressed: the beat is fire-and-forget behind CRYPTO_READY;
+  the daily mark is set only AFTER a successful write, so offline devices
+  and clients racing an unapplied migration retry on the next boot.
+  On personal links the beat waits briefly (≤15 s poll) for the first
+  pull's member list; if it never comes, it writes with empty member_id —
+  the VERSION is the message, not the name.
+- WHY NOT members-columns (the obvious idea): members carries
+  touch_updated_at and feeds the delta sync — a daily write would bump
+  rows into every device's pull (the churn 20260727080000 refused);
+  a family-link device has no member row to stamp; multiple devices per
+  person would last-writer-wins each other. One row per device answers
+  the actual question.
+- OPERATIONS: migration must be applied via the db-migrate workflow
+  (workflow_dispatch) — the client tolerates its absence (404 → silent
+  retry next boot), so deploy order is soft, but the data only starts
+  flowing once the table exists.
+- 2 new tests (personal link: version+member+device_id, same-day
+  once-guard, version-change re-beat with STABLE device_id, family link
+  with null member_id; failure path: 404 leaves no mark, boot unaffected,
+  next boot retries). No i18n keys — the feature has no UI.
+- APP_VERSION 4.88.0, SW-Cache haushalt-v191
+
 ## 2026-07-28 — v4.87.0 (SW haushalt-v190): one pastel frame around every art crop
 
 - Maintainer request: a slight border around the crops so the tile art

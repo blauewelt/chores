@@ -4214,6 +4214,54 @@ test.describe('Fairli', () => {
     await expect(page.locator('#toast')).toContainText('Verschoben auf Gestern');
   });
 
+  // ---------- v4.88.0: Geräte-Herzschlag ----------
+
+  test('Geräte-Herzschlag: Boot meldet Version write-only, 1×/Tag, Versionswechsel sofort, Familien-Link ohne member_id (v4.88.0)', async ({ context, page }) => {
+    const beats = [];
+    await mockBackend(context);
+    await context.route(`${SB}/rest/v1/devices**`, route => {
+      beats.push(JSON.parse(route.request().postData() || '[]')[0]);
+      return route.fulfill({ status: 201, body: '' });
+    });
+    // 1) Persoenlicher Link → member_id gesetzt, Version = Live-Version
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+    await expect.poll(() => beats.length).toBe(1);
+    expect(beats[0].app_version).toBe(APP_VERSION);
+    expect(beats[0].member_id).toBe('m-mira');
+    expect(beats[0].device_id).toBeTruthy();
+    expect(beats[0].family_id).toBe(FAM);
+    // 2) Gleicher Tag, gleiche Version: Reload schlaegt NICHT erneut
+    await page.reload();
+    await page.waitForTimeout(600);
+    expect(beats.length).toBe(1);
+    // 3) Versionswechsel: alte Marke → naechster Boot meldet sofort, GLEICHE device_id
+    await page.evaluate(() => localStorage.setItem('haushalt.devbeat',
+      new Date().toISOString().slice(0, 10) + '|4.0.0'));
+    await page.reload();
+    await expect.poll(() => beats.length).toBe(2);
+    expect(beats[1].device_id).toBe(beats[0].device_id);
+    // 4) Familien-Link (neuer Kontext-Zustand nicht noetig: Storage geleert): member_id null
+    await page.evaluate(() => { localStorage.removeItem('haushalt.devbeat'); });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect.poll(() => beats.length).toBe(3);
+    expect(beats[2].member_id).toBe(null);
+  });
+
+  test('Geräte-Herzschlag: Scheitern setzt KEINE Marke — der nächste Boot versucht es erneut (v4.88.0)', async ({ context, page }) => {
+    // Migration noch nicht angewandt / offline: 404 auf devices. Der Boot
+    // darf davon nichts merken, und die Marke bleibt frei fuer den Retry.
+    let calls = 0;
+    await mockBackend(context);
+    await context.route(`${SB}/rest/v1/devices**`, route => { calls++; return route.fulfill({ status: 404, body: '' }); });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect.poll(() => calls).toBe(1);
+    await expect(page.locator('.tabs')).toBeVisible();          // Boot unbeeindruckt
+    const mark = await page.evaluate(() => localStorage.getItem('haushalt.devbeat'));
+    expect(mark).toBe(null);                                    // kein Erfolg, keine Marke
+    await page.reload();
+    await expect.poll(() => calls).toBe(2);                     // Retry am naechsten Boot
+  });
+
   test('Einstellungen zeigen «Letzter Abgleich» — stilles Scheitern sieht nie wieder wie Abwesenheit aus (v4.61.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);

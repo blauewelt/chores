@@ -664,7 +664,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.87.0';
+  const APP_VERSION = '4.88.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -4019,6 +4019,36 @@
   }
   document.addEventListener('visibilitychange', () => { if (!document.hidden && !firstRunOpen) { invalidateOrder(); pull(); } });
   setInterval(() => { if (!document.hidden && cfg && !firstRunOpen) pull(); }, 20000); // Auto-Sync alle 20 s
+  // ---------- Geräte-Herzschlag (v4.88.0) ----------
+  // Einmal pro Tag (und nach einem Versionswechsel sofort) meldet das Geraet
+  // device_id + Version. WRITE-ONLY: kein Select, kein Pull, kein Reconcile —
+  // die Tabelle ist fuer Clients unsichtbar (RLS ohne Select-Policy) und
+  // beantwortet im Dashboard, was die log-Stempel (v4.72.0) nicht koennen:
+  // auch REINE LESER werden sichtbar. member_id nur am persoenlichen Link;
+  // am Familien-Link bleibt sie leer (der Chip ist Auswahl, keine
+  // Identitaet). Kein User-Agent, kein Modell — Version und sonst nichts.
+  // Die Marke wird erst NACH erfolgreichem Schreiben gesetzt: scheitert der
+  // Beat (offline, Migration noch nicht angewandt), probiert es der
+  // naechste Boot erneut.
+  (async () => {
+    try {
+      if (!cfg || !FAMILY) return;
+      const LS_DEV = 'haushalt.device', LS_BEAT = 'haushalt.devbeat';
+      let dev = localStorage.getItem(LS_DEV);
+      if (!dev) { dev = uid() + uid(); localStorage.setItem(LS_DEV, dev); }
+      const stamp = new Date().toISOString().slice(0, 10) + '|' + APP_VERSION;
+      if (localStorage.getItem(LS_BEAT) === stamp) return;
+      await CRYPTO_READY;
+      // member_id braucht die Mitgliederliste — auf einem frischen Geraet
+      // kommt die erst mit dem ersten Pull. Am persoenlichen Link kurz
+      // darauf warten; klappt es nicht, schreibt der Beat mit leerer
+      // member_id — die VERSION ist die Nachricht, nicht der Name.
+      if (USER_SLUG) for (let i = 0; i < 30 && !slugSelf(); i++) await new Promise(r => setTimeout(r, 500));
+      await upsert('devices', [{ device_id: dev, member_id: (slugSelf() || {}).id || null,
+        app_version: APP_VERSION, last_seen: new Date().toISOString() }]);
+      localStorage.setItem(LS_BEAT, stamp);
+    } catch {}
+  })();
   render();
   // Brandneue Familie ohne lokalen Stand: Einrichtung sofort zeigen, nicht
   // erst nach dem ersten Netzwerk-Pull.
