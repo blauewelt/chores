@@ -1,3 +1,18 @@
+## 2026-07-28 — v4.85.0: GDPR-Härtung — eigene Schrift, Read-Key auf GET, Datenschutz-Link
+
+- Bricolage Grotesque selbst gehostet (bricolage-grotesque.ttf, variable
+  100–900, @font-face inline): kein IP-Transfer mehr an Google Fonts.
+  Nebeneffekt: Schrift rendert jetzt auch offline korrekt.
+- sb() sendet den Familien-Schlüssel (x-fairli-key) auch auf GET —
+  Vorbereitung für die RLS-Lesesperre (Supabase nicht mehr weltlesbar).
+  Die SQL-Migration folgt SEPARAT, erst nach Client-Verbreitung
+  (Reihenfolge zwingend, sonst brechen Reads gecachter Clients).
+- Datenschutz-Link («Datenschutz») auf dem Einstiegs-Screen →
+  privacy.html (Datei lag schon im Repo, war aber nirgends verlinkt).
+- Kachel-Kunst (Pollinations) bewusst UNVERÄNDERT — Maintainer-Entscheid
+  27.07.: Feature bleibt; Ersatz nur durch etwas Besseres (§12).
+- SW-Cache haushalt-v188; Shell + bricolage-grotesque.ttf + privacy.html.
+
 ## 2026-07-27 — v4.84.0 (SW haushalt-v187): tile art in the ENTRY edit sheet
 
 - Maintainer request («I think you shipped this before»): v4.79.0 put the

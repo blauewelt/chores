@@ -36,9 +36,16 @@
 <meta name="theme-color" content="#141A17">
 <link rel="apple-touch-icon" href="/chores/icon-192.png?v=48">
 <link rel="icon" href="/chores/icon-192.png?v=48" sizes="192x192" type="image/png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+  /* GDPR (v4.85.0): Schrift selbst gehostet — kein IP-Transfer mehr an Google
+     Fonts. Variable Font, deckt 500/700/800 aus einer Datei. */
+  @font-face {
+    font-family: 'Bricolage Grotesque';
+    src: url('./bricolage-grotesque.ttf') format('truetype');
+    font-weight: 100 900;
+    font-display: swap;
+  }
+</style>
 <style>
   :root{
     --bg:#12161F; --card:#1A2230; --ink:#EAF1EB; --muted:#91A1B8;
@@ -630,7 +637,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.84.0';
+  const APP_VERSION = '4.85.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1485,6 +1492,7 @@
       </div>` : ''}
       <button id="newFam" style="${IS_STANDALONE ? 'border:none;background:none;color:var(--muted);font-size:14px;cursor:pointer;margin-top:4px' : btn + ';background:' + (last && last.family ? 'var(--card);border:1px solid var(--line);color:var(--ink)' : 'var(--accent);color:#0C1220')}">${t('Neuen Haushalt erstellen')}</button>
       <button id="showJoin" style="${IS_STANDALONE ? btn + ';background:var(--accent);color:#0C1220' : 'border:none;background:none;color:var(--muted);font-size:14px;cursor:pointer;margin-top:4px'}">${t('Ich habe einen Einladungs-Link')}</button>
+      <a href="./privacy.html" target="_blank" rel="noopener" style="color:var(--muted);font-size:12px;margin-top:10px;text-decoration:underline;opacity:.75">${t('Datenschutz')}</a>
       <div id="joinWrap" style="display:none;flex-direction:column;gap:10px;width:100%;max-width:300px;margin-top:4px">
         <input id="joinLink" type="text" inputmode="url" autocomplete="off" autocapitalize="off"
           placeholder="${t('Link einfügen')}" style="width:100%;padding:12px;font-size:15px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);box-sizing:border-box">
@@ -1722,7 +1730,7 @@
       headers: Object.assign({
         apikey: cfg.key, Authorization: 'Bearer ' + cfg.key,
         'Content-Type': 'application/json', Prefer: 'return=minimal'
-      }, method !== 'GET' && WRITEKEY ? { 'x-fairli-key': WRITEKEY } : {}),
+      }, WRITEKEY ? { 'x-fairli-key': WRITEKEY } : {}),   // GDPR (v4.85.0): Read-Key auch auf GET — Vorbereitung RLS-Lesesperre
       body: body ? JSON.stringify(body) : undefined
     });
     if (!r.ok) throw new Error(method + ' ' + path + ' → ' + r.status);
