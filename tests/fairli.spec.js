@@ -3194,6 +3194,19 @@ test.describe('Fairli', () => {
     const bc2 = await page.locator('.entry .eartph').first().evaluate(el => getComputedStyle(el).borderTopColor);
     expect(bc).toBe('rgba(240, 233, 220, 0.42)');
     expect(bc2).toBe(bc);
+    // v4.89.0: der Initial-Kreis sitzt IN der Bildecke (auch auf dem
+    // Leer-Slot), nicht mehr in der Textzeile — und die Textspalte beginnt
+    // an der OBERKANTE des Bildes, als haette sie immer drei Zeilen.
+    await expect(rows.nth(0).locator('.eartw .edot')).toHaveCount(1);
+    await expect(rows.nth(1).locator('.eartph .edot')).toHaveCount(1);
+    await expect(page.locator('.eline1 .edot')).toHaveCount(0);
+    const artTop = (await rows.nth(0).locator('.eartw').boundingBox()).y;
+    const txtTop = (await rows.nth(0).locator('.eline1').boundingBox()).y;
+    expect(Math.abs(txtTop - artTop)).toBeLessThan(4);
+    // Zweizeiler ebenso top-aligned (nicht zentriert):
+    const artTop2 = (await rows.nth(1).locator('.eartph').boundingBox()).y;
+    const txtTop2 = (await rows.nth(1).locator('.eline1').boundingBox()).y;
+    expect(Math.abs(txtTop2 - artTop2)).toBeLessThan(4);
     // Textspalte startet in beiden Zeilen an derselben x-Koordinate
     const x1 = (await rows.nth(0).locator('.eline1').boundingBox()).x;
     const x2 = (await rows.nth(1).locator('.eline1').boundingBox()).x;

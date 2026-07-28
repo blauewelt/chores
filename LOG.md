@@ -1,3 +1,31 @@
+## 2026-07-28 — v4.89.0 (SW haushalt-v193): Verlauf — the initial circle sits in the art's corner; text top-aligns as three lines
+
+Two aesthetics refinements to the Verlauf rows, requested together:
+
+- The 24 px colored initial circle (the ICH-BIN chip rendering) no longer
+  sits inline in the text line — it overlays the TOP-LEFT CORNER of the
+  art crop. Radius math: the circle has radius 12 and the crop's corner
+  radius is 12, so the circle's arc CONTINUES the corner's arc — nested,
+  not stacked. Coverage of the art stays minimal (a quarter of the circle
+  at most overlaps painted content thanks to the 22 % overscan pushing
+  the subject toward center). Rows WITHOUT art (snapshot guard: renamed
+  or deleted chores, §3 history immutability) keep the same circle in the
+  same place on their placeholder square, so the eye finds the person at
+  a constant position in every row.
+- The text column next to the art is laid out as if it always had three
+  lines: `justify-content:flex-start` on a fixed 60 px column (= art
+  height), so line 1 (person + task name) aligns with the TOP edge of
+  the art even when only two lines exist. Before, short rows centered
+  and line 1 wandered vertically between rows.
+
+Tests: the Verlauf-Ordnung structure test pins the circle's new home
+(`.eartw .edot` = 1, `.eartph .edot` = 1, `.eline1 .edot` = 0) and the
+top alignment (|eline1.y − eartw.y| < 4 px, for an art row AND an
+artless row). Negative control: restoring `justify-content:center` turns
+the alignment pin red — the guard guards.
+
+No behavior, storage, or sync changes — CSS and row markup only.
+
 ## 2026-07-28 — v4.88.1 (SW haushalt-v192): INCIDENT — v4.88.0 was deployed on a red suite; beat now rides the pull
 
 CONFESSION, on the record: v4.88.0 went live although the full run had
