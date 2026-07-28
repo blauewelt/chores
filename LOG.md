@@ -1,3 +1,31 @@
+## 2026-07-28 — v4.87.0 (SW haushalt-v190): one pastel frame around every art crop
+
+- Maintainer request: a slight border around the crops so the tile art
+  reads as the SAME object on every surface. Implemented as ONE warm
+  pastel cream tone (--artframe, rgba(240,233,220,.42), 1.5 px) on all
+  three crop surfaces — Verlauf thumb, task pane, entry pane — and on
+  the Verlauf's empty slot, so the column keeps its rhythm.
+- The tone is an echo of the painted cream frame that the generated
+  images carry (and that the overscan crops away). Deliberately NOT
+  measured per image: reading border pixels needs CORS-enabled canvas
+  per thumbnail — a new failure mode for a 1.5 px line — and the painted
+  frames are near-uniformly warm white anyway, so one fixed tone gets
+  the effect without the machinery. Documented so the «infer it from the
+  image» idea is not re-litigated without that cost in view.
+- Same release, second maintainer finding: editing the prompt made the
+  pane preview DISAPPEAR for the whole generation time. Cause: the
+  debounce swapped src immediately, but a new prompt is a new IMAGE
+  GENERATION (seconds) — the preview had no loaded image and faded to an
+  empty frame; on failure it stayed empty. Now the old picture stays
+  visible (dimmed, pulsing ✨ = «being repainted»), the new one preloads
+  off-screen and swaps in ON LOAD; a failed generation quietly keeps the
+  old picture, and a newer edit invalidates any older in-flight load.
+  Test holds the «generation» open with a suspended route and asserts
+  the old src is STILL displayed mid-generation; negative control
+  (direct swap restored) → red.
+- Pinned in the structure test (border color identical on image slot and
+  empty slot); negative control: frame removed → red.
+
 ## 2026-07-28 — v4.86.0 (SW haushalt-v189): Verlauf polish — ICH-BIN-style person, one crop everywhere
 
 - Maintainer-approved via MOCK before any deploy (new workflow for UI

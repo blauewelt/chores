@@ -3047,12 +3047,31 @@ test.describe('Fairli', () => {
     await expect(prev).toHaveAttribute('src', /gen\.pollinations\.ai/);
     await expect(prev).toHaveAttribute('src', /seed=/);
     const before = await prev.getAttribute('src');
+    // v4.87.0: der Prompt-Wechsel ERZEUGT ein neues Bild (dauert Sekunden) —
+    // das alte bleibt SICHTBAR stehen, bis das neue geladen ist. Die neue URL
+    // antwortet hier verzoegert; solange sie unterwegs ist, muss src noch die
+    // alte sein und der busy-Funke leuchten. Vorher sprang die Vorschau
+    // sofort auf die neue URL um und war fuer die gesamte Generierungszeit
+    // ein leerer Rahmen (Maintainer-Befund).
+    const png1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+    let releaseNew = null;
+    await context.route('**://gen.pollinations.ai/**', async r => {
+      if (decodeURIComponent(r.request().url()).includes('a red robot vacuum')) {
+        await new Promise(res => { releaseNew = res; });        // «Generierung» haelt an
+      }
+      return r.fulfill({ status: 200, contentType: 'image/png', body: png1 });
+    });
     // Idee tippen: das Bild folgt — nach der Debounce-Pause, nicht pro Taste
     await page.locator('#cArt').fill('a red robot vacuum');
     await page.waitForTimeout(400);
-    expect(await prev.getAttribute('src')).toBe(before);        // noch nicht …
+    expect(await prev.getAttribute('src')).toBe(before);        // noch nicht (Debounce) …
+    await expect.poll(() => page.locator('#cArtPrevW').evaluate(el => el.classList.contains('busy')),
+      { timeout: 4000 }).toBe(true);                            // … Generierung laeuft an
+    expect(await prev.getAttribute('src')).toBe(before);        // ALTES Bild steht noch
+    releaseNew();                                               // Generierung fertig
     await expect.poll(() => prev.getAttribute('src'), { timeout: 4000 })
-      .toContain(encodeURIComponent('a red robot vacuum'));     // … jetzt
+      .toContain(encodeURIComponent('a red robot vacuum'));     // jetzt der Wechsel
+    await expect.poll(() => page.locator('#cArtPrevW').evaluate(el => el.classList.contains('busy'))).toBe(false);
   });
 
   test('KEINE Bild-Vorschau beim Anlegen und bei Einmalig — ohne id gibt es keinen stabilen Seed (v4.78.0)', async ({ context, page }) => {
@@ -3166,6 +3185,12 @@ test.describe('Fairli', () => {
     // … und der bildlose Eintrag traegt den leeren Slot in gleicher Groesse
     const ph = await page.locator('.entry .eartph').first().boundingBox();
     expect(Math.abs(ph.width - wrap.width)).toBeLessThan(1);
+    // v4.87.0: EIN Pastell-Rahmen um jede Crop-Flaeche (Echo des gemalten
+    // Bildrahmens) — Bild-Slot und Leer-Slot tragen denselben Ton.
+    const bc = await page.locator('.entry .eartw').first().evaluate(el => getComputedStyle(el).borderTopColor);
+    const bc2 = await page.locator('.entry .eartph').first().evaluate(el => getComputedStyle(el).borderTopColor);
+    expect(bc).toBe('rgba(240, 233, 220, 0.42)');
+    expect(bc2).toBe(bc);
     // Textspalte startet in beiden Zeilen an derselben x-Koordinate
     const x1 = (await rows.nth(0).locator('.eline1').boundingBox()).x;
     const x2 = (await rows.nth(1).locator('.eline1').boundingBox()).x;
