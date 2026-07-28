@@ -1,3 +1,61 @@
+## 2026-07-28 — v4.86.0 (SW haushalt-v189): Verlauf polish — ICH-BIN-style person, one crop everywhere
+
+- Maintainer-approved via MOCK before any deploy (new workflow for UI
+  rounds — the screenshot went out first, the release second).
+- The person in a Verlauf row now renders exactly like the ICH-BIN
+  selector: colored circle with the initial, UNCOLORED name next to it.
+  The v4.80.0 color chip is gone. Name and title share ONE font size
+  (the compact one; weight separates them — name bold, title regular).
+  The «·» separator was dropped after measuring: 19 px incl. gaps, which
+  was precisely why «Aufräumen Küche» ellipsized 3 px short of fitting.
+- «White stripes» on Verlauf thumbnails explained and fixed: generated
+  tile art carries a PAINTED light frame on all four sides. On the tile
+  (matching aspect) it reads as an intentional picture frame; cover-crop
+  into the 1:1 Verlauf square removes the left/right frame but keeps
+  top/bottom — two orphaned edges reading as artifacts. Fix: the image
+  overscans its clipping wrapper by 22 % (transform:scale in an
+  overflow:hidden square — cross-engine, unlike object-view-box, which
+  Safari lacks). 15 % was measurably not enough: the frame is ~6.7 % per
+  edge, 1.15 crops 6.5 %.
+- Tests updated to the new markup, plus a new assertion pair: the slot
+  is square AND the image inside is wider than the slot (overscan
+  active). Negative controls: remove the overscan → red; let the two
+  font sizes diverge → red.
+- Engine lesson from the suite: WebKit collapses a BROKEN <img alt="">
+  to 0×0 while Chromium keeps the CSS box — the overscan assertion was
+  deterministically red on the iPhone project until the test routes a
+  real 1×1 PNG instead of relying on the global art abort. Geometry
+  assertions on images need LOADED images.
+- First release fully under the §11b protocol: area claimed on the
+  intent board beforehand, version assigned from the LIVE state at
+  release time, deploy under the lock.
+- Follow-up in the same release (maintainer, after seeing both features
+  live side by side): ONE crop everywhere. Both edit panes previously
+  showed the FULL 440×300 art including the painted frame while the
+  Verlauf showed a frame-free square — two renderings of the same tile.
+  Now a shared .artprevw wrapper gives the panes the same centered
+  source-square crop (min(h,w) minus frame, via the 22 % overscan), just
+  larger: task pane 96 px, entry pane 84 px (the colleague's «a tad
+  smaller» relation between the panes is preserved), Verlauf thumb 60 px.
+  The colleague's v4.84.0 test pinned the old 42 %-width geometry — that
+  premise is superseded by the unification, so its assertion now pins
+  the new truth (square wrapper, pane-sized, image overscans the
+  wrapper) while keeping their snapshot-rule and no-placeholder checks.
+- FOURTH version collision today — and the FIRST caught by tooling, not
+  luck: the parallel session shipped its v4.84.0 (entry-edit-sheet art,
+  e6347307) while this suite ran, and this session's deploy was REFUSED
+  by the new version guard (exit 3, lock released cleanly) instead of
+  interleaving blind. §11b works. Renumbered to 4.85.0, merged on top,
+  their feature verified intact. Note for both sessions: the intent
+  board only helps if it is READ before starting — the two art efforts
+  were adjacent (Verlauf row vs. entry edit sheet) and composed, but
+  that was proximity, not coordination.
+- FIFTH collision, SECOND caught by the guard: the colleague shipped
+  v4.85.0 (self-hosted font for GDPR + privacy.html) during this
+  session's suite run; this deploy was refused cleanly (exit 3, lock
+  released) and renumbered 4.85.0 → 4.86.0 on top of their head. The
+  guard has now paid for itself twice in one evening.
+
 ## 2026-07-28 — v4.85.0: GDPR-Härtung — eigene Schrift, Read-Key auf GET, Datenschutz-Link
 
 - Bricolage Grotesque selbst gehostet (bricolage-grotesque.ttf, variable

@@ -384,15 +384,18 @@
   /* Maintainer-Feedback 27.07. (2. Runde): volle Breite erdrueckte das Sheet.
      Jetzt KACHELGROESSE (2-Spalten-Anteil, gleicher Radius) oben links —
      das Sheet beginnt mit dem Bild der Kachel, die man gerade bearbeitet. */
-  #cArtPrev{display:block; width:46%; aspect-ratio:440/300; object-fit:cover;
-    border-radius:14px; margin:2px 0 12px; background:#161D19; border:1px solid var(--line)}
-  /* Eintrag-bearbeiten (v4.84.0): gleiches Bild oben links, eine Spur kleiner
-     als die Kachel-Vorschau im Aufgaben-Sheet (46%) — «tad smaller». */
-  #lArtPrev{display:block; width:42%; aspect-ratio:440/300; object-fit:cover;
-    border-radius:14px; margin:2px 0 12px; background:#161D19; border:1px solid var(--line)}
-  /* display:block schlaegt das hidden-Attribut — ohne diese Zeile zeigte das
-     Anlegen-Sheet den leeren Vorschau-Rahmen (vom Test gefangen). */
-  #cArtPrev[hidden]{display:none}
+  /* Maintainer 27.07. (Vereinheitlichung): BEIDE Edit-Panes zeigen denselben
+     QUADRAT-Ausschnitt wie der Verlauf — zentriertes Quellquadrat
+     min(Hoehe,Breite) minus Rahmen (dieselbe 22%-Ueberscan-Technik), nur
+     groesser dargestellt. Vorher zeigten die Panes das VOLLE 440x300 samt
+     gemaltem Rahmen, der Verlauf ein Quadrat ohne — zwei Darstellungen
+     derselben Kachel. Eintrag-Pane einen Hauch kleiner (84 vs. 96). */
+  .artprevw{display:block; width:96px; height:96px; border-radius:14px;
+    overflow:hidden; margin:2px 0 12px; background:#161D19; border:1px solid var(--line)}
+  .artprevw img{display:block; width:100%; height:100%; object-fit:cover; transform:scale(1.22)}
+  .artprevw[hidden]{display:none}
+  #lArtPrevW{width:84px; height:84px}
+  
   /* Maintainer-Feedback 27.07. (4. Runde, Ordnung): JEDE Verlaufszeile hat
      DIESELBE Hoehe, das Bild ist ein einheitliches QUADRAT, Zeile 1 traegt
      Chip + Titel auf EINER Grundlinie, Notiz/Zeit folgen einzeilig darunter,
@@ -400,10 +403,18 @@
      Notizen werden mit Ellipse gekappt statt die Zeile zu sprengen. */
   .entry.vrow{height:96px; gap:12px}
   .entry.vrow .what{display:flex; flex-direction:column; gap:2px; justify-content:center}
-  .entry .eart, .entry .eartph{width:60px; height:60px; border-radius:12px;
-    object-fit:cover; flex:none; background:#252F29}
+  .entry .eartw, .entry .eartph{width:60px; height:60px; border-radius:12px;
+    flex:none; background:#252F29; overflow:hidden}
+  .entry .eartw .eart{width:100%; height:100%; object-fit:cover; transform:scale(1.22)}
   .entry .eartph{background:#1E2620}                 /* leerer Slot: gleiche Spalte, ruhig */
-  .entry .eline1{display:flex; align-items:baseline; gap:9px; min-width:0}
+  /* EINE Schriftgroesse fuer Name und Titel (Maintainer 27.07.) — die
+     kompaktere von beiden: Gewicht trennt (Name fett, Titel normal), und
+     die kleinere Groesse kauft dem Titel Breite vor der Ellipse zurueck. */
+  .entry .eline1{display:flex; align-items:center; gap:7px; min-width:0; font-size:15.5px}
+  .entry .edot{width:20px; height:20px; border-radius:50%; flex:none;
+    display:grid; place-items:center; color:#10140F; font-weight:800; font-size:11px}
+  .entry .epname{font-weight:700; flex:none; max-width:30%;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .entry .ename{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
   .entry.vrow .enote, .entry.vrow .when{overflow:hidden; text-overflow:ellipsis;
     white-space:nowrap; margin:0}
@@ -589,7 +600,7 @@
       <h2 id="choreSheetTitle">Neue Aufgabe</h2>
       <div class="slot end"><button type="button" class="x" id="cancelChore" aria-label="Schließen">×</button></div>
     </div>
-    <img id="cArtPrev" class="art" alt="" hidden>
+    <span class="artprevw" id="cArtPrevW" hidden><img id="cArtPrev" class="art" alt=""></span>
     <div class="field">
       <label for="cName" data-i18n>Aufgabe</label>
       <div id="dupHint" style="display:none;background:color-mix(in srgb, var(--accent) 12%, transparent);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--ink);margin-bottom:2px">
@@ -637,7 +648,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.85.0';
+  const APP_VERSION = '4.86.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2675,7 +2686,7 @@
             // beginnt in jeder Zeile an derselben x-Koordinate (Ordnung
             // schlaegt hier die fruehere «ehrliche Raggedness», 4. Runde).
             const art = ac && ac.name === e.chore_name
-              ? `<img class="art eart${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)">`
+              ? `<span class="eartw"><img class="art eart${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)"></span>`
               : '<span class="eartph"></span>';
             // v4.80.0: Das Bild fuehrt die Zeile an, die Person ist ein farbiger
             // Chip. Der alte Farbpunkt war neben dem Bild nur noch Rauschen
@@ -2684,7 +2695,7 @@
             const inner = `
               ${art}
               <span class="what">
-                <span class="eline1"><span class="mchip" style="background:${esc(m ? m.color : '#C2CCC5')}">${esc(e.member_name)}</span><span class="ename">${esc(e.chore_name)}</span>${n > 1 ? `<span class="xn">×${n}</span>` : ''}</span>
+                <span class="eline1"><span class="edot" style="background:${esc(m ? m.color : '#C2CCC5')}">${esc(initial(e.member_name))}</span><span class="epname">${esc(e.member_name)}</span><span class="ename">${esc(e.chore_name)}</span>${n > 1 ? `<span class="xn">×${n}</span>` : ''}</span>
                 ${note ? `<div class="enote">${esc(note)}</div>` : ''}
                 <div class="when">${d.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' })}</div>
               </span>
@@ -2960,7 +2971,7 @@
         // null) haben kein Bild.
         const ac = first.chore_id ? state.chores.find(x => x.id === first.chore_id) : null;
         return ac && ac.name === first.chore_name
-          ? `<img id="lArtPrev" class="art${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)">`
+          ? `<span class="artprevw" id="lArtPrevW"><img id="lArtPrev" class="art${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)"></span>`
           : '';
       })()}
       <div class="field">
@@ -3127,7 +3138,7 @@
   ['cArt', 'cName', 'cNote'].forEach(fid =>
     document.getElementById(fid).addEventListener('input', () => {
       const prev = document.getElementById('cArtPrev');
-      if (!editingChore || oneOffMode || prev.hidden) return;
+      if (!editingChore || oneOffMode || document.getElementById('cArtPrevW').hidden) return;
       clearTimeout(artPrevTimer);
       artPrevTimer = setTimeout(() => {
         const url = choreArt({ id: editingChore,
@@ -3200,7 +3211,7 @@
     // der Seed haengt an der id, und die gibt es beim Anlegen noch nicht.
     // Die Vorschau macht das Bild-Idee-Feld greifbar: Idee aendern, Bild sehen.
     const prev = document.getElementById('cArtPrev');
-    prev.hidden = !c || oneOffMode;
+    document.getElementById('cArtPrevW').hidden = !c || oneOffMode;
     prev.classList.remove('ok');
     prev.onload = () => prev.classList.add('ok');
     prev.onerror = () => prev.classList.remove('ok');   // Rahmen bleibt, kein Kaputt-Icon

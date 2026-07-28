@@ -3094,10 +3094,16 @@ test.describe('Fairli', () => {
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     await page.locator('.entry', { hasText: 'Müll rausbringen' }).first().click();
     await expect(page.locator('#logSheet #lArtPrev')).toHaveAttribute('src', /gen\.pollinations\.ai/);
-    // eine Spur kleiner als die Kachel-Vorschau im Aufgaben-Sheet (46%)
-    const w = await page.locator('#lArtPrev').evaluate(el =>
-      el.getBoundingClientRect().width / el.closest('.sheet').getBoundingClientRect().width);
-    expect(w).toBeGreaterThan(0.3); expect(w).toBeLessThan(0.46);
+    // Vereinheitlicht (Maintainer 27.07., ersetzt die 42%-Breite aus v4.84.0):
+    // beide Edit-Panes zeigen den QUADRAT-Ausschnitt des Verlaufs, nur
+    // groesser — Wrapper quadratisch, Bild ueberscannt den Rahmen weg.
+    const g = await page.locator('#lArtPrevW').evaluate(el => {
+      const w = el.getBoundingClientRect(), i = el.querySelector('img').getBoundingClientRect();
+      return { ww: w.width, wh: w.height, iw: i.width };
+    });
+    expect(Math.abs(g.ww - g.wh)).toBeLessThan(1);           // Quadrat
+    expect(g.ww).toBeGreaterThan(60);                        // groesser als der Verlaufs-Thumb …
+    expect(g.ww).toBeLessThan(120);                          // … aber ein Pane-Bild, kein Poster
     await page.locator('#closeLog').click();
     await page.locator('.entry', { hasText: 'Pizza holen' }).click();
     await expect(page.locator('#logSheet #lArtPrev')).toHaveCount(0);
@@ -3108,12 +3114,18 @@ test.describe('Fairli', () => {
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     const row = page.locator('.entry', { hasText: 'Müll rausbringen' }).first();
-    // Chip traegt Namen UND Personenfarbe (Mira = #3E6BD6 in der Fixture)
-    await expect(row.locator('.mchip')).toHaveText('Mira');
-    const bg = await row.locator('.mchip').evaluate(el => getComputedStyle(el).backgroundColor);
+    // v4.84.0: Person wie im ICH-BIN-Waehler — farbiger Buchstaben-Kreis,
+    // Name UNGEFAERBT daneben, gleiche Schriftgroesse wie der Titel.
+    await expect(row.locator('.edot')).toHaveText('M');
+    const bg = await row.locator('.edot').evaluate(el => getComputedStyle(el).backgroundColor);
     expect(bg).toBe('rgb(62, 107, 214)');
-    // Der Farbpunkt ist aus der Verlaufszeile verschwunden …
+    await expect(row.locator('.epname')).toHaveText('Mira');
+    const fs = await row.locator('.epname').evaluate(el => getComputedStyle(el).fontSize);
+    const fs2 = await row.locator('.ename').evaluate(el => getComputedStyle(el).fontSize);
+    expect(fs).toBe(fs2);                                   // EINE Groesse (Maintainer 27.07.)
+    // Der alte Farbpunkt und der Farb-Chip sind aus der Verlaufszeile weg …
     await expect(row.locator('.dot')).toHaveCount(0);
+    await expect(row.locator('.mchip')).toHaveCount(0);
     // … und das Bild steht VOR dem Text (erstes Element der Zeile)
     const first = await row.evaluate(el => el.firstElementChild.className);
     expect(first).toContain('eart');
@@ -3131,18 +3143,29 @@ test.describe('Fairli', () => {
       mk('l-a', 'c-1', 'Müll rausbringen', 'nur Restmüll', 0),   // Bild + Notiz (3 Zeilen)
       mk('l-b', null, 'Pizza holen', '', 3600e3),                // kein Bild, keine Notiz (2 Zeilen)
     ] });
+    // Fuer die Ueberscan-Messung muss das Bild LADEN: WebKit kollabiert ein
+    // kaputtes <img alt=""> zu 0×0 (Chromium behaelt die CSS-Box) — mit dem
+    // globalen Abort war dieser Test auf dem iPhone-Projekt deterministisch
+    // rot. Spaeter registrierte Routen gewinnen: 1×1-PNG statt Abort.
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+    await context.route('**://gen.pollinations.ai/**', r => r.fulfill({ status: 200, contentType: 'image/png', body: png }));
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     const rows = page.locator('.entry.vrow');
     await expect(rows).toHaveCount(2);
     const boxes = [await rows.nth(0).boundingBox(), await rows.nth(1).boundingBox()];
     expect(Math.abs(boxes[0].height - boxes[1].height)).toBeLessThan(1);   // gleiche Hoehe
-    // Bild ist quadratisch …
+    // Bild-SLOT ist quadratisch; das Bild darin ist GROESSER als der Slot
+    // (22 % Ueberscan, v4.84.0) — der gemalte helle Rahmen der generierten
+    // Bilder wird so weggeschnitten, statt als «weisse Streifen» oben und
+    // unten stehenzubleiben (cover in 1:1 kappt nur die Seiten).
+    const wrap = await page.locator('.entry .eartw').first().boundingBox();
+    expect(Math.abs(wrap.width - wrap.height)).toBeLessThan(1);
     const img = await page.locator('.entry img.eart').first().boundingBox();
-    expect(Math.abs(img.width - img.height)).toBeLessThan(1);
+    expect(img.width).toBeGreaterThan(wrap.width + 8);      // Ueberscan wirkt
     // … und der bildlose Eintrag traegt den leeren Slot in gleicher Groesse
     const ph = await page.locator('.entry .eartph').first().boundingBox();
-    expect(Math.abs(ph.width - img.width)).toBeLessThan(1);
+    expect(Math.abs(ph.width - wrap.width)).toBeLessThan(1);
     // Textspalte startet in beiden Zeilen an derselben x-Koordinate
     const x1 = (await rows.nth(0).locator('.eline1').boundingBox()).x;
     const x2 = (await rows.nth(1).locator('.eline1').boundingBox()).x;

@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v188';   // GDPR v4.85.0: Font selbst gehostet + Datenschutz-Link
+const CACHE = 'haushalt-v189';
 const SHELL = [
   './',
   './index.html',
