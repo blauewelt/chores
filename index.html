@@ -664,7 +664,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.88.0';
+  const APP_VERSION = '4.88.1';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1982,6 +1982,9 @@
       } catch {}
       lastSyncAt = Date.now(); pullDiscards = 0;   // uebernommen = nichts mehr ausstehend
       syncOk = true;
+      // Geraete-Herzschlag NACH uebernommenem Pull mit echten Mitgliedern —
+      // nie fuer leere/migrierte Alt-Familien (v4.88.0, s. deviceBeat).
+      if (members.length) deviceBeat();
       if (uiFingerprint() !== fpBefore) { save(); render(); }
       else { renderSyncDot(); maybeOfferClaim(); }   // v4.60.0: das Identitaets-Angebot
       // haengt am ERSTEN GELUNGENEN Pull — der bringt bei Wiederkehrern oft
@@ -2293,6 +2296,36 @@
     });
     return t;
   }
+  // ---------- Geräte-Herzschlag (v4.88.0) ----------
+  // Einmal pro Tag (und nach einem Versionswechsel sofort) meldet das Geraet
+  // device_id + Version. WRITE-ONLY: kein Select, kein Reconcile — die
+  // Tabelle ist fuer Clients unsichtbar (RLS ohne Select-Policy) und
+  // beantwortet im Dashboard, was die log-Stempel (v4.72.0) nicht koennen:
+  // auch REINE LESER werden sichtbar. member_id nur am persoenlichen Link;
+  // am Familien-Link bleibt sie leer (der Chip ist Auswahl, keine
+  // Identitaet). Kein User-Agent, kein Modell — Version und sonst nichts.
+  // GERUFEN NACH JEDEM UEBERNOMMENEN PULL MIT MITGLIEDERN, nie roh am Boot:
+  // ein Geraet auf einer migrierten Alt-Familie (Wegweiser, leere Zeilen)
+  // darf ihre Klartext-ID nirgendwohin schreiben (v4.33.1-Vertrag), und die
+  // Mitgliederliste fuer member_id ist so immer schon da. Die Marke wird
+  // erst NACH erfolgreichem Schreiben gesetzt: scheitert der Beat (offline,
+  // Migration noch nicht angewandt), traegt ihn der naechste Pull nach.
+  function deviceBeat() {
+    (async () => {
+      try {
+        if (!cfg || !FAMILY) return;
+        const LS_DEV = 'haushalt.device', LS_BEAT = 'haushalt.devbeat';
+        let dev = localStorage.getItem(LS_DEV);
+        if (!dev) { dev = uid() + uid(); localStorage.setItem(LS_DEV, dev); }
+        const stamp = new Date().toISOString().slice(0, 10) + '|' + APP_VERSION;
+        if (localStorage.getItem(LS_BEAT) === stamp) return;
+        await upsert('devices', [{ device_id: dev, member_id: (slugSelf() || {}).id || null,
+          app_version: APP_VERSION, last_seen: new Date().toISOString() }]);
+        localStorage.setItem(LS_BEAT, stamp);
+      } catch {}
+    })();
+  }
+
   // Sofort-Anpassung der Server-Summen zwischen zwei Pulls (v4.65.0):
   // +1 beim Eintragen, − beim Grabstein, + beim Wiederherstellen.
   function bumpTotals(mid, dPts, dN) {
@@ -4019,36 +4052,6 @@
   }
   document.addEventListener('visibilitychange', () => { if (!document.hidden && !firstRunOpen) { invalidateOrder(); pull(); } });
   setInterval(() => { if (!document.hidden && cfg && !firstRunOpen) pull(); }, 20000); // Auto-Sync alle 20 s
-  // ---------- Geräte-Herzschlag (v4.88.0) ----------
-  // Einmal pro Tag (und nach einem Versionswechsel sofort) meldet das Geraet
-  // device_id + Version. WRITE-ONLY: kein Select, kein Pull, kein Reconcile —
-  // die Tabelle ist fuer Clients unsichtbar (RLS ohne Select-Policy) und
-  // beantwortet im Dashboard, was die log-Stempel (v4.72.0) nicht koennen:
-  // auch REINE LESER werden sichtbar. member_id nur am persoenlichen Link;
-  // am Familien-Link bleibt sie leer (der Chip ist Auswahl, keine
-  // Identitaet). Kein User-Agent, kein Modell — Version und sonst nichts.
-  // Die Marke wird erst NACH erfolgreichem Schreiben gesetzt: scheitert der
-  // Beat (offline, Migration noch nicht angewandt), probiert es der
-  // naechste Boot erneut.
-  (async () => {
-    try {
-      if (!cfg || !FAMILY) return;
-      const LS_DEV = 'haushalt.device', LS_BEAT = 'haushalt.devbeat';
-      let dev = localStorage.getItem(LS_DEV);
-      if (!dev) { dev = uid() + uid(); localStorage.setItem(LS_DEV, dev); }
-      const stamp = new Date().toISOString().slice(0, 10) + '|' + APP_VERSION;
-      if (localStorage.getItem(LS_BEAT) === stamp) return;
-      await CRYPTO_READY;
-      // member_id braucht die Mitgliederliste — auf einem frischen Geraet
-      // kommt die erst mit dem ersten Pull. Am persoenlichen Link kurz
-      // darauf warten; klappt es nicht, schreibt der Beat mit leerer
-      // member_id — die VERSION ist die Nachricht, nicht der Name.
-      if (USER_SLUG) for (let i = 0; i < 30 && !slugSelf(); i++) await new Promise(r => setTimeout(r, 500));
-      await upsert('devices', [{ device_id: dev, member_id: (slugSelf() || {}).id || null,
-        app_version: APP_VERSION, last_seen: new Date().toISOString() }]);
-      localStorage.setItem(LS_BEAT, stamp);
-    } catch {}
-  })();
   render();
   // Brandneue Familie ohne lokalen Stand: Einrichtung sofort zeigen, nicht
   // erst nach dem ersten Netzwerk-Pull.

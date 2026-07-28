@@ -2379,7 +2379,10 @@ test.describe('Fairli', () => {
       if (req.method() === 'POST') {
         const rows = JSON.parse(req.postData());
         (Array.isArray(rows) ? rows : [rows]).forEach(x => {
-          const i = (store[table] || []).findIndex(y => y.id === x.id || (table === 'families' && y.family_id === x.family_id));
+          // Unbekannte Tabellen (z. B. devices, v4.88.0) tolerant anlegen —
+          // der Migrations-Vertrag handelt von families/members/chores/log.
+          store[table] = store[table] || [];
+          const i = store[table].findIndex(y => y.id === x.id || (table === 'families' && y.family_id === x.family_id));
           if (i >= 0) store[table][i] = x; else store[table].push(x);
         });
         return r.fulfill({ status: 201, body: '' });

@@ -1,4 +1,39 @@
+## 2026-07-28 — v4.88.1 (SW haushalt-v192): INCIDENT — v4.88.0 was deployed on a red suite; beat now rides the pull
+
+CONFESSION, on the record: v4.88.0 went live although the full run had
+4 failed tests. The deployer misread the tail of the log (saw «3 flaky …
+318 passed», missed the «4 failed» block above it) and shipped. The rule
+from v4.60 exists precisely for this: RED = NO DEPLOY, and «verify, READ,
+then deploy» (ae0d3f4) means reading the WHOLE summary, not its last line.
+The failures were real regressions of the new beat, not flakes:
+
+- The boot-time beat fired for a plaintext family whose backend says
+  «migrated» (Wegweiser row) — writing the retired fam- id into devices
+  and breaking the v4.33.1 no-resurrection contract (its guard counts ANY
+  non-famc POST, and it is right to).
+- The v4.31.0 roundtrip test's request-recorder crashed on the unknown
+  devices table (store[table].push on undefined) — masking the rest of
+  that flow.
+
+FIX (v4.88.1): deviceBeat() is no longer called raw at boot. It rides
+EVERY ADOPTED pull that brought real members (called after lastSyncAt,
+guarded by members.length) and self-throttles via the daily mark. A
+device on a migrated/empty alt family never pulls members → never beats
+→ never writes its plaintext id anywhere. Bonus: the member list is
+always present when the beat runs, so the personal-link member_id needs
+no wait-poll anymore (v4.88.0's 15 s loop deleted). The roundtrip test's
+recorder now default-creates unknown tables — the migration contract is
+about families/members/chores/log, not about every future table.
+
+Suite re-run and READ this time: the v4.33.1 and v4.31.0 contracts are
+green again alongside both beat tests, with retries off.
+
+- APP_VERSION 4.88.1, SW-Cache haushalt-v192
+
 ## 2026-07-28 — v4.88.0 (SW haushalt-v191): device heartbeat — silent readers become visible
+   [KORRIGIERT in v4.88.1, s. oben: der Beat feuert NICHT mehr roh am Boot,
+   sondern nach jedem uebernommenen Pull mit Mitgliedern — der Boot-Beat
+   dieser Fassung verletzte den v4.33.1-Vertrag auf migrierten Alt-Familien.]
 
 - Maintainer question the log stamp (v4.72.0) cannot answer: «is anyone
   besides me updating?» The stamp sees only WRITERS; a device that just
