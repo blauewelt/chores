@@ -427,6 +427,12 @@
     border:1.5px solid var(--artframe)}
   .entry .eartw .eart{width:100%; height:100%; object-fit:cover; transform:scale(1.22)}
   .entry .eartph{background:#1E2620}                 /* leerer Slot: gleiche Spalte, ruhig */
+  /* Kachelbilder AUS (v4.91.0): Farbband-Variante — kompakte Zeile,
+     Personenfarbe als 5px-Leiste an der Kartenkante (uebersteht den
+     Kartenradius dank overflow:hidden). */
+  .entry.vrow.noart{height:auto; min-height:0; padding-top:13px; padding-bottom:13px;
+    position:relative; overflow:hidden}
+  .entry.vrow.noart .pband{position:absolute; left:0; top:0; bottom:0; width:5px; flex:none}
   /* EINE Schriftgroesse fuer Name und Titel (Maintainer 27.07.) — die
      kompaktere von beiden: Gewicht trennt (Name fett, Titel normal), und
      die kleinere Groesse kauft dem Titel Breite vor der Ellipse zurueck. */
@@ -673,7 +679,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.90.0';
+  const APP_VERSION = '4.91.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1076,6 +1082,8 @@
         <span class="seticon">🗑️</span><span class="setlabel">${t('Papierkorb')}</span><span class="setval">${trashVisible().length || ''}</span><span class="chev">›</span></button>
       <button class="menuitem setrow" id="setSearch" style="border-radius:12px">
         <span class="seticon">🔎</span><span class="setlabel">${t('Suche')}</span><span class="setval">${t(SEARCH_ON ? 'An' : 'Aus')}</span></button>
+      <button class="menuitem setrow" id="setLogart" style="border-radius:12px">
+        <span class="seticon">🖼️</span><span class="setlabel">${t('Kachelbilder im Verlauf')}</span><span class="setval">${t(LOGART_ON ? 'An' : 'Aus')}</span></button>
       <button class="menuitem setrow" id="setMaxPts" style="border-radius:12px">
         <span class="seticon">🎯</span><span class="setlabel">${t('Max. Punkte')}</span><span class="setval">${MAXPTS}</span><span class="chev">›</span></button>
       ${IS_ENC || !isAdmin() ? '' : `<button class="menuitem setrow" id="setEnc" style="border-radius:12px">
@@ -1135,6 +1143,12 @@
       setSearchOn(!SEARCH_ON);
       e.currentTarget.querySelector('.setval').textContent = t(SEARCH_ON ? 'An' : 'Aus');
       if (SEARCH_ON) { sh.close(); document.getElementById('searchInput').focus(); }
+    };
+    sh.querySelector('#setLogart').onclick = e => {
+      LOGART_ON = !LOGART_ON;
+      try { localStorage.setItem(LS_LOGART, LOGART_ON ? '1' : '0'); } catch {}
+      e.currentTarget.querySelector('.setval').textContent = t(LOGART_ON ? 'An' : 'Aus');
+      render();
     };
     sh.querySelector('#setMaxPts').onclick = () => { sh.close(); openMaxPtsSheet(); };
     const se = sh.querySelector('#setEnc');
@@ -2367,6 +2381,14 @@
   // Suche: pro Geraet, standardmaessig AUS (v4.50.0)
   const LS_SEARCH = 'haushalt.search';
   let SEARCH_ON = (() => { try { return localStorage.getItem(LS_SEARCH) === '1'; } catch { return false; } })();
+  // Kachelbilder im Verlauf (v4.91.0): pro Geraet, Standard AN — eine
+  // SEH-Praeferenz, kein Familienzustand (wie die Suche). '0' = aus →
+  // Farbband-Variante: kompakte Zeilen (~2/3 Hoehe), Personenfarbe als
+  // schmale Leiste an der Kartenkante statt Bild + Initial-Kreis.
+  // Gewaehlt aus 4 gerenderten Varianten (Maintainer + Mitbewohnerin,
+  // 28.07.): Schlicht / Farbpunkt / FARBBAND / Monogramm.
+  const LS_LOGART = 'haushalt.logart';
+  let LOGART_ON = (() => { try { return localStorage.getItem(LS_LOGART) !== '0'; } catch { return true; } })();
   let QUERY = '';
   // Diakritik-blind in BEIDE Richtungen: «ku» findet «Küche», «kü» findet «Kuche»
   const norm = v => (v == null ? '' : String(v)).toLowerCase()
@@ -2749,10 +2771,15 @@
             // Auge liest rechts Person + Punkte als EIN Paar — «wer, wieviel».
             // Das Bild bleibt dadurch komplett unverdeckt; der Leer-Slot ist
             // wieder einfach leer. (Vorher v4.89.0: Kreis in der Bildecke.)
-            const dot = `<span class="edot" style="background:${esc(m ? m.color : '#C2CCC5')}">${esc(initial(e.member_name))}</span>`;
-            const art = ac && ac.name === e.chore_name
-              ? `<span class="eartw"><img class="art eart${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)"></span>`
-              : `<span class="eartph"></span>`;
+            // Kachelbilder AUS (v4.91.0): Farbband-Variante — die Personen-
+            // farbe wird zur schmalen Leiste an der Kartenkante, Bild-Spalte
+            // und Initial-Kreis entfallen, die Zeile wird kompakt (.noart).
+            const dot = LOGART_ON ? `<span class="edot" style="background:${esc(m ? m.color : '#C2CCC5')}">${esc(initial(e.member_name))}</span>` : '';
+            const art = !LOGART_ON
+              ? `<span class="pband" style="background:${esc(m ? m.color : '#C2CCC5')}"></span>`
+              : ac && ac.name === e.chore_name
+                ? `<span class="eartw"><img class="art eart${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)"></span>`
+                : `<span class="eartph"></span>`;
             // v4.80.0: Das Bild fuehrt die Zeile an, die Person ist ein farbiger
             // Chip. Der alte Farbpunkt war neben dem Bild nur noch Rauschen
             // (Maintainer-Screenshot 27.07.); der Chip traegt dieselbe
@@ -2766,8 +2793,8 @@
               </span>
               ${dot}<span class="pts">+${sum}</span>`;
             return editable
-              ? `<button class="entry vrow" data-editlog="${ids}">${inner}</button>`
-              : `<div class="entry vrow">${inner}</div>`;
+              ? `<button class="entry vrow${LOGART_ON ? '' : ' noart'}" data-editlog="${ids}">${inner}</button>`
+              : `<div class="entry vrow${LOGART_ON ? '' : ' noart'}">${inner}</div>`;
           }).map((html, i) => {
             const day = dayKey(groups[i].entries[0].done_at);
             const head = day !== lastDay ? `<div class="dayhead">${dayLabel(groups[i].entries[0].done_at)}</div>` : '';

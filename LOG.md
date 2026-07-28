@@ -1,3 +1,25 @@
+## 2026-07-28 — v4.91.0 (SW haushalt-v195): tile art in the Verlauf is now a per-device choice — off = Farbband
+
+- Household feedback (maintainer + flatmate): the art in the log can be
+  visually overloading. Decision process: four art-less variants were
+  RENDERED through the real app and compared side by side (Schlicht /
+  Farbpunkt links / Farbband / Monogramm); the household picked FARBBAND.
+- Settings row «Kachelbilder im Verlauf» (An/Aus), stored per device
+  (haushalt.logart, default AN) — a viewing preference like the search
+  toggle, never synced: one flatmate can turn it off without a family
+  debate. The toggle re-renders immediately.
+- OFF = Farbband: no art column, no empty slot, no initial circle — the
+  person's color becomes a 5px ribbon on the card's left edge (position
+  absolute under the card radius, overflow hidden), and rows drop from
+  the fixed 96px art height to content height (~66px plain, ~86px with
+  note). The ribbon forms a scannable color rail down the list; the bold
+  name still says who, so no information is lost, only pixels.
+- ON is byte-identical to v4.90.0 — the default experience does not move.
+- 1 new i18n key in 19 languages; 1 new test (default ON, toggle to OFF:
+  no eartw/eartph/edot, ribbon carries the person color, compact height,
+  choice survives reload, toggle back restores the art row).
+- APP_VERSION 4.91.0, SW-Cache haushalt-v195
+
 ## 2026-07-28 — v4.90.0 (SW haushalt-v194): Verlauf — the person circle moves to the row's right end, directly before the points
 
 Maintainer follow-up to v4.89.0, same evening, after three mocks

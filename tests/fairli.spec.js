@@ -3131,6 +3131,43 @@ test.describe('Fairli', () => {
     await expect(page.locator('#logSheet #lArtPrev')).toHaveCount(0);
   });
 
+  test('Kachelbilder im Verlauf abschaltbar: Farbband-Variante, pro Gerät, überlebt den Reload (v4.91.0)', async ({ context, page }) => {
+    await mockBackend(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    // Standard AN: Bild-Spalte + Initial-Kreis wie gehabt
+    await expect(page.locator('.entry .eartw').first()).toBeVisible();
+    await expect(page.locator('.entry .edot').first()).toBeVisible();
+    // Einstellungen → Kachelbilder AUS
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setLogart .setval')).toHaveText('An');
+    await page.locator('#setLogart').click();
+    await expect(page.locator('#setLogart .setval')).toHaveText('Aus');
+    await page.keyboard.press('Escape');
+    // Farbband-Variante: kein Bild, kein Leer-Slot, kein Kreis — dafuer die
+    // Personenfarbe als Leiste, und die Zeile ist kompakt (.noart)
+    await expect(page.locator('.entry .eartw')).toHaveCount(0);
+    await expect(page.locator('.entry .eartph')).toHaveCount(0);
+    await expect(page.locator('.entry .edot')).toHaveCount(0);
+    const band = page.locator('.entry.noart .pband').first();
+    await expect(band).toBeVisible();
+    const bg = await band.evaluate(el => getComputedStyle(el).backgroundColor);
+    expect(bg).toBe('rgb(62, 107, 214)');            // Mira = #3E6BD6 (Fixture)
+    const hArt = await page.evaluate(() => document.querySelector('.entry.noart').getBoundingClientRect().height);
+    expect(hArt).toBeLessThan(90);                    // kompakt (Inhaltshoehe) statt fixer 96px-Bildzeile
+    // Pro Geraet, persistiert: Reload behaelt die Wahl
+    await page.reload();
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('.entry .eartw')).toHaveCount(0);
+    await expect(page.locator('.entry.noart .pband').first()).toBeVisible();
+    // Und zurueck: AN stellt Bildzeile wieder her
+    await page.locator('#openSettings').click();
+    await page.locator('#setLogart').click();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.entry .eartw').first()).toBeVisible();
+    await expect(page.locator('.entry .pband')).toHaveCount(0);
+  });
+
   test('Verlauf-Zeile: Bild fuehrt, Person ist ein farbiger Chip, der alte Punkt ist weg (v4.80.0/v4.82.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);
