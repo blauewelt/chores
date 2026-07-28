@@ -379,6 +379,10 @@
      das Sheet beginnt mit dem Bild der Kachel, die man gerade bearbeitet. */
   #cArtPrev{display:block; width:46%; aspect-ratio:440/300; object-fit:cover;
     border-radius:14px; margin:2px 0 12px; background:#161D19; border:1px solid var(--line)}
+  /* Eintrag-bearbeiten (v4.84.0): gleiches Bild oben links, eine Spur kleiner
+     als die Kachel-Vorschau im Aufgaben-Sheet (46%) — «tad smaller». */
+  #lArtPrev{display:block; width:42%; aspect-ratio:440/300; object-fit:cover;
+    border-radius:14px; margin:2px 0 12px; background:#161D19; border:1px solid var(--line)}
   /* display:block schlaegt das hidden-Attribut — ohne diese Zeile zeigte das
      Anlegen-Sheet den leeren Vorschau-Rahmen (vom Test gefangen). */
   #cArtPrev[hidden]{display:none}
@@ -626,7 +630,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.83.0';
+  const APP_VERSION = '4.84.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2940,6 +2944,17 @@
         <h2>${t('Eintrag bearbeiten')}</h2>
         <div class="slot end"><button type="button" class="x" id="closeLog" aria-label="${t('Schließen')}">×</button></div>
       </div>
+      ${(() => {
+        // Kachelbild oben links (v4.84.0) — dieselbe Schnappschuss-Regel wie
+        // die Verlaufs-Zeile (v4.78.0): nur wenn die Kachel noch existiert
+        // UND noch den Namen des Eintrags traegt; sonst GAR kein Bild (das
+        // Sheet braucht keinen leeren Platzhalter-Slot). Einmalige (chore_id
+        // null) haben kein Bild.
+        const ac = first.chore_id ? state.chores.find(x => x.id === first.chore_id) : null;
+        return ac && ac.name === first.chore_name
+          ? `<img id="lArtPrev" class="art${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)">`
+          : '';
+      })()}
       <div class="field">
         <label for="lName">${t('Titel')}</label>
         <input id="lName" type="text" maxlength="60" value="${esc(first.chore_name)}" autocomplete="off">
@@ -3032,6 +3047,9 @@
         toast(msg);
       }
     };
+    // Cache-Fall: fertig geladene Bilder feuern onload nicht zwingend nach
+    // dem innerHTML-Einbau — gleiche Nachpruefung wie im Listen-Render.
+    sh.querySelectorAll('img.art:not(.ok)').forEach(i => { if (i.complete && i.naturalWidth) artOk(i); });
     sh.showModal();
   }
 

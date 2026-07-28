@@ -1,3 +1,22 @@
+## 2026-07-27 — v4.84.0 (SW haushalt-v187): tile art in the ENTRY edit sheet
+
+- Maintainer request («I think you shipped this before»): v4.79.0 put the
+  art into the TASK edit sheet and the Verlauf rows — the Eintrag-
+  bearbeiten sheet (logSheet) never had it. Now it does: top left under
+  the bar, width 42% (deliberately a tad under the task sheet's 46% —
+  «roughly tile size, maybe a tad smaller»), same radius/border/aspect.
+- Same snapshot rule as the Verlauf row (v4.78.0, §3): image only if the
+  chore still exists AND still carries the entry's snapshot name; one-off
+  entries (chore_id null) and renamed chores show NO image and NO empty
+  slot — a sheet has no column alignment to keep, unlike the list.
+- Cached-image completion re-checked after innerHTML insertion (same
+  pattern as the list render) so the fade-in cannot strand at opacity 0.
+- Claimed on the §11b intent board as «logSheet art» (the parallel
+  session's active claim covers the Verlauf ROW — no overlap).
+- 1 new test (image with matching snapshot; 0.30 < width-ratio < 0.46;
+  no element at all for one-offs). No i18n keys.
+- APP_VERSION 4.84.0, SW-Cache haushalt-v187
+
 ## 2026-07-27 — process: release lock + intent board (§11b) — parallel sessions, serialized releases
 
 - Maintainer question after the third collision: engineers work in

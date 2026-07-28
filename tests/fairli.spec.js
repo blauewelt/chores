@@ -3082,6 +3082,27 @@ test.describe('Fairli', () => {
     await expect(row('Alter Kachelname').locator('img.eart')).toHaveCount(0);
   });
 
+  test('Eintrag-bearbeiten traegt das Kachelbild oben links — gleiche Schnappschuss-Regel, kein leerer Slot (v4.84.0)', async ({ context, page }) => {
+    const now = new Date().toISOString();
+    const mk = (id, cid, cname) => ({ id, chore_id: cid, chore_name: cname, chore_note: '',
+      member_id: 'm-mira', member_name: 'Mira', points: 2, done_at: now, created_at: now, family_id: FAM });
+    await mockBackend(context, { logRows: () => [
+      mk('l-a', 'c-1', 'Müll rausbringen'),          // Kachel existiert, Name stimmt → Bild
+      mk('l-b', null, 'Pizza holen'),                // Einmalig → KEIN Bild, KEIN Platzhalter
+    ] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('.entry', { hasText: 'Müll rausbringen' }).first().click();
+    await expect(page.locator('#logSheet #lArtPrev')).toHaveAttribute('src', /gen\.pollinations\.ai/);
+    // eine Spur kleiner als die Kachel-Vorschau im Aufgaben-Sheet (46%)
+    const w = await page.locator('#lArtPrev').evaluate(el =>
+      el.getBoundingClientRect().width / el.closest('.sheet').getBoundingClientRect().width);
+    expect(w).toBeGreaterThan(0.3); expect(w).toBeLessThan(0.46);
+    await page.locator('#closeLog').click();
+    await page.locator('.entry', { hasText: 'Pizza holen' }).click();
+    await expect(page.locator('#logSheet #lArtPrev')).toHaveCount(0);
+  });
+
   test('Verlauf-Zeile: Bild fuehrt, Person ist ein farbiger Chip, der alte Punkt ist weg (v4.80.0/v4.82.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);
