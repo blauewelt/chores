@@ -1,3 +1,25 @@
+## 2026-07-28 — v4.93.0 (SW haushalt-v197): Verlauf-Kachel 90×60 & Edit-Vorschau zentriert — durchgehend OHNE Overscan
+
+Maintainer-Entscheid (28.07.), mit Messung statt Bauchgefühl:
+
+- MESSUNG: 20 Live-Generierungen quer durch die Kachel-Namen (12 Namen ×
+  Seeds) automatisch vermessen — KEIN einziges Bild trägt einen gemalten
+  Rand. Der bisherige Ueberscan (22 %, später 12 %) schnitt also nur
+  echtes Bild weg für einen Rand, den es nicht gibt. Nebenbefund: die
+  Pollinations-API liefert 512×256 (2:1), nicht 440×300 — cover framt
+  ohnehin, ein festes Quell-Seitenverhältnis anzunehmen war falsch.
+- VERLAUF-KACHEL: 66×45 → 90×60 (3:2), KEIN Overscan (transform entfernt).
+  Grösser, zeigt das ganze Bild; sitzt weiter rechts vor «+n».
+- EDIT-VORSCHAU (beide Sheets, Aufgabe UND Eintrag): vereinheitlicht auf
+  96×64 (3:2), ZENTRIERT (margin auto), KEIN Overscan — statt vorher
+  Quadrat links (Aufgabe 96×96, Eintrag 84×84) mit 22 % Ueberscan. Die
+  Titel-/Aufgabe-Zeile bleibt korrekt bei ihrem Eingabefeld (die zuvor
+  erwogene Rechts-Platzierung hätte das Label verrutscht — daher zentriert).
+- Der Pastell-Rahmen (v4.87.0) bleibt auf allen Flächen als ruhige Kante.
+- Tests: Verlauf-Struktur- und Edit-Vorschau-Test auf v4.93.0 (90×60 bzw.
+  96×64, Zentrierung, Negativ-Kontrolle gegen wiederkehrendes scale).
+- APP_VERSION 4.93.0, SW-Cache haushalt-v197.
+
 ## 2026-07-28 — v4.92.0 (SW haushalt-v196): Verlauf-Kunst — Standard AUS, Bild wandert nach RECHTS, minimaler Crop
 
 Maintainer-Entscheid (28.07.):

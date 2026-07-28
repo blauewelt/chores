@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v196';   // v4.92.0 Verlauf-Kunst rechts
+const CACHE = 'haushalt-v197';   // v4.93.0 Verlauf 90x60 + Edit zentriert
 const SHELL = [
   './',
   './index.html',

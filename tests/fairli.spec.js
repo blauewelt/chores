@@ -3108,7 +3108,7 @@ test.describe('Fairli', () => {
     await expect(row('Alter Kachelname').locator('img.eart')).toHaveCount(0);
   });
 
-  test('Eintrag-bearbeiten traegt das Kachelbild oben links — gleiche Schnappschuss-Regel, kein leerer Slot (v4.84.0)', async ({ context, page }) => {
+  test('Eintrag-bearbeiten traegt das Kachelbild ZENTRIERT — gleiche Schnappschuss-Regel, kein leerer Slot (v4.93.0)', async ({ context, page }) => {
     const now = new Date().toISOString();
     const mk = (id, cid, cname) => ({ id, chore_id: cid, chore_name: cname, chore_note: '',
       member_id: 'm-mira', member_name: 'Mira', points: 2, done_at: now, created_at: now, family_id: FAM });
@@ -3116,20 +3116,27 @@ test.describe('Fairli', () => {
       mk('l-a', 'c-1', 'Müll rausbringen'),          // Kachel existiert, Name stimmt → Bild
       mk('l-b', null, 'Pizza holen'),                // Einmalig → KEIN Bild, KEIN Platzhalter
     ] });
+    // v4.93.0: Kachelbilder sind standardmaessig AUS — die Snapshot-Regel im
+    // Edit-Sheet gilt aber unabhaengig vom Listen-Schalter; explizit an, damit
+    // das Preview-Bild da ist.
+    await page.addInitScript(() => { try { localStorage.setItem('haushalt.logart', '1'); } catch {} });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     await page.locator('.entry', { hasText: 'Müll rausbringen' }).first().click();
     await expect(page.locator('#logSheet #lArtPrev')).toHaveAttribute('src', /gen\.pollinations\.ai/);
-    // Vereinheitlicht (Maintainer 27.07., ersetzt die 42%-Breite aus v4.84.0):
-    // beide Edit-Panes zeigen den QUADRAT-Ausschnitt des Verlaufs, nur
-    // groesser — Wrapper quadratisch, Bild ueberscannt den Rahmen weg.
+    // v4.93.0: Preview im Bild-Seitenverhaeltnis (96×64 ≈ 3:2, NICHT quadratisch),
+    // ZENTRIERT im Sheet, KEIN Overscan (Bild fuellt den Rahmen ohne Scale).
     const g = await page.locator('#lArtPrevW').evaluate(el => {
-      const w = el.getBoundingClientRect(), i = el.querySelector('img').getBoundingClientRect();
-      return { ww: w.width, wh: w.height, iw: i.width };
+      const w = el.getBoundingClientRect();
+      const sheet = el.closest('.sheet').getBoundingClientRect();
+      const cs = getComputedStyle(el.querySelector('img'));
+      return { ww: w.width, wh: w.height, wLeft: w.left - sheet.left, wRight: sheet.right - w.right,
+               transform: cs.transform };
     });
-    expect(Math.abs(g.ww - g.wh)).toBeLessThan(1);           // Quadrat
-    expect(g.ww).toBeGreaterThan(60);                        // groesser als der Verlaufs-Thumb …
-    expect(g.ww).toBeLessThan(120);                          // … aber ein Pane-Bild, kein Poster
+    expect(g.ww).toBeGreaterThan(g.wh + 10);                 // breiter als hoch (kein Quadrat)
+    expect(Math.abs(g.ww / g.wh - 1.5)).toBeLessThan(0.12);  // ~3:2
+    expect(Math.abs(g.wLeft - g.wRight)).toBeLessThan(4);    // horizontal ZENTRIERT
+    expect(g.transform === 'none' || g.transform === 'matrix(1, 0, 0, 1, 0, 0)').toBeTruthy();  // kein Overscan
     await page.locator('#closeLog').click();
     await page.locator('.entry', { hasText: 'Pizza holen' }).click();
     await expect(page.locator('#logSheet #lArtPrev')).toHaveCount(0);
@@ -3186,11 +3193,11 @@ test.describe('Fairli', () => {
     expect(first).toContain('pband');
   });
 
-  test('Verlauf-Ordnung v4.92.0: Bild RECHTS vor den Punkten, Bild-Seitenverhaeltnis, minimaler Ueberscan, ohne Bild kein Slot', async ({ context, page }) => {
+  test('Verlauf-Ordnung v4.93.0: Bild RECHTS vor den Punkten, 90×60, KEIN Overscan, ohne Bild kein Slot', async ({ context, page }) => {
     // Maintainer-Spez 28.07.: Basis-Layout = Farbband-Zeile; Kachelbild (An)
-    // sitzt RECHTS, direkt vor «+n». Crop: Seitenverhaeltnis des Bildes
-    // (440:300) statt Quadrat, Ueberscan 12 % statt 22 % — so wenig
-    // beschneiden wie noetig, nur der gemalte Rand soll verschwinden.
+    // sitzt RECHTS, direkt vor «+n». Crop v4.93.0: 90×60 (3:2), KEIN Overscan —
+    // gemessen an 20 Live-Generierungen trug KEINE einen Rand, also nichts
+    // wegzuschneiden; cover fuellt sauber.
     const now = new Date().toISOString();
     const mk = (id, cid, cname, note, off) => ({ id, chore_id: cid, chore_name: cname, chore_note: note,
       member_id: 'm-mira', member_name: 'Mira', points: 2,
@@ -3218,14 +3225,15 @@ test.describe('Fairli', () => {
     // Text steht LINKS vom Bild (Basis-Layout unveraendert)
     const txt = await rows.nth(0).locator('.eline1').boundingBox();
     expect(txt.x + txt.width).toBeLessThanOrEqual(art.x + 1);
-    // Crop-Geometrie: Slot im Bild-Seitenverhaeltnis 440:300 (~1.47) …
-    expect(Math.abs(art.width / art.height - 440 / 300)).toBeLessThan(0.05);
-    // … und der Ueberscan ist MINIMAL: Bild groesser als der Slot (Rand
-    // verschwindet), aber unter 20 % (Negativ-Grenze gegen Ruck-Crop) —
-    // vorher: cover in 1:1 + 22 % nahm seitlich rund ein Viertel weg.
+    // Crop-Geometrie: Kachel 90×60 = 3:2 …
+    expect(Math.abs(art.width / art.height - 1.5)).toBeLessThan(0.06);
+    expect(art.width).toBeGreaterThan(80);                      // groesser als der alte 66px-Thumb
+    // … und KEIN Overscan: das <img> fuellt die Kachel exakt (cover ohne
+    // scale). Negativ-Kontrolle gegen ein wiederkehrendes transform:scale.
     const img = await rows.nth(0).locator('img.eart').boundingBox();
-    expect(img.width).toBeGreaterThan(art.width + 4);
-    expect(img.width).toBeLessThan(art.width * 1.2);
+    expect(Math.abs(img.width - art.width)).toBeLessThan(5);   // nur die 1.5px-Kante, KEIN Overscan-Zoom (der waere +10..18px)
+    const tf = await rows.nth(0).locator('img.eart').evaluate(el => getComputedStyle(el).transform);
+    expect(tf === 'none' || tf === 'matrix(1, 0, 0, 1, 0, 0)').toBeTruthy();   // strikte Negativ-Kontrolle gegen scale()
     // v4.87.0: der Pastell-Rahmen bleibt auf der Kachel
     const bc = await rows.nth(0).locator('.eartr').evaluate(el => getComputedStyle(el).borderTopColor);
     expect(bc).toBe('rgba(240, 233, 220, 0.42)');
