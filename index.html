@@ -410,40 +410,34 @@
      Chip + Titel auf EINER Grundlinie, Notiz/Zeit folgen einzeilig darunter,
      Inhalt vertikal zentriert. Einheit schlaegt Dichte: lange Titel und
      Notizen werden mit Ellipse gekappt statt die Zeile zu sprengen. */
-  .entry.vrow{height:96px; gap:12px}
-  /* Text top-aligned aufs Bild, als haette er IMMER drei Zeilen: die Spalte
-     ist exakt bildhoch und beginnt oben — zweizeilige Eintraege lassen den
-     Platz unten frei, statt zu zentrieren (Maintainer 28.07.). */
-  .entry.vrow .what{display:flex; flex-direction:column; gap:2px;
-    justify-content:flex-start; height:60px; align-self:center}
+  /* v4.92.0 (Maintainer-Entscheid): EINE Verlaufs-Zeile fuer beide Modi —
+     die Farbband-Variante (v4.91.0) ist jetzt die Basis. Kompakte Zeile,
+     Personenfarbe als 5px-Leiste an der Kartenkante (uebersteht den
+     Kartenradius dank overflow:hidden). Kachelbilder sind ein ZUSATZ:
+     rechts in der Zeile, direkt VOR den Punkten. Die alte Bild-links-
+     Spalte (eartw/eartph 60px + edot-Kreis) ist geloescht. */
+  .entry.vrow{height:auto; min-height:0; gap:12px; padding-top:13px;
+    padding-bottom:13px; position:relative; overflow:hidden}
+  .entry.vrow .what{display:flex; flex-direction:column; gap:2px; min-width:0; flex:1}
+  .entry.vrow .pband{position:absolute; left:0; top:0; bottom:0; width:5px; flex:none}
   /* Maintainer 27.07.: ein leichter PASTELL-Rahmen um jede Crop-Flaeche —
-     ein Echo des gemalten Creme-Rahmens der generierten Bilder (den der
-     Ueberscan wegschneidet). EIN Ton fuer alle Flaechen, bewusst nicht pro
-     Bild gemessen: Pixel-Lesen braeuchte CORS+Canvas je Thumbnail, und die
-     gemalten Rahmen sind ohnehin nahezu einheitlich warmweiss. */
+     ein Echo des gemalten Creme-Rahmens mancher generierter Bilder. */
   :root{--artframe:rgba(240,233,220,.42)}
-  .entry .eartw, .entry .eartph{width:60px; height:60px; border-radius:12px;
+  /* Kachel rechts (v4.92.0): SEITENVERHAELTNIS DES BILDES (440:300 = 66:45)
+     statt Quadrat, Ueberscan nur noch 12 % statt 22 % — Live-Stichproben
+     (28.07., 3 Bilder gemessen) zeigen: die meisten Generierungen tragen
+     GAR KEINEN gemalten Rahmen; wo einer auftritt, ist er schmal. Also so
+     wenig beschneiden wie noetig: cover kappt im Bild-Seitenverhaeltnis
+     nichts, scale(1.12) nimmt ~5 % je Kante als Versicherung, und der
+     Pastell-Rahmen (v4.87.0) schluckt seltene Reste optisch. */
+  .entry .eartr{width:66px; height:45px; border-radius:10px;
     flex:none; background:#252F29; overflow:hidden; position:relative;
     border:1.5px solid var(--artframe)}
-  .entry .eartw .eart{width:100%; height:100%; object-fit:cover; transform:scale(1.22)}
-  .entry .eartph{background:#1E2620}                 /* leerer Slot: gleiche Spalte, ruhig */
-  /* Kachelbilder AUS (v4.91.0): Farbband-Variante — kompakte Zeile,
-     Personenfarbe als 5px-Leiste an der Kartenkante (uebersteht den
-     Kartenradius dank overflow:hidden). */
-  .entry.vrow.noart{height:auto; min-height:0; padding-top:13px; padding-bottom:13px;
-    position:relative; overflow:hidden}
-  .entry.vrow.noart .pband{position:absolute; left:0; top:0; bottom:0; width:5px; flex:none}
+  .entry .eartr .eart{width:100%; height:100%; object-fit:cover; transform:scale(1.12)}
   /* EINE Schriftgroesse fuer Name und Titel (Maintainer 27.07.) — die
      kompaktere von beiden: Gewicht trennt (Name fett, Titel normal), und
      die kleinere Groesse kauft dem Titel Breite vor der Ellipse zurueck. */
   .entry .eline1{display:flex; align-items:center; gap:7px; min-width:0; font-size:15.5px}
-  /* v4.90.0: 24px circle as a normal flex child at the row's right end,
-     directly BEFORE the points — the row itself centers both vertically,
-     so person and «+n» read as one pair. (v4.89.0 had it nested in the
-     art's corner; the art is now fully unobscured again.) */
-  .entry .edot{width:24px; height:24px; flex:none;
-    border-radius:50%; display:grid; place-items:center; color:#10140F;
-    font-weight:800; font-size:12px}
   .entry .epname{font-weight:700; flex:none; max-width:30%;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .entry .ename{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
@@ -679,7 +673,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.91.0';
+  const APP_VERSION = '4.92.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2381,14 +2375,14 @@
   // Suche: pro Geraet, standardmaessig AUS (v4.50.0)
   const LS_SEARCH = 'haushalt.search';
   let SEARCH_ON = (() => { try { return localStorage.getItem(LS_SEARCH) === '1'; } catch { return false; } })();
-  // Kachelbilder im Verlauf (v4.91.0): pro Geraet, Standard AN — eine
-  // SEH-Praeferenz, kein Familienzustand (wie die Suche). '0' = aus →
-  // Farbband-Variante: kompakte Zeilen (~2/3 Hoehe), Personenfarbe als
-  // schmale Leiste an der Kartenkante statt Bild + Initial-Kreis.
-  // Gewaehlt aus 4 gerenderten Varianten (Maintainer + Mitbewohnerin,
-  // 28.07.): Schlicht / Farbpunkt / FARBBAND / Monogramm.
+  // Kachelbilder im Verlauf (v4.91.0): pro Geraet — eine SEH-Praeferenz,
+  // kein Familienzustand (wie die Suche). Farbband-Basis gewaehlt aus 4
+  // gerenderten Varianten (Maintainer + Mitbewohnerin, 28.07.).
+  // v4.92.0 (Maintainer): Standard ist jetzt AUS — '1' schaltet die
+  // Bilder ein (rechts in der Zeile, vor den Punkten). Geraete, die den
+  // Schalter schon explizit auf An gestellt hatten ('1'), behalten ihn.
   const LS_LOGART = 'haushalt.logart';
-  let LOGART_ON = (() => { try { return localStorage.getItem(LS_LOGART) !== '0'; } catch { return true; } })();
+  let LOGART_ON = (() => { try { return localStorage.getItem(LS_LOGART) === '1'; } catch { return false; } })();
   let QUERY = '';
   // Diakritik-blind in BEIDE Richtungen: «ku» findet «Küche», «kü» findet «Kuche»
   const norm = v => (v == null ? '' : String(v)).toLowerCase()
@@ -2762,39 +2756,30 @@
             // Kachel hat ein NEUES Bild, und das wuerde neben dem alten
             // Eintragstext luegen. Einmalige (chore_id null) haben kein Bild.
             const ac = e.chore_id ? state.chores.find(x => x.id === e.chore_id) : null;
-            // Ohne Bild ein LEERER Slot in gleicher Groesse: die Textspalte
-            // beginnt in jeder Zeile an derselben x-Koordinate (Ordnung
-            // schlaegt hier die fruehere «ehrliche Raggedness», 4. Runde).
-            // v4.90.0: Der Initial-Kreis wandert ans rechte Zeilenende,
-            // DIREKT VOR die Punkte: [Bild] [Text] … [Kreis] [+n]. Beide
-            // sind vertikal zentriert (align-items:center der Zeile), das
-            // Auge liest rechts Person + Punkte als EIN Paar — «wer, wieviel».
-            // Das Bild bleibt dadurch komplett unverdeckt; der Leer-Slot ist
-            // wieder einfach leer. (Vorher v4.89.0: Kreis in der Bildecke.)
-            // Kachelbilder AUS (v4.91.0): Farbband-Variante — die Personen-
-            // farbe wird zur schmalen Leiste an der Kartenkante, Bild-Spalte
-            // und Initial-Kreis entfallen, die Zeile wird kompakt (.noart).
-            const dot = LOGART_ON ? `<span class="edot" style="background:${esc(m ? m.color : '#C2CCC5')}">${esc(initial(e.member_name))}</span>` : '';
-            const art = !LOGART_ON
-              ? `<span class="pband" style="background:${esc(m ? m.color : '#C2CCC5')}"></span>`
-              : ac && ac.name === e.chore_name
-                ? `<span class="eartw"><img class="art eart${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)"></span>`
-                : `<span class="eartph"></span>`;
-            // v4.80.0: Das Bild fuehrt die Zeile an, die Person ist ein farbiger
-            // Chip. Der alte Farbpunkt war neben dem Bild nur noch Rauschen
-            // (Maintainer-Screenshot 27.07.); der Chip traegt dieselbe
-            // Information — Personenfarbe — dort, wo das Auge sowieso liest.
+            // v4.92.0 (Maintainer): EINE Zeile fuer beide Modi — die Farbband-
+            // Variante (v4.91.0) ist die Basis: Personenfarbe als 5px-Leiste
+            // an der Kartenkante, kompakte Hoehe, der fette Name sagt wer.
+            // Kachelbilder (falls AN) sind ein Zusatz RECHTS in der Zeile,
+            // direkt VOR den Punkten: [Band][Text] … [Bild] [+n]. Zeilen ohne
+            // Bild (Schnappschuss-Wache, Einmalige) lassen den Platz einfach
+            // frei — die Punkte bleiben rechtsbuendig verankert. Die alte
+            // Bild-links-Spalte samt Leer-Slot und Initial-Kreis (v4.89/90)
+            // ist GELOESCHT, nicht versteckt.
+            const band = `<span class="pband" style="background:${esc(m ? m.color : '#C2CCC5')}"></span>`;
+            const art = LOGART_ON && ac && ac.name === e.chore_name
+              ? `<span class="eartr"><img class="art eart${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)"></span>`
+              : '';
             const inner = `
-              ${art}
+              ${band}
               <span class="what">
                 <span class="eline1"><span class="epname">${esc(e.member_name)}</span><span class="ename">${esc(e.chore_name)}</span>${n > 1 ? `<span class="xn">×${n}</span>` : ''}</span>
                 ${note ? `<div class="enote">${esc(note)}</div>` : ''}
                 <div class="when">${d.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' })}</div>
               </span>
-              ${dot}<span class="pts">+${sum}</span>`;
+              ${art}<span class="pts">+${sum}</span>`;
             return editable
-              ? `<button class="entry vrow${LOGART_ON ? '' : ' noart'}" data-editlog="${ids}">${inner}</button>`
-              : `<div class="entry vrow${LOGART_ON ? '' : ' noart'}">${inner}</div>`;
+              ? `<button class="entry vrow" data-editlog="${ids}">${inner}</button>`
+              : `<div class="entry vrow">${inner}</div>`;
           }).map((html, i) => {
             const day = dayKey(groups[i].entries[0].done_at);
             const head = day !== lastDay ? `<div class="dayhead">${dayLabel(groups[i].entries[0].done_at)}</div>` : '';

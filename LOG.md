@@ -1,3 +1,31 @@
+## 2026-07-28 — v4.92.0 (SW haushalt-v196): Verlauf-Kunst — Standard AUS, Bild wandert nach RECHTS, minimaler Crop
+
+Maintainer-Entscheid (28.07.):
+
+- STANDARD ist jetzt AUS: die Farbband-Variante (v4.91.0) ist die
+  Grunderfahrung. haushalt.logart === '1' schaltet Bilder ein; Geraete
+  mit explizitem An behalten es, unberuehrte Geraete wechseln auf Aus.
+- Der An-Modus ist NEU GEBAUT, nicht mehr die alte Bild-links-Zeile:
+  Basis ist die Farbband-Zeile (kompakt, 5px-Personenfarbe an der
+  Kante, fetter Name), das Kachelbild sitzt RECHTS in der Zeile,
+  direkt VOR den Punkten: [Band][Text] … [Bild] [+n]. Zeilen ohne Bild
+  (Schnappschuss-Wache, Einmalige) lassen den Platz frei — kein
+  Leer-Slot mehr; die Punkte bleiben rechts verankert. Die alten
+  Bausteine eartw/eartph/edot sind GELOESCHT.
+- CROP ERSETZT: Kachel im Bild-Seitenverhaeltnis 440:300 (66×45px)
+  statt Quadrat, Ueberscan 12 % statt 22 %. Begruendung mit Messung:
+  drei Live-Generierungen (28.07.) tragen GAR KEINEN gemalten Rand —
+  cover in 1:1 + 22 % nahm seitlich rund ein Viertel des Bildes fuer
+  einen Rand, den es meist nicht gibt. Jetzt: so wenig beschneiden wie
+  noetig (~5 % je Kante als Versicherung); der Pastell-Rahmen (v4.87.0)
+  schluckt seltene Reste optisch.
+- Tests: die drei Verlaufs-Struktur/Toggle-Tests auf v4.92.0
+  umgeschrieben (Standard Aus; Bild rechts vor +n mit Abstands- und
+  Zentrier-Pins; Seitenverhaeltnis- und Ueberscan-Fenster 4px..20 % als
+  Negativ-Grenze; kein Slot ohne Bild; Punkte-Kante buendig; Farbband
+  in beiden Modi; geloeschte Klassen nirgends im DOM).
+- APP_VERSION 4.92.0, SW-Cache haushalt-v196 (nur Bump).
+
 ## 2026-07-28 — v4.91.0 (SW haushalt-v195): tile art in the Verlauf is now a per-device choice — off = Farbband
 
 - Household feedback (maintainer + flatmate): the art in the log can be

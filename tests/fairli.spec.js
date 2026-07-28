@@ -3096,6 +3096,10 @@ test.describe('Fairli', () => {
       mk('l-b', null, 'Pizza holen'),                // Einmalig → kein Bild
       mk('l-c', 'c-1', 'Alter Kachelname'),          // Schnappschuss ≠ Kachel → KEIN Bild:
     ] });                                            // das neue Bild wuerde neben dem alten Text luegen (§3)
+    // v4.92.0: Kachelbilder sind standardmaessig AUS — fuer diesen Snapshot-
+    // Namens-Test explizit einschalten (die Snapshot-Regel selbst ist
+    // unveraendert; nur der Default hat gewechselt).
+    await page.addInitScript(() => { try { localStorage.setItem('haushalt.logart', '1'); } catch {} });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     const row = txt => page.locator('.entry', { hasText: txt });
@@ -3131,128 +3135,109 @@ test.describe('Fairli', () => {
     await expect(page.locator('#logSheet #lArtPrev')).toHaveCount(0);
   });
 
-  test('Kachelbilder im Verlauf abschaltbar: Farbband-Variante, pro Gerät, überlebt den Reload (v4.91.0)', async ({ context, page }) => {
+  test('Kachelbilder im Verlauf: Standard AUS (Farbband), Einschalten pro Gerät, überlebt den Reload (v4.92.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
-    // Standard AN: Bild-Spalte + Initial-Kreis wie gehabt
-    await expect(page.locator('.entry .eartw').first()).toBeVisible();
-    await expect(page.locator('.entry .edot').first()).toBeVisible();
-    // Einstellungen → Kachelbilder AUS
-    await page.locator('#openSettings').click();
-    await expect(page.locator('#setLogart .setval')).toHaveText('An');
-    await page.locator('#setLogart').click();
-    await expect(page.locator('#setLogart .setval')).toHaveText('Aus');
-    await page.keyboard.press('Escape');
-    // Farbband-Variante: kein Bild, kein Leer-Slot, kein Kreis — dafuer die
-    // Personenfarbe als Leiste, und die Zeile ist kompakt (.noart)
-    await expect(page.locator('.entry .eartw')).toHaveCount(0);
-    await expect(page.locator('.entry .eartph')).toHaveCount(0);
+    // v4.92.0: Standard ist AUS — Farbband-Zeile, KEIN Bild, kein Kreis
+    await expect(page.locator('.entry .eartr')).toHaveCount(0);
     await expect(page.locator('.entry .edot')).toHaveCount(0);
-    const band = page.locator('.entry.noart .pband').first();
+    const band = page.locator('.entry.vrow .pband').first();
     await expect(band).toBeVisible();
     const bg = await band.evaluate(el => getComputedStyle(el).backgroundColor);
     expect(bg).toBe('rgb(62, 107, 214)');            // Mira = #3E6BD6 (Fixture)
-    const hArt = await page.evaluate(() => document.querySelector('.entry.noart').getBoundingClientRect().height);
-    expect(hArt).toBeLessThan(90);                    // kompakt (Inhaltshoehe) statt fixer 96px-Bildzeile
+    const hOff = await page.evaluate(() => document.querySelector('.entry.vrow').getBoundingClientRect().height);
+    expect(hOff).toBeLessThan(90);                   // kompakt: Inhaltshoehe
+    // Einstellungen → Kachelbilder AN
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setLogart .setval')).toHaveText('Aus');
+    await page.locator('#setLogart').click();
+    await expect(page.locator('#setLogart .setval')).toHaveText('An');
+    await page.keyboard.press('Escape');
+    // AN: Bild rechts in der Zeile — das Farbband bleibt (Basis-Layout)
+    await expect(page.locator('.entry .eartr').first()).toBeVisible();
+    await expect(page.locator('.entry.vrow .pband').first()).toBeVisible();
+    await expect(page.locator('.entry .edot')).toHaveCount(0);
     // Pro Geraet, persistiert: Reload behaelt die Wahl
     await page.reload();
     await page.getByRole('tab', { name: 'Verlauf' }).click();
-    await expect(page.locator('.entry .eartw')).toHaveCount(0);
-    await expect(page.locator('.entry.noart .pband').first()).toBeVisible();
-    // Und zurueck: AN stellt Bildzeile wieder her
+    await expect(page.locator('.entry .eartr').first()).toBeVisible();
+    // Und zurueck: AUS entfernt die Bilder wieder
     await page.locator('#openSettings').click();
     await page.locator('#setLogart').click();
     await page.keyboard.press('Escape');
-    await expect(page.locator('.entry .eartw').first()).toBeVisible();
-    await expect(page.locator('.entry .pband')).toHaveCount(0);
+    await expect(page.locator('.entry .eartr')).toHaveCount(0);
+    await expect(page.locator('.entry.vrow .pband').first()).toBeVisible();
   });
 
-  test('Verlauf-Zeile: Bild fuehrt, Person ist ein farbiger Chip, der alte Punkt ist weg (v4.80.0/v4.82.0)', async ({ context, page }) => {
+  test('Verlauf-Zeile: Farbband + fetter Name, EINE Schriftgroesse, alte Bild-links-Bausteine sind weg (v4.92.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     const row = page.locator('.entry', { hasText: 'Müll rausbringen' }).first();
-    // v4.84.0: Person wie im ICH-BIN-Waehler — farbiger Buchstaben-Kreis,
-    // Name UNGEFAERBT daneben, gleiche Schriftgroesse wie der Titel.
-    await expect(row.locator('.edot')).toHaveText('M');
-    const bg = await row.locator('.edot').evaluate(el => getComputedStyle(el).backgroundColor);
-    expect(bg).toBe('rgb(62, 107, 214)');
     await expect(row.locator('.epname')).toHaveText('Mira');
     const fs = await row.locator('.epname').evaluate(el => getComputedStyle(el).fontSize);
     const fs2 = await row.locator('.ename').evaluate(el => getComputedStyle(el).fontSize);
     expect(fs).toBe(fs2);                                   // EINE Groesse (Maintainer 27.07.)
-    // Der alte Farbpunkt und der Farb-Chip sind aus der Verlaufszeile weg …
-    await expect(row.locator('.dot')).toHaveCount(0);
-    await expect(row.locator('.mchip')).toHaveCount(0);
-    // … und das Bild steht VOR dem Text (erstes Element der Zeile)
+    // Die alten Bausteine existieren NIRGENDS mehr (geloescht, nicht versteckt):
+    await expect(page.locator('.edot, .eartw, .eartph, .entry .dot, .entry .mchip')).toHaveCount(0);
+    // Erstes Element der Zeile ist das Farbband
     const first = await row.evaluate(el => el.firstElementChild.className);
-    expect(first).toContain('eart');
+    expect(first).toContain('pband');
   });
 
-  test('Verlauf-Ordnung: JEDE Zeile gleich hoch, Bild quadratisch, ohne Bild ein leerer Slot (v4.82.0)', async ({ context, page }) => {
-    // Maintainer-Spez 27.07.: gleiche Zeilenhoehe ueberall, Inhalt vertikal
-    // zentriert, Bild als einheitliches Quadrat, Textspalte immer an derselben
-    // x-Koordinate — Einmalige bekommen dafuer einen leeren Slot.
+  test('Verlauf-Ordnung v4.92.0: Bild RECHTS vor den Punkten, Bild-Seitenverhaeltnis, minimaler Ueberscan, ohne Bild kein Slot', async ({ context, page }) => {
+    // Maintainer-Spez 28.07.: Basis-Layout = Farbband-Zeile; Kachelbild (An)
+    // sitzt RECHTS, direkt vor «+n». Crop: Seitenverhaeltnis des Bildes
+    // (440:300) statt Quadrat, Ueberscan 12 % statt 22 % — so wenig
+    // beschneiden wie noetig, nur der gemalte Rand soll verschwinden.
     const now = new Date().toISOString();
     const mk = (id, cid, cname, note, off) => ({ id, chore_id: cid, chore_name: cname, chore_note: note,
       member_id: 'm-mira', member_name: 'Mira', points: 2,
       done_at: new Date(Date.now() - off).toISOString(), created_at: now, family_id: FAM });
     await mockBackend(context, { logRows: () => [
-      mk('l-a', 'c-1', 'Müll rausbringen', 'nur Restmüll', 0),   // Bild + Notiz (3 Zeilen)
-      mk('l-b', null, 'Pizza holen', '', 3600e3),                // kein Bild, keine Notiz (2 Zeilen)
+      mk('l-a', 'c-1', 'Müll rausbringen', 'nur Restmüll', 0),   // Bild + Notiz
+      mk('l-b', null, 'Pizza holen', '', 3600e3),                // kein Bild (Einmalige)
     ] });
-    // Fuer die Ueberscan-Messung muss das Bild LADEN: WebKit kollabiert ein
-    // kaputtes <img alt=""> zu 0×0 (Chromium behaelt die CSS-Box) — mit dem
-    // globalen Abort war dieser Test auf dem iPhone-Projekt deterministisch
-    // rot. Spaeter registrierte Routen gewinnen: 1×1-PNG statt Abort.
     const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
     await context.route('**://gen.pollinations.ai/**', r => r.fulfill({ status: 200, contentType: 'image/png', body: png }));
+    // Kachelbilder AN (v4.92.0: Standard ist AUS)
+    await page.addInitScript(() => { try { localStorage.setItem('haushalt.logart', '1'); } catch {} });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     const rows = page.locator('.entry.vrow');
     await expect(rows).toHaveCount(2);
-    const boxes = [await rows.nth(0).boundingBox(), await rows.nth(1).boundingBox()];
-    expect(Math.abs(boxes[0].height - boxes[1].height)).toBeLessThan(1);   // gleiche Hoehe
-    // Bild-SLOT ist quadratisch; das Bild darin ist GROESSER als der Slot
-    // (22 % Ueberscan, v4.84.0) — der gemalte helle Rahmen der generierten
-    // Bilder wird so weggeschnitten, statt als «weisse Streifen» oben und
-    // unten stehenzubleiben (cover in 1:1 kappt nur die Seiten).
-    const wrap = await page.locator('.entry .eartw').first().boundingBox();
-    expect(Math.abs(wrap.width - wrap.height)).toBeLessThan(1);
-    const img = await page.locator('.entry img.eart').first().boundingBox();
-    expect(img.width).toBeGreaterThan(wrap.width + 8);      // Ueberscan wirkt
-    // … und der bildlose Eintrag traegt den leeren Slot in gleicher Groesse
-    const ph = await page.locator('.entry .eartph').first().boundingBox();
-    expect(Math.abs(ph.width - wrap.width)).toBeLessThan(1);
-    // v4.87.0: EIN Pastell-Rahmen um jede Crop-Flaeche (Echo des gemalten
-    // Bildrahmens) — Bild-Slot und Leer-Slot tragen denselben Ton.
-    const bc = await page.locator('.entry .eartw').first().evaluate(el => getComputedStyle(el).borderTopColor);
-    const bc2 = await page.locator('.entry .eartph').first().evaluate(el => getComputedStyle(el).borderTopColor);
+    // Bild-Zeile: Kachel rechts, DIREKT vor den Punkten, vertikal zentriert
+    const art = await rows.nth(0).locator('.eartr').boundingBox();
+    const pts = await rows.nth(0).locator('.pts').boundingBox();
+    const row0 = await rows.nth(0).boundingBox();
+    expect(art.x + art.width).toBeLessThan(pts.x + 1);           // Bild VOR +n
+    expect(pts.x - (art.x + art.width)).toBeLessThan(20);        // … und direkt davor
+    const artMidY = art.y + art.height / 2, rowMidY = row0.y + row0.height / 2;
+    expect(Math.abs(artMidY - rowMidY)).toBeLessThan(3);
+    // Text steht LINKS vom Bild (Basis-Layout unveraendert)
+    const txt = await rows.nth(0).locator('.eline1').boundingBox();
+    expect(txt.x + txt.width).toBeLessThanOrEqual(art.x + 1);
+    // Crop-Geometrie: Slot im Bild-Seitenverhaeltnis 440:300 (~1.47) …
+    expect(Math.abs(art.width / art.height - 440 / 300)).toBeLessThan(0.05);
+    // … und der Ueberscan ist MINIMAL: Bild groesser als der Slot (Rand
+    // verschwindet), aber unter 20 % (Negativ-Grenze gegen Ruck-Crop) —
+    // vorher: cover in 1:1 + 22 % nahm seitlich rund ein Viertel weg.
+    const img = await rows.nth(0).locator('img.eart').boundingBox();
+    expect(img.width).toBeGreaterThan(art.width + 4);
+    expect(img.width).toBeLessThan(art.width * 1.2);
+    // v4.87.0: der Pastell-Rahmen bleibt auf der Kachel
+    const bc = await rows.nth(0).locator('.eartr').evaluate(el => getComputedStyle(el).borderTopColor);
     expect(bc).toBe('rgba(240, 233, 220, 0.42)');
-    expect(bc2).toBe(bc);
-    // v4.90.0: der Initial-Kreis steht am RECHTEN Zeilenende, direkt VOR
-    // den Punkten — nicht im Bild, nicht im Leer-Slot, nicht in der
-    // Textzeile. Beide rechts vertikal zentriert (Person+Punkte = ein Paar).
-    await expect(rows.nth(0).locator('.edot')).toHaveCount(1);
-    await expect(rows.nth(1).locator('.edot')).toHaveCount(1);
-    await expect(page.locator('.eartw .edot, .eartph .edot, .eline1 .edot')).toHaveCount(0);
-    const dotBox = await rows.nth(0).locator('.edot').boundingBox();
-    const ptsBox = await rows.nth(0).locator('.pts').boundingBox();
-    const rowBox = await rows.nth(0).boundingBox();
-    expect(dotBox.x + dotBox.width).toBeLessThan(ptsBox.x + 1);          // Kreis VOR +n
-    expect(ptsBox.x - (dotBox.x + dotBox.width)).toBeLessThan(20);       // … und direkt davor
-    const dotMidY = dotBox.y + dotBox.height / 2, rowMidY = rowBox.y + rowBox.height / 2;
-    expect(Math.abs(dotMidY - rowMidY)).toBeLessThan(3);                 // vertikal zentriert
-    // Die Textspalte beginnt weiterhin an der OBERKANTE des Bildes (v4.89.0):
-    const artTop = (await rows.nth(0).locator('.eartw').boundingBox()).y;
-    const txtTop = (await rows.nth(0).locator('.eline1').boundingBox()).y;
-    expect(Math.abs(txtTop - artTop)).toBeLessThan(4);
-    // Zweizeiler ebenso top-aligned (nicht zentriert):
-    const artTop2 = (await rows.nth(1).locator('.eartph').boundingBox()).y;
-    const txtTop2 = (await rows.nth(1).locator('.eline1').boundingBox()).y;
-    expect(Math.abs(txtTop2 - artTop2)).toBeLessThan(4);
-    // Textspalte startet in beiden Zeilen an derselben x-Koordinate
+    // Zeile OHNE Bild: KEIN Slot, kein Platzhalter — die Punkte bleiben
+    // trotzdem rechts verankert (gleiche rechte Kante in beiden Zeilen)
+    await expect(rows.nth(1).locator('.eartr')).toHaveCount(0);
+    await expect(rows.nth(1).locator('.eartph')).toHaveCount(0);
+    const pts2 = await rows.nth(1).locator('.pts').boundingBox();
+    expect(Math.abs((pts.x + pts.width) - (pts2.x + pts2.width))).toBeLessThan(1.5);
+    // Beide Zeilen tragen das Farbband, Textspalte an derselben x-Koordinate
+    await expect(rows.nth(0).locator('.pband')).toHaveCount(1);
+    await expect(rows.nth(1).locator('.pband')).toHaveCount(1);
     const x1 = (await rows.nth(0).locator('.eline1').boundingBox()).x;
     const x2 = (await rows.nth(1).locator('.eline1').boundingBox()).x;
     expect(Math.abs(x1 - x2)).toBeLessThan(1);
