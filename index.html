@@ -431,9 +431,11 @@
      kompaktere von beiden: Gewicht trennt (Name fett, Titel normal), und
      die kleinere Groesse kauft dem Titel Breite vor der Ellipse zurueck. */
   .entry .eline1{display:flex; align-items:center; gap:7px; min-width:0; font-size:15.5px}
-  /* v4.89.0: 24px-Kreis, Radius 12 = Eckenradius des Bildes — der Bogen des
-     Kreises setzt die Bildecke fort, oben links, minimale Abdeckung. */
-  .entry .edot{position:absolute; left:0; top:0; width:24px; height:24px;
+  /* v4.90.0: 24px circle as a normal flex child at the row's right end,
+     directly BEFORE the points — the row itself centers both vertically,
+     so person and «+n» read as one pair. (v4.89.0 had it nested in the
+     art's corner; the art is now fully unobscured again.) */
+  .entry .edot{width:24px; height:24px; flex:none;
     border-radius:50%; display:grid; place-items:center; color:#10140F;
     font-weight:800; font-size:12px}
   .entry .epname{font-weight:700; flex:none; max-width:30%;
@@ -671,7 +673,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.89.0';
+  const APP_VERSION = '4.90.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2741,15 +2743,16 @@
             // Ohne Bild ein LEERER Slot in gleicher Groesse: die Textspalte
             // beginnt in jeder Zeile an derselben x-Koordinate (Ordnung
             // schlaegt hier die fruehere «ehrliche Raggedness», 4. Runde).
-            // v4.89.0: Der Initial-Kreis sitzt IN der oberen linken Bildecke.
-            // Kreisradius = Eckenradius des Bildes (12px): der Kreisbogen
-            // setzt den Eckenbogen fort, der Kreis deckt kaum Bild ab und
-            // bleibt doch an der gewohnten Stelle. Der Leer-Slot traegt ihn
-            // genauso — so hat er endlich eine Aufgabe.
+            // v4.90.0: Der Initial-Kreis wandert ans rechte Zeilenende,
+            // DIREKT VOR die Punkte: [Bild] [Text] … [Kreis] [+n]. Beide
+            // sind vertikal zentriert (align-items:center der Zeile), das
+            // Auge liest rechts Person + Punkte als EIN Paar — «wer, wieviel».
+            // Das Bild bleibt dadurch komplett unverdeckt; der Leer-Slot ist
+            // wieder einfach leer. (Vorher v4.89.0: Kreis in der Bildecke.)
             const dot = `<span class="edot" style="background:${esc(m ? m.color : '#C2CCC5')}">${esc(initial(e.member_name))}</span>`;
             const art = ac && ac.name === e.chore_name
-              ? `<span class="eartw"><img class="art eart${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)">${dot}</span>`
-              : `<span class="eartph">${dot}</span>`;
+              ? `<span class="eartw"><img class="art eart${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)"></span>`
+              : `<span class="eartph"></span>`;
             // v4.80.0: Das Bild fuehrt die Zeile an, die Person ist ein farbiger
             // Chip. Der alte Farbpunkt war neben dem Bild nur noch Rauschen
             // (Maintainer-Screenshot 27.07.); der Chip traegt dieselbe
@@ -2761,7 +2764,7 @@
                 ${note ? `<div class="enote">${esc(note)}</div>` : ''}
                 <div class="when">${d.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' })}</div>
               </span>
-              <span class="pts">+${sum}</span>`;
+              ${dot}<span class="pts">+${sum}</span>`;
             return editable
               ? `<button class="entry vrow" data-editlog="${ids}">${inner}</button>`
               : `<div class="entry vrow">${inner}</div>`;

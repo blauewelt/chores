@@ -3194,12 +3194,20 @@ test.describe('Fairli', () => {
     const bc2 = await page.locator('.entry .eartph').first().evaluate(el => getComputedStyle(el).borderTopColor);
     expect(bc).toBe('rgba(240, 233, 220, 0.42)');
     expect(bc2).toBe(bc);
-    // v4.89.0: der Initial-Kreis sitzt IN der Bildecke (auch auf dem
-    // Leer-Slot), nicht mehr in der Textzeile — und die Textspalte beginnt
-    // an der OBERKANTE des Bildes, als haette sie immer drei Zeilen.
-    await expect(rows.nth(0).locator('.eartw .edot')).toHaveCount(1);
-    await expect(rows.nth(1).locator('.eartph .edot')).toHaveCount(1);
-    await expect(page.locator('.eline1 .edot')).toHaveCount(0);
+    // v4.90.0: der Initial-Kreis steht am RECHTEN Zeilenende, direkt VOR
+    // den Punkten — nicht im Bild, nicht im Leer-Slot, nicht in der
+    // Textzeile. Beide rechts vertikal zentriert (Person+Punkte = ein Paar).
+    await expect(rows.nth(0).locator('.edot')).toHaveCount(1);
+    await expect(rows.nth(1).locator('.edot')).toHaveCount(1);
+    await expect(page.locator('.eartw .edot, .eartph .edot, .eline1 .edot')).toHaveCount(0);
+    const dotBox = await rows.nth(0).locator('.edot').boundingBox();
+    const ptsBox = await rows.nth(0).locator('.pts').boundingBox();
+    const rowBox = await rows.nth(0).boundingBox();
+    expect(dotBox.x + dotBox.width).toBeLessThan(ptsBox.x + 1);          // Kreis VOR +n
+    expect(ptsBox.x - (dotBox.x + dotBox.width)).toBeLessThan(20);       // … und direkt davor
+    const dotMidY = dotBox.y + dotBox.height / 2, rowMidY = rowBox.y + rowBox.height / 2;
+    expect(Math.abs(dotMidY - rowMidY)).toBeLessThan(3);                 // vertikal zentriert
+    // Die Textspalte beginnt weiterhin an der OBERKANTE des Bildes (v4.89.0):
     const artTop = (await rows.nth(0).locator('.eartw').boundingBox()).y;
     const txtTop = (await rows.nth(0).locator('.eline1').boundingBox()).y;
     expect(Math.abs(txtTop - artTop)).toBeLessThan(4);

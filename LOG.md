@@ -1,3 +1,23 @@
+## 2026-07-28 — v4.90.0 (SW haushalt-v194): Verlauf — the person circle moves to the row's right end, directly before the points
+
+Maintainer follow-up to v4.89.0, same evening, after three mocks
+(art corner top-right / far right at text-line height / far right at
+points height): the winner is the circle as a normal flex child at the
+END of the row, immediately BEFORE the «+n» points — both vertically
+centered by the row itself, so person and points read as one pair:
+«who, how much». The art crop is fully unobscured again, and the
+artless placeholder slot is simply empty. The person's NAME stays in
+the text line (maintainer choice — the chip is a color cue, not a
+replacement for the name).
+
+Markup: the dot leaves `.eartw`/`.eartph` and renders between `.what`
+and `.pts`; CSS drops the absolute positioning (one flex child, no
+geometry math). The structure test now pins: exactly one `.edot` per
+row, none inside the art slots or the text line, the circle's right
+edge before the points' left edge and within 20 px of it, and the
+circle vertically centered in the row (±3 px). Negative control:
+swapping the markup order (points before circle) turns the pin red.
+
 ## 2026-07-28 — v4.89.0 (SW haushalt-v193): Verlauf — the initial circle sits in the art's corner; text top-aligns as three lines
 
 Two aesthetics refinements to the Verlauf rows, requested together:
