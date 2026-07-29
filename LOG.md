@@ -1,3 +1,27 @@
+## 2026-07-28 — v4.95.0 (SW haushalt-v199): Pro-Kachel-Abdunkelung + Aufgaben-Edit-Vorschau ist eine echte Kachel
+
+Maintainer praezisiert (28.07.):
+- «Manche Kacheln zu dunkel» → der Regler steuert jetzt die ABDUNKELUNG,
+  nicht die Bild-Deckkraft. Befund: das Bild rendert voll deckend; die
+  Daempfung kommt vom Dunkel-Overlay (.chore::after). Der Regler
+  «Abdunkelung» (0–100 %) setzt dessen Deckkraft pro Kachel via --dk.
+  Standard 100 % = HEUTIGER Look (keine Bestandskachel aendert sich);
+  nach links = heller. Persistenz: chores.opacity (0..1, Overlay-Deckkraft;
+  NULL = 1.0). Migration 20260728210000, im Delta-Pull selektiert.
+- Aufgaben-Edit-Vorschau: KEIN Banner mehr (v4.94.0 verworfen). Der
+  Vorschau-Knoten traegt jetzt die .chore-Klasse und rendert EXAKT wie eine
+  Kachel im Aufgaben-Tab — halbe Grid-Breite, links, gleicher Gradient,
+  Name/Notiz/Punkte, nur nicht antippbar (DIV statt Button). --dk folgt dem
+  Regler live; Name/Notiz/Punkte folgen den Feldern live.
+- Der Eintrag-Edit (logSheet) behaelt seine zentrierte 96×64-Vorschau.
+- Automatischer Migrations-Fluss: db-migrate laeuft jetzt bei jedem Push
+  unter supabase/migrations/** (idempotent). Die opacity-Spalte wurde so
+  bereits angewandt (REST-Probe 400 → 200).
+- Tests auf v4.95.0 umgeschrieben (Vorschau = echte .chore, halbe Breite,
+  nicht antippbar; --dk spiegelt/persistiert; Standard 1.0). Neuer i18n-Key
+  «Abdunkelung» in 19 Sprachen (der ungenutzte «Bild-Deckkraft» entfernt).
+- APP_VERSION 4.95.0, SW-Cache haushalt-v199.
+
 ## 2026-07-28 — v4.94.0 (SW haushalt-v198): Aufgabe-Bearbeiten zeigt die Kachel in echter Kachel-Größe
 
 Maintainer-Entscheid (28.07., aus zwei gerenderten Varianten gewählt —

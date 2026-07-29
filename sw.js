@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v198';   // v4.94.0 Aufgaben-Edit Kachel-Vorschau
+const CACHE = 'haushalt-v199';   // v4.95.0 Pro-Kachel-Deckkraft
 const SHELL = [
   './',
   './index.html',

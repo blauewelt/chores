@@ -3142,37 +3142,85 @@ test.describe('Fairli', () => {
     await expect(page.locator('#logSheet #lArtPrev')).toHaveCount(0);
   });
 
-  test('Aufgabe-bearbeiten zeigt die Kachel in ECHTER Kachel-Groesse — volle Breite, gedimmt, Name + Punkte im Overlay (v4.94.0)', async ({ context, page }) => {
+  test('Aufgabe-bearbeiten: die Vorschau IST eine echte Kachel (wie im Aufgaben-Tab), nicht antippbar (v4.95.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);
-    // Aufgaben-Tab, Stift auf der Kachel öffnet das Bearbeiten-Sheet
     await page.getByRole('tab', { name: 'Aufgaben' }).click();
     await page.locator('[data-edit="c-1"]').first().click();
     await expect(page.locator('#choreSheet')).toBeVisible();
     const w = page.locator('#cArtPrevW');
     await expect(w).toBeVisible();
-    // Bild da …
+    // Der Vorschau-Knoten traegt die .chore-Klasse (erbt Gradient/Schriften/Punkte)
+    await expect(w).toHaveClass(/\bchore\b/);
     await expect(page.locator('#cArtPrev')).toHaveAttribute('src', /gen\.pollinations\.ai/);
+    // Halbe Grid-Breite (wie eine Kachel im 2-Spalten-Tab), NICHT volle Sheet-Breite
     const g = await w.evaluate(el => {
-      const r = el.getBoundingClientRect();
-      const sheet = el.closest('.sheet').getBoundingClientRect();
-      return { ww: r.width, wh: r.height, fillsWidth: (r.width / sheet.width),
-               op: getComputedStyle(el.querySelector('img')).opacity,
-               name: el.querySelector('.tpName') && el.querySelector('.tpName').textContent,
-               pts: el.querySelector('.tpPts') && el.querySelector('.tpPts').textContent };
+      const r = el.getBoundingClientRect(); const sheet = el.closest('.sheet').getBoundingClientRect();
+      return { frac: r.width / sheet.width, name: el.querySelector('.cname').textContent,
+               note: el.querySelector('.cnote').textContent, pts: el.querySelector('.pts').textContent,
+               tag: el.tagName };
     });
-    expect(g.fillsWidth).toBeGreaterThan(0.9);               // volle Sheet-Breite (Kachel-Groesse)
-    expect(g.ww).toBeGreaterThan(g.wh * 2);                  // Banner, deutlich breiter als hoch
-    expect(parseFloat(g.op)).toBeLessThan(0.8);              // Bild GEDIMMT (wie die echte Kachel)
-    expect(g.name).toBe('Müll rausbringen');                 // Name-Overlay = Aufgabenname
-    expect(g.pts).toBe('+2');                                // Punkte-Overlay
-    // Live: Name im Feld ändern → Overlay zieht sofort mit
+    expect(g.frac).toBeLessThan(0.6);                         // ~halbe Breite, nicht voll
+    expect(g.frac).toBeGreaterThan(0.35);
+    expect(g.name).toBe('Müll rausbringen');                  // Name wie auf der Kachel
+    expect(g.note).toBe('nur Restmüll');                      // Notiz wie auf der Kachel
+    expect(g.pts).toContain('+2');                            // Punkte-Pille
+    expect(g.tag).toBe('DIV');                                // kein <button> — nicht antippbar
+    // Alte Banner-Overlays existieren nicht mehr (weder hier noch im logSheet)
+    await expect(page.locator('.tpName, .tpPts')).toHaveCount(0);
+    // Live: Name im Feld ändern → Kachel-Name zieht mit
     await page.locator('#cName').fill('Küche wischen');
-    await expect(page.locator('#cArtPrevW .tpName')).toHaveText('Küche wischen');
-    // Der Eintrag-Edit (logSheet) bleibt die kleine zentrierte Vorschau —
-    // KEINE Kachel-Overlays dort (Negativ-Kontrolle gegen versehentliche
-    // Wiederverwendung der Klassen).
-    await expect(page.locator('#logSheet .tpName')).toHaveCount(0);
+    await expect(page.locator('#cArtPrevW .cname')).toHaveText('Küche wischen');
+  });
+
+  test('Pro-Kachel-Abdunkelung: Regler steuert das Dunkel-Overlay, Live-Vorschau, Persistenz, Kachel spiegelt sie (v4.95.0)', async ({ context, page }) => {
+    // Fixture-Kachel mit gesetzter Abdunkelung 0.40 (0..1 = Overlay-Deckkraft) …
+    await mockBackend(context, { logRows: () => [] });
+    await context.route(`${SB}/rest/v1/chores*`, route => {
+      if (route.request().method() !== 'GET') return route.fulfill({ status: 204, body: '' });
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify([{ id: 'c-1', name: 'Müll rausbringen', points: 2, note: 'nur Restmüll', art: null, opacity: 0.40, family_id: FAM }]) });
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    // Die Kachel im Aufgaben-Tab traegt die Abdunkelung als --dk (0.40)
+    const tileDk = await page.locator('.chore[data-cid="c-1"]').first().evaluate(el => el.style.getPropertyValue('--dk'));
+    expect(parseFloat(tileDk)).toBeCloseTo(0.40, 2);
+    // … und das Dunkel-Overlay (.chore::after) hat diese Deckkraft
+    const afterOp = await page.locator('.chore[data-cid="c-1"]').first().evaluate(el => getComputedStyle(el, '::after').opacity);
+    expect(parseFloat(afterOp)).toBeCloseTo(0.40, 2);
+    // Edit öffnen: Regler steht auf 40 %
+    await page.locator('[data-edit="c-1"]').first().click();
+    await expect(page.locator('#cOpacityF')).toBeVisible();
+    expect(await page.locator('#cOpacity').inputValue()).toBe('40');
+    await expect(page.locator('#cOpacityVal')).toHaveText('40%');
+    // Regler auf 90 % → Vorschau-Kachel --dk folgt LIVE
+    await page.locator('#cOpacity').fill('90');
+    await page.locator('#cOpacity').dispatchEvent('input');
+    await expect(page.locator('#cOpacityVal')).toHaveText('90%');
+    const prevDk = await page.locator('#cArtPrevW').evaluate(el => el.style.getPropertyValue('--dk'));
+    expect(parseFloat(prevDk)).toBeCloseTo(0.90, 2);
+    // Speichern schreibt chores.opacity (= Abdunkelung)
+    let sent = null;
+    await context.route(`${SB}/rest/v1/chores*`, route => {
+      const req = route.request();
+      if (req.method() !== 'GET') {
+        try { const b = JSON.parse(req.postData() || '[]'); const row = Array.isArray(b) ? b[0] : b; if (row && 'opacity' in row) sent = row.opacity; } catch {}
+        return route.fulfill({ status: 204, body: '' });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify([{ id: 'c-1', name: 'Müll rausbringen', points: 2, note: 'nur Restmüll', art: null, opacity: 0.90, family_id: FAM }]) });
+    });
+    await page.locator('#saveChore').click();
+    await expect(page.locator('#choreSheet')).toBeHidden();
+    await expect.poll(() => sent).toBeCloseTo(0.90, 2);
+    // Standard ohne Wert = 1.0 (heutiger Look): Kachel ohne opacity traegt --dk 1
+    const defDk = await page.evaluate(() => {
+      const b = document.createElement('button'); b.className = 'chore'; b.style.setProperty('--c', '#888');
+      document.querySelector('.grid, body').appendChild(b);
+      const op = getComputedStyle(b, '::after').opacity; b.remove(); return op;
+    });
+    expect(parseFloat(defDk)).toBeCloseTo(1, 2);
   });
 
   test('Kachelbilder im Verlauf: Standard AUS (Farbband), Einschalten pro Gerät, überlebt den Reload (v4.92.0)', async ({ context, page }) => {
