@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v199';   // v4.95.0 Pro-Kachel-Deckkraft
+const CACHE = 'haushalt-v200';   // v4.96.0 Vorschau-Kachelhoehe + reservierter Slot
 const SHELL = [
   './',
   './index.html',

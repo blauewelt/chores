@@ -1,3 +1,17 @@
+## 2026-07-28 — v4.96.0 (SW haushalt-v200): Aufgaben-Edit-Vorschau — Kachelhoehe waechst mit den Punkten, reservierter Slot
+
+- Die Vorschau-Kachel ist jetzt exakt so hoch wie die echte Kachel: EINE
+  Formel tileMinH(p)=104+34·log2(p+1) fuer Aufgaben-Kachel UND Vorschau,
+  live am Punkte-Regler mitgefuehrt.
+- Reservierter Slot (#cArtPrevWrap) in Hoehe der GROESSTEN moeglichen Kachel
+  des Haushalts: tileMinH(max(MAXPTS, Kachel-Punkte)). MAXPTS ist die
+  Haushalts-Einstellung «Max. Punkte» (Standard 5) — kein hartes 15, also
+  wenig Leerraum. Die Felder darunter springen nicht mehr, wenn man die
+  Punkte zieht. Links ausgerichtet (Maintainer-Entscheid gegen zentriert).
+- 1 neuer Test (Vorschauhoehe = tileMinH(Punkte); Slot = tileMinH(MAXPTS);
+  Ziehen der Punkte laesst den Slot stabil).
+- APP_VERSION 4.96.0, SW-Cache haushalt-v200.
+
 ## 2026-07-28 — v4.95.0 (SW haushalt-v199): Pro-Kachel-Abdunkelung + Aufgaben-Edit-Vorschau ist eine echte Kachel
 
 Maintainer praezisiert (28.07.):

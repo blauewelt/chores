@@ -3173,6 +3173,39 @@ test.describe('Fairli', () => {
     await expect(page.locator('#cArtPrevW .cname')).toHaveText('Küche wischen');
   });
 
+  test('Vorschau-Kachel: Hoehe waechst mit Punkten (wie echte Kachel); Slot reserviert MAXPTS-Hoehe, Felder springen nicht (v4.96.0)', async ({ context, page }) => {
+    await mockBackend(context);
+    // MAXPTS Standard 5 → tileMinH(5)=192, tileMinH(2)=158, tileMinH(4)=~183
+    const tileMinH = p => Math.round(104 + 34 * Math.log2((+p || 0) + 1));
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await page.locator('[data-edit="c-1"]').first().click();      // Fixture-Kachel hat points 2
+    await expect(page.locator('#choreSheet')).toBeVisible();
+    // Vorschau-Kachel ist so hoch wie die echte Kachel bei diesen Punkten
+    const h2 = await page.locator('#cArtPrevW').evaluate(el => el.getBoundingClientRect().height);
+    expect(Math.abs(h2 - tileMinH(2))).toBeLessThan(3);
+    // Der Slot reserviert die groesste moegliche Kachel des Haushalts (MAXPTS=5)
+    const slot = await page.locator('#cArtPrevWrap').evaluate(el => parseFloat(getComputedStyle(el).minHeight));
+    expect(Math.abs(slot - tileMinH(5))).toBeLessThan(3);
+    // Abstand des Notiz-Labels vom Slot-Anfang merken (relativ — hebt das
+    // vertikale Neu-Zentrieren des <dialog> auf), dann Punkte hochziehen …
+    const noteGap = () => page.evaluate(() => {
+      const n = document.querySelector('label[for="cNote"]').getBoundingClientRect().top;
+      const w = document.getElementById('cArtPrevWrap').getBoundingClientRect().top;
+      return n - w;
+    });
+    const before = await noteGap();
+    await page.locator('#cPts').fill('4'); await page.locator('#cPts').dispatchEvent('input');
+    // Kachel ist gewachsen …
+    const h4 = await page.locator('#cArtPrevW').evaluate(el => el.getBoundingClientRect().height);
+    expect(h4).toBeGreaterThan(h2 + 8);
+    expect(Math.abs(h4 - tileMinH(4))).toBeLessThan(3);
+    // … aber der Slot (und damit die Felder darunter) bleibt stabil
+    const slot2 = await page.locator('#cArtPrevWrap').evaluate(el => parseFloat(getComputedStyle(el).minHeight));
+    expect(Math.abs(slot2 - tileMinH(5))).toBeLessThan(3);
+    expect(Math.abs((await noteGap()) - before)).toBeLessThan(2);   // Notiz-Label bleibt relativ zum Slot stehen
+  });
+
   test('Pro-Kachel-Abdunkelung: Regler steuert das Dunkel-Overlay, Live-Vorschau, Persistenz, Kachel spiegelt sie (v4.95.0)', async ({ context, page }) => {
     // Fixture-Kachel mit gesetzter Abdunkelung 0.40 (0..1 = Overlay-Deckkraft) …
     await mockBackend(context, { logRows: () => [] });

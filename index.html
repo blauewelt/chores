@@ -418,8 +418,12 @@
      Radius, Schatten, Bild, Name/Notiz/Punkte. Nur halbe Grid-Breite,
      links, nicht antippbar; --dk steuert live die Abdunkelung. Der
      Eintrag-Edit (logSheet) behaelt seine 96×64-Vorschau (#lArtPrevW). */
-  #cArtPrevW{display:block; width:calc(50% - 6px); margin:2px 0 14px; cursor:default}
-  #cArtPrevW[hidden]{display:none}   /* .chore setzt display:flex — [hidden] waere sonst wirkungslos */
+  /* v4.96.0: Reservierter Slot in Hoehe der GROESSTEN moeglichen Kachel des
+     Haushalts (tileMinH(MAXPTS)) — so springen die Felder darunter NICHT,
+     wenn man die Punkte zieht. Der Slot-Wert wird pro Oeffnung gesetzt. */
+  #cArtPrevWrap{margin:2px 0 14px}
+  #cArtPrevWrap[hidden]{display:none}
+  #cArtPrevW{display:block; width:calc(50% - 6px); margin:0; cursor:default}
   #cArtPrevW:active{transform:none; box-shadow:0 12px 20px rgba(0,0,0,.35)}
   #cArtPrevW.busy .art{filter:saturate(.55) brightness(.8); transition:filter .3s}
   #cArtPrevW.busy::before{content:'✨'; position:absolute; right:10px; bottom:8px; z-index:3;
@@ -643,7 +647,7 @@
       <h2 id="choreSheetTitle">Neue Aufgabe</h2>
       <div class="slot end"><button type="button" class="x" id="cancelChore" aria-label="Schließen">×</button></div>
     </div>
-    <div class="chore" id="cArtPrevW" hidden aria-hidden="true"><img id="cArtPrev" class="art" alt=""><span class="cname" id="cArtName"></span><span class="cnote" id="cArtNote"></span><span class="pts" id="cArtPts"></span></div>
+    <div id="cArtPrevWrap" hidden><div class="chore" id="cArtPrevW" aria-hidden="true"><img id="cArtPrev" class="art" alt=""><span class="cname" id="cArtName"></span><span class="cnote" id="cArtNote"></span><span class="pts" id="cArtPts"></span></div></div>
     <div class="field">
       <label for="cName" data-i18n>Aufgabe</label>
       <div id="dupHint" style="display:none;background:color-mix(in srgb, var(--accent) 12%, transparent);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--ink);margin-bottom:2px">
@@ -695,7 +699,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.95.0';
+  const APP_VERSION = '4.96.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1463,6 +1467,10 @@
     let x = 0; for (const ch of String(id)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
     return CHORE_COLORS[x % CHORE_COLORS.length];
   };
+  // v4.96.0: Kachelhoehe waechst mit den Punkten — EINE Formel fuer die
+  // Aufgaben-Kachel UND die Edit-Vorschau, damit die Vorschau exakt so hoch
+  // ist wie die echte Kachel.
+  const tileMinH = p => Math.round(104 + 34 * Math.log2((+p || 0) + 1));
   const choreSeed = id => {
     let x = 0; for (const ch of String(id)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
     return x % 100000;
@@ -2614,7 +2622,7 @@
           <span class="pts">＋</span>
         </button>`;
       listEl.innerHTML = `<div class="grid">` + (QUERY.trim() ? '' : oneOffTile) + ordered.map(c =>
-            `<button class="chore" data-cid="${c.id}" style="--c:${choreColor(c.id)}; --dk:${artDim(c)}; min-height:${Math.round(104 + 34 * Math.log2(c.points + 1))}px">
+            `<button class="chore" data-cid="${c.id}" style="--c:${choreColor(c.id)}; --dk:${artDim(c)}; min-height:${tileMinH(c.points)}px">
               <img class="art${ARTOK.has(choreArt(c)) ? ' ok' : ''}" src="${choreArt(c)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)">
               <span class="cname">${esc(c.name)}</span>
               ${c.note ? `<span class="cnote">${esc(c.note)}</span>` : ''}
@@ -3237,7 +3245,7 @@
   ['cArt', 'cName', 'cNote'].forEach(fid =>
     document.getElementById(fid).addEventListener('input', () => {
       const prev = document.getElementById('cArtPrev');
-      if (!editingChore || oneOffMode || document.getElementById('cArtPrevW').hidden) return;
+      if (!editingChore || oneOffMode || document.getElementById('cArtPrevWrap').hidden) return;
       // v4.95.0: Name + Notiz der Kachel-Vorschau sofort mitfuehren (das Bild
       // folgt debounced, weil jede Prompt-Variante eine neue Erzeugung ist)
       document.getElementById('cArtName').textContent = document.getElementById('cName').value;
@@ -3298,7 +3306,10 @@
     syncPtsRange(document.getElementById('cPts'), document.getElementById('cPtsVal'), v);
     // v4.94.0: Punkte auch in der Kachel-Vorschau (unten links) mitfuehren
     const cap = document.getElementById('cArtPts');
-    if (cap) cap.textContent = '+' + document.getElementById('cPts').value;
+    const pv = document.getElementById('cPts').value;
+    if (cap) cap.textContent = '+' + pv;
+    // v4.96.0: Vorschau-Kachel waechst mit den Punkten wie die echte Kachel
+    document.getElementById('cArtPrevW').style.minHeight = tileMinH(pv) + 'px';
   }
   document.getElementById('cPts').addEventListener('input', e => setPtsSlider(e.target.value));
 
@@ -3348,9 +3359,14 @@
     // Die Vorschau macht das Bild-Idee-Feld greifbar: Idee aendern, Bild sehen.
     const prev = document.getElementById('cArtPrev');
     const prevW = document.getElementById('cArtPrevW');
+    const prevWrap = document.getElementById('cArtPrevWrap');
     artPrevLoad = null; clearTimeout(artPrevTimer);
     prevW.classList.remove('busy');
-    prevW.hidden = !c || oneOffMode;
+    prevWrap.hidden = !c || oneOffMode;
+    // v4.96.0: Slot in Hoehe der groessten moeglichen Kachel des Haushalts
+    // reservieren (tileMinH von MAXPTS bzw. dem aktuellen Wert, falls hoeher)
+    // — so bleiben die Felder darunter stehen, wenn man die Punkte zieht.
+    prevWrap.style.minHeight = (c && !oneOffMode) ? tileMinH(Math.max(MAXPTS, c.points)) + 'px' : '';
     prev.classList.remove('ok');
     prev.onload = () => prev.classList.add('ok');
     prev.onerror = () => prev.classList.remove('ok');   // Rahmen bleibt, kein Kaputt-Icon
