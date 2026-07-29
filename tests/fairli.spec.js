@@ -3305,11 +3305,11 @@ test.describe('Fairli', () => {
     expect(first).toContain('pband');
   });
 
-  test('Verlauf-Ordnung v4.93.0: Bild RECHTS vor den Punkten, 90×60, KEIN Overscan, ohne Bild kein Slot', async ({ context, page }) => {
+  test('Verlauf-Ordnung v4.98.0: Bild RECHTS vor den Punkten, 90×84, KEIN Overscan, Rahmen in Aufgabenfarbe, ohne Bild kein Slot', async ({ context, page }) => {
     // Maintainer-Spez 28.07.: Basis-Layout = Farbband-Zeile; Kachelbild (An)
-    // sitzt RECHTS, direkt vor «+n». Crop v4.93.0: 90×60 (3:2), KEIN Overscan —
-    // gemessen an 20 Live-Generierungen trug KEINE einen Rand, also nichts
-    // wegzuschneiden; cover fuellt sauber.
+    // sitzt RECHTS, direkt vor «+n». Crop v4.98.0: 90×84 (quadratischer, Seiten
+    // beschnitten), KEIN Overscan; cover fuellt sauber. Rahmen NEU in der
+    // Aufgabenfarbe (choreColor(chore.id)) statt einheitlichem Creme.
     const now = new Date().toISOString();
     const mk = (id, cid, cname, note, off) => ({ id, chore_id: cid, chore_name: cname, chore_note: note,
       member_id: 'm-mira', member_name: 'Mira', points: 2,
@@ -3337,18 +3337,23 @@ test.describe('Fairli', () => {
     // Text steht LINKS vom Bild (Basis-Layout unveraendert)
     const txt = await rows.nth(0).locator('.eline1').boundingBox();
     expect(txt.x + txt.width).toBeLessThanOrEqual(art.x + 1);
-    // Crop-Geometrie: Kachel 90×60 = 3:2 …
-    expect(Math.abs(art.width / art.height - 1.5)).toBeLessThan(0.06);
-    expect(art.width).toBeGreaterThan(80);                      // groesser als der alte 66px-Thumb
+    // Crop-Geometrie v4.98.0: Kachel 90×84 (quadratischer als das alte 3:2) …
+    expect(art.width).toBeGreaterThan(80);                      // Breite bleibt 90
+    expect(art.height).toBeGreaterThan(78);                     // Hoehe jetzt ~84 (vorher 60)
+    expect(Math.abs(art.width / art.height - 90 / 84)).toBeLessThan(0.06);
     // … und KEIN Overscan: das <img> fuellt die Kachel exakt (cover ohne
     // scale). Negativ-Kontrolle gegen ein wiederkehrendes transform:scale.
     const img = await rows.nth(0).locator('img.eart').boundingBox();
     expect(Math.abs(img.width - art.width)).toBeLessThan(5);   // nur die 1.5px-Kante, KEIN Overscan-Zoom (der waere +10..18px)
     const tf = await rows.nth(0).locator('img.eart').evaluate(el => getComputedStyle(el).transform);
     expect(tf === 'none' || tf === 'matrix(1, 0, 0, 1, 0, 0)').toBeTruthy();   // strikte Negativ-Kontrolle gegen scale()
-    // v4.87.0: der Pastell-Rahmen bleibt auf der Kachel
+    // v4.98.0: Rahmen in der AUFGABENFARBE — die Kachel traegt --c inline aus
+    // choreColor('c-1') (= #E8746A), NICHT mehr den einheitlichen Creme-Rahmen.
+    const cvar = await rows.nth(0).locator('.eartr').evaluate(el => el.style.getPropertyValue('--c').trim());
+    expect(cvar).toBe('#E8746A');                               // choreColor('c-1')
     const bc = await rows.nth(0).locator('.eartr').evaluate(el => getComputedStyle(el).borderTopColor);
-    expect(bc).toBe('rgba(240, 233, 220, 0.42)');
+    expect(bc).not.toBe('rgba(240, 233, 220, 0.42)');          // nicht mehr Creme
+    expect(bc).not.toBe('rgba(0, 0, 0, 0)');                    // ein echter Rahmen ist da
     // Zeile OHNE Bild: KEIN Slot, kein Platzhalter — die Punkte bleiben
     // trotzdem rechts verankert (gleiche rechte Kante in beiden Zeilen)
     await expect(rows.nth(1).locator('.eartr')).toHaveCount(0);

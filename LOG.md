@@ -1,3 +1,24 @@
+## 2026-07-29 — v4.98.0 (SW haushalt-v202): Verlauf-Kachel 90×84 + Rahmen in Aufgabenfarbe, Kunst-Vorwärmen gegen bildlose Einträge
+
+- Verlauf-Kachel höher: 90×60 → **90×84** (quadratischer, Seiten werden per
+  cover beschnitten; Quelle 440×300). Aus dem Höhen-Mock gewählt (Maintainer
+  29.07.). Breite bleibt 90.
+- **Rahmen in der Aufgabenfarbe:** die Verlauf-Kachel trägt jetzt denselben
+  Farbrand wie ihre Kachel im Aufgaben-Tab — `color-mix(in srgb, var(--c) 45 %,
+  var(--card))` mit `--c` = `choreColor(chore.id)` inline pro Zeile, statt des
+  einheitlichen Creme-Rahmens (`--artframe`, bleibt als Fallback). Die farbige
+  Leiste links bleibt die Personenfarbe — zwei getrennte Signale (wer / welche
+  Aufgabe).
+- **Bildlose Verlauf-Einträge behoben:** «Speichern & verbuchen» einer frisch
+  angelegten Kachel legte sofort einen Verlaufs-Eintrag an, während Pollinations
+  das Bild noch erzeugte — die Zeile blieb bildlos (und ein `<img>`-Fehler nach
+  3 Retries entfernte es ganz). Neu: `warmArt()` lädt die Kunst beim Anlegen im
+  Hintergrund vor (losgelöst von jedem sichtbaren `<img>`), trägt sie bei Erfolg
+  in ARTOK/SW-Cache und rendert den Verlauf einmalig nach. Zusätzlich wärmt der
+  Verlauf-Render jede noch fehlende Kachel-Kunst aktiv nach (Nachschlagen der
+  Kachel aus `state.chores` wie im Aufgaben-Tab) — so bleibt keine Zeile
+  dauerhaft ohne Bild.
+
 ## 2026-07-29 — v4.97.0 (SW haushalt-v201): Edit-Vorschau exakt wie Listen-Kachel, Abdunkelungs-Regler entfernt (Schema bleibt), Kunst regeneriert 1s nach dem Tippen
 
 - Edit-Vorschau == Listen-Kachel: Die `display:block`-Regel auf `#cArtPrevW`

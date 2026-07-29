@@ -452,17 +452,18 @@
     padding-bottom:13px; position:relative; overflow:hidden}
   .entry.vrow .what{display:flex; flex-direction:column; gap:2px; min-width:0; flex:1}
   .entry.vrow .pband{position:absolute; left:0; top:0; bottom:0; width:5px; flex:none}
-  /* Maintainer 27.07.: ein leichter PASTELL-Rahmen um jede Crop-Flaeche —
-     ein Echo des gemalten Creme-Rahmens mancher generierter Bilder. */
+  /* v4.98.0: Rahmen in der AUFGABENFARBE (Maintainer 29.07.) — dieselbe Wahl
+     wie im Aufgaben-Tab (.chore: color-mix var(--c) 45% + Karte), damit die
+     Kachel im Verlauf denselben Farbrand traegt wie in der Aufgabenliste. Der
+     einheitliche Creme-Rahmen (--artframe, v4.87.0) ist ersetzt; --c kommt pro
+     Zeile inline aus choreColor(chore.id). --artframe bleibt als Fallback. */
   :root{--artframe:rgba(240,233,220,.42)}
-  /* Kachel rechts in der Zeile (v4.92.0), groesser + KEIN Overscan (v4.93.0):
-     90×60. Messung 28.07. (20 Live-Generierungen quer durch die Kachel-Namen):
-     KEIN einziges Bild traegt einen gemalten Rand — der Ueberscan schnitt also
-     nur echtes Bild weg fuer einen Rand, den es nicht gibt. cover fuellt die
-     Kachel sauber, der Pastell-Rahmen (v4.87.0) bleibt als ruhige Kante. */
-  .entry .eartr{width:90px; height:60px; border-radius:10px;
+  /* Kachel rechts in der Zeile (v4.92.0), KEIN Overscan (v4.93.0). Hoehe
+     v4.98.0: 84 statt 60 — quadratischer (90×84), die Seiten werden beschnitten
+     (cover, Quelle 440×300). Maintainer-Entscheid 29.07. aus dem Hoehen-Mock. */
+  .entry .eartr{width:90px; height:84px; border-radius:10px;
     flex:none; background:#252F29; overflow:hidden; position:relative;
-    border:1.5px solid var(--artframe)}
+    border:1.5px solid color-mix(in srgb, var(--c, var(--line)) 45%, var(--card))}
   .entry .eartr .eart{width:100%; height:100%; object-fit:cover}
   /* EINE Schriftgroesse fuer Name und Titel (Maintainer 27.07.) — die
      kompaktere von beiden: Gewicht trennt (Name fett, Titel normal), und
@@ -713,7 +714,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.97.0';
+  const APP_VERSION = '4.98.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1501,6 +1502,36 @@
     const src = img.src;
     setTimeout(() => { img.src = ''; img.src = src; }, n * 5000);
   };
+  // v4.98.0: Kachelkunst im HINTERGRUND vorwaermen. Anlass (Maintainer 29.07.):
+  // «Speichern & verbuchen» einer FRISCHEN Kachel legt sofort einen Verlaufs-
+  // Eintrag an, doch Pollinations erzeugt das Bild erst in den naechsten
+  // Sekunden — die Verlaufs-Zeile blieb bildlos (und ein <img>-Fehler nach 3
+  // Retries entfernte es ganz). warmArt() laedt das Bild losgeloest von jedem
+  // sichtbaren <img>, traegt es bei Erfolg in ARTOK (→ SW-Cache) und rendert
+  // den Verlauf einmalig nach, sobald es da ist. Dedupliziert ueber artWarm.
+  const artWarm = new Set();
+  let warmRerenderT = null;
+  function scheduleLogRerender() {
+    if (view !== 'log') return;
+    clearTimeout(warmRerenderT);
+    warmRerenderT = setTimeout(() => { if (view === 'log') render(); }, 180);
+  }
+  function warmArt(c) {
+    if (!c) return;
+    const url = choreArt(c);
+    if (ARTOK.has(url) || artWarm.has(url)) return;
+    artWarm.add(url);
+    const im = new Image();
+    let tries = 0;
+    im.onload = () => { artWarm.delete(url); ARTOK.add(url); scheduleLogRerender(); };
+    im.onerror = () => {
+      // Erstgenerierung kann zaeh sein (Pollinations rechnet) — geduldig
+      // wiederholen mit Backoff, aber irgendwann aufgeben (kein Endlos-Loop).
+      if (++tries <= 5) setTimeout(() => { im.src = ''; im.src = url; }, tries * 4000);
+      else artWarm.delete(url);
+    };
+    im.src = url;
+  }
   const choreArt = c => 'https://gen.pollinations.ai/image/' +
     // Bild-Idee (c.art, v4.53.0 im Sheet sichtbar) schlaegt alles: sie ist der
     // ganze Prompt. Sonst Name + Notiz (v4.46.2). Hintergrund: kurze deutsche
@@ -2810,9 +2841,16 @@
             // Bild-links-Spalte samt Leer-Slot und Initial-Kreis (v4.89/90)
             // ist GELOESCHT, nicht versteckt.
             const band = `<span class="pband" style="background:${esc(m ? m.color : '#C2CCC5')}"></span>`;
-            const art = LOGART_ON && ac && ac.name === e.chore_name
-              ? `<span class="eartr"><img class="art eart${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)"></span>`
-              : '';
+            // v4.98.0: Rahmen in der Aufgabenfarbe (--c inline, wie im Tab).
+            // Fehlt das Bild noch (frisch erzeugte Kachel, Pollinations rechnet
+            // noch), waermt warmArt() es im Hintergrund vor und rendert den
+            // Verlauf nach — so bleibt keine Zeile dauerhaft ohne Bild.
+            let art = '';
+            if (LOGART_ON && ac && ac.name === e.chore_name) {
+              const au = choreArt(ac);
+              if (!ARTOK.has(au)) warmArt(ac);
+              art = `<span class="eartr" style="--c:${choreColor(ac.id)}"><img class="art eart${ARTOK.has(au) ? ' ok' : ''}" src="${au}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)"></span>`;
+            }
             const inner = `
               ${band}
               <span class="what">
@@ -3455,6 +3493,8 @@
       c.created_at = new Date().toISOString();   // lokal sofort korrekt einsortieren
       createRemote('chores', c);
       justAdded = c.id;   // Platz bestimmt die Sortierung; Scroll+Flash fuehren hin (v4.34.0)
+      warmArt(c);   // v4.98.0: Bild sofort im Hintergrund erzeugen, damit der
+                    // frische Verlaufs-Eintrag nicht bildlos bleibt
       if (alsoRecord) recordEntry(c);   // Kachel anlegen UND sofort verbuchen
     }
     invalidateOrder();

@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v201';   // v4.97.0 Edit-Vorschau == Liste, Abdunkelungs-Regler entfernt (Schema bleibt)
+const CACHE = 'haushalt-v202';   // v4.98.0 Verlauf-Kachel 90x84 + Rahmen in Aufgabenfarbe + Kunst-Vorwaermen
 const SHELL = [
   './',
   './index.html',
