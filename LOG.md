@@ -1,3 +1,25 @@
+## 2026-07-29 — v4.101.0 (SW haushalt-v205): Render-Bündelung («×N») gelöscht, Folge-Tipp zählt nie mehr auf einen Grabstein
+
+- **«Tippen tut nichts mehr»-Bug behoben (Live 29.07.):** Die 1-h-Zusammen-
+  legung (v4.35.0) suchte den jüngsten passenden Eintrag OHNE Grabsteine
+  auszunehmen. Nach «Löschen» lag der Eintrag als Grabstein (deleted_at)
+  wieder in state.log — der nächste Tipp fand IHN, addierte die Punkte auf
+  die gelöschte Zeile und upsertete sie: sichtbar passierte nichts. Jetzt
+  ist `!e.deleted_at` Teil der Suche; der Tipp erzeugt wieder eine echte
+  neue Zeile. (Der Zustand war nie «kaputt» — nur die Punkte versickerten
+  im Papierkorb-Eintrag; per Wiederherstellen wären sie sichtbar geworden.)
+- **Render-Bündelung im Verlauf GELÖSCHT (Maintainer):** Einträge derselben
+  Person/Aufgabe/Tag kollabierten beim Rendern zu «×N» mit Summenpunkten
+  (v4.23.0) — zusätzlich zur echten 1-h-Zusammenlegung. Doppelt gemoppelt
+  und mehrdeutig (Löschen traf N Zeilen auf einmal). Jetzt gilt: Folge-Tipps
+  < 1 h werden beim ERFASSEN zu EINEM Eintrag zusammengelegt (unverändert);
+  weiter auseinanderliegende Tipps sind bewusst getrennte Einträge und
+  erscheinen auch getrennt. Mit der Bündelung fällt die Serien-Mehrfach-
+  bearbeitung («Löschen (n)», gemeinsames Verschieben, ×N-Element samt CSS)
+  ersatzlos weg — openLogSheet arbeitet nur noch auf genau einem Eintrag.
+- Nebenbei: die Zusammenlegung und der Punkte-Edit ziehen jetzt auch
+  state.totalsAll sofort mit (bumpTotals-Lücke seit v4.65.0).
+
 ## 2026-07-29 — v4.100.0 (SW haushalt-v204): Eintrag-Edit und Aufgabe-Edit teilen sich EINE Kachel-Vorschau
 
 - Die beiden Bearbeiten-Sheets zeigten die Kachelkunst unterschiedlich: das

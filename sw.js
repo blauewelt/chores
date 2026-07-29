@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v204';   // v4.100.0 Eintrag-Edit nutzt dieselbe Kachel-Vorschau wie das Aufgabe-Edit
+const CACHE = 'haushalt-v205';   // v4.101.0 Render-Buendelung (xN) geloescht + Folge-Tipp ignoriert Grabsteine
 const SHELL = [
   './',
   './index.html',

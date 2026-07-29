@@ -377,7 +377,10 @@ test.describe('Fairli', () => {
     await expect(page.locator('#installBar')).toBeHidden();   // aber kein Banner
   });
 
-  test('Verlauf: Serien gebündelt (×N, Summenpunkte), Serie löschbar (v4.23.0)', async ({ context, page }) => {
+  test('Verlauf: KEINE Render-Bündelung mehr — jede Zeile ist EIN Eintrag, Löschen trifft genau einen (v4.101.0, ersetzt v4.23.0)', async ({ context, page }) => {
+    // v4.101.0 (Maintainer): Folge-Tipps < 1 h legt recordEntry in EINEN
+    // Eintrag zusammen — getrennte Eintraege sind gewollt getrennt und
+    // duerfen im Verlauf NICHT nachtraeglich zu «×N» kollabieren.
     const serie = [1,2,3].map(i => ({ id: 'l-s'+i, chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: 'nur Restmüll',
       member_id: 'm-mira', member_name: 'Mira', points: 2, done_at: `2026-07-10T10:0${4-i}:00Z`, family_id: FAM }));
     const timonRow = { id: 'l-c', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null,
@@ -385,15 +388,15 @@ test.describe('Fairli', () => {
     await mockBackend(context, { logRows: () => [...serie, timonRow] });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
-    await expect(page.locator('.entry')).toHaveCount(2);            // Miras Serie + Timon
-    const g = page.locator('.entry', { hasText: 'Mira' });
-    await expect(g.locator('.xn')).toHaveText('×3');
-    await expect(g.locator('.pts')).toHaveText('+6');               // Summe statt Einzelpunkte
-    await g.click();                                             // ganze Zeile öffnet das Sheet (v4.31)
+    await expect(page.locator('.entry')).toHaveCount(4);            // 3× Mira + Timon, KEINE ×N-Zeile
+    await expect(page.locator('.xn')).toHaveCount(0);               // das ×N-Element existiert nicht mehr
+    const g = page.locator('.entry', { hasText: 'Mira' }).first();
+    await expect(g.locator('.pts')).toHaveText('+2');               // Einzelpunkte, keine Summe
+    await g.click();                                                // Zeile öffnet das Sheet (v4.31)
     const del = page.locator('#logSheet #delLog');
-    await expect(del).toHaveText('Löschen (3)');
+    await expect(del).toHaveText('Löschen');                        // ohne (n) — genau EIN Eintrag
     await del.click();
-    await expect(page.locator('.entry')).toHaveCount(1);            // ganze Serie weg
+    await expect(page.locator('.entry')).toHaveCount(3);            // nur der eine Eintrag weg
   });
 
   test('Verlauf: Eintrag bearbeiten — Titel + Notiz, Serie gemeinsam (v4.23.0)', async ({ context, page }) => {
@@ -527,7 +530,7 @@ test.describe('Fairli', () => {
     await expect(page.getByRole('heading', { name: 'Einmalig eintragen' })).toBeVisible();  // keine unsichtbare Kachel
   });
 
-  test('Verlauf: Zeit bearbeitbar — Serie verschiebt sich um dasselbe Delta (v4.25.0)', async ({ context, page }) => {
+  test('Verlauf: Zeit bearbeitbar — Eintrag wird direkt gesetzt, Nachbarn bleiben stehen (v4.101.0, ersetzt Serien-Delta v4.25.0)', async ({ context, page }) => {
     const serie = [1,2,3].map(i => ({ id: 'l-s'+i, chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null,
       member_id: 'm-mira', member_name: 'Mira', points: 2, done_at: `2026-07-10T10:0${4-i}:00Z`, family_id: FAM }));
     await mockBackend(context, { logRows: () => serie });
@@ -535,17 +538,17 @@ test.describe('Fairli', () => {
       r.request().method() === 'PATCH' ? r.fulfill({ status: 204, body: '' }) : r.fallback());
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
-    const g = page.locator('.entry', { hasText: 'Mira' });
-    await expect(g.locator('.xn')).toHaveText('×3');
-    await g.click();
+    await expect(page.locator('.entry')).toHaveCount(3);             // drei einzelne Zeilen (v4.101.0)
+    await page.locator('.entry', { hasText: 'Mira' }).first().click();
     const sh = page.locator('#logSheet');
-    await expect(sh.getByText('verschiebt alle 3 gemeinsam')).toBeVisible();
+    await expect(sh.getByText('verschiebt alle')).toHaveCount(0);    // kein Serien-Hinweis mehr
     await setPickerTime(page, '2026-07-08', 8, 30);   // eigener Picker seit v4.82.0
     await sh.locator('#saveLog').click();
-    await expect(g.locator('.xn')).toHaveText('×3');                 // Serie bleibt Serie (Delta!)
     // v4.32: Datum wandert in den Tages-Kopf, Zeile zeigt nur die Zeit
     await expect(page.locator('.dayhead', { hasText: '8. Juli' })).toBeVisible();
-    await expect(g.locator('.when')).toContainText('08:30');         // neuester Eintrag exakt gesetzt
+    await expect(page.locator('.entry')).toHaveCount(3);             // Nachbarn unangetastet …
+    const times = await page.locator('.entry .when').allInnerTexts();
+    expect(times.filter(x => x.includes('08:30')).length).toBe(1);   // … nur EINER ist umgezogen
   });
 
   test('Delta-Sync: zweiter Boot zieht nur Neues (or=created_at/updated_at), merged korrekt (v4.36.0)', async ({ context, page }) => {
@@ -631,6 +634,37 @@ test.describe('Fairli', () => {
     await expect(fresh.locator('.pts')).toHaveText('+6');            // 3 × 2 Punkte, EINE Zeile
     await expect(fresh.locator('.xn')).toHaveCount(0);               // kein ×N (keine Serie)
     await expect(page.locator('.entry')).toHaveCount(2);             // plus die alte Zeile
+  });
+
+  test('Folge-Tipp zählt NIE auf einen Grabstein: nach Löschen erzeugt der nächste Tipp eine NEUE sichtbare Zeile (v4.101.0, Live-Bug 29.07.)', async ({ context, page }) => {
+    // Live-Hergang: Eintrag gelöscht (Grabstein bleibt in state.log), Kachel
+    // erneut getippt → die 1-h-Zusammenlegung fand den GELOESCHTEN Eintrag,
+    // addierte die Punkte dort auf und upsertete ihn — sichtbar passierte
+    // nichts, die Kachel wirkte «kaputt».
+    const dead = { id: 'l-dead', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null,
+      member_id: 'm-mira', member_name: 'Mira', points: 2,
+      done_at: new Date(Date.now() - 10 * 60e3).toISOString(),        // vor 10 min → mitten im 1-h-Fenster
+      deleted_at: new Date(Date.now() - 5 * 60e3).toISOString(), family_id: FAM };
+    let newRows = 0, upserts = [];
+    await mockBackend(context, { logRows: () => [dead] });
+    await context.route(`${SB}/rest/v1/log**`, r => {
+      if (r.request().method() === 'POST') {
+        const b = r.request().postDataJSON();
+        if (Array.isArray(b)) upserts.push(b[0]); else newRows++;
+        return r.fulfill({ status: 201, body: '' });
+      }
+      return r.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.locator('.chip', { hasText: 'Mira' }).click();
+    await page.locator('.chore', { hasText: 'Müll rausbringen' }).click();
+    await page.waitForTimeout(400);
+    expect(newRows).toBe(1);                                         // NEUE Zeile, kein Grabstein-Upsert
+    expect(upserts.filter(u => u && u.id === 'l-dead').length).toBe(0);  // der Grabstein bleibt unangetastet
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    const row = page.locator('.entry', { hasText: 'Müll rausbringen' });
+    await expect(row).toHaveCount(1);                                // sichtbar — nicht im Grabstein versickert
+    await expect(row.locator('.pts')).toHaveText('+2');
   });
 
   test('Verlauf: Punkte einer Einzelzeile per Slider editierbar (gleiche UI wie Anlegen); Punkte-Ansicht folgt (v4.38.0)', async ({ context, page }) => {
