@@ -1,3 +1,17 @@
+## 2026-07-29 — v4.102.0 (SW haushalt-v206): Folge-Tipp frischt den Verlaufs-Schnappschuss auf (Notiz erscheint sofort)
+
+- Live-Fund (Maintainer): Notiz zu einer Aufgabe ergänzt, Aufgabe erneut
+  getippt — die bestehende Verlaufs-Zeile blieb notizlos, bis irgendwann
+  (> 1 h) ein frischer Eintrag entstand. Ursache: die 1-h-Zusammenlegung
+  (v4.35.0) addierte NUR Punkte und liess den alten Name/Notiz-Schnappschuss
+  stehen. Jetzt verbucht der Folge-Tipp die Aufgabe, WIE SIE JETZT IST:
+  die Zusammenlegung frischt chore_name/chore_note der Zeile auf — genau wie
+  ein frischer Eintrag den aktuellen Stand einfriert. §3 (Verlauf ist
+  unveränderlich gegenüber Kachel-BEARBEITUNGEN) bleibt unangetastet: nicht
+  der Kachel-Edit schreibt die Historie um, der neue TIPP tut es.
+- Direkter Eintrag-Edit (Notiz im Verlauf-Sheet ändern) war und ist sofort
+  sichtbar — per Repro bestätigt, Testabdeckung besteht.
+
 ## 2026-07-29 — v4.101.0 (SW haushalt-v205): Render-Bündelung («×N») gelöscht, Folge-Tipp zählt nie mehr auf einen Grabstein
 
 - **«Tippen tut nichts mehr»-Bug behoben (Live 29.07.):** Die 1-h-Zusammen-

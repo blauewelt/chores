@@ -709,7 +709,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.101.0';
+  const APP_VERSION = '4.102.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -3268,6 +3268,14 @@
       && Date.now() - new Date(e.done_at).getTime() < 3600e3);
     if (recent) {
       recent.points += choreLike.points;
+      // v4.102.0: Der Folge-Tipp verbucht die Aufgabe, WIE SIE JETZT IST —
+      // Name/Notiz-Schnappschuss auffrischen (Live-Fund 29.07.: Notiz zur
+      // Aufgabe ergänzt, erneut getippt — die Verlaufs-Zeile behielt den alten
+      // notizlosen Schnappschuss, bis irgendwann ein frischer Eintrag entstand;
+      // «aktualisiert nicht sofort»). §3 bleibt gewahrt: nicht die KACHEL-
+      // Bearbeitung schreibt die Historie um — der neue TIPP tut es, genau wie
+      // ein frischer Eintrag den aktuellen Stand einfriert.
+      recent.chore_name = choreLike.name; recent.chore_note = choreLike.note || null;
       bumpTotals(m.id, choreLike.points, 0);   // Punkte wachsen, Zeilenzahl nicht (v4.65.0-Lücke)
       upsertRemote('log', [recent]);   // v4.47.5: Punkte-Zusammenlegung pull-geschützt
       try { if (navigator.vibrate) navigator.vibrate(12); } catch {}

@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v205';   // v4.101.0 Render-Buendelung (xN) geloescht + Folge-Tipp ignoriert Grabsteine
+const CACHE = 'haushalt-v206';   // v4.102.0 Folge-Tipp frischt Name/Notiz-Schnappschuss der Verlaufs-Zeile auf
 const SHELL = [
   './',
   './index.html',

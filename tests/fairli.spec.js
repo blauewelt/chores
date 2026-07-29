@@ -667,6 +667,32 @@ test.describe('Fairli', () => {
     await expect(row.locator('.pts')).toHaveText('+2');
   });
 
+  test('Folge-Tipp frischt den Schnappschuss auf: Notiz zur Aufgabe ergänzt → erneuter Tipp zeigt sie SOFORT im Verlauf (v4.102.0)', async ({ context, page }) => {
+    // Live-Fund 29.07.: Eintrag ohne Notiz existiert (< 1 h). Der Haushalt
+    // ergänzt die Notiz auf der KACHEL und tippt erneut — die Zusammenlegung
+    // addierte nur Punkte, der alte notizlose Schnappschuss blieb stehen.
+    const fresh = { id: 'l-f', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null,
+      member_id: 'm-mira', member_name: 'Mira', points: 2,
+      done_at: new Date(Date.now() - 10 * 60e3).toISOString(), family_id: FAM };   // 10 min → Merge-Fenster
+    await mockBackend(context, { logRows: () => [fresh] });
+    await context.route(`${SB}/rest/v1/chores*`, route => {
+      if (route.request().method() !== 'GET') return route.fulfill({ status: 204, body: '' });
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify([{ id: 'c-1', name: 'Müll rausbringen', points: 2, note: 'auch Papier!', family_id: FAM }]) });
+    });
+    await context.route(`${SB}/rest/v1/log**`, r => r.request().method() === 'POST'
+      ? r.fulfill({ status: 201, body: '' }) : r.fallback());
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.locator('.chip', { hasText: 'Mira' }).click();
+    await page.locator('.chore', { hasText: 'Müll rausbringen' }).click();   // Folge-Tipp → Merge
+    await page.waitForTimeout(400);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    const row = page.locator('.entry', { hasText: 'Müll rausbringen' });
+    await expect(row).toHaveCount(1);                                // weiterhin EINE Zeile (Merge)
+    await expect(row.locator('.pts')).toHaveText('+4');              // Punkte aufaddiert
+    await expect(row.locator('.enote')).toHaveText('auch Papier!');  // Notiz SOFORT da — neuer Schnappschuss
+  });
+
   test('Verlauf: Punkte einer Einzelzeile per Slider editierbar (gleiche UI wie Anlegen); Punkte-Ansicht folgt (v4.38.0)', async ({ context, page }) => {
     const row = { id: 'l-p', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null,
       member_id: 'm-mira', member_name: 'Mira', points: 7, done_at: new Date().toISOString(), family_id: FAM };
