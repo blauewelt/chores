@@ -1303,19 +1303,28 @@ test.describe('Fairli', () => {
     // Leer-Zustand
     await page.locator('#searchInput').fill('zzz');
     await expect(page.locator('.empty')).toContainText('Nichts gefunden');
-    // b) Verlauf filtern — Aufgabe, Notiz und Person
+    // b) v4.99.0: Tab-Wechsel LÖSCHT die Suche (kein Mitschleppen mehr) …
     await page.locator('#searchInput').fill('küche');
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
     await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('#searchInput')).toHaveValue('');                 // beim Wechsel geleert
+    await expect(page.locator('.entry', { hasText: 'Müll' })).toHaveCount(1);   // nichts weggefiltert
+    // … und im Verlauf FRISCH getippt filtert Aufgabe, Notiz und Person
+    await page.locator('#searchInput').fill('küche');
     await expect(page.locator('.entry', { hasText: 'Küche aufräumen' })).toHaveCount(1);
     await expect(page.locator('.entry', { hasText: 'Müll' })).toHaveCount(0);
     await page.locator('#searchInput').fill('timon');
     await expect(page.locator('.entry', { hasText: 'Müll' })).toHaveCount(1);
+    // Leeren-Knopf räumt die aktuelle Suche (ohne Tab-Wechsel)
+    await page.locator('#searchClear').click();
+    await expect(page.locator('.entry', { hasText: 'Küche aufräumen' })).toHaveCount(1);
+    await expect(page.locator('.entry', { hasText: 'Müll' })).toHaveCount(1);
     // Punkte-Ansicht: keine Suchleiste
     await page.getByRole('tab', { name: 'Punkte' }).click();
     await expect(page.locator('#searchBar')).toBeHidden();
-    // Leeren-Knopf + Ausschalten räumt auf
+    // Zurück zu Aufgaben: Suche leer, alle Kacheln da
     await page.getByRole('tab', { name: 'Aufgaben' }).click();
-    await page.locator('#searchClear').click();
+    await expect(page.locator('#searchInput')).toHaveValue('');
     await expect(page.locator('.chore[data-cid="c-2"]')).toBeVisible();
     await page.locator('#openSettings').click();
     await page.locator('#setSearch').click();
@@ -3354,6 +3363,10 @@ test.describe('Fairli', () => {
     const bc = await rows.nth(0).locator('.eartr').evaluate(el => getComputedStyle(el).borderTopColor);
     expect(bc).not.toBe('rgba(240, 233, 220, 0.42)');          // nicht mehr Creme
     expect(bc).not.toBe('rgba(0, 0, 0, 0)');                    // ein echter Rahmen ist da
+    // v4.99.0: derselbe Dunkel-Schleier wie auf der Aufgaben-Kachel — verdeckt
+    // helle Creme-Raender mancher generierter Bilder (Katzen-Bug 29.07.).
+    const ov = await rows.nth(0).locator('.eartr').evaluate(el => getComputedStyle(el, '::after').backgroundImage);
+    expect(ov).toContain('gradient');
     // Zeile OHNE Bild: KEIN Slot, kein Platzhalter — die Punkte bleiben
     // trotzdem rechts verankert (gleiche rechte Kante in beiden Zeilen)
     await expect(rows.nth(1).locator('.eartr')).toHaveCount(0);

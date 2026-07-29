@@ -465,6 +465,14 @@
     flex:none; background:#252F29; overflow:hidden; position:relative;
     border:1.5px solid color-mix(in srgb, var(--c, var(--line)) 45%, var(--card))}
   .entry .eartr .eart{width:100%; height:100%; object-fit:cover}
+  /* v4.99.0: derselbe Dunkel-Schleier wie auf der Aufgaben-Kachel (.chore::after).
+     Grund (Maintainer 29.07.): manche generierten Bilder tragen oben/unten einen
+     hellen Creme-Rand (z. B. die Katze «Ginj hinaus begleiten»). Im Aufgaben-Tab
+     verdeckt dieser Verlauf die Raender — im Verlauf fehlte er, also blitzten sie
+     als weisse Linien durch. Jetzt identisch: oben/unten dunkel, Mitte klar. */
+  .entry .eartr::after{content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
+    border-radius:inherit; opacity:var(--dk, 1);
+    background:linear-gradient(180deg, rgba(10,14,12,.6), rgba(10,14,12,.12) 55%, rgba(10,14,12,.55))}
   /* EINE Schriftgroesse fuer Name und Titel (Maintainer 27.07.) — die
      kompaktere von beiden: Gewicht trennt (Name fett, Titel normal), und
      die kleinere Groesse kauft dem Titel Breite vor der Ellipse zurueck. */
@@ -714,7 +722,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.98.0';
+  const APP_VERSION = '4.99.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2849,7 +2857,7 @@
             if (LOGART_ON && ac && ac.name === e.chore_name) {
               const au = choreArt(ac);
               if (!ARTOK.has(au)) warmArt(ac);
-              art = `<span class="eartr" style="--c:${choreColor(ac.id)}"><img class="art eart${ARTOK.has(au) ? ' ok' : ''}" src="${au}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)"></span>`;
+              art = `<span class="eartr" style="--c:${choreColor(ac.id)}; --dk:${artDim(ac)}"><img class="art eart${ARTOK.has(au) ? ' ok' : ''}" src="${au}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)"></span>`;
             }
             const inner = `
               ${band}
@@ -2913,6 +2921,16 @@
   // ---------- Events ----------
   document.querySelector('.tabs').addEventListener('click', e => {
     const b = e.target.closest('.tab'); if (!b) return;
+    // v4.99.0: Suchbegriff NICHT zwischen Aufgaben/Punkte/Verlauf mitschleppen
+    // (Maintainer 29.07.) — ein Filter aus einer Ansicht wirkte in der naechsten
+    // wie ein Bug. Beim echten Tab-Wechsel Suche zuruecksetzen.
+    if (b.dataset.view !== view) {
+      QUERY = '';
+      const inp = document.getElementById('searchInput');
+      if (inp) inp.value = '';
+      const clr = document.getElementById('searchClear');
+      if (clr) clr.hidden = true;
+    }
     view = b.dataset.view; invalidateOrder(); render();
   });
 

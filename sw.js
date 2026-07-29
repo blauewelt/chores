@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v202';   // v4.98.0 Verlauf-Kachel 90x84 + Rahmen in Aufgabenfarbe + Kunst-Vorwaermen
+const CACHE = 'haushalt-v203';   // v4.99.0 Verlauf-Kachel Dunkel-Schleier (Creme-Raender weg) + Suche loescht bei Tab-Wechsel
 const SHELL = [
   './',
   './index.html',

@@ -1,3 +1,18 @@
+## 2026-07-29 — v4.99.0 (SW haushalt-v203): Verlauf-Kachel bekommt den Dunkel-Schleier der Aufgaben-Kachel (helle Creme-Ränder weg), Suche wird beim Tab-Wechsel gelöscht
+
+- **Weisse Linien oben/unten auf Verlauf-Kacheln behoben:** manche generierten
+  Bilder tragen einen hellen Creme-Rand oben und unten (z. B. die Katze «Ginj
+  hinaus begleiten»). Die Aufgaben-Kachel verdeckt ihn mit dem Dunkel-Verlauf
+  (`.chore::after`) — die Verlauf-Kachel hatte diesen Schleier nicht, also
+  blitzten die Ränder als weisse Linien durch. Jetzt trägt `.eartr::after`
+  denselben Verlauf (oben/unten dunkel, Mitte klar) inkl. `--dk` aus artDim() —
+  die Verlauf-Kachel sieht damit exakt aus wie im Aufgaben-Tab.
+- **Suche nicht mehr über Tabs mitschleppen:** ein in Aufgaben getippter
+  Suchbegriff blieb beim Wechsel zu Verlauf/Punkte aktiv und filterte dort
+  weiter — das fühlte sich kaputt an (Maintainer 29.07.). Der Tab-Wechsel setzt
+  die Suche jetzt zurück (Feld + QUERY leer). Der Leeren-Knopf und die Suche
+  innerhalb einer Ansicht funktionieren unverändert.
+
 ## 2026-07-29 — v4.98.0 (SW haushalt-v202): Verlauf-Kachel 90×84 + Rahmen in Aufgabenfarbe, Kunst-Vorwärmen gegen bildlose Einträge
 
 - Verlauf-Kachel höher: 90×60 → **90×84** (quadratischer, Seiten werden per
