@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v203';   // v4.99.0 Verlauf-Kachel Dunkel-Schleier (Creme-Raender weg) + Suche loescht bei Tab-Wechsel
+const CACHE = 'haushalt-v204';   // v4.100.0 Eintrag-Edit nutzt dieselbe Kachel-Vorschau wie das Aufgabe-Edit
 const SHELL = [
   './',
   './index.html',

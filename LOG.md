@@ -1,3 +1,17 @@
+## 2026-07-29 — v4.100.0 (SW haushalt-v204): Eintrag-Edit und Aufgabe-Edit teilen sich EINE Kachel-Vorschau
+
+- Die beiden Bearbeiten-Sheets zeigten die Kachelkunst unterschiedlich: das
+  Aufgabe-Edit als volle `.chore`-Kachel (halbe Breite, Name/Notiz/Punkte-
+  Overlay, Aufgabenfarbe, Dunkel-Schleier), das Eintrag-Edit (Verlauf) als
+  kleinen 96×64-Thumbnail. Jetzt tragen BEIDE dieselbe Vorschau — gemeinsame
+  Klassen `.artprevslot`/`.artprevtile` (die alte `.artprevw` ist weg) und
+  gemeinsame Füll-Helfer `paintPreviewTile()`/`setTilePreviewPts()`. Titel,
+  Notiz und Punkte ziehen im Eintrag-Edit live in die Kachel nach, genau wie im
+  Aufgabe-Edit; der Höhen-Slot ist ebenso reserviert, damit nichts springt.
+- Kontext-Unterschied bewusst weggelassen: das Eintrag-Edit hat KEIN
+  «Bild-Idee»-Feld (ein Eintrag ändert die Kachelkunst nicht) — das Bild bleibt
+  dort also fest die Kachelkunst, während alles andere identisch ist.
+
 ## 2026-07-29 — v4.99.0 (SW haushalt-v203): Verlauf-Kachel bekommt den Dunkel-Schleier der Aufgaben-Kachel (helle Creme-Ränder weg), Suche wird beim Tab-Wechsel gelöscht
 
 - **Weisse Linien oben/unten auf Verlauf-Kacheln behoben:** manche generierten

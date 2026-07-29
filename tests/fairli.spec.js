@@ -1978,8 +1978,17 @@ test.describe('Fairli', () => {
     await expect(page.locator('#newsBar')).toBeVisible();
     // 3) Konsistenz-Wache: NEWS_VERSION darf nie vor dem liegen, was
     //    updates.html tatsächlich berichtet (sonst pingt der Banner auf
-    //    Inhalte, die es nicht gibt)
-    expect(parseFloat(news)).toBeLessThanOrEqual(parseFloat(ver));
+    //    Inhalte, die es nicht gibt). Segmentweise vergleichen wie das
+    //    vcmp() der App — parseFloat scheiterte ab v4.100.0 («4.100» < 4.74
+    //    als Float, obwohl 100 > 74 als Release).
+    const vcmp = (a, b) => {
+      const pa = String(a).split('.').map(Number), pb = String(b).split('.').map(Number);
+      for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        const d = (pa[i] || 0) - (pb[i] || 0); if (d) return d;
+      }
+      return 0;
+    };
+    expect(vcmp(news, ver)).toBeLessThanOrEqual(0);
   });
 
   test('Was-ist-neu-Hinweis: Erstkontakt sieht KEIN Banner, Marke wird still gesetzt (v4.37.0)', async ({ context, page }) => {
@@ -3117,35 +3126,43 @@ test.describe('Fairli', () => {
     await expect(row('Alter Kachelname').locator('img.eart')).toHaveCount(0);
   });
 
-  test('Eintrag-bearbeiten traegt das Kachelbild ZENTRIERT — gleiche Schnappschuss-Regel, kein leerer Slot (v4.93.0)', async ({ context, page }) => {
+  test('Eintrag-bearbeiten zeigt DIESELBE Kachel-Vorschau wie das Aufgabe-Edit (volle .chore-Kachel, halbe Breite, Aufgabenfarbe) — kein 96×64-Thumb mehr (v4.100.0)', async ({ context, page }) => {
     const now = new Date().toISOString();
-    const mk = (id, cid, cname) => ({ id, chore_id: cid, chore_name: cname, chore_note: '',
+    const mk = (id, cid, cname, note) => ({ id, chore_id: cid, chore_name: cname, chore_note: note || '',
       member_id: 'm-mira', member_name: 'Mira', points: 2, done_at: now, created_at: now, family_id: FAM });
     await mockBackend(context, { logRows: () => [
-      mk('l-a', 'c-1', 'Müll rausbringen'),          // Kachel existiert, Name stimmt → Bild
-      mk('l-b', null, 'Pizza holen'),                // Einmalig → KEIN Bild, KEIN Platzhalter
+      mk('l-a', 'c-1', 'Müll rausbringen', 'nur Restmüll'),   // Kachel existiert, Name stimmt → Bild
+      mk('l-b', null, 'Pizza holen'),                          // Einmalig → KEIN Bild, KEIN Platzhalter
     ] });
-    // v4.93.0: Kachelbilder sind standardmaessig AUS — die Snapshot-Regel im
-    // Edit-Sheet gilt aber unabhaengig vom Listen-Schalter; explizit an, damit
-    // das Preview-Bild da ist.
     await page.addInitScript(() => { try { localStorage.setItem('haushalt.logart', '1'); } catch {} });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     await page.locator('.entry', { hasText: 'Müll rausbringen' }).first().click();
     await expect(page.locator('#logSheet #lArtPrev')).toHaveAttribute('src', /gen\.pollinations\.ai/);
-    // v4.93.0: Preview im Bild-Seitenverhaeltnis (96×64 ≈ 3:2, NICHT quadratisch),
-    // ZENTRIERT im Sheet, KEIN Overscan (Bild fuellt den Rahmen ohne Scale).
-    const g = await page.locator('#lArtPrevW').evaluate(el => {
+    // v4.100.0: die Vorschau IST dieselbe .chore-Kachel wie im Aufgabe-Edit —
+    // volle Kachel mit Name/Notiz/Punkte-Overlay, halbe Sheet-Breite, links,
+    // Rahmen in der Aufgabenfarbe. NICHT mehr der zentrierte 96×64-Thumbnail.
+    const tile = page.locator('#lArtPrevW');
+    await expect(tile).toHaveClass(/\bchore\b/);
+    await expect(tile).toHaveClass(/\bartprevtile\b/);
+    await expect(page.locator('#lArtName')).toHaveText('Müll rausbringen');
+    await expect(page.locator('#lArtNote')).toHaveText('nur Restmüll');
+    await expect(page.locator('#lArtPts')).toHaveText('+2');
+    const cvar = await tile.evaluate(el => el.style.getPropertyValue('--c').trim());
+    expect(cvar).toBe('#E8746A');                            // choreColor('c-1') — wie im Aufgaben-Tab
+    // halbe Sheet-Breite (wie das Aufgabe-Edit), deutlich breiter als der 96px-Thumb
+    const g = await tile.evaluate(el => {
       const w = el.getBoundingClientRect();
       const sheet = el.closest('.sheet').getBoundingClientRect();
-      const cs = getComputedStyle(el.querySelector('img'));
-      return { ww: w.width, wh: w.height, wLeft: w.left - sheet.left, wRight: sheet.right - w.right,
-               transform: cs.transform };
+      return { ww: w.width, ratio: w.width / sheet.width, transform: getComputedStyle(el.querySelector('img')).transform };
     });
-    expect(g.ww).toBeGreaterThan(g.wh + 10);                 // breiter als hoch (kein Quadrat)
-    expect(Math.abs(g.ww / g.wh - 1.5)).toBeLessThan(0.12);  // ~3:2
-    expect(Math.abs(g.wLeft - g.wRight)).toBeLessThan(4);    // horizontal ZENTRIERT
-    expect(g.transform === 'none' || g.transform === 'matrix(1, 0, 0, 1, 0, 0)').toBeTruthy();  // kein Overscan
+    expect(g.ww).toBeGreaterThan(120);                       // kein 96px-Thumb mehr
+    expect(g.ratio).toBeGreaterThan(0.4);                    // ~halbe Breite
+    expect(g.ratio).toBeLessThan(0.6);
+    expect(g.transform === 'none' || g.transform === 'matrix(1, 0, 0, 1, 0, 0)').toBeTruthy();  // kein Overscan-Zoom
+    // Live: Titel im Feld ändern → Overlay in der Kachel zieht nach
+    await page.locator('#lName').fill('Müll rausbringen!');
+    await expect(page.locator('#lArtName')).toHaveText('Müll rausbringen!');
     await page.locator('#closeLog').click();
     await page.locator('.entry', { hasText: 'Pizza holen' }).click();
     await expect(page.locator('#logSheet #lArtPrev')).toHaveCount(0);
