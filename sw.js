@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v200';   // v4.96.0 Vorschau-Kachelhoehe + reservierter Slot
+const CACHE = 'haushalt-v201';   // v4.97.0 Edit-Vorschau == Liste, Abdunkelungs-Regler entfernt (Schema bleibt)
 const SHELL = [
   './',
   './index.html',

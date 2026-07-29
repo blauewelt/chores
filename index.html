@@ -423,7 +423,15 @@
      wenn man die Punkte zieht. Der Slot-Wert wird pro Oeffnung gesetzt. */
   #cArtPrevWrap{margin:2px 0 14px}
   #cArtPrevWrap[hidden]{display:none}
-  #cArtPrevW{display:block; width:calc(50% - 6px); margin:0; cursor:default}
+  /* .chore liefert display:flex + justify-content:space-between (Punkte unten).
+     NICHT mit display:block ueberschreiben — sonst rutscht die Punkte-Pille
+     nach oben und die Vorschau sieht anders aus als die echte Kachel. */
+  /* v4.97.0: exakt so breit wie eine echte Listen-Kachel, damit der Titel
+     GLEICH umbricht (sonst wrappte «Müll rausbringen» eine Zeile mehr und die
+     Vorschau war ~18px hoeher). Die Liste nutzt columns:2/column-gap:12px in
+     einem um 14px gepolsterten Container; das Sheet ist um 20px gepolstert —
+     also ist EINE Listen-Spalte genau 50% der Sheet-Breite (nicht 50%-6px). */
+  #cArtPrevW{width:50%; margin:0; cursor:default}
   #cArtPrevW:active{transform:none; box-shadow:0 12px 20px rgba(0,0,0,.35)}
   #cArtPrevW.busy .art{filter:saturate(.55) brightness(.8); transition:filter .3s}
   #cArtPrevW.busy::before{content:'✨'; position:absolute; right:10px; bottom:8px; z-index:3;
@@ -669,10 +677,16 @@
       <input type="text" id="cArt" placeholder="z. B. «mowing the lawn with a lawnmower»" maxlength="120" autocomplete="off">
       <span class="subnote" style="display:block;margin-top:6px" data-i18n>Nur fürs Kachelbild — erscheint nirgends im Text. Englische Beschreibungen treffen meist besser.</span>
     </div>
+    <!-- v4.97.0: Abdunkelungs-Regler ausgeblendet (Maintainer 29.07.): der
+         Dunkel-Verlauf sitzt nur oben, der Regler bringt wenig und kostet viel
+         Platz. Schema (chores.opacity) BLEIBT — artDim() liest den Wert weiter,
+         nur die Bedien-UI ist weg. Zum Reaktivieren einfach entkommentieren
+         und die JS-Blöcke unten (setDimSlider) zurückholen.
     <div class="field" id="cOpacityF" hidden>
       <div class="ptsrow"><label for="cOpacity" data-i18n>Abdunkelung</label><output id="cOpacityVal" for="cOpacity">100%</output></div>
       <input type="range" id="cOpacity" min="0" max="100" step="5" value="100">
     </div>
+    -->
     <button type="submit" class="btn primary wide" id="saveChore">Speichern</button>
     <button type="button" class="btn ghost wide" id="saveAndRecord" hidden>Nur speichern</button>
   </form>
@@ -699,7 +713,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.96.0';
+  const APP_VERSION = '4.97.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -3319,14 +3333,9 @@
   // haelt den Wert 0..1; NULL = Standard 1.0 (heutiger Look). Die Kachel setzt
   // ihn als --dk; artDim() liefert den anzuwendenden Wert.
   const artDim = c => (c && c.opacity != null) ? c.opacity : 1.0;
-  function setDimSlider(pct) {
-    const sl = document.getElementById('cOpacity');
-    if (pct !== undefined) sl.value = pct;
-    document.getElementById('cOpacityVal').textContent = sl.value + '%';
-    sl.style.setProperty('--fill', sl.value + '%');
-    document.getElementById('cArtPrevW').style.setProperty('--dk', String(sl.value / 100));  // Vorschau folgt live
-  }
-  document.getElementById('cOpacity').addEventListener('input', () => setDimSlider());
+  // v4.97.0: setDimSlider() + der #cOpacity-Listener sind entfernt (Regler
+  // ausgeblendet). artDim() bleibt die einzige Quelle für --dk — die Vorschau
+  // bekommt ihren Wert jetzt direkt in openChoreSheet().
 
   let oneOffMode = false;
   function openChoreSheet(id, mode) {
@@ -3376,10 +3385,9 @@
     if (c) prevW.style.setProperty('--c', choreColor(c.id));
     document.getElementById('cArtName').textContent = c ? c.name : '';
     document.getElementById('cArtNote').textContent = c && c.note ? c.note : '';
-    // Abdunkelungs-Regler NUR beim Bearbeiten (wie die Vorschau); Wert aus der
-    // Kachel (Standard 100 % = heutiger Look), Vorschau folgt sofort.
-    document.getElementById('cOpacityF').hidden = !c || oneOffMode;
-    setDimSlider(Math.round(artDim(c) * 100));
+    // Abdunkelung: Regler ist ausgeblendet (v4.97.0); die Vorschau spiegelt
+    // trotzdem den gespeicherten opacity-Wert der Kachel wider (--dk).
+    prevW.style.setProperty('--dk', String(artDim(c)));
     choreDirty = false;
     choreSheet.showModal();
   }
@@ -3422,7 +3430,6 @@
     const points = Math.max(0, Math.min(15, parseInt(document.getElementById('cPts').value) || 0));
     const note = document.getElementById('cNote').value.trim() || null;
     const artHint = document.getElementById('cArt').value.trim() || null;
-    const opacity = +(document.getElementById('cOpacity').value) / 100;   // v4.95.0: 0..1
     if (!name) return false;
     if (oneOffMode) {
       // Einmalig: NUR verbuchen, keine Kachel (gegen Kachel-Inflation)
@@ -3434,7 +3441,9 @@
       const c = state.chores.find(x => x.id === editingChore);
       c.name = name; c.points = points; c.note = note;
       c.art = artHint;             // leer = Bild wieder aus Name + Notiz ableiten
-      c.opacity = opacity;         // v4.95.0: Pro-Kachel-Deckkraft (der Regler steht nur im Bearbeiten)
+      // v4.97.0: c.opacity bleibt unangetastet (Regler ausgeblendet) — der
+      // gespeicherte Wert bleibt erhalten, statt bei jedem Edit auf 100 % zu
+      // springen. Schema/Spalte chores.opacity bleibt bestehen.
       // upsertRemote statt push(PATCH) (v4.47.1): der ungeschützte PATCH
       // verlor das Race gegen pull() — alter Name/Notiz kamen zurück und
       // damit auch die alte Kachel-Kunst (URL hängt an name+note). Gleiche

@@ -1,3 +1,21 @@
+## 2026-07-29 — v4.97.0 (SW haushalt-v201): Edit-Vorschau exakt wie Listen-Kachel, Abdunkelungs-Regler entfernt (Schema bleibt), Kunst regeneriert 1s nach dem Tippen
+
+- Edit-Vorschau == Listen-Kachel: Die `display:block`-Regel auf `#cArtPrevW`
+  hatte das Flex-Layout der `.chore` ausser Kraft gesetzt — das Punkte-Pill
+  klebte oben statt unten. Regel entfernt; beide Kacheln sind nun deckungs-
+  gleich (Titel oben, Notiz darunter, `+n` unten links, Bild dahinter).
+- Abdunkelungs-Regler entfernt (Maintainer 29.07.): der Dunkel-Verlauf sitzt
+  nur oben, der Regler brachte wenig und kostete viel Platz. Das Schema
+  (Spalte `chores.opacity`) BLEIBT — Kacheln und Edit-Vorschau spiegeln den
+  gespeicherten Wert weiter als `--dk`; `artDim()` liest ihn. Beim Speichern
+  bleibt ein vorhandener opacity-Wert unangetastet (kein Ueberschreiben auf
+  100 %). Markup + `setDimSlider()` sind auskommentiert/entfernt, leicht
+  reaktivierbar. Der v4.95.0-Regler-Test ist auf das neue Verhalten umge-
+  schrieben.
+- Kunst-Neuerzeugung: Beim Ändern von Bild-Idee, Titel oder Notiz wird die
+  Vorschau-Kunst 1 s nach dem letzten Tastendruck neu erzeugt (Debounce, kein
+  Fetch pro Zeichen). War bereits vorhanden — Verhalten bestätigt.
+
 ## 2026-07-28 — v4.96.0 (SW haushalt-v200): Aufgaben-Edit-Vorschau — Kachelhoehe waechst mit den Punkten, reservierter Slot
 
 - Die Vorschau-Kachel ist jetzt exakt so hoch wie die echte Kachel: EINE

@@ -3206,7 +3206,7 @@ test.describe('Fairli', () => {
     expect(Math.abs((await noteGap()) - before)).toBeLessThan(2);   // Notiz-Label bleibt relativ zum Slot stehen
   });
 
-  test('Pro-Kachel-Abdunkelung: Regler steuert das Dunkel-Overlay, Live-Vorschau, Persistenz, Kachel spiegelt sie (v4.95.0)', async ({ context, page }) => {
+  test('Pro-Kachel-Abdunkelung: Schema bleibt, Kachel + Vorschau spiegeln opacity, Regler ist entfernt, Edit erhält den Wert (v4.97.0)', async ({ context, page }) => {
     // Fixture-Kachel mit gesetzter Abdunkelung 0.40 (0..1 = Overlay-Deckkraft) …
     await mockBackend(context, { logRows: () => [] });
     await context.route(`${SB}/rest/v1/chores*`, route => {
@@ -3222,31 +3222,29 @@ test.describe('Fairli', () => {
     // … und das Dunkel-Overlay (.chore::after) hat diese Deckkraft
     const afterOp = await page.locator('.chore[data-cid="c-1"]').first().evaluate(el => getComputedStyle(el, '::after').opacity);
     expect(parseFloat(afterOp)).toBeCloseTo(0.40, 2);
-    // Edit öffnen: Regler steht auf 40 %
+    // Edit öffnen: v4.97.0 — der Regler ist ENTFERNT (auskommentiert), aber die
+    // Vorschau-Kachel spiegelt weiterhin den gespeicherten opacity-Wert als --dk.
     await page.locator('[data-edit="c-1"]').first().click();
-    await expect(page.locator('#cOpacityF')).toBeVisible();
-    expect(await page.locator('#cOpacity').inputValue()).toBe('40');
-    await expect(page.locator('#cOpacityVal')).toHaveText('40%');
-    // Regler auf 90 % → Vorschau-Kachel --dk folgt LIVE
-    await page.locator('#cOpacity').fill('90');
-    await page.locator('#cOpacity').dispatchEvent('input');
-    await expect(page.locator('#cOpacityVal')).toHaveText('90%');
+    await expect(page.locator('#cOpacity')).toHaveCount(0);
     const prevDk = await page.locator('#cArtPrevW').evaluate(el => el.style.getPropertyValue('--dk'));
-    expect(parseFloat(prevDk)).toBeCloseTo(0.90, 2);
-    // Speichern schreibt chores.opacity (= Abdunkelung)
-    let sent = null;
+    expect(parseFloat(prevDk)).toBeCloseTo(0.40, 2);
+    // Speichern ohne Regler ERHÄLT den gespeicherten opacity-Wert (0.40), statt
+    // ihn zu ueberschreiben — das Schema (chores.opacity) bleibt bestehen.
+    let sent = null, seen = false;
     await context.route(`${SB}/rest/v1/chores*`, route => {
       const req = route.request();
       if (req.method() !== 'GET') {
-        try { const b = JSON.parse(req.postData() || '[]'); const row = Array.isArray(b) ? b[0] : b; if (row && 'opacity' in row) sent = row.opacity; } catch {}
+        try { const b = JSON.parse(req.postData() || '[]'); const row = Array.isArray(b) ? b[0] : b; if (row && 'opacity' in row) { seen = true; sent = row.opacity; } } catch {}
         return route.fulfill({ status: 204, body: '' });
       }
       return route.fulfill({ status: 200, contentType: 'application/json',
-        body: JSON.stringify([{ id: 'c-1', name: 'Müll rausbringen', points: 2, note: 'nur Restmüll', art: null, opacity: 0.90, family_id: FAM }]) });
+        body: JSON.stringify([{ id: 'c-1', name: 'Müll rausbringen', points: 2, note: 'nur Restmüll', art: null, opacity: 0.40, family_id: FAM }]) });
     });
+    await page.locator('#cName').fill('Müll rausbringen (neu)');   // irgendeine Änderung
     await page.locator('#saveChore').click();
     await expect(page.locator('#choreSheet')).toBeHidden();
-    await expect.poll(() => sent).toBeCloseTo(0.90, 2);
+    await expect.poll(() => seen).toBe(true);
+    expect(sent).toBeCloseTo(0.40, 2);   // Wert unangetastet
     // Standard ohne Wert = 1.0 (heutiger Look): Kachel ohne opacity traegt --dk 1
     const defDk = await page.evaluate(() => {
       const b = document.createElement('button'); b.className = 'chore'; b.style.setProperty('--c', '#888');
