@@ -1,5 +1,14 @@
 name: db-migrate
-on: workflow_dispatch
+# Automatischer Migrations-Fluss (28.07.2026): Migrationen wenden sich beim
+# Push selbst an — jede Aenderung unter supabase/migrations/ triggert den
+# Lauf. Sicher, weil ALLE Migrationen idempotent sind (if not exists /
+# create or replace); der Lauf wendet stets die komplette Liste an.
+# workflow_dispatch bleibt fuer manuelles Nachfahren erhalten.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['supabase/migrations/**']
 jobs:
   migrate:
     runs-on: ubuntu-latest
