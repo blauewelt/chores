@@ -1,3 +1,20 @@
+## 2026-07-31 — DB: RLS read-hardening applied (Supabase no longer world-readable for keyed families)
+
+- Migration `20260731083000_rls_read_hardening.sql` (auto-applied via the
+  db-migrate workflow on push): restrictive SELECT policies on members/
+  chores/log bind reads to `fairli_read_ok(family_id)` — same key logic as
+  writes (`x-fairli-key` vs. families.write_key_hash). Encrypted households
+  are no longer readable without their family key. `families` stays readable
+  by design (pre-key existence/migration lookup). Keyless legacy `fam-`
+  households remain open (version-cut philosophy) — their migrate-or-retire
+  cleanup is the separate, still-pending step (20260726_retire_legacy.sql).
+- Pre-checks before applying (maintainer confirmed go): only ONE keyed
+  family active in the last 7 days; its newest pre-v4.85 write was ~84 h
+  old while v4.85+ clients wrote as recently as <1 h — no active client
+  left that reads without the key. Rollback: drop the three auth_sel_*
+  policies.
+- No client change, no APP_VERSION/SW bump (current: 4.102.0 / haushalt-v206).
+
 ## 2026-07-29 — v4.102.0 (SW haushalt-v206): Folge-Tipp frischt den Verlaufs-Schnappschuss auf (Notiz erscheint sofort)
 
 - Live-Fund (Maintainer): Notiz zu einer Aufgabe ergänzt, Aufgabe erneut
