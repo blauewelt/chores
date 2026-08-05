@@ -460,10 +460,23 @@
     mask-image:linear-gradient(270deg, #000 52%, transparent 96%)}
   .entry .eartb::after{content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
     opacity:var(--dk, 1);
-    background:linear-gradient(180deg, rgba(10,14,12,.6), rgba(10,14,12,.12) 55%, rgba(10,14,12,.55));
+    background:
+      /* v4.104.0: ZWEITER Verlauf an der rechten Kante — der Scrim unter den
+         Punkten. Er ist die Lizenz, Text UEBER dem Bild zu rendern
+         (Maintainer 05.08.): erst die dunkle Zone macht +n auf jedem
+         Motiv lesbar. */
+      linear-gradient(270deg, rgba(10,14,12,.78) 0, rgba(10,14,12,.30) 30%, rgba(10,14,12,0) 52%),
+      linear-gradient(180deg, rgba(10,14,12,.6), rgba(10,14,12,.12) 55%, rgba(10,14,12,.55));
     -webkit-mask-image:linear-gradient(270deg, #000 52%, transparent 96%);
     mask-image:linear-gradient(270deg, #000 52%, transparent 96%)}
-  .entry.vrow.bleed .pts{position:relative; z-index:2}
+  /* v4.104.0: Punkte HART RECHTS ueber dem Bild (Maintainer-Screenshot
+     05.08.: an der Verlaufsgrenze «schwamm» +n je nach Motiv). Absolut
+     positioniert sitzt jede Zahl der Liste auf derselben x-Koordinate —
+     auch in bildlosen Zeilen — und der Titel gewinnt die Breite des
+     Punkte-Chips zurueck (er verliess den Flex-Fluss). */
+  .entry.vrow.bleed .pts{position:absolute; right:14px; top:50%;
+    transform:translateY(-50%); z-index:2; margin:0;
+    text-shadow:0 1px 6px rgba(0,0,0,.55)}
   /* EINE Schriftgroesse fuer Name und Titel (Maintainer 27.07.) — die
      kompaktere von beiden: Gewicht trennt (Name fett, Titel normal), und
      die kleinere Groesse kauft dem Titel Breite vor der Ellipse zurueck. */
@@ -713,7 +726,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.103.0';
+  const APP_VERSION = '4.104.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------

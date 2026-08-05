@@ -1,3 +1,25 @@
+## 2026-08-05 — v4.104.0 (SW haushalt-v208): points move hard right OVER the art — the scrim is the license for text-on-art
+
+- Maintainer screenshot from the live device: at the fade boundary the
+  +n «floated» — its visual anchor depended on what each image happened
+  to be doing underneath. His proposal, shipped as specced: a SECOND
+  gradient on the art's right edge (a scrim), and the points sit on it,
+  at the card's right edge.
+- .pts in art mode is now position:absolute (right 14px, vertically
+  centered, z-lifted, soft text-shadow): every number in the list lands
+  on the SAME x — including artless rows — like a column. Leaving the
+  flex flow returns the chip's width to the title (Duschabfluss reinigen
+  no longer truncates at Pixel width).
+- The eartb ::after veil gains a second layer: 270° scrim (.78 → 0 over
+  the right 52%) stacked on the v4.99 vertical veil, both under the same
+  leftward mask, both scaled by --dk. The scrim is deliberately strong
+  enough that +n reads on ANY motif — and it is the stated license to
+  render further text over the art later if the household wants it.
+- Farbband-only mode (art off) untouched: .pts stays in flow there.
+- v4.103 contract test extended: same right offset (14±3) and vertical
+  centering in every row, ::after carries ≥2 gradients. No i18n, no
+  schema. APP_VERSION 4.104.0, SW-Cache haushalt-v208
+
 ## 2026-07-31 — v4.103.0 (SW haushalt-v207): Verlauf-Anschnitt — the art bleeds from the card's right edge
 
 - Maintainer request: explore GRADIENTS for the Verlauf art instead of a

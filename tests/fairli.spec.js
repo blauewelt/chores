@@ -3442,6 +3442,14 @@ test.describe('Fairli', () => {
     expect(txt.x + txt.width).toBeLessThanOrEqual(row0.x + row0.width - 118);
     const z = await rows.nth(0).locator('.pts').evaluate(el => getComputedStyle(el).zIndex);
     expect(parseInt(z, 10)).toBeGreaterThanOrEqual(2);
+    // v4.104.0: Punkte HART RECHTS ueber dem Bild — jede Zahl der Liste auf
+    // derselben x-Koordinate, vertikal zentriert; der Rechts-Scrim (zweiter
+    // Verlauf im ::after) macht sie auf jedem Motiv lesbar.
+    const p0 = await rows.nth(0).locator('.pts').boundingBox();
+    expect(Math.abs((row0.x + row0.width) - (p0.x + p0.width) - 14)).toBeLessThan(3);
+    expect(Math.abs((p0.y + p0.height / 2) - (row0.y + row0.height / 2))).toBeLessThan(2);
+    const scrim = await rows.nth(0).locator('.eartb').evaluate(el => getComputedStyle(el, '::after').backgroundImage);
+    expect(scrim.match(/gradient/g).length).toBeGreaterThanOrEqual(2);   // Rechts-Scrim + Vertikal-Schleier
     // EINE Hoehe fuer alle: Bild-Zeile und bildlose Zeile sind gleich hoch
     const row1 = await rows.nth(1).boundingBox();
     expect(Math.abs(row0.height - row1.height)).toBeLessThan(1);

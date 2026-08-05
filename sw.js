@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v207';   // v4.103.0 Anschnitt: Verlaufs-Bild buendig rechts mit Verlaufsmaske
+const CACHE = 'haushalt-v208';   // v4.104.0 Punkte hart rechts ueber dem Bild, Rechts-Scrim
 const SHELL = [
   './',
   './index.html',
