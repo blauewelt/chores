@@ -1,3 +1,39 @@
+## 2026-07-31 — v4.103.0 (SW haushalt-v207): Verlauf-Anschnitt — the art bleeds from the card's right edge
+
+- Maintainer request: explore GRADIENTS for the Verlauf art instead of a
+  border. Four variants were rendered through the real app and compared
+  on one sheet (soft-edge vignette / gradient frame running out into the
+  card / ANSCHNITT full-bleed with leftward fade / borderless glow); the
+  household picked Anschnitt, with one addition: ONE row height for all.
+- The eartr box (v4.92–4.99: 90×84, task-color frame) is DELETED, not
+  hidden. The image now sits flush against the card's right edge, full
+  row height, and dissolves leftward into the row via a mask gradient
+  (52% opaque → 96% transparent). No frame, no box — the illustration
+  emerges from the card. choreColor/--c left the markup with the border
+  that carried it; --dk stays (the v4.99.0 dark veil survives, now
+  wearing the same mask, and doubles as contrast for the points).
+- UNIFORM HEIGHT (maintainer 31.07.): in art mode every row — with or
+  without an image — is .bleed: fixed 88px, same right text edge
+  (padding-right 122px), points anchored and z-lifted above the fade.
+  Art-off (Farbband default) is byte-identical to before.
+- Contract test rewritten as v4.103.0: surviving intents kept (image
+  right, text left of the opaque zone, veil present, artless rows
+  slotless with anchored points, Farbband on every row) — box geometry
+  (90×84, border color, overscan guard) retired with the box itself.
+  The v4.92.0 toggle test follows the container rename (eartb).
+- PIGGYBACKED CI REPAIR: the tests workflow had been RED since 29.07.
+  (three runs), and v4.97–v4.102 were deployed over it — against the
+  standing rule ROTES CI = KEIN DEPLOY. Root cause, verified against a
+  clean checkout and the CI logs: the v4.96.0 preview-tile test asserted
+  rect height == tileMinH(pts), but WebKit wraps «Müll rausbringen» into
+  three lines and the tile legitimately grows 16px past its min-height —
+  exactly as the real Aufgaben tile would. The test now pins the
+  MECHANISM (min-height follows tileMinH, growing with points) and
+  allows content to exceed it (rect >= tileMinH − 3). Green on both
+  engines again; this deploy waited for that.
+
+- No i18n keys, no schema. APP_VERSION 4.103.0, SW-Cache haushalt-v207
+
 ## 2026-07-31 — DB: RLS read-hardening applied (Supabase no longer world-readable for keyed families)
 
 - Migration `20260731083000_rls_read_hardening.sql` (auto-applied via the

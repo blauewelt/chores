@@ -3267,9 +3267,16 @@ test.describe('Fairli', () => {
     await page.getByRole('tab', { name: 'Aufgaben' }).click();
     await page.locator('[data-edit="c-1"]').first().click();      // Fixture-Kachel hat points 2
     await expect(page.locator('#choreSheet')).toBeVisible();
-    // Vorschau-Kachel ist so hoch wie die echte Kachel bei diesen Punkten
+    // Vorschau-Kachel folgt dem Punkte-Hoehengesetz WIE die echte Kachel:
+    // der VERTRAG ist die min-height (tileMinH), nicht die Rect-Hoehe —
+    // Inhalt darf daruber hinaus wachsen, genau wie im Aufgaben-Tab.
+    // (CI-Rot seit 29.07.: WebKit bricht «Müll rausbringen» in DREI Zeilen
+    // um, die Kachel waechst 16px ueber tileMinH(2) — korrektes .chore-
+    // Verhalten, der alte Gleichheits-Assert war zu streng.)
+    const minH2 = await page.locator('#cArtPrevW').evaluate(el => parseFloat(getComputedStyle(el).minHeight));
+    expect(Math.abs(minH2 - tileMinH(2))).toBeLessThan(3);
     const h2 = await page.locator('#cArtPrevW').evaluate(el => el.getBoundingClientRect().height);
-    expect(Math.abs(h2 - tileMinH(2))).toBeLessThan(3);
+    expect(h2).toBeGreaterThanOrEqual(tileMinH(2) - 3);
     // Der Slot reserviert die groesste moegliche Kachel des Haushalts (MAXPTS=5)
     const slot = await page.locator('#cArtPrevWrap').evaluate(el => parseFloat(getComputedStyle(el).minHeight));
     expect(Math.abs(slot - tileMinH(5))).toBeLessThan(3);
@@ -3282,10 +3289,13 @@ test.describe('Fairli', () => {
     });
     const before = await noteGap();
     await page.locator('#cPts').fill('4'); await page.locator('#cPts').dispatchEvent('input');
-    // Kachel ist gewachsen …
+    // Kachel ist gewachsen — der Vertrag wandert mit: min-height folgt den
+    // Punkten; die Rect-Hoehe ist mindestens so gross (Inhalt darf ueberragen)
+    const minH4 = await page.locator('#cArtPrevW').evaluate(el => parseFloat(getComputedStyle(el).minHeight));
+    expect(Math.abs(minH4 - tileMinH(4))).toBeLessThan(3);
+    expect(minH4).toBeGreaterThan(minH2 + 8);
     const h4 = await page.locator('#cArtPrevW').evaluate(el => el.getBoundingClientRect().height);
-    expect(h4).toBeGreaterThan(h2 + 8);
-    expect(Math.abs(h4 - tileMinH(4))).toBeLessThan(3);
+    expect(h4).toBeGreaterThanOrEqual(tileMinH(4) - 3);
     // … aber der Slot (und damit die Felder darunter) bleibt stabil
     const slot2 = await page.locator('#cArtPrevWrap').evaluate(el => parseFloat(getComputedStyle(el).minHeight));
     expect(Math.abs(slot2 - tileMinH(5))).toBeLessThan(3);
@@ -3345,7 +3355,7 @@ test.describe('Fairli', () => {
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     // v4.92.0: Standard ist AUS — Farbband-Zeile, KEIN Bild, kein Kreis
-    await expect(page.locator('.entry .eartr')).toHaveCount(0);
+    await expect(page.locator('.entry .eartb')).toHaveCount(0);
     await expect(page.locator('.entry .edot')).toHaveCount(0);
     const band = page.locator('.entry.vrow .pband').first();
     await expect(band).toBeVisible();
@@ -3360,18 +3370,18 @@ test.describe('Fairli', () => {
     await expect(page.locator('#setLogart .setval')).toHaveText('An');
     await page.keyboard.press('Escape');
     // AN: Bild rechts in der Zeile — das Farbband bleibt (Basis-Layout)
-    await expect(page.locator('.entry .eartr').first()).toBeVisible();
+    await expect(page.locator('.entry .eartb').first()).toBeVisible();
     await expect(page.locator('.entry.vrow .pband').first()).toBeVisible();
     await expect(page.locator('.entry .edot')).toHaveCount(0);
     // Pro Geraet, persistiert: Reload behaelt die Wahl
     await page.reload();
     await page.getByRole('tab', { name: 'Verlauf' }).click();
-    await expect(page.locator('.entry .eartr').first()).toBeVisible();
+    await expect(page.locator('.entry .eartb').first()).toBeVisible();
     // Und zurueck: AUS entfernt die Bilder wieder
     await page.locator('#openSettings').click();
     await page.locator('#setLogart').click();
     await page.keyboard.press('Escape');
-    await expect(page.locator('.entry .eartr')).toHaveCount(0);
+    await expect(page.locator('.entry .eartb')).toHaveCount(0);
     await expect(page.locator('.entry.vrow .pband').first()).toBeVisible();
   });
 
@@ -3391,11 +3401,12 @@ test.describe('Fairli', () => {
     expect(first).toContain('pband');
   });
 
-  test('Verlauf-Ordnung v4.98.0: Bild RECHTS vor den Punkten, 90×84, KEIN Overscan, Rahmen in Aufgabenfarbe, ohne Bild kein Slot', async ({ context, page }) => {
-    // Maintainer-Spez 28.07.: Basis-Layout = Farbband-Zeile; Kachelbild (An)
-    // sitzt RECHTS, direkt vor «+n». Crop v4.98.0: 90×84 (quadratischer, Seiten
-    // beschnitten), KEIN Overscan; cover fuellt sauber. Rahmen NEU in der
-    // Aufgabenfarbe (choreColor(chore.id)) statt einheitlichem Creme.
+  test('Verlauf-Anschnitt v4.103.0: Bild bündig rechts mit Verlaufsmaske, EINE Zeilenhöhe für alle, Punkte lesbar obendrauf', async ({ context, page }) => {
+    // G3 aus dem Mock-Blatt 31.07. (Haushaltswahl): die eartr-Box (v4.92–4.99)
+    // ist ersetzt. Vertraege, die UEBERLEBEN: Bild rechts, Text links davon,
+    // Dunkel-Schleier vorhanden, bildlose Zeilen ohne Slot mit verankerten
+    // Punkten. NEU: Maskenverlauf statt Rahmen, und im AN-Modus haben ALLE
+    // Zeilen dieselbe feste Hoehe (Maintainer: einheitliche Hoehe).
     const now = new Date().toISOString();
     const mk = (id, cid, cname, note, off) => ({ id, chore_id: cid, chore_name: cname, chore_note: note,
       member_id: 'm-mira', member_name: 'Mira', points: 2,
@@ -3404,52 +3415,42 @@ test.describe('Fairli', () => {
       mk('l-a', 'c-1', 'Müll rausbringen', 'nur Restmüll', 0),   // Bild + Notiz
       mk('l-b', null, 'Pizza holen', '', 3600e3),                // kein Bild (Einmalige)
     ] });
-    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+    const png = Buffer.from('iVBORw0KGgoAAAABAAAAAQCAYAAAAf8/9hAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
     await context.route('**://gen.pollinations.ai/**', r => r.fulfill({ status: 200, contentType: 'image/png', body: png }));
-    // Kachelbilder AN (v4.92.0: Standard ist AUS)
     await page.addInitScript(() => { try { localStorage.setItem('haushalt.logart', '1'); } catch {} });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     const rows = page.locator('.entry.vrow');
     await expect(rows).toHaveCount(2);
-    // Bild-Zeile: Kachel rechts, DIREKT vor den Punkten, vertikal zentriert
-    const art = await rows.nth(0).locator('.eartr').boundingBox();
-    const pts = await rows.nth(0).locator('.pts').boundingBox();
+    // ANSCHNITT: Bild-Container liegt BUENDIG an der rechten Kartenkante …
+    const art = await rows.nth(0).locator('.eartb').boundingBox();
     const row0 = await rows.nth(0).boundingBox();
-    expect(art.x + art.width).toBeLessThan(pts.x + 1);           // Bild VOR +n
-    expect(pts.x - (art.x + art.width)).toBeLessThan(20);        // … und direkt davor
-    const artMidY = art.y + art.height / 2, rowMidY = row0.y + row0.height / 2;
-    expect(Math.abs(artMidY - rowMidY)).toBeLessThan(3);
-    // Text steht LINKS vom Bild (Basis-Layout unveraendert)
-    const txt = await rows.nth(0).locator('.eline1').boundingBox();
-    expect(txt.x + txt.width).toBeLessThanOrEqual(art.x + 1);
-    // Crop-Geometrie v4.98.0: Kachel 90×84 (quadratischer als das alte 3:2) …
-    expect(art.width).toBeGreaterThan(80);                      // Breite bleibt 90
-    expect(art.height).toBeGreaterThan(78);                     // Hoehe jetzt ~84 (vorher 60)
-    expect(Math.abs(art.width / art.height - 90 / 84)).toBeLessThan(0.06);
-    // … und KEIN Overscan: das <img> fuellt die Kachel exakt (cover ohne
-    // scale). Negativ-Kontrolle gegen ein wiederkehrendes transform:scale.
-    const img = await rows.nth(0).locator('img.eart').boundingBox();
-    expect(Math.abs(img.width - art.width)).toBeLessThan(5);   // nur die 1.5px-Kante, KEIN Overscan-Zoom (der waere +10..18px)
-    const tf = await rows.nth(0).locator('img.eart').evaluate(el => getComputedStyle(el).transform);
-    expect(tf === 'none' || tf === 'matrix(1, 0, 0, 1, 0, 0)').toBeTruthy();   // strikte Negativ-Kontrolle gegen scale()
-    // v4.98.0: Rahmen in der AUFGABENFARBE — die Kachel traegt --c inline aus
-    // choreColor('c-1') (= #E8746A), NICHT mehr den einheitlichen Creme-Rahmen.
-    const cvar = await rows.nth(0).locator('.eartr').evaluate(el => el.style.getPropertyValue('--c').trim());
-    expect(cvar).toBe('#E8746A');                               // choreColor('c-1')
-    const bc = await rows.nth(0).locator('.eartr').evaluate(el => getComputedStyle(el).borderTopColor);
-    expect(bc).not.toBe('rgba(240, 233, 220, 0.42)');          // nicht mehr Creme
-    expect(bc).not.toBe('rgba(0, 0, 0, 0)');                    // ein echter Rahmen ist da
-    // v4.99.0: derselbe Dunkel-Schleier wie auf der Aufgaben-Kachel — verdeckt
-    // helle Creme-Raender mancher generierter Bilder (Katzen-Bug 29.07.).
-    const ov = await rows.nth(0).locator('.eartr').evaluate(el => getComputedStyle(el, '::after').backgroundImage);
+    expect(Math.abs((art.x + art.width) - (row0.x + row0.width))).toBeLessThan(1.5);
+    // … ueber die VOLLE Zeilenhoehe (kein Kasten mehr)
+    expect(Math.abs(art.height - row0.height)).toBeLessThan(1.5);
+    // … und das Bild traegt den Verlauf (Maske) statt eines Rahmens
+    const mask = await rows.nth(0).locator('img.eart').evaluate(el =>
+      getComputedStyle(el).webkitMaskImage || getComputedStyle(el).maskImage);
+    expect(mask).toContain('gradient');
+    const border = await rows.nth(0).locator('.eartb').evaluate(el => getComputedStyle(el).borderTopWidth);
+    expect(border).toBe('0px');
+    // Dunkel-Schleier (v4.99.0) bleibt — auch er ist maskiert
+    const ov = await rows.nth(0).locator('.eartb').evaluate(el => getComputedStyle(el, '::after').backgroundImage);
     expect(ov).toContain('gradient');
-    // Zeile OHNE Bild: KEIN Slot, kein Platzhalter — die Punkte bleiben
-    // trotzdem rechts verankert (gleiche rechte Kante in beiden Zeilen)
-    await expect(rows.nth(1).locator('.eartr')).toHaveCount(0);
+    // Text bleibt LINKS der undurchsichtigen Bildzone; Punkte lesbar OBEN drauf
+    const txt = await rows.nth(0).locator('.eline1').boundingBox();
+    expect(txt.x + txt.width).toBeLessThanOrEqual(row0.x + row0.width - 118);
+    const z = await rows.nth(0).locator('.pts').evaluate(el => getComputedStyle(el).zIndex);
+    expect(parseInt(z, 10)).toBeGreaterThanOrEqual(2);
+    // EINE Hoehe fuer alle: Bild-Zeile und bildlose Zeile sind gleich hoch
+    const row1 = await rows.nth(1).boundingBox();
+    expect(Math.abs(row0.height - row1.height)).toBeLessThan(1);
+    // Zeile OHNE Bild: kein Container, kein Platzhalter, Punkte an derselben Kante
+    await expect(rows.nth(1).locator('.eartb')).toHaveCount(0);
     await expect(rows.nth(1).locator('.eartph')).toHaveCount(0);
-    const pts2 = await rows.nth(1).locator('.pts').boundingBox();
-    expect(Math.abs((pts.x + pts.width) - (pts2.x + pts2.width))).toBeLessThan(1.5);
+    const pts0 = await rows.nth(0).locator('.pts').boundingBox();
+    const pts1 = await rows.nth(1).locator('.pts').boundingBox();
+    expect(Math.abs((pts0.x + pts0.width) - (pts1.x + pts1.width))).toBeLessThan(1.5);
     // Beide Zeilen tragen das Farbband, Textspalte an derselben x-Koordinate
     await expect(rows.nth(0).locator('.pband')).toHaveCount(1);
     await expect(rows.nth(1).locator('.pband')).toHaveCount(1);

@@ -445,21 +445,25 @@
      einheitliche Creme-Rahmen (--artframe, v4.87.0) ist ersetzt; --c kommt pro
      Zeile inline aus choreColor(chore.id). --artframe bleibt als Fallback. */
   :root{--artframe:rgba(240,233,220,.42)}
-  /* Kachel rechts in der Zeile (v4.92.0), KEIN Overscan (v4.93.0). Hoehe
-     v4.98.0: 84 statt 60 — quadratischer (90×84), die Seiten werden beschnitten
-     (cover, Quelle 440×300). Maintainer-Entscheid 29.07. aus dem Hoehen-Mock. */
-  .entry .eartr{width:90px; height:84px; border-radius:10px;
-    flex:none; background:#252F29; overflow:hidden; position:relative;
-    border:1.5px solid color-mix(in srgb, var(--c, var(--line)) 45%, var(--card))}
-  .entry .eartr .eart{width:100%; height:100%; object-fit:cover}
-  /* v4.99.0: derselbe Dunkel-Schleier wie auf der Aufgaben-Kachel (.chore::after).
-     Grund (Maintainer 29.07.): manche generierten Bilder tragen oben/unten einen
-     hellen Creme-Rand (z. B. die Katze «Ginj hinaus begleiten»). Im Aufgaben-Tab
-     verdeckt dieser Verlauf die Raender — im Verlauf fehlte er, also blitzten sie
-     als weisse Linien durch. Jetzt identisch: oben/unten dunkel, Mitte klar. */
-  .entry .eartr::after{content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
-    border-radius:inherit; opacity:var(--dk, 1);
-    background:linear-gradient(180deg, rgba(10,14,12,.6), rgba(10,14,12,.12) 55%, rgba(10,14,12,.55))}
+  /* v4.103.0: ANSCHNITT (G3 aus dem Mock-Blatt 31.07., Haushaltswahl) — das
+     Bild liegt BUENDIG an der rechten Kartenkante und VERLAEUFT nach links in
+     die Zeile (Maskenverlauf statt Rahmen/Kasten; die eartr-Box v4.92–4.99
+     ist GELOESCHT). Der Dunkel-Schleier (v4.99.0, helle Creme-Raender) bleibt
+     und traegt dieselbe Maske. Im AN-Modus teilen ALLE Zeilen — mit und ohne
+     Bild — EINE feste Hoehe und dieselbe rechte Textkante (.bleed;
+     Maintainer 31.07.: einheitliche Hoehe). Punkte liegen ueber der
+     Verlaufszone (z-index), der Schleier sichert ihre Lesbarkeit. */
+  .entry.vrow.bleed{height:88px; padding-right:122px}
+  .entry .eartb{position:absolute; right:0; top:0; bottom:0; width:150px; overflow:hidden}
+  .entry .eartb .eart{width:100%; height:100%; object-fit:cover;
+    -webkit-mask-image:linear-gradient(270deg, #000 52%, transparent 96%);
+    mask-image:linear-gradient(270deg, #000 52%, transparent 96%)}
+  .entry .eartb::after{content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
+    opacity:var(--dk, 1);
+    background:linear-gradient(180deg, rgba(10,14,12,.6), rgba(10,14,12,.12) 55%, rgba(10,14,12,.55));
+    -webkit-mask-image:linear-gradient(270deg, #000 52%, transparent 96%);
+    mask-image:linear-gradient(270deg, #000 52%, transparent 96%)}
+  .entry.vrow.bleed .pts{position:relative; z-index:2}
   /* EINE Schriftgroesse fuer Name und Titel (Maintainer 27.07.) — die
      kompaktere von beiden: Gewicht trennt (Name fett, Titel normal), und
      die kleinere Groesse kauft dem Titel Breite vor der Ellipse zurueck. */
@@ -709,7 +713,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.102.0';
+  const APP_VERSION = '4.103.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2826,15 +2830,17 @@
             // Bild-links-Spalte samt Leer-Slot und Initial-Kreis (v4.89/90)
             // ist GELOESCHT, nicht versteckt.
             const band = `<span class="pband" style="background:${esc(m ? m.color : '#C2CCC5')}"></span>`;
-            // v4.98.0: Rahmen in der Aufgabenfarbe (--c inline, wie im Tab).
-            // Fehlt das Bild noch (frisch erzeugte Kachel, Pollinations rechnet
-            // noch), waermt warmArt() es im Hintergrund vor und rendert den
-            // Verlauf nach — so bleibt keine Zeile dauerhaft ohne Bild.
+            // v4.103.0 Anschnitt: Bild absolut an der rechten Kartenkante,
+            // Verlaufsmaske statt Rahmen — kein --c mehr (es gibt keinen
+            // Rand, der die Aufgabenfarbe tragen koennte); --dk steuert
+            // weiter den Schleier. Fehlt das Bild noch (frisch erzeugte
+            // Kachel, Pollinations rechnet noch), waermt warmArt() es im
+            // Hintergrund vor und rendert den Verlauf nach.
             let art = '';
             if (LOGART_ON && ac && ac.name === e.chore_name) {
               const au = choreArt(ac);
               if (!ARTOK.has(au)) warmArt(ac);
-              art = `<span class="eartr" style="--c:${choreColor(ac.id)}; --dk:${artDim(ac)}"><img class="art eart${ARTOK.has(au) ? ' ok' : ''}" src="${au}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)"></span>`;
+              art = `<span class="eartb" style="--dk:${artDim(ac)}"><img class="art eart${ARTOK.has(au) ? ' ok' : ''}" src="${au}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)"></span>`;
             }
             const inner = `
               ${band}
@@ -2844,9 +2850,11 @@
                 <div class="when">${d.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' })}</div>
               </span>
               ${art}<span class="pts">+${e.points || 0}</span>`;
+            // .bleed im AN-Modus auf JEDER Zeile (auch ohne Bild): einheitliche
+            // Hoehe und dieselbe rechte Textkante ueber die ganze Liste.
             return editable
-              ? `<button class="entry vrow" data-editlog="${e.id}">${inner}</button>`
-              : `<div class="entry vrow">${inner}</div>`;
+              ? `<button class="entry vrow${LOGART_ON ? ' bleed' : ''}" data-editlog="${e.id}">${inner}</button>`
+              : `<div class="entry vrow${LOGART_ON ? ' bleed' : ''}">${inner}</div>`;
           }).map((html, i) => {
             const day = dayKey(shown[i].done_at);
             const head = day !== lastDay ? `<div class="dayhead">${dayLabel(shown[i].done_at)}</div>` : '';

@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v206';   // v4.102.0 Folge-Tipp frischt Name/Notiz-Schnappschuss der Verlaufs-Zeile auf
+const CACHE = 'haushalt-v207';   // v4.103.0 Anschnitt: Verlaufs-Bild buendig rechts mit Verlaufsmaske
 const SHELL = [
   './',
   './index.html',
