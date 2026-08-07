@@ -1,3 +1,31 @@
+## 2026-08-05 — v4.105.0 (SW haushalt-v209): the art enters earlier and leaves before the points — +n always stands alone
+
+- Maintainer, one release after v4.104: the tile should come in EARLIER
+  (further left) and the +n should ALWAYS stand alone. So the row needs
+  two gradients — one that introduces the art, one that ends it before
+  the points column.
+- Geometry: `.eartb` widened 150 → 190px and pulled off the right edge by
+  a reserved points column (`--ptcol:56px`). Measured on Pixel 7: art
+  spans x 152–342, +n sits 364–384, a real 22px of untouched card
+  between them. Points column stays image-free in EVERY row, so +12 and
+  +1 line up identically with and without art.
+- ONE mask now serves image and veil: transparent → opaque (44%) →
+  opaque (76%) → transparent. The soft exit on the right REPLACES the
+  v4.104 right-hand scrim — there is simply no image under the points
+  anymore, and the text-shadow on .pts is gone with it.
+- The scrim moves LEFT, where the image now enters: it keeps long titles
+  readable if they run into the fade-in zone. The v4.104 promise (a dark
+  zone as the license to render text over art) is preserved, just
+  relocated to the edge where text and art actually meet.
+- Row height, uniform-height rule, Farbband, artless-row handling and the
+  art-off mode are untouched.
+- v4.103/104 contract test superseded by a v4.105 one: art ends >40px
+  before the card edge, is >170px wide, +n never overlaps it, mask has
+  TWO zero-alpha stops, veil still multi-layered, plus the surviving
+  invariants (one height, no slot without art, points on one x, band on
+  every row). No i18n, no schema.
+- APP_VERSION 4.105.0, SW-Cache haushalt-v209
+
 ## 2026-08-05 — v4.104.0 (SW haushalt-v208): points move hard right OVER the art — the scrim is the license for text-on-art
 
 - Maintainer screenshot from the live device: at the fade boundary the

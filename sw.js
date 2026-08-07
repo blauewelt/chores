@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v208';   // v4.104.0 Punkte hart rechts ueber dem Bild, Rechts-Scrim
+const CACHE = 'haushalt-v209';   // v4.105.0 Bild frueher in der Zeile, beidseitige Maske, Punkte allein
 const SHELL = [
   './',
   './index.html',

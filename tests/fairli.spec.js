@@ -3401,12 +3401,12 @@ test.describe('Fairli', () => {
     expect(first).toContain('pband');
   });
 
-  test('Verlauf-Anschnitt v4.103.0: Bild bündig rechts mit Verlaufsmaske, EINE Zeilenhöhe für alle, Punkte lesbar obendrauf', async ({ context, page }) => {
-    // G3 aus dem Mock-Blatt 31.07. (Haushaltswahl): die eartr-Box (v4.92–4.99)
-    // ist ersetzt. Vertraege, die UEBERLEBEN: Bild rechts, Text links davon,
-    // Dunkel-Schleier vorhanden, bildlose Zeilen ohne Slot mit verankerten
-    // Punkten. NEU: Maskenverlauf statt Rahmen, und im AN-Modus haben ALLE
-    // Zeilen dieselbe feste Hoehe (Maintainer: einheitliche Hoehe).
+  test('Verlauf-Anschnitt v4.105.0: Bild früher in der Zeile, beidseitige Maske, +n steht ALLEIN neben dem Bild', async ({ context, page }) => {
+    // v4.105.0 (Maintainer 05.08.): das Bild kommt frueher (weiter links) und
+    // ENDET vor den Punkten — zwei Verlaeufe, einer fuehrt es ein, einer aus.
+    // UEBERLEBENDE Vertraege aus v4.103/104: volle Zeilenhoehe, EINE Hoehe fuer
+    // alle Zeilen, Dunkel-Schleier, bildlose Zeilen ohne Slot, Punkte in jeder
+    // Zeile auf derselben x. NEU: Punkte liegen NICHT mehr auf dem Motiv.
     const now = new Date().toISOString();
     const mk = (id, cid, cname, note, off) => ({ id, chore_id: cid, chore_name: cname, chore_note: note,
       member_id: 'm-mira', member_name: 'Mira', points: 2,
@@ -3422,44 +3422,34 @@ test.describe('Fairli', () => {
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     const rows = page.locator('.entry.vrow');
     await expect(rows).toHaveCount(2);
-    // ANSCHNITT: Bild-Container liegt BUENDIG an der rechten Kartenkante …
     const art = await rows.nth(0).locator('.eartb').boundingBox();
     const row0 = await rows.nth(0).boundingBox();
-    expect(Math.abs((art.x + art.width) - (row0.x + row0.width))).toBeLessThan(1.5);
-    // … ueber die VOLLE Zeilenhoehe (kein Kasten mehr)
+    const p0 = await rows.nth(0).locator('.pts').boundingBox();
+    // (1) Das Bild endet VOR der rechten Kartenkante — Platz fuer die Punkte
+    expect((row0.x + row0.width) - (art.x + art.width)).toBeGreaterThan(40);
+    // (2) … und beginnt frueher als die alte 150px-Zone (v4.104): breiter Streifen
+    expect(art.width).toBeGreaterThan(170);
+    // (3) +n steht ALLEIN: keine Ueberlappung mit dem Bild, echter Abstand
+    expect(p0.x).toBeGreaterThan(art.x + art.width);
+    // (4) volle Zeilenhoehe wie bisher
     expect(Math.abs(art.height - row0.height)).toBeLessThan(1.5);
-    // … und das Bild traegt den Verlauf (Maske) statt eines Rahmens
+    // (5) BEIDSEITIGE Maske: transparent an beiden Enden (zwei Null-Alpha-Stopps)
     const mask = await rows.nth(0).locator('img.eart').evaluate(el =>
       getComputedStyle(el).webkitMaskImage || getComputedStyle(el).maskImage);
     expect(mask).toContain('gradient');
-    const border = await rows.nth(0).locator('.eartb').evaluate(el => getComputedStyle(el).borderTopWidth);
-    expect(border).toBe('0px');
-    // Dunkel-Schleier (v4.99.0) bleibt — auch er ist maskiert
+    expect((mask.match(/rgba\(0,\s*0,\s*0,\s*0\)/g) || []).length).toBeGreaterThanOrEqual(2);
+    // (6) Schleier bleibt (helle Creme-Raender), weiterhin mehrschichtig
     const ov = await rows.nth(0).locator('.eartb').evaluate(el => getComputedStyle(el, '::after').backgroundImage);
-    expect(ov).toContain('gradient');
-    // Text bleibt LINKS der undurchsichtigen Bildzone; Punkte lesbar OBEN drauf
-    const txt = await rows.nth(0).locator('.eline1').boundingBox();
-    expect(txt.x + txt.width).toBeLessThanOrEqual(row0.x + row0.width - 118);
-    const z = await rows.nth(0).locator('.pts').evaluate(el => getComputedStyle(el).zIndex);
-    expect(parseInt(z, 10)).toBeGreaterThanOrEqual(2);
-    // v4.104.0: Punkte HART RECHTS ueber dem Bild — jede Zahl der Liste auf
-    // derselben x-Koordinate, vertikal zentriert; der Rechts-Scrim (zweiter
-    // Verlauf im ::after) macht sie auf jedem Motiv lesbar.
-    const p0 = await rows.nth(0).locator('.pts').boundingBox();
-    expect(Math.abs((row0.x + row0.width) - (p0.x + p0.width) - 14)).toBeLessThan(3);
-    expect(Math.abs((p0.y + p0.height / 2) - (row0.y + row0.height / 2))).toBeLessThan(2);
-    const scrim = await rows.nth(0).locator('.eartb').evaluate(el => getComputedStyle(el, '::after').backgroundImage);
-    expect(scrim.match(/gradient/g).length).toBeGreaterThanOrEqual(2);   // Rechts-Scrim + Vertikal-Schleier
-    // EINE Hoehe fuer alle: Bild-Zeile und bildlose Zeile sind gleich hoch
+    expect((ov.match(/gradient/g) || []).length).toBeGreaterThanOrEqual(2);
+    // (7) EINE Hoehe fuer alle; bildlose Zeile ohne Slot; Punkte auf gleicher x
     const row1 = await rows.nth(1).boundingBox();
     expect(Math.abs(row0.height - row1.height)).toBeLessThan(1);
-    // Zeile OHNE Bild: kein Container, kein Platzhalter, Punkte an derselben Kante
     await expect(rows.nth(1).locator('.eartb')).toHaveCount(0);
     await expect(rows.nth(1).locator('.eartph')).toHaveCount(0);
-    const pts0 = await rows.nth(0).locator('.pts').boundingBox();
-    const pts1 = await rows.nth(1).locator('.pts').boundingBox();
-    expect(Math.abs((pts0.x + pts0.width) - (pts1.x + pts1.width))).toBeLessThan(1.5);
-    // Beide Zeilen tragen das Farbband, Textspalte an derselben x-Koordinate
+    const p1 = await rows.nth(1).locator('.pts').boundingBox();
+    expect(Math.abs((p0.x + p0.width) - (p1.x + p1.width))).toBeLessThan(1.5);
+    expect(Math.abs((p0.y + p0.height / 2) - (row0.y + row0.height / 2))).toBeLessThan(2);
+    // (8) Farbband auf beiden Zeilen, Textspalte an derselben x-Koordinate
     await expect(rows.nth(0).locator('.pband')).toHaveCount(1);
     await expect(rows.nth(1).locator('.pband')).toHaveCount(1);
     const x1 = (await rows.nth(0).locator('.eline1').boundingBox()).x;

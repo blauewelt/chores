@@ -453,30 +453,37 @@
      Bild — EINE feste Hoehe und dieselbe rechte Textkante (.bleed;
      Maintainer 31.07.: einheitliche Hoehe). Punkte liegen ueber der
      Verlaufszone (z-index), der Schleier sichert ihre Lesbarkeit. */
-  .entry.vrow.bleed{height:88px; padding-right:122px}
-  .entry .eartb{position:absolute; right:0; top:0; bottom:0; width:150px; overflow:hidden}
-  .entry .eartb .eart{width:100%; height:100%; object-fit:cover;
-    -webkit-mask-image:linear-gradient(270deg, #000 52%, transparent 96%);
-    mask-image:linear-gradient(270deg, #000 52%, transparent 96%)}
+  /* v4.105.0: das Bild kommt FRUEHER in die Zeile und ENDET vor den Punkten
+     (Maintainer 05.08.): zwei Verlaeufe statt einem — einer fuehrt das Bild
+     ein (links), einer fuehrt es wieder aus (rechts), damit +n IMMER allein
+     auf der Karte steht statt auf dem Motiv. Die Punkte-Spalte rechts
+     (--ptcol) bleibt in jeder Zeile bildfrei. */
+  .entry.vrow.bleed{--ptcol:56px; height:88px; padding-right:170px}
+  .entry .eartb{position:absolute; right:var(--ptcol); top:0; bottom:0; width:190px; overflow:hidden}
+  /* EINE Maske fuer Bild und Schleier: transparent → deckend (38 %) →
+     deckend (78 %) → transparent. Der weiche Ausgang rechts ersetzt den
+     v4.104-Scrim unter den Punkten — es liegt dort schlicht kein Bild mehr. */
+  .entry .eartb .eart, .entry .eartb::after{
+    -webkit-mask-image:linear-gradient(90deg, transparent 0, #000 44%, #000 76%, transparent 100%);
+    mask-image:linear-gradient(90deg, transparent 0, #000 44%, #000 76%, transparent 100%)}
+  .entry .eartb .eart{width:100%; height:100%; object-fit:cover}
   .entry .eartb::after{content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
     opacity:var(--dk, 1);
     background:
-      /* v4.104.0: ZWEITER Verlauf an der rechten Kante — der Scrim unter den
-         Punkten. Er ist die Lizenz, Text UEBER dem Bild zu rendern
-         (Maintainer 05.08.): erst die dunkle Zone macht +n auf jedem
-         Motiv lesbar. */
-      linear-gradient(270deg, rgba(10,14,12,.78) 0, rgba(10,14,12,.30) 30%, rgba(10,14,12,0) 52%),
-      linear-gradient(180deg, rgba(10,14,12,.6), rgba(10,14,12,.12) 55%, rgba(10,14,12,.55));
-    -webkit-mask-image:linear-gradient(270deg, #000 52%, transparent 96%);
-    mask-image:linear-gradient(270deg, #000 52%, transparent 96%)}
+      /* Scrim jetzt LINKS, wo das Bild einsetzt: er haelt lange Titel lesbar,
+         falls sie in die Einblend-Zone laufen — die Lizenz, Text ueber dem
+         Bild zu rendern (v4.104), wandert mit der Bildkante mit. */
+      linear-gradient(90deg, rgba(10,14,12,.55) 0, rgba(10,14,12,0) 45%),
+      linear-gradient(180deg, rgba(10,14,12,.6), rgba(10,14,12,.12) 55%, rgba(10,14,12,.55))}
   /* v4.104.0: Punkte HART RECHTS ueber dem Bild (Maintainer-Screenshot
      05.08.: an der Verlaufsgrenze «schwamm» +n je nach Motiv). Absolut
      positioniert sitzt jede Zahl der Liste auf derselben x-Koordinate —
      auch in bildlosen Zeilen — und der Titel gewinnt die Breite des
      Punkte-Chips zurueck (er verliess den Flex-Fluss). */
+  /* v4.105.0: die Punkte stehen ALLEIN auf der Karte (das Bild endet vor
+     ihnen) — der Textschatten von v4.104 ist damit gegenstandslos. */
   .entry.vrow.bleed .pts{position:absolute; right:14px; top:50%;
-    transform:translateY(-50%); z-index:2; margin:0;
-    text-shadow:0 1px 6px rgba(0,0,0,.55)}
+    transform:translateY(-50%); z-index:2; margin:0}
   /* EINE Schriftgroesse fuer Name und Titel (Maintainer 27.07.) — die
      kompaktere von beiden: Gewicht trennt (Name fett, Titel normal), und
      die kleinere Groesse kauft dem Titel Breite vor der Ellipse zurueck. */
@@ -726,7 +733,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.104.0';
+  const APP_VERSION = '4.105.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
