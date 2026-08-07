@@ -3401,7 +3401,7 @@ test.describe('Fairli', () => {
     expect(first).toContain('pband');
   });
 
-  test('Verlauf-Anschnitt v4.105.0: Bild früher in der Zeile, beidseitige Maske, +n steht ALLEIN neben dem Bild', async ({ context, page }) => {
+  test('Verlauf-Anschnitt v4.106.0: schmaleres Bild weiter rechts, Text läuft ÜBER das Motiv, +n steht allein', async ({ context, page }) => {
     // v4.105.0 (Maintainer 05.08.): das Bild kommt frueher (weiter links) und
     // ENDET vor den Punkten — zwei Verlaeufe, einer fuehrt es ein, einer aus.
     // UEBERLEBENDE Vertraege aus v4.103/104: volle Zeilenhoehe, EINE Hoehe fuer
@@ -3427,10 +3427,21 @@ test.describe('Fairli', () => {
     const p0 = await rows.nth(0).locator('.pts').boundingBox();
     // (1) Das Bild endet VOR der rechten Kartenkante — Platz fuer die Punkte
     expect((row0.x + row0.width) - (art.x + art.width)).toBeGreaterThan(40);
-    // (2) … und beginnt frueher als die alte 150px-Zone (v4.104): breiter Streifen
-    expect(art.width).toBeGreaterThan(170);
+    // (2) v4.106.0: SCHMALER als die v4.105-Zone (190px) — weniger Zeile, und
+    //     dadurch naeher an den Punkten; trotzdem ein echter Streifen.
+    expect(art.width).toBeGreaterThan(110);
+    expect(art.width).toBeLessThan(170);
     // (3) +n steht ALLEIN: keine Ueberlappung mit dem Bild, echter Abstand
     expect(p0.x).toBeGreaterThan(art.x + art.width);
+    // (3b) v4.106.0: der TEXT weicht dem Bild NICHT mehr aus — er laeuft
+    //      darueber (Ueberlappung real) und liegt dabei OBEN (z-index),
+    //      lesbar durch Scrim + Textschatten.
+    const txt = await rows.nth(0).locator('.eline1').boundingBox();
+    expect(txt.x + txt.width).toBeGreaterThan(art.x + 40);
+    const whatZ = await rows.nth(0).locator('.what').evaluate(el => +getComputedStyle(el).zIndex);
+    expect(whatZ).toBeGreaterThanOrEqual(2);
+    const shadow = await rows.nth(0).locator('.what').evaluate(el => getComputedStyle(el).textShadow);
+    expect(shadow).not.toBe('none');
     // (4) volle Zeilenhoehe wie bisher
     expect(Math.abs(art.height - row0.height)).toBeLessThan(1.5);
     // (5) BEIDSEITIGE Maske: transparent an beiden Enden (zwei Null-Alpha-Stopps)

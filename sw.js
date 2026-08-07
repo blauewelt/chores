@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v209';   // v4.105.0 Bild frueher in der Zeile, beidseitige Maske, Punkte allein
+const CACHE = 'haushalt-v210';   // v4.106.0 schmaleres Bild weiter rechts, Text ueber dem Motiv
 const SHELL = [
   './',
   './index.html',

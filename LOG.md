@@ -1,3 +1,27 @@
+## 2026-08-05 — v4.106.0 (SW haushalt-v210): narrower art, moved toward the points — and the text now runs OVER the motif
+
+- Maintainer, immediately after v4.105: the art should use less horizontal
+  room and sit a bit further right (toward the +n), and text should render
+  over the tile art rather than stopping short of it.
+- Art strip 190 → 140px at the same right offset, so its left edge moves
+  from x 152 to x 202 (Pixel 7): less of the row, closer to the points.
+  The reserved points column (--ptcol 56px) is unchanged, so +12 and +1
+  still stand alone — measured gap 15–26px depending on digit count.
+- TEXT OVER ART is now real, not just tolerated: padding-right drops
+  170 → 70px (it only clears the points column), so the title uses the
+  full row. `.what` gets position:relative + z-index:2 — without it the
+  absolutely positioned art would paint OVER the static flex child — plus
+  a text-shadow. The scrim widens from a left-edge fade to the WHOLE
+  strip (.58 → .34 → .16), strongest where text begins.
+- Effect: «Duschabfluss reinigen» and «Aufräumen Küche» render in full
+  instead of truncating at the art's edge; the motif shows through behind
+  them. This is the v4.104 «license for text on art» finally exercised.
+- Contract test follows: art now 110–170px wide (was >170), text right
+  edge provably past the art's left edge, .what z-index ≥2 and a real
+  text-shadow; +n still never overlaps the art, one row height, points on
+  one x, band on every row. No i18n, no schema.
+- APP_VERSION 4.106.0, SW-Cache haushalt-v210
+
 ## 2026-08-05 — v4.105.0 (SW haushalt-v209): the art enters earlier and leaves before the points — +n always stands alone
 
 - Maintainer, one release after v4.104: the tile should come in EARLIER

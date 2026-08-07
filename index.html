@@ -458,8 +458,17 @@
      ein (links), einer fuehrt es wieder aus (rechts), damit +n IMMER allein
      auf der Karte steht statt auf dem Motiv. Die Punkte-Spalte rechts
      (--ptcol) bleibt in jeder Zeile bildfrei. */
-  .entry.vrow.bleed{--ptcol:56px; height:88px; padding-right:170px}
-  .entry .eartb{position:absolute; right:var(--ptcol); top:0; bottom:0; width:190px; overflow:hidden}
+  /* v4.106.0 (Maintainer 05.08.): SCHMALER und weiter rechts — das Bild
+     braucht weniger Zeile (190 → 140px) und rueckt damit naeher an die
+     Punkte. Und der Text weicht ihm NICHT mehr aus: er laeuft ueber das
+     Motiv (padding-right nur noch die Punkte-Spalte), lesbar durch
+     z-index + Scrim + Textschatten. */
+  .entry.vrow.bleed{--ptcol:56px; height:88px; padding-right:70px}
+  .entry .eartb{position:absolute; right:var(--ptcol); top:0; bottom:0; width:140px; overflow:hidden}
+  /* Text UEBER dem Bild: .what ist sonst ein statischer Flex-Kind-Knoten und
+     wuerde vom absolut positionierten Bild ueberdeckt. */
+  .entry.vrow.bleed .what{position:relative; z-index:2;
+    text-shadow:0 1px 4px rgba(8,11,10,.8), 0 0 2px rgba(8,11,10,.5)}
   /* EINE Maske fuer Bild und Schleier: transparent → deckend (38 %) →
      deckend (78 %) → transparent. Der weiche Ausgang rechts ersetzt den
      v4.104-Scrim unter den Punkten — es liegt dort schlicht kein Bild mehr. */
@@ -470,10 +479,10 @@
   .entry .eartb::after{content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
     opacity:var(--dk, 1);
     background:
-      /* Scrim jetzt LINKS, wo das Bild einsetzt: er haelt lange Titel lesbar,
-         falls sie in die Einblend-Zone laufen — die Lizenz, Text ueber dem
-         Bild zu rendern (v4.104), wandert mit der Bildkante mit. */
-      linear-gradient(90deg, rgba(10,14,12,.55) 0, rgba(10,14,12,0) 45%),
+      /* v4.106.0: der Scrim deckt jetzt den GANZEN Streifen (links am
+         staerksten, wo der Text beginnt) — Text laeuft ueber das ganze
+         Motiv, nicht mehr nur in die Einblend-Zone. */
+      linear-gradient(90deg, rgba(10,14,12,.58) 0, rgba(10,14,12,.34) 55%, rgba(10,14,12,.16) 100%),
       linear-gradient(180deg, rgba(10,14,12,.6), rgba(10,14,12,.12) 55%, rgba(10,14,12,.55))}
   /* v4.104.0: Punkte HART RECHTS ueber dem Bild (Maintainer-Screenshot
      05.08.: an der Verlaufsgrenze «schwamm» +n je nach Motiv). Absolut
@@ -733,7 +742,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.105.0';
+  const APP_VERSION = '4.106.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
