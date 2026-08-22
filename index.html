@@ -91,6 +91,11 @@
     padding:6px 13px 6px 8px; font-size:15px; font-weight:600; color:var(--ink); cursor:pointer}
   .chip .dot{width:18px; height:18px; border-radius:50%; display:grid; place-items:center; color:#10140F; font-size:11px; font-weight:800}
   .chip[aria-pressed="true"]{border-color:var(--accent); box-shadow:inset 0 0 0 1.5px var(--accent)}
+  /* Chips INNERHALB eines Sheet-Feldes (v4.107.0, Person eines Eintrags).
+     Bewusst dieselbe .chip-Sprache wie «Ich bin» — dort waehlt man, WER
+     eintraegt, hier, FUER WEN der Eintrag zaehlt; gleiche Frage, gleiches
+     Aussehen. Nur der Umbruch-Rahmen ist eigen (kein Header-Padding). */
+  .chiprow{display:flex; flex-wrap:wrap; gap:8px; row-gap:6px}
 
   #searchBar{display:flex; align-items:center; gap:6px; margin:0 14px 8px; padding:0 10px;
     background:var(--card); border:1px solid var(--line); border-radius:999px}
@@ -742,7 +747,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.106.0';
+  const APP_VERSION = '4.107.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -3129,6 +3134,16 @@
     const allow = allowedIds();               // selbst + betreute (v4.49.0)
     return !!allow && allow.has(en.member_id);
   };
+  // v4.107.0: Fuer WEN zaehlt der Eintrag? Im Sheet aenderbar — aber nur
+  // innerhalb der Reichweite des Links, und das ist EXAKT die Menge der
+  // «Ich bin»-Chips: allowedIds() (Admin = ganze Familie, sonst selbst +
+  // betreute Mitglieder ohne eigenes Telefon, v4.49.0). Stehende Regel §8:
+  // jede neue Rechtefrage geht durch allowedIds(), nie durch `me === x`
+  // oder USER_SLUG (das ist nur die IDENTITAET).
+  const logWhoOptions = () => {
+    const allow = allowedIds();
+    return allow ? state.members.filter(m => allow.has(m.id)) : state.members.slice();
+  };
   function localDT(iso) {
     const d = new Date(iso), p = x => String(x).padStart(2, '0');
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
@@ -3188,6 +3203,24 @@
           <span class="tfv">${esc(fmtTF(localDT(first.done_at)))}</span><span class="tfc">✎</span>
         </button>
       </div>
+      ${(() => {
+        // Person des Eintrags (v4.107.0). Der haeufigste Korrekturfall im
+        // Alltag: getippt, waehrend der Chip noch auf jemand anderem stand.
+        // Bis hierher blieb nur loeschen + neu eintragen — und das verlor
+        // Zeit, Notiz und Punkte-Korrektur des Eintrags.
+        // Angeboten wird NUR, was der Link ohnehin darf (logWhoOptions()).
+        // Bei genau einer Wahlmoeglichkeit gibt es nichts zu waehlen → das
+        // Feld entfaellt ganz, statt als toter Ein-Chip dazustehen.
+        const opts = logWhoOptions();
+        if (opts.length < 2) return '';
+        return `<div class="field">
+        <label>${t('Person')}</label>
+        <div class="chiprow" id="lWho">${opts.map(m =>
+          `<button type="button" class="chip" data-mid="${esc(m.id)}" aria-pressed="${m.id === first.member_id}">
+            <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>${esc(m.name)}
+          </button>`).join('')}</div>
+      </div>`;
+      })()}
       <button type="button" class="btn primary wide" id="saveLog">${t('Speichern')}</button>
       ${(() => {
         // Nur Kontext, kein Formularfeld: wer hat das eingetragen? (v4.54.0)
@@ -3239,6 +3272,15 @@
       lt.querySelector('.tfv').textContent = fmtTF(v);
       logSheetDirty = true;
     });
+    // Personen-Chips: Auswahl ist EINFACH (aria-pressed als einzige Quelle).
+    // Der `input`-Lauscher oben sieht Klicks nicht → dirty hier selbst setzen,
+    // sonst schluckt der Backdrop-Schutz (Formular-Regel) die Aenderung.
+    const lwho = sh.querySelector('#lWho');
+    if (lwho) lwho.addEventListener('click', ev => {
+      const c = ev.target.closest('.chip'); if (!c) return;
+      lwho.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === c)));
+      logSheetDirty = true;
+    });
     sh.querySelector('#saveLog').onclick = () => {
       const name = sh.querySelector('#lName').value.trim();
       const note = sh.querySelector('#lNote').value.trim() || null;
@@ -3258,6 +3300,28 @@
         bumpTotals(first.member_id, np - (first.points || 0), 0);   // Gesamt sofort mitziehen
         first.points = np;
       }
+      // Person umbuchen (v4.107.0) — NACH den Punkten, damit die Umbuchung
+      // den GUELTIGEN Betrag verschiebt (sonst wandert der alte Wert und die
+      // Server-Summen driften bis zum naechsten Pull auseinander).
+      // Der Wechsel ist eine vollstaendige Umbuchung: Punkte UND Zeilenzahl
+      // gehen von der einen Person zur anderen (dN -1/+1) — die Punkte-Karten
+      // zeigen sonst weiter «N Einträge» bei jemandem, der keinen mehr hat.
+      // `logged_by` bleibt unangetastet: wer den Eintrag erfasst hat, ist ein
+      // Protokoll und keine Einstellung (§ «Wer hat verbucht», v4.54.0).
+      const pickEl = sh.querySelector('#lWho .chip[aria-pressed="true"]');
+      const newWho = pickEl ? pickEl.dataset.mid : null;
+      // Verteidigung in der Tiefe: die gerenderten Chips SIND die erlaubte
+      // Menge — hier trotzdem erneut gegen allowedIds() pruefen, falls sich
+      // der Zustand zwischen Oeffnen und Speichern geaendert hat (Pull!).
+      const allowNow = allowedIds();
+      const newM = newWho && newWho !== first.member_id
+        && (!allowNow || allowNow.has(newWho)) ? memberById(newWho) : null;
+      if (newM) {
+        bumpTotals(first.member_id, -(first.points || 0), -1);
+        bumpTotals(newM.id, first.points || 0, 1);
+        first.member_id = newM.id;
+        first.member_name = newM.name;   // Schnappschuss wie ueberall im Verlauf
+      }
       // upsertRemote statt push(PATCH) (v4.47.5, Audit): letzter
       // ungeschützter Edit-Pfad — Verlauf-Änderungen verloren das Race
       // gegen pull wie zuvor Personen (v4.46.1) und Aufgaben (v4.47.1)
@@ -3270,13 +3334,22 @@
       // landed a day further AND left «Diese Woche» (Monday reset), reading
       // as data loss. The toast names the landing day; if the entry left the
       // current week, it says that too — BEFORE anyone goes looking.
+      // EIN Toast, nicht zwei: toast() ERSETZT den Text, ein zweiter Aufruf
+      // wuerde den ersten stumm ueberschreiben. Beide Befunde in eine Zeile.
+      const msgs = [];
       if (delta) {
         const d = new Date(first.done_at);
         let msg = t('Verschoben auf {day}, {time}',
           { day: dayLabel(first.done_at), time: d.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' }) });
         if (first.done_at < weekStart()) msg += ' — ' + t('nicht mehr in «Diese Woche»');
-        toast(msg);
+        msgs.push(msg);
       }
+      // Umbuchung ansagen (gleiche Begruendung wie der Move-Toast): der
+      // Eintrag verlaesst die Punkte-Karte der einen Person und taucht bei
+      // einer anderen auf — und faellt aus einem aktiven Personen-Filter
+      // (LOGFILTER) sofort heraus. Das darf niemand suchen muessen.
+      if (newM) msgs.push(t('Übertragen auf {name}', { name: newM.name }));
+      if (msgs.length) toast(msgs.join(' · '));
     };
     // Cache-Fall: fertig geladene Bilder feuern onload nicht zwingend nach
     // dem innerHTML-Einbau — gleiche Nachpruefung wie im Listen-Render.

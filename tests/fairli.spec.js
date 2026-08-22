@@ -2748,24 +2748,32 @@ test.describe('Fairli', () => {
   test('Grabstein vom Server entfernt den Eintrag auf ANDEREN Geräten im Delta — keine 24-h-Geister mehr (v4.63.0)', async ({ context, page }) => {
     // Gerät B hat den Eintrag lokal; ein Delta-Pull bringt denselben Eintrag
     // als Grabstein (anderes Gerät hat gelöscht) → Verlauf zeigt ihn nicht mehr.
+    // ZEITBOMBE ENTSCHÄRFT (v4.107.0): die Fixtures standen auf festen
+    // Julidaten. Der Papierkorb hat eine 30-Tage-Uhr (TRASH_DAYS) und
+    // purgeExpired() räumt am Admin-Link auf — ab dem 20.08. war der
+    // Grabstein schlicht ÜBERFÄLLIG und das Sheet zu Recht leer. Der Test
+    // fiel also an einem Kalendertag, nicht an einem Commit (genau die
+    // Lehre von weekSafeAgo, §11a). Jetzt relativ zu jetzt.
+    const tRow = new Date(Date.now() - 3 * 3600e3).toISOString();   // angelegt
+    const tDel = new Date(Date.now() - 1 * 3600e3).toISOString();   // gelöscht (frisch im Papierkorb)
     const ROW = { id: 'l-1', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
       member_id: 'm-mira', member_name: 'Mira', points: 2,
-      done_at: '2026-07-21T10:00:00+00:00', created_at: '2026-07-21T10:00:01+00:00',
+      done_at: tRow, created_at: tRow,
       updated_at: null, deleted_at: null, deleted_by: null, family_id: FAM };
-    const TOMB = Object.assign({}, ROW, { deleted_at: '2026-07-21T12:00:00+00:00',
-      deleted_by: 'm-chris', updated_at: '2026-07-21T12:00:00.5+00:00' });
+    const TOMB = Object.assign({}, ROW, { deleted_at: tDel,
+      deleted_by: 'm-chris', updated_at: tDel });
     await mockBackend(context, { logRows: () => [TOMB] });
-    await context.addInitScript(({ fam, row, ver }) => {
+    await context.addInitScript(({ fam, row, ver, mark }) => {
       localStorage.setItem('haushalt.onboard:' + fam + ':a', '1');
       localStorage.setItem('haushalt.onboard:' + fam + ':u', '1');
       localStorage.setItem('haushalt.claim:' + fam, '1');
       localStorage.setItem('haushalt.v2:' + fam, JSON.stringify({
         members: [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6' }],
         chores: [], log: [row], famName: 'Testhaushalt' }));
-      localStorage.setItem('haushalt.delta:' + fam, '2026-07-21T11:00:00+00:00');
+      localStorage.setItem('haushalt.delta:' + fam, mark);
       localStorage.setItem('haushalt.full:' + fam, String(Date.now() - 3600e3));
       localStorage.setItem('haushalt.pullver:' + fam, ver);
-    }, { fam: FAM, row: ROW, ver: APP_VERSION });
+    }, { fam: FAM, row: ROW, ver: APP_VERSION, mark: new Date(Date.now() - 2 * 3600e3).toISOString() });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     await expect(page.locator('#list')).not.toContainText('Müll rausbringen');
@@ -4540,6 +4548,151 @@ test.describe('Fairli', () => {
     await page.locator('#openSettings').click();
     await expect(page.locator('#syncInfo')).toContainText('Letzter Abgleich');
     await expect(page.locator('#syncInfo')).toContainText('gerade eben');
+  });
+
+  // ---- Person eines Eintrags umbuchen (v4.107.0) -------------------------
+  // Der Alltagsfall: getippt, während der «Ich bin»-Chip noch auf jemand
+  // anderem stand. Bis v4.106 half nur löschen + neu eintragen (und das
+  // verlor Zeit, Notiz und Punkte-Korrektur). Die Auswahl ist auf
+  // allowedIds() begrenzt — dieselbe Reichweite wie die Chips oben.
+
+  test('Eintrag umbuchen (v4.107.0): Admin wählt eine andere Person, Punkte + Zeilenzahl wandern mit, logged_by bleibt', async ({ context, page }) => {
+    const rows = [{ id: 'l-um', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null,
+      member_id: 'm-mira', member_name: 'Mira', logged_by: 'm-mira', points: 3,
+      done_at: weekSafeAgo(2 * 3600e3), family_id: FAM }];
+    await mockBackend(context, { logRows: () => rows });
+    const posts = [];
+    await context.route(`${SB}/rest/v1/log*`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') { posts.push(req.postDataJSON()); return route.fulfill({ status: 201, body: '' }); }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('button.entry', { hasText: 'Müll rausbringen' }).click();
+    const sh = page.locator('#logSheet');
+    // Admin (Familien-Link) sieht die GANZE Familie; die aktuelle Person ist gedrückt
+    await expect(sh.locator('#lWho .chip')).toHaveCount(2);
+    await expect(sh.locator('#lWho .chip[aria-pressed="true"]')).toHaveText(/Mira/);
+    await sh.locator('#lWho .chip', { hasText: 'Timon' }).click();
+    await sh.locator('#saveLog').click();
+    // Zeile gehört jetzt Timon — der Titel-Schnappschuss bleibt unangetastet
+    await expect(page.locator('.entry', { hasText: 'Müll rausbringen' }).locator('.epname')).toHaveText('Timon');
+    // Ansage statt stiller Umbuchung (der Eintrag verlässt eine Punkte-Karte)
+    await expect(page.locator('#toast')).toContainText('Übertragen auf Timon');
+    // Upsert trägt beides: ID UND den Namens-Schnappschuss; logged_by bleibt
+    await expect.poll(() => posts.length).toBeGreaterThan(0);
+    const sent = [].concat(posts[posts.length - 1])[0];
+    expect(sent.member_id).toBe('m-chris');
+    expect(sent.member_name).toBe('Timon');
+    expect(sent.logged_by).toBe('m-mira');       // wer erfasst hat, ist Protokoll — keine Einstellung
+    expect(sent.points).toBe(3);
+    // Punkte-Tab: die 3 Punkte UND die eine Zeile sind komplett gewandert
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    const timon = page.locator('.score', { hasText: 'Timon' });
+    await expect(timon.locator('.num')).toHaveText('3');
+    await expect(timon.locator('.sub')).toContainText('1 Aufgabe erledigt');
+    // … und stehen bei Mira nicht mehr (die Zeilenzahl fällt mit den Punkten)
+    const mira = page.locator('.score', { hasText: 'Mira' });
+    if (await mira.count()) await expect(mira.locator('.num')).toHaveText('0');
+  });
+
+  test('Eintrag umbuchen: persönlicher Link bietet NUR selbst + betreute an, nie die ganze Familie (v4.107.0)', async ({ context, page }) => {
+    const members = [
+      { id: 'm-chris', name: 'Timon', color: '#2FAE6A', family_id: FAM, url_slug: 'slugchris1', admin: true },
+      { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: false },
+      { id: 'm-cat', name: 'Kater', color: '#C8892F', family_id: FAM, url_slug: null, assisted: true },
+    ];
+    const rows = [{ id: 'l-own', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null,
+      member_id: 'm-mira', member_name: 'Mira', points: 2,
+      done_at: weekSafeAgo(2 * 3600e3), family_id: FAM }];
+    await mockBackend(context, { logRows: () => rows, memberRows: () => members });
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('button.entry', { hasText: 'Müll rausbringen' }).click();
+    const who = page.locator('#logSheet #lWho');
+    await expect(who.locator('.chip')).toHaveCount(2);                    // selbst + betreut
+    await expect(who.locator('.chip', { hasText: 'Kater' })).toBeVisible();
+    await expect(who.locator('.chip', { hasText: 'Timon' })).toHaveCount(0);  // NIE die ganze Familie
+    // Umbuchen auf das betreute Mitglied bleibt erlaubt — und bleibt editierbar
+    await who.locator('.chip', { hasText: 'Kater' }).click();
+    await page.locator('#logSheet #saveLog').click();
+    await expect(page.locator('.entry', { hasText: 'Müll rausbringen' }).locator('.epname')).toHaveText('Kater');
+    await expect(page.locator('button.entry', { hasText: 'Müll rausbringen' })).toBeVisible();  // weiterhin ein BUTTON
+  });
+
+  test('Eintrag umbuchen + Punkte in EINEM Speichern: der NEUE Betrag wandert, ein Toast nennt beides (v4.107.0)', async ({ context, page }) => {
+    const rows = [{ id: 'l-both', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null,
+      member_id: 'm-mira', member_name: 'Mira', points: 3,
+      done_at: weekSafeAgo(2 * 3600e3), family_id: FAM }];
+    await mockBackend(context, { logRows: () => rows });
+    const posts = [];
+    await context.route(`${SB}/rest/v1/log*`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') { posts.push(req.postDataJSON()); return route.fulfill({ status: 201, body: '' }); }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('button.entry', { hasText: 'Müll rausbringen' }).click();
+    const sh = page.locator('#logSheet');
+    // Punkte 3 → 5 UND Person Mira → Timon, in einem Rutsch
+    // (5 = MAXPTS der Voreinstellung; die Skala endet dort)
+    await sh.locator('#lPts').fill('5');
+    await sh.locator('#lWho .chip', { hasText: 'Timon' }).click();
+    // Zeit ebenfalls verschieben: BEIDE Befunde müssen in EINEN Toast passen
+    // (toast() ersetzt seinen Text — zwei Aufrufe frässen einander auf).
+    // BEWUSST keine Punkte-Karten-Prüfung in diesem Test: der Gestern-Sprung
+    // fällt montags aus «Diese Woche», die Karte wäre eine Zeitbombe. Die
+    // Karten prüft der Umbuchungs-Test oben, der die Zeit nicht anfasst.
+    await sh.locator('#lTime').click();
+    await page.locator('#timeSheet #tpYest').click();
+    await page.locator('#tpApply').click();
+    await sh.locator('#saveLog').click();
+    await expect(page.locator('#toast')).toContainText('Verschoben auf Gestern');
+    await expect(page.locator('#toast')).toContainText('Übertragen auf Timon');
+    // Umgebucht wird der GÜLTIGE Betrag (5), nicht der alte (3)
+    await expect.poll(() => posts.length).toBeGreaterThan(0);
+    const sent = [].concat(posts[posts.length - 1])[0];
+    expect(sent.points).toBe(5);
+    expect(sent.member_id).toBe('m-chris');
+    expect(sent.member_name).toBe('Timon');
+  });
+
+  test('Eintrag umbuchen: der Chip-Klick allein macht das Formular schmutzig — Backdrop verwirft nicht stumm (v4.107.0)', async ({ context, page }) => {
+    await mockBackend(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('button.entry').first().click();
+    await expect(page.locator('#logSheet')).toBeVisible();
+    // Nur den Chip antippen — kein input-Event, das der Sheet-Lauscher sähe
+    await page.locator('#logSheet #lWho .chip', { hasText: 'Timon' }).click();
+    // ECHTER Backdrop-Tipp (Klick auf das dialog-Element selbst): der
+    // Dirty-Schutz muss greifen, das Sheet bleibt offen
+    await page.evaluate(() => document.getElementById('logSheet')
+      .dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    await expect(page.locator('#logSheet')).toBeVisible();
+    await expect(page.locator('#logSheet #lWho .chip[aria-pressed="true"]')).toHaveText(/Timon/);
+  });
+
+  test('Eintrag umbuchen: ohne echte Wahl gar kein Feld — ein toter Ein-Chip wäre eine Lüge (v4.107.0)', async ({ context, page }) => {
+    const members = [
+      { id: 'm-chris', name: 'Timon', color: '#2FAE6A', family_id: FAM, url_slug: 'slugchris1', admin: true },
+      { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: false },
+    ];
+    const rows = [{ id: 'l-own', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null,
+      member_id: 'm-mira', member_name: 'Mira', points: 2,
+      done_at: weekSafeAgo(2 * 3600e3), family_id: FAM }];
+    await mockBackend(context, { logRows: () => rows, memberRows: () => members });
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('button.entry', { hasText: 'Müll rausbringen' }).click();
+    await expect(page.locator('#logSheet')).toBeVisible();
+    await expect(page.locator('#logSheet #lWho')).toHaveCount(0);
+    // Speichern funktioniert unverändert (kein Feld = keine Umbuchung)
+    await page.locator('#logSheet #lName').fill('Müll & Papier');
+    await page.locator('#logSheet #saveLog').click();
+    await expect(page.locator('.entry', { hasText: 'Müll & Papier' }).locator('.epname')).toHaveText('Mira');
   });
 });
 

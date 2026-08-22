@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v210';   // v4.106.0 schmaleres Bild weiter rechts, Text ueber dem Motiv
+const CACHE = 'haushalt-v211';   // v4.107.0 Person eines Verlaufs-Eintrags aenderbar (Reichweite = allowedIds)
 const SHELL = [
   './',
   './index.html',

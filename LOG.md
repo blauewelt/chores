@@ -1,3 +1,56 @@
+## 2026-08-22 — v4.107.0 (SW haushalt-v211): an entry's PERSON is editable — within the link's reach
+
+- Maintainer, from a screenshot of the entry sheet: let the user be changed
+  from here. The everyday case is banal and had no cure: you tap a tile while
+  the «Ich bin» chip still stands on somebody else. Until now the only way
+  back was delete + re-enter, and that threw away the entry's time, note and
+  points correction along with the wrong name.
+- New field «Person» in #logSheet, between Zeit and Speichern: the same
+  `.chip` language as the «Ich bin» row (dot + name, aria-pressed on the
+  current one) in a new `.chiprow` wrapper. Same question, same look — up
+  there you pick who is logging, down here who the entry COUNTS FOR.
+- **Reach = `allowedIds()`, not a new rule.** `logWhoOptions()` is a thin
+  wrapper over it: admin (family link or `members.admin`) gets the whole
+  family, everyone else gets themselves + the assisted members (v4.49.0 —
+  the people without their own phone). This is the §8 standing rule
+  exercised, not bent: every permission question goes through allowedIds(),
+  never through `me === x` or USER_SLUG. The save path re-checks against a
+  FRESH allowedIds() — the rendered chips are the allowed set, but a pull can
+  move underneath an open sheet.
+- **With fewer than two options the field is absent**, not disabled. A single
+  dead chip would promise a choice that does not exist. A personal link in a
+  household without assisted members therefore sees exactly the old sheet.
+- **The rebooking is complete: points AND row count.** `bumpTotals(old, -pts,
+  -1)` + `bumpTotals(new, +pts, +1)`, and deliberately AFTER the points slider
+  has been applied, so what moves is the value that is actually saved. Doing
+  it before would move the stale amount and let the server sums drift until
+  the next pull. Without the `dN` half, the loser's card would keep claiming
+  «N Aufgaben erledigt» for an entry they no longer have.
+- `logged_by` stays untouched. Who ENTERED it is a record, not a setting
+  (v4.54.0); only who it counts for is a correction.
+- **One toast, not two.** `toast()` replaces its text, so a second call would
+  silently eat the first — the move-toast (v4.78.0) and the new «Übertragen
+  auf {name}» are joined with « · ». The transfer announcement exists for the
+  same reason the move-toast does: the entry leaves one person's score card,
+  appears on another's, and drops out of an active person filter (LOGFILTER)
+  immediately. Nobody should have to go looking for it.
+- i18n: one new key («Übertragen auf {name}») across all 19 files; «Person»
+  already existed. Dictionary integrity test green (224 keys × 19).
+- Five tests: admin rebooking end-to-end (row, toast, upsert body incl.
+  unchanged logged_by, score cards), personal link offers only self +
+  assisted (never the whole family), no field at all without a real choice,
+  points + person + time in ONE save (the CURRENT amount moves, and both
+  findings share one toast), and the chip click alone marking the form dirty
+  so a backdrop tap cannot discard it silently. Visual sign-off in both engines, DE + EN, with a deliberately
+  over-long member name: chips wrap, Speichern and «Eingetragen von …» stay
+  in view under the field.
+- **Fixed a red main that was nobody's commit:** the v4.63.0 tombstone test
+  pinned its fixtures to fixed July dates. The trash has a 30-day clock
+  (TRASH_DAYS) and purgeExpired() runs on the admin link — from 20.08. the
+  tombstone was simply overdue and the sheet was empty for the right reason.
+  It failed on a CALENDAR DAY, not on a commit, which is exactly the lesson
+  behind weekSafeAgo (§11a). Fixtures are relative to now again.
+
 ## 2026-08-05 — v4.106.0 (SW haushalt-v210): narrower art, moved toward the points — and the text now runs OVER the motif
 
 - Maintainer, immediately after v4.105: the art should use less horizontal

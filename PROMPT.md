@@ -117,6 +117,16 @@ updates on every return to the foreground (since v3.3).
 - Offline write queue with replay
 
 
+## Eintrags-Person (v4.107.0)
+
+Der Verlaufs-Eintrag laesst sich im Bearbeiten-Sheet einer ANDEREN Person
+zuordnen (Feld «Person», Chips wie «Ich bin»). Die Auswahl ist exakt
+`allowedIds()`: Admin = ganze Familie, sonst selbst + betreute Mitglieder.
+Weniger als zwei Moeglichkeiten → kein Feld. Punkte UND Zeilenzahl werden
+umgebucht (`bumpTotals` -1/+1); `logged_by` bleibt, weil es protokolliert,
+wer erfasst hat — nicht, fuer wen.
+
+
 ## Mehrfamilien-Modell (v4.1)
 
 Eine Supabase-Instanz, alle Tabellen per `family_id` partitioniert. Auth ist

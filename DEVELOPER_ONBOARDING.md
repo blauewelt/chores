@@ -408,7 +408,8 @@ build static-text constructions.
 Day headers (Today/Yesterday/localized date), rows show only the time.
 Entries are buttons (the whole row is tappable = edit, WITHOUT a symbol
 — v4.47.4; locked rows are DIVs) → #logSheet: title, points, note, time
-— the SAME field order and elements as the chore sheet. Points (single
+— the SAME field order and elements as the chore sheet, plus the one
+log-specific field «Person» APPENDED at the end (v4.107.0, see below). Points (single
 rows only) have been the same ptsrow+range slider as in the create flow
 since v4.38.0; ONE mechanism `syncPtsRange(sl, out, v)` for cPts AND
 lPts (setPtsSlider delegates), scale max(MAXPTS, existing). Time:
@@ -531,6 +532,20 @@ never through `USER_SLUG` (that is only the IDENTITY). The bare family
 link still counts as a nameless admin (grandfathered), but is no longer
 offered. Invariants: at least one admin; non-admins may not operate the
 switch, but may share links. New households: first person = admin.
+
+### The entry's person (v4.107.0)
+The «Person» field in #logSheet changes `member_id` + `member_name` — who the
+entry COUNTS FOR. `logWhoOptions()` is a thin wrapper over `allowedIds()`
+(admin = whole family, otherwise self + assisted), so the reach is identical
+to the «Ich bin» chips; the save path re-checks against a fresh allowedIds()
+because a pull can move under an open sheet. **Fewer than two options → no
+field at all** (a lone dead chip promises a choice that does not exist).
+The rebooking runs AFTER the points slider is applied and moves BOTH halves:
+`bumpTotals(old, -pts, -1)` and `bumpTotals(new, +pts, +1)` — dropping the
+`dN` half leaves «N Aufgaben erledigt» on a card that has no such entry.
+`logged_by` is deliberately untouched (that is a record, not a setting).
+The transfer is announced in the SAME toast as a date move, joined with « · »
+— `toast()` replaces its text, so two calls would eat one another.
 
 ### Who logged it (v4.54.0)
 `log.logged_by` = member ID of the LINK (slugSelf()), NULL on the
