@@ -14,6 +14,13 @@ import pytesseract
 
 udid, png, target = sys.argv[1], sys.argv[2], sys.argv[3]
 exact = '--exact' in sys.argv
+# Apostroph-Normalisierung (23.08.2026): tesseract liefert je nach Schrift
+# und Skalierung ' oder ’ — «Let's go» fand sich deshalb mal und mal nicht.
+# Ein Suchbegriff darf nicht an der Typografie scheitern.
+def norm(x):
+    for ch in '\u2019\u2018\u00b4\u0060':
+        x = x.replace(ch, "'")
+    return x.lower()
 im = Image.open(png)
 scale = im.width / float(os.environ.get('OCR_TAP_PT_WIDTH') or 393)
 
@@ -33,12 +40,12 @@ if exact:
     # rechteste Vorkommen des Einzelworts. Oben-rechts gewinnt.
     for words in lines.values():
         for (l, t, w, h, word) in words:
-            if word.strip('.,"«»“”\'').lower() == target.lower():
+            if norm(word.strip('.,"«»“”\'')) == norm(target):
                 cands.append((t, -(l + w), l + w/2, t + h/2, word))
 else:
     for words in lines.values():
         text = ' '.join(w[4] for w in sorted(words))
-        if target.lower() in text.lower():
+        if norm(target) in norm(text):
             xs = [w[0] for w in words]; xe = [w[0] + w[2] for w in words]
             ys = [w[1] for w in words]; ye = [w[1] + w[3] for w in words]
             cands.append((min(ys), -max(xe), (min(xs)+max(xe))/2, (min(ys)+max(ye))/2, text))

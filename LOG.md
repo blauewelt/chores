@@ -87,6 +87,17 @@ install beyond tesseract. The other three moved one honest step further:
   and derives the share-button coordinate from the device size instead of
   hardcoding 196,812 (the image ships 402×874 now, not 393×852). `ocr-tap.py`
   takes the logical width from `OCR_TAP_PT_WIDTH` for the same reason.
+**Round 5 — two matcher bugs, both the same shape.**
+- **android is now ONLINE** («Netz steht.», page loads, app renders) and failed
+  on the assertion instead: the dismiss helper had tapped the onboarding's
+  NOTE, not its button. `tap-by-text.py` matched substrings, and «OK» sits
+  inside «bookmark». The modal stayed up, and a modal takes the background out
+  of the accessibility tree, so «Testperson» was genuinely absent. The helper
+  now matches EXACTLY first and only then by substring, and «OK» is out of the
+  target list. Short target words are always inside prose somewhere.
+- **capture** could not find «Let's go» in the OCR: tesseract renders the
+  apostrophe as ' or ’ depending on font and scale. `ocr-tap.py` normalises
+  both before comparing — a search term must not fail on typography.
 - **webclip:** reached the springboard and found no injected clip icon —
   exactly the predicted iOS-17 dependency. The scenario needs rebuilding on
   the capture flow (create the clip through the share sheet instead of

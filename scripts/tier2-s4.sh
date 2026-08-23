@@ -12,8 +12,10 @@ dismiss() {
   # Onboarding «Zugriff sichern» (v4.45.0) ist modal und steht bei JEDEM
   # Erstbesuch vor der App — ein frischer Emulator ist immer ein Erstbesuch.
   # Ohne das Wegtippen misst die Assertion den Dialog statt der Sicht.
+  # «OK» ist RAUS (23.08.2026): als Teilzeichenkette steckt es in «bookmark»
+  # und traf damit den Hinweistext des Onboardings statt eines Knopfes.
   python3 scripts/tap-by-text.py ui.xml "Accept & continue" "Use without an account" \
-    "No thanks" "Got it" "Weiter" "OK" "Let's go" "Los geht" || true
+    "No thanks" "Got it" "Weiter" "Let's go" "Los geht's" || true
 }
 
 adb wait-for-device
