@@ -5,14 +5,17 @@
 #   ocr-tap.py <udid> <png> <zieltext> [--exact]
 # --exact: Zeile muss GENAU dem Zieltext entsprechen (z. B. «Add» vs.
 # «Add Bookmark»); bei mehreren Treffern gewinnt oben-rechts (Nav-Button).
-import subprocess, sys
+# Die logische Breite ist NICHT mehr gepinnt (23.08.2026): mit dem Runner-Image
+# wandert das Simulator-Modell (402x874 statt 393x852). Wer sie kennt, setzt
+# OCR_TAP_PT_WIDTH; ohne die Angabe bleibt der alte Wert.
+import os, subprocess, sys
 from PIL import Image
 import pytesseract
 
 udid, png, target = sys.argv[1], sys.argv[2], sys.argv[3]
 exact = '--exact' in sys.argv
 im = Image.open(png)
-scale = im.width / 393.0   # iPhone 15 Pro: 393 pt logische Breite (im Workflow gepinnt)
+scale = im.width / float(os.environ.get('OCR_TAP_PT_WIDTH') or 393)
 
 d = pytesseract.image_to_data(im, output_type=pytesseract.Output.DICT)
 lines = {}

@@ -74,6 +74,26 @@ install beyond tesseract. The other three moved one honest step further:
   Both capture and webclip now pick a device the same resilient way S1 does,
   and abort loudly when no iPhone exists at all.
 
+**Round 4 — what the runs then said, and what it cost to hear it.**
+- **android:** the route fix answered «File exists» — the default route was
+  there all along. ping runs as the `shell` user and asks the MAIN table,
+  while Android selects networks per-UID through policy tables, so
+  «Network is unreachable» never said anything about the browser. The gate is
+  now a `dumpsys connectivity` check that only WARNS: a precheck that is wrong
+  more often than the thing it guards does not belong in the gate.
+- **capture:** idb installed, Safari opened, and the share tap landed in the
+  APP — the onboarding sheet was over the page again, and the «share sheet»
+  OCR was reading «Save your access». It now dismisses the onboarding first,
+  and derives the share-button coordinate from the device size instead of
+  hardcoding 196,812 (the image ships 402×874 now, not 393×852). `ocr-tap.py`
+  takes the logical width from `OCR_TAP_PT_WIDTH` for the same reason.
+- **webclip:** reached the springboard and found no injected clip icon —
+  exactly the predicted iOS-17 dependency. The scenario needs rebuilding on
+  the capture flow (create the clip through the share sheet instead of
+  injecting it); filesystem injection is dead on current runtimes. Left red
+  ON PURPOSE, with the reason in the log, rather than softened into a green
+  that proves nothing.
+
 
 None of them was the app. They had been red for at least a week — a watchdog
 that only ever barks is not a watchdog.

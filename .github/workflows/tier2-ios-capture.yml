@@ -63,16 +63,39 @@ jobs:
           sleep 12
           xcrun simctl io "$DEVICE" screenshot 1-loaded.png
 
+      - name: Dismiss first-visit onboarding
+        run: |
+          # «Zugriff sichern» (v4.45.0) ist modal und liegt bei jedem
+          # Erstbesuch UEBER der Seite — ein frisch geloeschter Simulator ist
+          # immer ein Erstbesuch. Befund 23.08.2026: der Koordinaten-Tap auf
+          # Safaris Teilen-Knopf landete deshalb im App-Sheet, und die OCR des
+          # «Share-Sheets» las das Onboarding. Erst wegtippen, dann teilen.
+          for label in "Let's go" "Los geht"; do
+            /usr/bin/python3 scripts/ocr-tap.py "$DEVICE" 1-loaded.png "$label" && break || true
+          done
+          sleep 3
+          xcrun simctl io "$DEVICE" screenshot 1b-app.png
+
       - name: Share sheet → Add to Home Screen → Add
         run: |
-          # Share oeffnen: Koordinaten-Tap (Safari-Toolbar; per Screenshot verifiziert,
-          # idb-Accessibility ist fuer Sheet-Inhalte zu flach → OCR-Taps)
-          idb ui tap --udid "$DEVICE" 196 812
+          # Safaris Teilen-Knopf traegt keinen Text (Glyphe) — also Koordinate.
+          # Nicht mehr hartkodiert (23.08.2026): mit dem Runner-Image wandert
+          # die Geraetegroesse (402x874 statt 393x852). In Safaris unterer
+          # Leiste liegt Teilen MITTIG, knapp ueber dem Home-Indikator.
+          SIZE=$(idb describe --udid "$DEVICE" --json 2>/dev/null | /usr/bin/python3 -c \
+            "import sys,json; d=json.load(sys.stdin); print(d.get('screen_dimensions',{}).get('width_points',393), d.get('screen_dimensions',{}).get('height_points',852))" \
+            || echo "393 852")
+          W=$(echo $SIZE | cut -d' ' -f1); H=$(echo $SIZE | cut -d' ' -f2)
+          TX=$((W / 2)); TY=$((H - 40))
+          echo "Geraet ${W}x${H} pt → Teilen-Tap @ $TX,$TY"
+          echo "OCR_TAP_PT_WIDTH=$W" >> $GITHUB_ENV
+          export OCR_TAP_PT_WIDTH=$W
+          idb ui tap --udid "$DEVICE" "$TX" "$TY"
           sleep 3
           xcrun simctl io "$DEVICE" screenshot 2-sheet.png
           /usr/bin/python3 scripts/ocr-tap.py "$DEVICE" 2-sheet.png "Add to Home Screen" || {
             echo "unter dem Falz — im Sheet hochwischen"
-            idb ui swipe --udid "$DEVICE" 200 750 200 350
+            idb ui swipe --udid "$DEVICE" $((W/2)) $((H*85/100)) $((W/2)) $((H*40/100))
             sleep 2
             xcrun simctl io "$DEVICE" screenshot 2b-sheet.png
             /usr/bin/python3 scripts/ocr-tap.py "$DEVICE" 2b-sheet.png "Add to Home Screen"
@@ -105,6 +128,7 @@ jobs:
           name: capture-artifacts
           path: |
             1-loaded.png
+            1b-app.png
             2-sheet.png
             3-edit.png
             4-after.png
