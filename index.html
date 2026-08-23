@@ -755,7 +755,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.108.0';
+  const APP_VERSION = '4.109.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -4037,6 +4037,11 @@
   const icShare = '<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
   const icPlus  = '<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M12 8v8M8 12h8"/></svg>';
   const icDots  = '<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>';
+  // WAAGERECHTE Ellipse (v4.109.0): Safaris «Mehr»-Knopf. Bewusst NICHT
+  // icDots — das ist Chromes SENKRECHTES Kebab-Menue auf Android. Zwei
+  // verschiedene Knoepfe in zwei verschiedenen Browsern; ein Piktogramm, das
+  // den falschen zeigt, ist schlimmer als gar keins.
+  const icDotsH = '<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
   function installInstructionsHTML(onlyCurrent) {
     // onlyCurrent: Install-Sheet vom Banner — der Nutzer steht VOR SEINEM
     // Geraet, fremde Plattform-Anleitungen verwirren nur (Maintainer, 14.07.).
@@ -4049,7 +4054,7 @@
           <h4>iPhone &amp; iPad${IS_IOS ? badge : ''}</h4>
           <ol>
             <li>${t('Den Link in <b>Safari</b> oder <b>Chrome</b> öffnen.')}</li>
-            <li>${t('Im Browser auf {ic} <b>«Teilen»</b> tippen.', { ic: icShare })} <span class="sub">${t('Safari: unten in der Mitte (iPad: oben rechts) · Chrome: oben neben der Adressleiste.')}</span></li>
+            <li>${t('Im Browser auf {ic} <b>«Teilen»</b> tippen.', { ic: icShare })} <span class="sub">${t('Safari: unten rechts im {ic}-Menü — auf älteren iPhones direkt unten in der Mitte (iPad: oben rechts) · Chrome: oben neben der Adressleiste.', { ic: icDotsH })}</span></li>
             <li>${t('In der Liste nach unten scrollen zu {ic} <b>«Zum Home-Bildschirm»</b>.', { ic: icPlus })}</li>
             <li>${t('Oben rechts <b>Hinzufügen</b> — fertig.')}</li>
           </ol>

@@ -181,11 +181,13 @@ recorded here rather than papered over.
   scenario means: dismiss the coach mark → tap `⋯` (bottom right) → «Share» →
   «Add to Home Screen» → «Add». The artefacts of run 32634717439 show every
   one of those states.
-- **PRODUCT FINDING from the same screenshot:** the app's own onboarding text
-  says «In the browser, tap ⬆ "Share". Safari: bottom centre». On this iOS that
-  is simply wrong — the instruction has to name the `⋯` menu for new versions
-  while staying true for older ones. This is a copy decision for the
-  maintainer, not something a test round should decide.
+- **PRODUCT FINDING from the same screenshot — FIXED in v4.109.0.** The app's
+  onboarding said «In the browser, tap ⬆ "Share". Safari: bottom centre», which
+  on this iOS points at empty space. It now names both positions, new one
+  first. Worth remembering as a pattern: a broken CI job was the only thing
+  looking at a real, current iOS — the instructions had been quietly wrong for
+  everyone on the new Safari, and no test covered them because no test could
+  see them.
 - **S3 / web-clip injection (`tier2-ios-webclip`): dead as built.** It pins an
   iOS-17 runtime that no current runner image carries; without it the injected
   clips never appear on the springboard (the run gets that far and then finds

@@ -1,3 +1,30 @@
+## 2026-08-23 — v4.109.0 (SW haushalt-v213): the iOS install instructions were sending people to a button that moved
+
+- Found while debugging the tier-2 capture run, not by looking for it: the
+  simulator screenshot showed Safari's bottom bar as `[<] [address] [⋯]`.
+  **The share button is no longer in the toolbar** — it lives in the «more»
+  menu. Our step 2 kept saying «Safari: unten in der Mitte», which on current
+  iOS points at empty space. A wrong instruction is worse than none: the user
+  follows it, finds nothing, and concludes the app is broken.
+- The line now names BOTH states, new one first, because that is the one that
+  fails confusingly: «Safari: unten rechts im ⋯-Menü — auf älteren iPhones
+  direkt unten in der Mitte (iPad: oben rechts) · Chrome: oben neben der
+  Adressleiste.» Older iPhones are not wrong, they are just older, and nothing
+  in the app can tell which one the reader holds. Steps 1, 3 and 4 stay true
+  either way — once you are in the share sheet, the path is unchanged.
+- **New pictogram `icDotsH`, deliberately not `icDots`.** Safari's «more» is a
+  HORIZONTAL ellipsis; Chrome's Android menu is a VERTICAL kebab, and both
+  appear in the same sheet, three lines apart. Reusing the existing icon would
+  have drawn the wrong button in the right sentence. A test asserts the three
+  circles share one `cy` — horizontal, provably.
+- i18n: the old key is REPLACED (not added next to), so no household can end
+  up seeing the outdated sentence; all 19 files carry the `{ic}` placeholder.
+- Test pins both positions plus iPad and Chrome, so a future tidy-up cannot
+  quietly drop half of the answer again.
+- Not covered here: whether iOS's ⋯ menu offers «Add to Home Screen» directly.
+  It might, and that would be a shorter path — but nothing in the artefacts
+  proves it, so the instructions keep the route that is verified to work.
+
 ## 2026-08-23 — v4.108.0 (SW haushalt-v212): the logging toast leads back INTO the entry — and the tier2 nightlies run again
 
 - Maintainer: «could the user tap the displayed toast to get into the history

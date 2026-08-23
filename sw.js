@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v212';   // v4.108.0 Verbuchungs-Toast mit «Ändern» direkt in den frischen Eintrag
+const CACHE = 'haushalt-v213';   // v4.109.0 iOS-Anleitung: Teilen sitzt im Safari-«Mehr»-Menue
 const SHELL = [
   './',
   './index.html',

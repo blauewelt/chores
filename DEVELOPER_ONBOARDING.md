@@ -1016,8 +1016,11 @@ All four were red for a week, none because of the app.
   only image with Xcode 26). Both stay RED on purpose: Safari moved Share out
   of the bottom toolbar into the `⋯` menu (S2's whole premise), and webclip's
   iOS-17 runtime pin has no image left to run on. See TESTING_TIER2.md
-  §Status 23.08.2026 — including the product finding that the app's own
-  onboarding text still points iOS users at the old share position.
+  §Status 23.08.2026. The product finding from those artefacts is FIXED in
+  v4.109.0: the install instructions now name both share positions (Safari's
+  `⋯` menu on current iOS, bottom centre on older ones), with `icDotsH` — a
+  HORIZONTAL ellipsis, never `icDots`, which is Chrome's vertical kebab and
+  sits three lines below in the same sheet.
 
 **Standing lesson:** a nightly that is always red is not a watchdog. When one
 goes red, read the ARTEFACT (screenshot, OCR dump, UI dump) before touching

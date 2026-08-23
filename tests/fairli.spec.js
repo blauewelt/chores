@@ -2527,6 +2527,32 @@ test.describe('Fairli', () => {
     expect(await ios.locator('svg.ic').count()).toBeGreaterThanOrEqual(2);
   });
 
+  test('Install-Anleitung iOS nennt BEIDE Safari-Positionen des Teilen-Knopfs (v4.109.0)', async ({ context, page }) => {
+    // Live-Befund 23.08.2026 (Screenshot aus dem tier2-capture-Lauf): Safari
+    // hat den Teilen-Knopf aus der unteren Leiste ins «Mehr»-Menü verlegt —
+    // unten steht jetzt [<] [Adresse] [⋯]. Die Anleitung schickte iOS-Nutzer
+    // weiter «unten in die Mitte», wo nichts mehr ist. Sie muss BEIDE Stände
+    // nennen, sonst ist sie fuer die eine oder die andere Haelfte falsch.
+    await mockBackend(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.locator('#openShareTop').click();
+    const inst = page.locator('#shareSheet details.install');
+    await inst.locator('summary').click();
+    const ios = inst.locator('.plat').first();
+    const txt = await ios.innerText();
+    expect(txt).toContain('Menü');                 // neuer Stand
+    expect(txt).toContain('unten in der Mitte');   // alter Stand, weiterhin wahr
+    expect(txt).toContain('iPad');
+    expect(txt).toContain('Chrome');
+    // Drei Piktogramme jetzt: Teilen-Pfeil, waagerechte Ellipse, Plus-im-Quadrat.
+    // Die Ellipse muss WAAGERECHT sein (Safari), nicht senkrecht (Chrome-Kebab).
+    expect(await ios.locator('svg.ic').count()).toBeGreaterThanOrEqual(3);
+    const cys = await ios.locator('svg.ic circle').evaluateAll(
+      els => els.map(e => e.getAttribute('cy')));
+    expect(cys.length).toBeGreaterThanOrEqual(3);
+    expect(new Set(cys).size).toBe(1);             // alle Punkte auf EINER Höhe
+  });
+
 
   // ---------- v4.61.0: Der eingefrorene Leser (Live-Vorfall 19.–21.07.) ----------
 
