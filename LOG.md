@@ -59,6 +59,21 @@ of fixes was partly wrong, and the runs said so:
   for that scenario, and the workflow says so out loud instead of dying at
   `brew install`.
 
+**Round 3 (same day) — S1 is GREEN.** The contrast-boost pass reads the locked
+view straight through the dimmed onboarding; no idb, no tapping, no tool
+install beyond tesseract. The other three moved one honest step further:
+- **android:** now measured, not guessed. `ip addr`/`ip route` from the failing
+  run show eth0 (10.0.2.15) and wlan0 (10.0.2.16) with addresses and on-link
+  routes but **no default route** — hence «Network is unreachable». The image
+  runs the virtio-Wi-Fi path (`ro.boot.qemu.virtiowifi=1`) and never gets one
+  by DHCP. QEMU's slirp gateway is always 10.0.2.2, so the script adds the
+  route itself (`adb root` + `ip route add default via 10.0.2.2`) and re-probes
+  before giving up.
+- **capture:** died on a leftover hardcode — `grep "iPhone 15 Pro ("` matches
+  nothing on the macOS 26 image, and `simctl erase ""` took the job with it.
+  Both capture and webclip now pick a device the same resilient way S1 does,
+  and abort loudly when no iPhone exists at all.
+
 
 None of them was the app. They had been red for at least a week — a watchdog
 that only ever barks is not a watchdog.

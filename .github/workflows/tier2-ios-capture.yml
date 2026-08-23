@@ -29,7 +29,14 @@ jobs:
 
       - name: Boot simulator
         run: |
-          DEVICE=$(xcrun simctl list devices available | grep "iPhone 15 Pro (" | head -1 | grep -oE '[0-9A-F-]{36}')
+          # Kein fester Modellname (23.08.2026): mit dem Runner-Image wandert
+          # die Simulator-Generation mit — auf macos-26 gibt es kein
+          # «iPhone 15 Pro» mehr, und der Lauf starb an einem leeren DEVICE.
+          LIST=$(xcrun simctl list devices available)
+          DEVICE=$(echo "$LIST" | grep -E "iPhone 1[5-9] Pro \(|iPhone 2[0-9] Pro \(" | head -1 | grep -oE '[0-9A-F-]{36}' || true)
+          [ -n "$DEVICE" ] || DEVICE=$(echo "$LIST" | grep "iPhone" | head -1 | grep -oE '[0-9A-F-]{36}' || true)
+          if [ -z "$DEVICE" ]; then echo "FEHLER: kein iPhone-Simulator im Image"; echo "$LIST" | head -30; exit 1; fi
+          echo "$LIST" | grep "$DEVICE"
           echo "DEVICE=$DEVICE" >> $GITHUB_ENV
           xcrun simctl erase "$DEVICE"
           xcrun simctl boot "$DEVICE"; xcrun simctl bootstatus "$DEVICE" -b

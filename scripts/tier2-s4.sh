@@ -29,9 +29,23 @@ adb shell svc wifi enable >/dev/null 2>&1 || true
 adb shell svc data enable >/dev/null 2>&1 || true
 net_ok() { adb shell ping -c 1 -W 2 8.8.8.8 2>&1 | grep -q "bytes from"; }
 for i in $(seq 1 20); do net_ok && break; sleep 3; done
+# MESSUNG statt Vermutung (Diagnose-Lauf 23.08.2026): eth0 (10.0.2.15) und
+# wlan0 (10.0.2.16) haben Adressen und On-Link-Routen, aber es gibt KEINE
+# Default-Route — daher «Network is unreachable». Das Image faehrt den
+# virtio-WLAN-Pfad (ro.boot.qemu.virtiowifi=1) und bekommt per DHCP keine
+# Default-Route mehr. Das QEMU-Slirp-Gateway liegt immer auf 10.0.2.2:
+# nachtragen ist deterministisch und billiger als auf DHCP zu hoffen.
+if ! net_ok && ! adb shell ip route 2>/dev/null | grep -q '^default'; then
+  echo "keine Default-Route — trage 10.0.2.2 nach"
+  adb root >/dev/null 2>&1 || true
+  adb wait-for-device
+  adb shell ip route add default via 10.0.2.2 dev eth0 2>&1 || true
+  adb shell ip route add default via 10.0.2.2 dev wlan0 2>&1 || true
+  for i in 1 2 3 4 5; do net_ok && break; sleep 2; done
+fi
 if ! net_ok; then
   echo "FEHLER: Emulator hat kein Netz — nicht die App ist rot. Diagnose:"
-  adb shell ip addr 2>&1 | head -30 || true
+  adb shell ip addr 2>&1 | head -60 || true
   adb shell ip route 2>&1 | head -10 || true
   adb shell settings get global airplane_mode_on 2>&1 || true
   adb shell getprop 2>&1 | grep -iE "dns|wifi|net\." | head -20 || true

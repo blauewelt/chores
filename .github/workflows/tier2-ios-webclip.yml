@@ -38,8 +38,9 @@ jobs:
             echo "erzeugt: iPhone 15 @ $RUNTIME → $DEVICE"
           else
             echo "WARNUNG: kein iOS-17-Runtime mehr — Fallback auf Default (Injektion wird vermutlich scheitern; dann auf Capture-Flow-Erzeugung umbauen)"
-            DEVICE=$(xcrun simctl list devices available | grep -E "iPhone 1[45]" | head -1 | grep -oE '[0-9A-F-]{36}')
+            DEVICE=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -oE '[0-9A-F-]{36}' || true)
           fi
+          if [ -z "$DEVICE" ]; then echo "FEHLER: kein iPhone-Simulator im Image"; xcrun simctl list devices available | head -30; exit 1; fi
           echo "DEVICE=$DEVICE" >> $GITHUB_ENV
           xcrun simctl erase "$DEVICE"
           xcrun simctl boot "$DEVICE"; xcrun simctl bootstatus "$DEVICE" -b
