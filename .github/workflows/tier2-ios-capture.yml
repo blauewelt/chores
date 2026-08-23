@@ -17,10 +17,12 @@ env:
 
 jobs:
   capture:
-    # macos-15 seit 23.08.2026: idb-companion baut auf macOS 14 nicht mehr
-    # («does not run on macOS versions older than Sequoia», braucht Xcode 26).
-    # Der Lauf war dadurch seit Tagen rot, noch bevor irgendetwas getestet wurde.
-    runs-on: macos-15
+    # macos-26 seit 23.08.2026. Zwei Stufen an EINEM Tag gelernt: auf
+    # macos-14 lehnt idb-companion mit «older than Sequoia» ab, auf macos-15
+    # verlangt es eine VOLLE Xcode-26-Installation — die gibt es erst im
+    # macOS-26-Image (= macos-latest). Vorher war der Lauf rot, bevor
+    # ueberhaupt etwas getestet wurde.
+    runs-on: macos-26
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4

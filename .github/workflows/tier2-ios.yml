@@ -9,8 +9,9 @@ on:
 
 jobs:
   s1-safari-openurl:
-    # macos-15 seit 23.08.2026 (idb-companion braucht Sequoia; hier fuer
-    # das Wegtippen des Onboardings noetig).
+    # macos-15 seit 23.08.2026 (macos-14 wird abgekuendigt; hier reicht
+    # tesseract als Bottle — KEIN idb: idb-companion verlangt inzwischen
+    # eine volle Xcode-26-Installation, die kein gehostetes Image hat).
     runs-on: macos-15
     timeout-minutes: 30
     steps:
@@ -30,44 +31,34 @@ jobs:
           echo "DEVICE=$DEVICE" >> $GITHUB_ENV
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
-      - name: Install idb + tesseract
+      - name: Install tesseract
         run: |
-          brew tap facebook/fb
-          brew trust facebook/fb || true
-          brew install idb-companion tesseract
-          /usr/bin/python3 -m pip install --user --quiet pytesseract pillow fb-idb
-          USERBIN=$(/usr/bin/python3 -m site --user-base)/bin
-          echo "$USERBIN" >> $GITHUB_PATH
-          "$USERBIN/idb" list-targets | head -3
-          "$USERBIN/idb" connect "$DEVICE" || true
-          sleep 3
+          brew install tesseract
+          /usr/bin/python3 -m pip install --user --quiet pillow \
+            || /usr/bin/python3 -m pip install --user --break-system-packages --quiet pillow
 
       - name: Open personal deep link in Safari
         run: |
           URL="https://blauewelt.github.io/chores/f/fam-e2e-fairli01/u/e2etest0001"
           xcrun simctl openurl "$DEVICE" "$URL"
           sleep 15
-          xcrun simctl io "$DEVICE" screenshot s1-onboard.png
-
-      - name: Dismiss first-visit onboarding
-        run: |
-          # «Zugriff sichern» (v4.45.0) ist modal und steht bei JEDEM
-          # Erstbesuch vor der App — ein frisch gebooteter Simulator ist
-          # immer ein Erstbesuch. Befund 23.08.2026: genau dieser Dialog
-          # war seit Tagen der ganze Inhalt des OCR-Auszugs, der Lauf
-          # scheiterte an der Haushalts-Zeile und sah aus wie ein
-          # Routing-Fehler. Er ist in Wahrheit der BEWEIS, dass der
-          # persoenliche Link aufging — trotzdem soll die Assertion die
-          # verriegelte SICHT messen, nicht das Onboarding.
-          for label in "Let's go" "Los geht"; do
-            /usr/bin/python3 scripts/ocr-tap.py "$DEVICE" s1-onboard.png "$label" && break || true
-          done
-          sleep 4
           xcrun simctl io "$DEVICE" screenshot s1.png
 
       - name: OCR assertion
         run: |
+          # ZWEI Durchgaenge. Das modale Onboarding «Zugriff sichern»
+          # (v4.45.0) steht bei JEDEM Erstbesuch vor der App, und ein frisch
+          # gebooteter Simulator ist immer ein Erstbesuch. Die verriegelte
+          # Sicht liegt dahinter VOLLSTAENDIG vor — Haushaltsname,
+          # ICH-BIN-Chip, Tabs — nur abgedunkelt. Genau daran scheiterte der
+          # Lauf tagelang (Befund 23.08.2026): das Bild trug den Beweis, die
+          # OCR las ihn nicht. Also zusaetzlich eine kontrastverstaerkte
+          # Fassung des oberen Bereichs lesen, statt den Dialog wegzutippen
+          # (idb-companion baut auf den gehosteten Runnern nicht mehr).
           tesseract s1.png out -l eng 2>/dev/null
+          /usr/bin/python3 scripts/ocr-boost.py s1.png s1-boost.png 0.45
+          tesseract s1-boost.png boost -l eng 2>/dev/null
+          cat boost.txt >> out.txt
           echo "--- OCR-Auszug ---"; head -40 out.txt
           echo "--- Assertion: Haushalts-Titel + App-UI sichtbar, keine Einstiegsseite ---"
           # OCR-tauglich: grosser Titel «E2E Testhaushalt» statt des kleinen
@@ -85,5 +76,5 @@ jobs:
           name: s1-artifacts
           path: |
             s1.png
-            s1-onboard.png
+            s1-boost.png
             out.txt

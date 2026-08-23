@@ -15,12 +15,14 @@ on:
 
 jobs:
   webclip-launch:
-    # macos-15 seit 23.08.2026: idb-companion baut auf macOS 14 nicht mehr
-    # (braucht Sequoia + Xcode 26). ACHTUNG: der iOS-17-Pin unten kann auf
-    # dem neuen Image leer ausgehen — dann greift der vorhandene Fallback
-    # samt Warnung, und der Lauf scheitert weiter unten mit einer AUSSAGE
-    # statt an der Werkzeug-Installation.
-    runs-on: macos-15
+    # macos-26 seit 23.08.2026: idb-companion verlangt inzwischen eine volle
+    # Xcode-26-Installation, die es erst in diesem Image gibt (macos-14 und
+    # macos-15 lehnten beide ab). ACHTUNG: der iOS-17-Pin unten geht auf dem
+    # neuen Image mit Sicherheit leer aus — dann greift der vorhandene
+    # Fallback samt Warnung, und der Lauf scheitert weiter unten mit einer
+    # AUSSAGE (Injektion wirkungslos) statt an der Werkzeug-Installation.
+    # Das ist der eigentliche offene Punkt dieses Szenarios, siehe LOG.
+    runs-on: macos-26
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4

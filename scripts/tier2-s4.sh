@@ -19,10 +19,25 @@ dismiss() {
 adb wait-for-device
 # Netz VOR dem Deep-Link pruefen: ohne Verbindung laedt die App nie und die
 # Assertion unten faellt mit «Testperson nicht gefunden» — eine irrefuehrende
-# Fehlermeldung fuer ein Emulator-Problem (Vorfall 23.08.2026).
-if ! adb shell ping -c 2 -W 3 8.8.8.8 | grep -q "0% packet loss"; then
-  echo "FEHLER: Emulator hat kein Netz (DNS/Konnektivitaet) — nicht die App ist rot."; exit 1
+# Fehlermeldung fuer ein Emulator-Problem (Vorfall 23.08.2026, das Artefakt
+# zeigte Chromes «No internet»). WARTEN statt sofort aufgeben: die virtuelle
+# WLAN-Assoziation ist nach boot_completed noch nicht fertig, der erste
+# Versuch trifft regelmaessig ins Leere. Schlaegt es endgueltig fehl, sagt
+# die Diagnose WAS fehlt (Route? Flugmodus? DNS?) — beim ersten Anlauf war
+# «-dns-server» die naheliegende, aber falsche Vermutung.
+adb shell svc wifi enable >/dev/null 2>&1 || true
+adb shell svc data enable >/dev/null 2>&1 || true
+net_ok() { adb shell ping -c 1 -W 2 8.8.8.8 2>&1 | grep -q "bytes from"; }
+for i in $(seq 1 20); do net_ok && break; sleep 3; done
+if ! net_ok; then
+  echo "FEHLER: Emulator hat kein Netz — nicht die App ist rot. Diagnose:"
+  adb shell ip addr 2>&1 | head -30 || true
+  adb shell ip route 2>&1 | head -10 || true
+  adb shell settings get global airplane_mode_on 2>&1 || true
+  adb shell getprop 2>&1 | grep -iE "dns|wifi|net\." | head -20 || true
+  exit 1
 fi
+echo "Netz steht."
 adb shell am start -a android.intent.action.VIEW -d "$URL" com.android.chrome
 for i in 1 2 3 4 5; do sleep 4; dismiss; done
 

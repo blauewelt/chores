@@ -33,6 +33,33 @@
 
 ### Tier-2 nightlies: all four were red, for three different reasons
 
+**Nachtrag, same day, after dispatching the fixed workflows** — the first round
+of fixes was partly wrong, and the runs said so:
+
+- **android:** `-dns-server` was the obvious guess and the wrong one. The
+  precheck now reported «Network is unreachable» — no ROUTE, not a name
+  resolution problem. The script now nudges (`svc wifi/data enable`), polls
+  connectivity for up to 60 s (the virtual Wi-Fi association is not finished
+  when `boot_completed` fires) and, if it still fails, dumps `ip addr`,
+  `ip route`, airplane mode and the net props — so the next round starts from
+  a measurement instead of another guess.
+- **ios (S1):** the idb route was a dead end — `idb-companion` refuses on
+  macOS 14 (Sequoia), and on macOS 15 it demands a full Xcode 26 install.
+  Then the artefact settled it: the screenshot ALREADY contained «E2E
+  Testhaushalt», the ICH-BIN chip and the tabs, fully rendered behind the
+  dimmed onboarding — only too dark for tesseract. So no UI automation at
+  all: `scripts/ocr-boost.py` crops the top 45 %, autocontrasts and doubles
+  it, and the assertion reads both passes. Verified locally against the real
+  failing artefact: the boosted pass yields «E2E Testhaushalt», «ICH BIN
+  Testperson», «Points History». Lesson: read the artefact before buying a
+  tool.
+- **capture / webclip:** moved on to `macos-26` (= macos-latest), the only
+  image carrying Xcode 26. webclip will now likely fail LATER, at its iOS-17
+  runtime pin, which no macOS 26 image can offer — that is the real open item
+  for that scenario, and the workflow says so out loud instead of dying at
+  `brew install`.
+
+
 None of them was the app. They had been red for at least a week — a watchdog
 that only ever barks is not a watchdog.
 

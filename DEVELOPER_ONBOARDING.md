@@ -1002,14 +1002,25 @@ centralization is mechanical:
   it still holds per FEATURE AREA (see intent board).
 
 ### Tier-2 nightlies (state 23.08.2026)
-All four were red for a week, none because of the app: the Android emulator
-had no DNS (`-dns-server` now pinned, plus a ping precheck in `tier2-s4.sh`),
-`idb-companion` stopped building on macOS 14 (capture + webclip moved to
-`macos-15`), and S1 was measuring the first-visit onboarding sheet instead of
-the locked view (it now OCR-taps «Let's go» first). Standing lesson: a nightly
-that is always red is not a watchdog — when one goes red, read the ARTEFACT
-(screenshot, OCR dump) before the code. Open risk: webclip pins an iOS-17
-runtime that the macos-15 image may not carry.
+All four were red for a week, none because of the app.
+- **android:** the emulator has no ROUTE right after `boot_completed` (the
+  artefact showed Chrome's «No internet»; `-dns-server` was the wrong guess).
+  `tier2-s4.sh` now nudges `svc wifi/data`, polls connectivity for 60 s and
+  dumps `ip addr`/`ip route`/airplane mode before failing — an emulator
+  problem must never read as «Testperson nicht gefunden».
+- **ios (S1):** it was measuring the modal first-visit onboarding. The locked
+  view is fully rendered BEHIND it, just dimmed — `scripts/ocr-boost.py`
+  (crop top 45 %, autocontrast, 2×) makes tesseract read it. **No idb:**
+  `idb-companion` refuses on macOS 14 and needs a full Xcode 26 on macOS 15.
+- **capture / webclip:** need idb, therefore `macos-26` (= macos-latest, the
+  only image with Xcode 26). Open item: webclip pins an iOS-17 runtime that
+  macOS 26 images cannot offer; expect it to fail there, loudly, until the
+  scenario is rebuilt on the capture flow.
+
+**Standing lesson:** a nightly that is always red is not a watchdog. When one
+goes red, read the ARTEFACT (screenshot, OCR dump, UI dump) before touching
+code or tools — twice in one day the artefact already held the answer while
+the plausible-sounding fix (DNS flag, UI automation) did not.
 
 ## 12. Known open items / deferred
 
