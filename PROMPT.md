@@ -127,6 +127,14 @@ umgebucht (`bumpTotals` -1/+1); `logged_by` bleibt, weil es protokolliert,
 wer erfasst hat — nicht, fuer wen.
 
 
+## Verbuchungs-Toast (v4.108.0)
+
+Nach jedem Verbuchen zeigt der Toast «+N für X» zusaetzlich den Knopf
+«Ändern»: er wechselt in den Verlauf und oeffnet genau diesen Eintrag
+(inkl. Personen-Feld). Gilt fuer den frischen Eintrag UND die
+1-h-Zusammenlegung. Aktions-Toasts stehen 5 s statt 1.8 s.
+
+
 ## Mehrfamilien-Modell (v4.1)
 
 Eine Supabase-Instanz, alle Tabellen per `family_id` partitioniert. Auth ist

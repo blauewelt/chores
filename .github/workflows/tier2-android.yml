@@ -23,7 +23,13 @@ jobs:
           api-level: 34
           target: google_apis
           arch: x86_64
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          # -dns-server: der Emulator erbt den DNS des Runners NICHT mehr
+          # zuverlaessig (Befund 23.08.2026: der Lauf war seit Tagen rot, der
+          # Screenshot zeigte Chromes «No internet» — die App wurde nie
+          # geladen, die Assertion konnte gar nicht greifen). Feste
+          # Resolver statt Vererbung; im Log steht «Netsim Wifi dns:///…
+          # is gone» als Vorbote.
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -dns-server 8.8.8.8,8.8.4.4
           script: bash scripts/tier2-s4.sh
       - uses: actions/upload-artifact@v4
         if: always()

@@ -4675,6 +4675,74 @@ test.describe('Fairli', () => {
     await expect(page.locator('#logSheet #lWho .chip[aria-pressed="true"]')).toHaveText(/Timon/);
   });
 
+  // ---- Verbuchungs-Toast führt zurück in den Eintrag (v4.108.0) -----------
+
+  test('Toast «Ändern» (v4.108.0): frisch getippt, falsche Person — ein Tipp öffnet den Eintrag im Verlauf', async ({ context, page }) => {
+    await mockBackend(context, { logRows: () => [] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.locator('.chip', { hasText: 'Timon' }).click();
+    await page.locator('.chore', { hasText: 'Müll rausbringen' }).click();
+    const toast = page.locator('#toast');
+    await expect(toast).toContainText('+2 für Timon');
+    // Der Weg zurück ist ein BESCHRIFTETER Knopf, kein stiller Tipp aufs Toast
+    const act = toast.locator('.tact');
+    await expect(act).toHaveText('Ändern');
+    // … und er steht NEBEN dem Text, nicht darunter (v4.108.0: `left:50%`
+    // ohne `right` deckelte die Shrink-to-fit-Breite auf ~50vw, der Knopf
+    // rutschte in die zweite Zeile und las sich wie eine Bildunterschrift).
+    const box = await toast.boundingBox();
+    expect(box.height).toBeLessThan(56);          // eine Zeile, nicht zwei
+    const tb = await act.boundingBox();
+    expect(tb.x).toBeGreaterThan(box.x + 40);     // rechts vom Text, gleiche Zeile
+    await act.click();
+    // … landet im Verlauf, mit genau diesem Eintrag offen
+    await expect(page.locator('#logSheet')).toBeVisible();
+    await expect(page.locator('.tab[data-view="log"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#logSheet #lName')).toHaveValue('Müll rausbringen');
+    // … und die Person lässt sich sofort korrigieren (v4.107.0-Feld)
+    await expect(page.locator('#logSheet #lWho .chip[aria-pressed="true"]')).toHaveText(/Timon/);
+    await page.locator('#logSheet #lWho .chip', { hasText: 'Mira' }).click();
+    await page.locator('#logSheet #saveLog').click();
+    await expect(page.locator('.entry', { hasText: 'Müll rausbringen' }).locator('.epname')).toHaveText('Mira');
+  });
+
+  test('Toast «Ändern»: greift auch auf die 1-h-Zusammenlegung — der Knopf zeigt auf die GEWACHSENE Zeile (v4.108.0)', async ({ context, page }) => {
+    const rows = [{ id: 'l-run', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: 'nur Restmüll',
+      member_id: 'm-chris', member_name: 'Timon', points: 2,
+      done_at: weekSafeAgo(10 * 60e3), family_id: FAM }];
+    await mockBackend(context, { logRows: () => rows });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.locator('.chip', { hasText: 'Timon' }).click();
+    await page.locator('.chore', { hasText: 'Müll rausbringen' }).click();   // < 1 h → addiert auf l-run
+    await page.locator('#toast .tact').click();
+    await expect(page.locator('#logSheet')).toBeVisible();
+    await expect(page.locator('#logSheet #lPtsVal')).toHaveText('4');        // 2 + 2, dieselbe Zeile
+  });
+
+  test('Toast «Ändern»: räumt Personen-Filter und Suche weg — nie ein Sheet über einer leeren Liste (v4.108.0)', async ({ context, page }) => {
+    await mockBackend(context, { logRows: () => [
+      { id: 'l-old', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: '',
+        member_id: 'm-mira', member_name: 'Mira', points: 2,
+        done_at: weekSafeAgo(3 * 3600e3), family_id: FAM },
+    ] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    // Personen-Filter auf Mira setzen (Tipp auf die Punkte-Karte)
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await page.locator('.score', { hasText: 'Mira' }).click();
+    await expect(page.locator('#clearLogFilter')).toBeVisible();
+    // Jetzt für TIMON verbuchen — unter dem Filter wäre die Zeile unsichtbar
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await page.locator('.chip', { hasText: 'Timon' }).click();
+    await page.locator('.chore', { hasText: 'Müll rausbringen' }).click();
+    await page.locator('#toast .tact').click();
+    await expect(page.locator('#logSheet')).toBeVisible();
+    await page.locator('#logSheet .x').click();
+    // Filter ist weg, der frische Eintrag steht sichtbar in der Liste
+    await expect(page.locator('#clearLogFilter')).toHaveCount(0);
+    await expect(page.locator('.entry', { hasText: 'Müll rausbringen' }).first()).toBeVisible();
+    await expect(page.locator('.epname', { hasText: 'Timon' })).toBeVisible();
+  });
+
   test('Eintrag umbuchen: ohne echte Wahl gar kein Feld — ein toter Ein-Chip wäre eine Lüge (v4.107.0)', async ({ context, page }) => {
     const members = [
       { id: 'm-chris', name: 'Timon', color: '#2FAE6A', family_id: FAM, url_slug: 'slugchris1', admin: true },

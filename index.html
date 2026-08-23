@@ -566,7 +566,15 @@
   #toast{position:fixed; left:50%; transform:translateX(-50%) translateY(20px);
     bottom:calc(100px + env(safe-area-inset-bottom)); background:var(--ink); color:#141A17;
     padding:10px 20px; border-radius:999px; font-weight:700; opacity:0; pointer-events:none;
-    transition:opacity .2s, transform .2s; z-index:50; max-width:85vw; text-align:center}
+    transition:opacity .2s, transform .2s; z-index:50; width:max-content; max-width:85vw; text-align:center}
+  /* width:max-content (v4.108.0): `left:50%` OHNE `right` laesst als
+     Verfuegbarkeit nur die RECHTE Haelfte uebrig — die Shrink-to-fit-Breite
+     war dadurch immer auf ~50vw gedeckelt und `max-width:85vw` biss nie.
+     Folge: schon «Gelöscht · Rückgängig» brach um, und der neue Verbuchungs-
+     Toast (haeufigster Toast der App) haette es bei JEDEM Tipp getan — die
+     Aktion sass dann unter dem Text und las sich wie eine Bildunterschrift
+     statt wie ein Knopf. max-content nimmt die einzeilige Wunschbreite,
+     85vw deckelt lange Saetze weiterhin. */
   #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
   @media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important} }
 </style>
@@ -747,7 +755,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.107.0';
+  const APP_VERSION = '4.108.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -3389,7 +3397,7 @@
       bumpTotals(m.id, choreLike.points, 0);   // Punkte wachsen, Zeilenzahl nicht (v4.65.0-Lücke)
       upsertRemote('log', [recent]);   // v4.47.5: Punkte-Zusammenlegung pull-geschützt
       try { if (navigator.vibrate) navigator.vibrate(12); } catch {}
-      toast(t('+{p} für {name}', { p: choreLike.points, name: m.name }));
+      toastLogged(recent, choreLike.points, m.name);
       return true;
     }
     const entry = {
@@ -3421,9 +3429,48 @@
     state.log.unshift(entry);
     bumpTotals(entry.member_id, entry.points || 0, 1);   // Gesamt sofort mitziehen (v4.65.0)
     try { if (navigator.vibrate) navigator.vibrate(12); } catch {}
-    toast(t('+{p} für {name}', { p: choreLike.points, name: m.name }));
+    toastLogged(entry, choreLike.points, m.name);
     createRemote('log', entry);
     return true;
+  }
+
+  // v4.108.0: Der Verbuchungs-Toast bekommt einen Weg ZURUECK in den Eintrag.
+  // Der haeufigste Fehler passiert in der Sekunde nach dem Tippen — es zaehlt
+  // fuer die falsche Person, weil der «Ich bin»-Chip noch woanders stand.
+  // Bisher hiess die Korrektur: Tab wechseln, Zeile suchen, antippen. Drei
+  // Schritte fuer etwas, das eine Sekunde alt ist und noch auf dem Schirm
+  // steht.
+  // BEWUSST ein beschrifteter Knopf, KEIN insgesamt tippbarer Toast: ein
+  // Toast verspricht von sich aus nichts, ein Knopf schon (stehende Frage
+  // §11: «Was verspricht die UI — und haelt sie es?»). Der Aktions-Toast
+  // steht ausserdem 5 s statt 1.8 s — die Sekunde, in der man den Fehler
+  // bemerkt, ist genau diese.
+  function toastLogged(entry, points, name) {
+    const msg = t('+{p} für {name}', { p: points, name });
+    // Verteidigung in der Tiefe: sollte der Eintrag ausnahmsweise nicht
+    // editierbar sein, gibt es keinen Knopf statt eines Knopfes ins Leere.
+    if (!canEditLog(entry)) { toast(msg); return; }
+    toast(msg, { label: t('Ändern'), fn: () => openLoggedEntry(entry.id) });
+  }
+  function openLoggedEntry(id) {
+    // In den Verlauf wechseln: die Korrektur passiert im Kontext, und nach
+    // dem Schliessen steht die Zeile da, die man gerade angefasst hat.
+    if (view !== 'log') {
+      view = 'log'; invalidateOrder();
+      document.querySelectorAll('.tab').forEach(b =>
+        b.setAttribute('aria-selected', String(b.dataset.view === 'log')));
+    }
+    // Ein aktiver Personen-Filter (v4.64.0) oder ein Suchbegriff wuerde die
+    // frische Zeile ausblenden — der Weg zum Sheet darf daran nicht
+    // scheitern, sonst oeffnet sich ein Sheet ueber einer leeren Liste.
+    LOGFILTER = null; LOGWEEK = false;
+    if (QUERY) {
+      QUERY = '';
+      const inp = document.getElementById('searchInput'); if (inp) inp.value = '';
+      const clr = document.getElementById('searchClear'); if (clr) clr.hidden = true;
+    }
+    render();
+    openLogSheet(id);
   }
 
   // ---------- Aufgaben-Sheet ----------

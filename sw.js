@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v211';   // v4.107.0 Person eines Verlaufs-Eintrags aenderbar (Reichweite = allowedIds)
+const CACHE = 'haushalt-v212';   // v4.108.0 Verbuchungs-Toast mit «Ändern» direkt in den frischen Eintrag
 const SHELL = [
   './',
   './index.html',

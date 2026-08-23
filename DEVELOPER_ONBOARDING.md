@@ -533,6 +533,20 @@ link still counts as a nameless admin (grandfathered), but is no longer
 offered. Invariants: at least one admin; non-admins may not operate the
 switch, but may share links. New households: first person = admin.
 
+### Toast → entry (v4.108.0)
+`recordEntry()` ends in `toastLogged()`, which adds an «Ändern» action to the
+«+N für X» toast; `openLoggedEntry(id)` switches to Verlauf, clears LOGFILTER
+and the search term (otherwise the sheet can open over a list that does not
+contain the row), renders, then `openLogSheet(id)`. Both write paths feed it —
+the fresh row and the 1 h accumulation — so the button always points at the row
+that actually grew. Deliberately a LABELLED button, not a tappable toast: a
+toast promises nothing, a button does. Action toasts stand 5 s, plain ones 1.8.
+
+**`#toast` needs `width:max-content`.** `left:50%` without `right` leaves only
+the right half as available width, so shrink-to-fit capped near 50vw and
+`max-width:85vw` never bit — every two-part toast wrapped, action under text.
+Do not remove it; a test measures the single line.
+
 ### The entry's person (v4.107.0)
 The «Person» field in #logSheet changes `member_id` + `member_name` — who the
 entry COUNTS FOR. `logWhoOptions()` is a thin wrapper over `allowedIds()`
@@ -986,6 +1000,16 @@ centralization is mechanical:
   refactor lives on a feature branch until its release slot.
 - The old rule «one session at a time» is hereby replaced for RELEASES;
   it still holds per FEATURE AREA (see intent board).
+
+### Tier-2 nightlies (state 23.08.2026)
+All four were red for a week, none because of the app: the Android emulator
+had no DNS (`-dns-server` now pinned, plus a ping precheck in `tier2-s4.sh`),
+`idb-companion` stopped building on macOS 14 (capture + webclip moved to
+`macos-15`), and S1 was measuring the first-visit onboarding sheet instead of
+the locked view (it now OCR-taps «Let's go» first). Standing lesson: a nightly
+that is always red is not a watchdog — when one goes red, read the ARTEFACT
+(screenshot, OCR dump) before the code. Open risk: webclip pins an iOS-17
+runtime that the macos-15 image may not carry.
 
 ## 12. Known open items / deferred
 

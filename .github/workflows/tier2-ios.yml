@@ -9,34 +9,75 @@ on:
 
 jobs:
   s1-safari-openurl:
-    runs-on: macos-14
+    # macos-15 seit 23.08.2026 (idb-companion braucht Sequoia; hier fuer
+    # das Wegtippen des Onboardings noetig).
+    runs-on: macos-15
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - name: Boot simulator
         run: |
-          DEVICE=$(xcrun simctl list devices available | grep -E "iPhone 1[45]" | head -1 | grep -oE '[0-9A-F-]{36}')
+          # Kein fester Modellname: mit dem Runner-Image wandert auch die
+          # Simulator-Generation (macos-15 bringt keine iPhone-14/15-Geraete
+          # mehr garantiert mit). Erst die bekannten Modelle probieren, sonst
+          # IRGENDEIN verfuegbares iPhone — und ehrlich abbrechen, wenn es
+          # keines gibt, statt mit leerem DEVICE weiterzulaufen.
+          LIST=$(xcrun simctl list devices available)
+          DEVICE=$(echo "$LIST" | grep -E "iPhone 1[4-9]" | head -1 | grep -oE '[0-9A-F-]{36}' || true)
+          [ -n "$DEVICE" ] || DEVICE=$(echo "$LIST" | grep "iPhone" | head -1 | grep -oE '[0-9A-F-]{36}' || true)
+          if [ -z "$DEVICE" ]; then echo "FEHLER: kein iPhone-Simulator im Image"; echo "$LIST" | head -30; exit 1; fi
+          echo "$LIST" | grep "$DEVICE"
           echo "DEVICE=$DEVICE" >> $GITHUB_ENV
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
+      - name: Install idb + tesseract
+        run: |
+          brew tap facebook/fb
+          brew trust facebook/fb || true
+          brew install idb-companion tesseract
+          /usr/bin/python3 -m pip install --user --quiet pytesseract pillow fb-idb
+          USERBIN=$(/usr/bin/python3 -m site --user-base)/bin
+          echo "$USERBIN" >> $GITHUB_PATH
+          "$USERBIN/idb" list-targets | head -3
+          "$USERBIN/idb" connect "$DEVICE" || true
+          sleep 3
+
       - name: Open personal deep link in Safari
         run: |
           URL="https://blauewelt.github.io/chores/f/fam-e2e-fairli01/u/e2etest0001"
           xcrun simctl openurl "$DEVICE" "$URL"
           sleep 15
+          xcrun simctl io "$DEVICE" screenshot s1-onboard.png
+
+      - name: Dismiss first-visit onboarding
+        run: |
+          # «Zugriff sichern» (v4.45.0) ist modal und steht bei JEDEM
+          # Erstbesuch vor der App — ein frisch gebooteter Simulator ist
+          # immer ein Erstbesuch. Befund 23.08.2026: genau dieser Dialog
+          # war seit Tagen der ganze Inhalt des OCR-Auszugs, der Lauf
+          # scheiterte an der Haushalts-Zeile und sah aus wie ein
+          # Routing-Fehler. Er ist in Wahrheit der BEWEIS, dass der
+          # persoenliche Link aufging — trotzdem soll die Assertion die
+          # verriegelte SICHT messen, nicht das Onboarding.
+          for label in "Let's go" "Los geht"; do
+            /usr/bin/python3 scripts/ocr-tap.py "$DEVICE" s1-onboard.png "$label" && break || true
+          done
+          sleep 4
           xcrun simctl io "$DEVICE" screenshot s1.png
+
       - name: OCR assertion
         run: |
-          brew install tesseract >/dev/null
           tesseract s1.png out -l eng 2>/dev/null
           echo "--- OCR-Auszug ---"; head -40 out.txt
           echo "--- Assertion: Haushalts-Titel + App-UI sichtbar, keine Einstiegsseite ---"
           # OCR-tauglich: grosser Titel «E2E Testhaushalt» statt des kleinen
           # ICH-BIN-Chips («Testperson» war OCR zu klein — Lauf 1 zeigte die
           # korrekte Mitglieder-Sicht, scheiterte nur an dieser Zeile)
+          # Der Simulator laeuft auf Englisch — die App uebersetzt sich mit.
+          # Beide Sprachen zulassen, sonst misst der Test die Runner-Locale.
           grep -qi "Testhaushalt" out.txt
-          grep -qiE "Verlauf|Aufgabe|Punkte" out.txt
-          ! grep -qi "Haushalt erstellen" out.txt
+          grep -qiE "Verlauf|Aufgabe|Punkte|History|Task|Point" out.txt
+          ! grep -qiE "Haushalt erstellen|Create .*household" out.txt
           echo "S1 GRUEN: verriegelte Sicht in echtem iOS-Safari erreicht"
       - uses: actions/upload-artifact@v4
         if: always()
@@ -44,4 +85,5 @@ jobs:
           name: s1-artifacts
           path: |
             s1.png
+            s1-onboard.png
             out.txt

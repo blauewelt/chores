@@ -1,3 +1,62 @@
+## 2026-08-23 — v4.108.0 (SW haushalt-v212): the logging toast leads back INTO the entry — and the tier2 nightlies run again
+
+- Maintainer: «could the user tap the displayed toast to get into the history
+  view with the just added activity open? For example, if they added it under
+  the wrong user.» That is the moment the mistake is noticed — one second
+  after the tap, with the toast still on screen. Until now the cure was: switch
+  tab, find the row, tap it. Three steps for something one second old.
+- `recordEntry()` now ends in `toastLogged()`: the same «+N für X» text, plus
+  an action button «Ändern». Tapping it switches to Verlauf and opens that
+  entry's sheet — where v4.107.0's Person field is one more tap away.
+  Both write paths feed it, the fresh row AND the 1 h accumulation, so the
+  button always points at the row that actually grew.
+- **A labelled button, not a tappable toast.** A toast promises nothing by
+  itself; a button does (standing question §11: what does the UI promise, and
+  does it keep it?). The action toast also stands 5 s instead of 1.8 — the
+  second in which you notice the wrong name is exactly that one.
+- `openLoggedEntry()` clears an active person filter (LOGFILTER) and the
+  search term before rendering: a fresh entry for someone else would be
+  filtered out, and the sheet would open over a list that does not contain it.
+- **`#toast` gets `width:max-content` — an old bug, found by looking.**
+  `left:50%` without `right` leaves only the RIGHT half as available width, so
+  shrink-to-fit was always capped near 50vw and `max-width:85vw` never bit.
+  «Gelöscht · Rückgängig» has been wrapping for a year; the new toast is the
+  most frequent one in the app and would have wrapped on EVERY tap, with the
+  action sitting under the text reading like a caption. max-content takes the
+  one-line preferred width, 85vw still caps long sentences. A test measures it
+  (height < 56 px, action to the right of the text) so it cannot regress.
+- i18n: one new key («Ändern») across all 19 files.
+- Three tests: toast action opens the just-logged entry and the person is
+  correctable right there; the action follows the 1 h merge to the GROWN row
+  (2+2 = 4 in the sheet); filter and search are cleared so the sheet never
+  opens over a list without the row.
+
+### Tier-2 nightlies: all four were red, for three different reasons
+
+None of them was the app. They had been red for at least a week — a watchdog
+that only ever barks is not a watchdog.
+
+- **tier2-android:** the screenshot artefact showed Chrome's «No internet».
+  The emulator no longer inherits the runner's DNS reliably (the log's
+  «Netsim Wifi dns:///… is gone» is the tell). Fixed with
+  `-dns-server 8.8.8.8,8.8.4.4`; `tier2-s4.sh` now PINGS before the deep link
+  and fails with «Emulator hat kein Netz» instead of the misleading
+  «Testperson nicht gefunden».
+- **tier2-ios-capture / tier2-ios-webclip:** `brew install idb-companion`
+  refuses on macOS 14 («does not run on macOS versions older than Sequoia»,
+  wants Xcode 26). Both moved to `macos-15`. Caveat noted in webclip: its
+  iOS-17 runtime pin may come up empty on the new image — then the existing
+  fallback warns and the run fails on a STATEMENT instead of on tooling.
+- **tier2-ios:** not tooling at all. The OCR dump was the onboarding sheet
+  «Save your access» (v4.45.0) — modal on every first visit, and a freshly
+  booted simulator is always a first visit. The dialog is in fact PROOF that
+  the personal link resolved, but the assertion is meant to measure the locked
+  VIEW. It now installs idb and OCR-taps «Let's go» first. Two more honesty
+  fixes while in there: the device pick no longer hardcodes iPhone 14/15
+  (runner images move on) and aborts loudly if no iPhone exists, and the UI
+  assertion accepts English as well as German — the simulator runs in English
+  and the app follows it, so the old grep measured the runner locale.
+
 ## 2026-08-22 — v4.107.0 (SW haushalt-v211): an entry's PERSON is editable — within the link's reach
 
 - Maintainer, from a screenshot of the entry sheet: let the user be changed
