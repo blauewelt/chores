@@ -1013,9 +1013,11 @@ All four were red for a week, none because of the app.
   (crop top 45 %, autocontrast, 2×) makes tesseract read it. **No idb:**
   `idb-companion` refuses on macOS 14 and needs a full Xcode 26 on macOS 15.
 - **capture / webclip:** need idb, therefore `macos-26` (= macos-latest, the
-  only image with Xcode 26). Open item: webclip pins an iOS-17 runtime that
-  macOS 26 images cannot offer; expect it to fail there, loudly, until the
-  scenario is rebuilt on the capture flow.
+  only image with Xcode 26). Both stay RED on purpose: Safari moved Share out
+  of the bottom toolbar into the `⋯` menu (S2's whole premise), and webclip's
+  iOS-17 runtime pin has no image left to run on. See TESTING_TIER2.md
+  §Status 23.08.2026 — including the product finding that the app's own
+  onboarding text still points iOS users at the old share position.
 
 **Standing lesson:** a nightly that is always red is not a watchdog. When one
 goes red, read the ARTEFACT (screenshot, OCR dump, UI dump) before touching
