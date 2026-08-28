@@ -1,3 +1,41 @@
+## 2026-08-28 — v4.110.0 (SW haushalt-v214): a single 503 could brick one tile's art forever
+
+- Reported as «one tile is stuck generating the art» with a screenshot of the
+  edit sheet: «Aufräumen Küche», Bild-Idee «tidy kitchen», broken-image glyph
+  where the picture belongs. The prompt was fine — fetched by hand it returns
+  `200 image/jpeg` in ~5 s. The flow around it was not.
+- **Two faults that fed each other.**
+  1. Pollinations answers `503 application/json` — `upstreamBody: {"detail":
+     "Queue full"}` — under load. Measured 28.08.: 15–40 % of a parallel burst
+     fails, 0 % sequentially. **We create that load ourselves**: the Aufgaben
+     grid requests every tile at once, and over HTTP/2 no per-host browser
+     limit slows it down.
+  2. An `<img>` loads no-cors, so the service worker sees `type: 'opaque'`,
+     `status: 0`, `ok: false` — **for a 200 and a 503 alike**. The old rule
+     `resp.ok || (isArt && resp.type === 'opaque')` therefore wrote error
+     responses into the cache, and since art was served cache-first with no
+     revalidation, that tile was **permanently** blank on that device: every
+     retry (`artRetry` 3×, `warmArt` 5× with backoff) got the stored 503 JSON
+     back without ever touching the network again. Only the next cache-name
+     bump healed it — by accident, not by design.
+- **Fix, all of it in `sw.js`:** art now has its own handler. It fetches with
+  `mode:'cors'` (Pollinations sends `access-control-allow-origin: *` on errors
+  too, which makes the status *readable*), caches only when `resp.ok` **and**
+  the content-type starts with `image/`, and lets failures through uncached so
+  the existing retries reach the network again. A semaphore caps generation at
+  `ART_PAR = 3` concurrent requests, which is the half of the problem we own.
+  If Pollinations ever drops the CORS header the handler falls back to the
+  plain opaque fetch and simply stops caching — pictures over purity.
+- The v4.98.0 comment at `artRetry` blamed throttling and was half right: the
+  throttling is real, but the backoff it added had been running into a cached
+  error since the day it was written. Corrected in place rather than deleted.
+- **Test (`@sw`)** pins the exact failure: first request 503, second 200.
+  Asserts the 503 is *not* in the cache, the retry reaches the network and is,
+  and a third request is served from the cache without a further call.
+  Verified red against the old service worker before being made green.
+- The maintainer's stuck tile heals itself on this deploy: `activate` deletes every
+  cache that is not the current one, and the name moved v213 → v214.
+
 ## 2026-08-23 — v4.109.0 (SW haushalt-v213): the iOS install instructions were sending people to a button that moved
 
 - Found while debugging the tier-2 capture run, not by looking for it: the

@@ -755,7 +755,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.109.0';
+  const APP_VERSION = '4.110.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1534,6 +1534,11 @@
   // Bild-Fehler: NICHT sofort entfernen. Beim Voll-Repaint (Cache-Miss auf
   // allen Kacheln zugleich, 15.07.) drosselt Pollinations — ein spaeterer
   // Versuch gelingt fast immer. 3 Retries mit Backoff, dann aufgeben.
+  // NACHTRAG v4.110.0: dieser Backoff lief lange ins Leere. Der Service
+  // Worker hatte die 503-Antwort gecacht, also bekam jeder Versuch dieselbe
+  // kaputte Antwort aus dem Cache statt einer neuen Chance vom Netz. Seit
+  // sw.js nur noch geprüfte Bilder cacht, erreichen die Retries wieder das
+  // Netz — und die Drosselung selbst mildert die Staffelung im SW.
   const ARTOK = new Set();
   window.artOk = img => { ARTOK.add(img.src); img.classList.add('ok'); };
   window.artRetry = img => {

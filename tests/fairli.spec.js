@@ -1765,6 +1765,49 @@ test.describe('Fairli', () => {
     expect(man.body.icons.every(i => /^https?:\/\//.test(i.src))).toBe(true);
   });
 
+  test('@sw Kachelkunst: eine 503-Antwort landet NICHT im Cache — die Kachel bleibt heilbar (v4.110.0)', async ({ context, page }) => {
+    // Der Fehler, den dieser Test festnagelt (Live-Befund 28.08.2026): ein
+    // <img> laedt no-cors, die Antwort ist damit IMMER 'opaque' — 200 und 503
+    // sehen identisch aus. Die alte SW-Regel hat darum auch Pollinations'
+    // «Queue full»-JSON gecacht, und weil cache-first ohne Revalidierung gilt,
+    // war genau diese eine Kachel danach dauerhaft bildlos: jeder Retry bekam
+    // die kaputte Antwort aus dem Cache statt einer neuen Chance vom Netz.
+    await mockBackend(context);
+    await blockExternal(context);
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+    // NACH blockExternal registriert → gewinnt fuer genau diese eine URL
+    let calls = 0;
+    await context.route('**://gen.pollinations.ai/image/kachelprobe*', r => {
+      calls++;
+      if (calls === 1) return r.fulfill({
+        status: 503, contentType: 'application/json',
+        headers: { 'access-control-allow-origin': '*' },
+        body: '{"success":false,"error":{"code":"SERVICE_UNAVAILABLE","details":{"upstreamBody":"{\\"detail\\":\\"Queue full\\"}"}}}' });
+      return r.fulfill({ status: 200, contentType: 'image/png',
+        headers: { 'access-control-allow-origin': '*' }, body: png });
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
+    const url = 'https://gen.pollinations.ai/image/kachelprobe?model=flux&seed=4711';
+    // Der Cache-Schreibvorgang laeuft im SW per waitUntil NEBEN der Antwort —
+    // darum kurz nachfassen statt einmalig zu schauen (sonst misst der Test
+    // das Timing, nicht das Verhalten).
+    const ask = u => page.evaluate(async x => {
+      await fetch(x, { mode: 'no-cors' }).catch(() => {});
+      for (let i = 0; i < 30; i++) {
+        if (await caches.match(x)) return true;
+        await new Promise(r => setTimeout(r, 100));
+      }
+      return false;
+    }, u);
+    expect(await ask(url)).toBe(false);   // 503 → NICHT gecacht
+    expect(await ask(url)).toBe(true);    // der zweite Versuch erreicht das Netz und gelingt
+    expect(calls).toBe(2);                // beide Male wirklich am Netz gewesen
+    // Und der Treffer wird danach aus dem Cache bedient, nicht erneut geholt
+    expect(await ask(url)).toBe(true);
+    expect(calls).toBe(2);
+  });
+
   test('Ersteinrichtung (v4.57.0): «Wer bist du?» — Gewählte wird Admin, Ersteller landet auf IHREM persönlichen Link', async ({ context, page }) => {
     const FAMN = 'neufam-xyz98765';
     const store = { members: [], chores: [], families: [], log: [] };
