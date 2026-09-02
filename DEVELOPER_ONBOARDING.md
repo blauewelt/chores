@@ -533,6 +533,28 @@ link still counts as a nameless admin (grandfathered), but is no longer
 offered. Invariants: at least one admin; non-admins may not operate the
 switch, but may share links. New households: first person = admin.
 
+### Tile sorting (v4.33.0, reworked v4.111.0)
+Three modes in `haushalt.sort` (per device): **`alpha` is the DEFAULT since
+v4.111.0**, plus `created` and `usage`. Settings label is «Kachel-Sortierung» —
+«Sortierung» alone did not say sorting of what.
+**`usage` ranks by the ACTIVE PERSON's log entries**, household count only as
+the tiebreak (usually at 0), name last. A household-wide ranking orders tiles
+by everyone's average and is right for nobody. Consequences: `_orderCache` keys
+on `me` too (a chip switch is an order switch), and tombstones (`deleted_at`)
+do not count.
+
+### Update banner (v4.111.0)
+`checkForUpdate()` fetches `BASE + 'index.html?fresh=<ts>'` (no-store) and
+compares the served `APP_VERSION` with ours; on a difference `#updBar` offers
+«Neu laden». Triggers: foreground return, every 15 min while visible, once 10 s
+after boot. **Version-based on purpose** — `waiting` never occurs because
+`sw.js` calls `skipWaiting()` in install, so SW states are no trigger here.
+The button updates the SW registration BEFORE reloading: the SW answers
+navigations cache-first with the old shell, so a plain `location.reload()`
+would return the same page and the banner with it. `sw.js` passes `?fresh=`
+through uncached — never cache the probe, or it answers with the very version
+it exists to expose. The news banner hides while this one is up.
+
 ### Toast → entry (v4.108.0)
 `recordEntry()` ends in `toastLogged()`, which adds an «Ändern» action to the
 «+N für X» toast; `openLoggedEntry(id)` switches to Verlauf, clears LOGFILTER

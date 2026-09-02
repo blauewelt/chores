@@ -554,6 +554,18 @@
   #newsBar[hidden]{display:none}
   #newsBar a{color:var(--accent);text-decoration:none;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #newsBar button{border:none;background:none;color:var(--muted);font-size:19px;padding:2px 6px;cursor:pointer;flex:none}
+  /* Update-Banner (v4.111.0): gleiche Anatomie wie #newsBar, aber mit einer
+     ECHTEN Aktion statt eines Links. Akzentrahmen, weil er etwas verlangt. */
+  #updBar{display:flex; align-items:center; gap:8px; margin:0 14px 8px; padding:6px 6px 6px 12px;
+    background:color-mix(in srgb, var(--accent) 12%, var(--card));
+    border:1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    border-radius:12px; font-size:14px}
+  #updBar[hidden]{display:none}
+  #updBar .ubmain{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600}
+  #updBar .ubgo{border:none; background:var(--accent); color:#0C1220; border-radius:999px;
+    font-family:var(--body); font-size:14px; font-weight:800; padding:7px 14px; cursor:pointer; flex:none}
+  #updBar .ubgo[disabled]{opacity:.6}
+  #updBar .ubx{border:none; background:none; color:var(--muted); font-size:19px; padding:2px 6px; cursor:pointer; flex:none}
   #installBar{display:flex; align-items:center; gap:4px; margin:2px 0 10px;
     background:rgba(132,178,255,.10); border:1px solid rgba(132,178,255,.35);
     border-radius:12px; padding:2px 4px 2px 12px}
@@ -595,6 +607,11 @@
 <div id="newsBar" hidden>
   <a id="newsBarLink" href="/chores/updates.html" target="_blank" rel="noopener">✨ <span data-i18n>Fairli hat Neues — ansehen</span></a>
   <button id="newsBarClose" aria-label="Schließen">×</button>
+</div>
+<div id="updBar" hidden>
+  <span class="ubmain">✨ <span data-i18n>Neue Version von Fairli</span></span>
+  <button class="ubgo" id="updReload" data-i18n>Neu laden</button>
+  <button class="ubx" id="updLater" aria-label="Schließen">×</button>
 </div>
 <div id="installBar" hidden>
   <button class="ibmain" id="installBarOpen" data-i18n>📲 Als App auf den Home-Bildschirm</button>
@@ -755,7 +772,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.110.0';
+  const APP_VERSION = '4.111.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -983,7 +1000,7 @@
     ['cName', 'placeholder'], ['cNote', 'placeholder'],
     ['cancelChore', 'aria-label'], ['closeMembers', 'aria-label'],
     ['installBarClose', 'aria-label'], ['openAdd', 'aria-label'],
-    ['newsBarClose', 'aria-label']
+    ['newsBarClose', 'aria-label'], ['updLater', 'aria-label']
   ];
   function translatePage() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -1045,7 +1062,7 @@
       <div class="grabber"></div>
       <div class="sheetbar">
         <div class="slot"></div>
-        <h2>${t('Sortierung')}</h2>
+        <h2>${t('Kachel-Sortierung')}</h2>
         <div class="slot end"><button type="button" class="x" id="closeSort" aria-label="${t('Schließen')}">×</button></div>
       </div>
       ${OPTS.map(([mode, label]) =>
@@ -1149,7 +1166,7 @@
       <button class="menuitem setrow" id="setLang" style="border-radius:12px">
         <span class="seticon">🌐</span><span class="setlabel">${t('Sprache')}</span><span class="setval">${LANGS[LANG]}</span><span class="chev">›</span></button>
       <button class="menuitem setrow" id="setSort" style="border-radius:12px">
-        <span class="seticon">↕️</span><span class="setlabel">${t('Sortierung')}</span><span class="setval">${t(SORT === 'alpha' ? 'Alphabetisch' : SORT === 'usage' ? 'Nach Nutzung' : 'Nach Erstellung')}</span><span class="chev">›</span></button>
+        <span class="seticon">↕️</span><span class="setlabel">${t('Kachel-Sortierung')}</span><span class="setval">${t(SORT === 'alpha' ? 'Alphabetisch' : SORT === 'usage' ? 'Nach Nutzung' : 'Nach Erstellung')}</span><span class="chev">›</span></button>
       ${!isAdmin() ? '' : `<button class="menuitem setrow" id="setRetention" style="border-radius:12px">
         <span class="seticon">🗓️</span><span class="setlabel">${t('Verlauf aufbewahren')}</span><span class="setval">${RETENTION ? t('{n} Tage', { n: RETENTION }) : t('Unbegrenzt')}</span><span class="chev">›</span></button>`}
       <button class="menuitem setrow" id="setSyncDiag" style="border-radius:12px">
@@ -2490,8 +2507,9 @@
   let _orderCache = null;
   let _pinned = [];                       // frisch hinzugefügte Aufgaben: vorne, neueste zuerst
   function invalidateOrder() { _orderCache = null; }
-  // Sortier-Modus (v4.33.0): 'created' (Standard — Positionen stabil, Neues
-  // hinten) | 'alpha' | 'usage' (bisheriges eingefrorenes Nutzungs-Ranking)
+  // Sortier-Modus: 'alpha' (Standard seit v4.111.0) | 'created' (Positionen
+  // stabil, Neues hinten) | 'usage' (eingefrorenes Nutzungs-Ranking, seit
+  // v4.111.0 nach der Nutzung der AKTIVEN PERSON)
   const LS_SORT = 'haushalt.sort';
   // Suche: pro Geraet, standardmaessig AUS (v4.50.0)
   const LS_SEARCH = 'haushalt.search';
@@ -2589,7 +2607,12 @@
   const LS_MAXPTS = 'haushalt.maxpts';
   let MAXPTS = (() => { try { return +localStorage.getItem(LS_MAXPTS) || 5; } catch { return 5; } })();
   function setMaxPts(v) { MAXPTS = v; try { localStorage.setItem(LS_MAXPTS, String(v)); } catch {} }
-  let SORT = (() => { try { return localStorage.getItem(LS_SORT) || 'created'; } catch { return 'created'; } })();
+  // v4.111.0 (Maintainer): Standard ist ALPHABETISCH. «Nach Erstellung» war
+  // die stabilste, aber nicht die auffindbarste Ordnung — man weiss, wie die
+  // Aufgabe heisst, nicht wann sie angelegt wurde. Geraete, die schon einmal
+  // bewusst gewaehlt haben, behalten ihre Wahl (der Schluessel wird nur beim
+  // Waehlen geschrieben); alle anderen wechseln mit diesem Update.
+  let SORT = (() => { try { return localStorage.getItem(LS_SORT) || 'alpha'; } catch { return 'alpha'; } })();
   function setSort(mode) {
     SORT = mode;
     try { localStorage.setItem(LS_SORT, mode); } catch {}
@@ -2609,33 +2632,52 @@
   }
   function pinChore(id) { _pinned = _pinned.filter(x => x !== id); _pinned.unshift(id); invalidateOrder(); }
   function choreOrder() {
+    // v4.111.0 (Maintainer + Familie): «Nach Nutzung» heisst MEINE Nutzung.
+    // Wer viel waescht, findet Waesche vorn — auch wenn im Haushalt jemand
+    // anders oefter kocht. Eine Haushalts-Rangliste ordnet die Kacheln nach
+    // dem Durchschnitt aller und damit fuer niemanden richtig.
+    // Die Haushalts-Zahl bleibt als ZWEITES Kriterium: wer neu ist oder eine
+    // Aufgabe noch nie getippt hat, bekommt trotzdem eine sinnvolle
+    // Reihenfolge statt einer alphabetischen Wand. Sie entscheidet nur da,
+    // wo die eigene Zahl gleich ist — meistens bei 0.
+    // Der Cache haengt deshalb AUCH an `me`: der Chip-Wechsel ist jetzt ein
+    // Ordnungswechsel, und ohne den Schluessel bliebe die Reihenfolge der
+    // vorigen Person stehen.
     const ids = state.chores.map(c => c.id).sort().join('|');
-    if (_orderCache && _orderCache.ids === ids) {
-      // Gleiche Aufgaben-Menge → gemerkte Reihenfolge halten, nur fehlende
-      // (theoretisch) ans Ende, gelöschte raus.
+    if (_orderCache && _orderCache.ids === ids && _orderCache.me === me) {
+      // Gleiche Aufgaben-Menge UND gleiche Person → gemerkte Reihenfolge
+      // halten, nur fehlende (theoretisch) ans Ende, gelöschte raus.
       const byId = new Map(state.chores.map(c => [c.id, c]));
       const kept = _orderCache.order.filter(id => byId.has(id)).map(id => byId.get(id));
       return applyPins(kept);
     }
-    const counts = {};
-    state.log.forEach(e => counts[e.chore_id] = (counts[e.chore_id] || 0) + 1);
+    const mine = {}, all = {};
+    state.log.forEach(e => {
+      if (e.deleted_at) return;            // Papierkorb zaehlt nicht (v4.63.0)
+      all[e.chore_id] = (all[e.chore_id] || 0) + 1;
+      if (me && e.member_id === me) mine[e.chore_id] = (mine[e.chore_id] || 0) + 1;
+    });
     const groupKey = n => (n || '').trim().split(/\s+/)[0].toLowerCase();
-    const groupUse = {}, groupName = {};
+    const groupMine = {}, groupAll = {}, groupName = {};
     state.chores.forEach(c => {
       const g = groupKey(c.name);
-      groupUse[g] = (groupUse[g] || 0) + (counts[c.id] || 0);
+      groupMine[g] = (groupMine[g] || 0) + (mine[c.id] || 0);
+      groupAll[g] = (groupAll[g] || 0) + (all[c.id] || 0);
       if (!groupName[g] || c.name.localeCompare(groupName[g], 'de', { sensitivity: 'base' }) < 0)
         groupName[g] = c.name;
     });
     const ordered = state.chores.slice().sort((a, b) => {
       const ga = groupKey(a.name), gb = groupKey(b.name);
       if (ga !== gb)
-        return (groupUse[gb] - groupUse[ga])
+        return (groupMine[gb] - groupMine[ga])
+            || (groupAll[gb] - groupAll[ga])
             || groupName[ga].localeCompare(groupName[gb], 'de', { sensitivity: 'base' });
-      return a.name.localeCompare(b.name, 'de', { sensitivity: 'base' });
+      return (mine[b.id] || 0) - (mine[a.id] || 0)
+          || (all[b.id] || 0) - (all[a.id] || 0)
+          || a.name.localeCompare(b.name, 'de', { sensitivity: 'base' });
     });
     const pinnedFirst = applyPins(ordered);
-    _orderCache = { ids, order: pinnedFirst.map(c => c.id) };
+    _orderCache = { ids, me, order: pinnedFirst.map(c => c.id) };
     return pinnedFirst;
   }
   function applyPins(list) {
@@ -3916,6 +3958,65 @@
     document.getElementById('newsBarLink').addEventListener('click', () => { mark(); bar.hidden = true; });
     document.getElementById('newsBarClose').addEventListener('click', () => { mark(); bar.hidden = true; });
   })();
+  // ---------- «Neue Version da» — mit echtem Neu-laden-Knopf (v4.111.0) ----
+  // Bisher gab es nur den News-Banner («Fairli hat Neues — ansehen»), und der
+  // fuehrt zu den Release-Notes, nicht zum Update. Wer ihn las, wusste nicht,
+  // WAS zu tun ist: die installierte App hat keinen Neu-laden-Knopf, und
+  // Android haelt sie tagelang am Leben. Vorbild ist blauewelt/earth — die
+  // AUSGELIEFERTE index.html nach ihrer Versionsnummer fragen und bei
+  // Abweichung eine Aktion anbieten.
+  // BEWUSST versionsbasiert statt ueber Service-Worker-Zustaende: `waiting`
+  // gibt es hier nie (sw.js ruft skipWaiting schon im install), und ein
+  // Zustand, den es nicht gibt, taugt nicht als Ausloeser.
+  let updOffered = null;      // bereits gemeldete Live-Version (nicht zweimal nerven)
+  let lastUpdCheck = 0;
+  async function checkForUpdate() {
+    if (document.hidden || Date.now() - lastUpdCheck < 30000) return;
+    lastUpdCheck = Date.now();
+    try {
+      // ?fresh=… umgeht Pages-Cache UND Service-Worker-Cache (sw.js laesst
+      // diesen Parameter absichtlich durch, ohne ihn abzulegen).
+      // BASE endet bereits auf '/' (z. B. '/chores/') — kein zweiter Slash.
+      const r = await fetch(BASE + 'index.html?fresh=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return;
+      const live = (/const APP_VERSION = '([\d.]+)'/.exec(await r.text()) || [])[1];
+      if (!live || live === APP_VERSION || live === updOffered) return;
+      updOffered = live;
+      showUpdateBar();
+    } catch {}      // offline: still bleiben, der naechste Anlauf kommt
+  }
+  function showUpdateBar() {
+    const bar = document.getElementById('updBar');
+    if (!bar || !bar.hidden) return;
+    // EINE Botschaft, nicht zwei: der News-Banner tritt zurueck — «es gibt
+    // Neues» und «lade neu, um es zu bekommen» nebeneinander waere Laerm,
+    // und nur eines davon ist gerade zu tun.
+    const news = document.getElementById('newsBar');
+    if (news) news.hidden = true;
+    bar.hidden = false;
+    const btn = document.getElementById('updReload');
+    btn.onclick = async () => {
+      // location.reload() ALLEIN reicht nicht: der Service Worker beantwortet
+      // Navigationen cache-first mit der ALTEN Shell — die Seite kaeme
+      // unveraendert zurueck und der Banner sofort wieder, was wie ein
+      // kaputter Knopf aussieht. Also erst den SW erneuern (sw.js ruft
+      // skipWaiting selbst, der controllerchange-Handler laedt dann neu);
+      // das reload bleibt als Netz fuer Geraete ohne SW.
+      btn.disabled = true;
+      btn.textContent = t('Lädt …');
+      try {
+        const reg = navigator.serviceWorker
+          && await navigator.serviceWorker.getRegistration(BASE);
+        if (reg) await reg.update();
+      } catch {}
+      setTimeout(() => location.reload(), 1500);
+    };
+    document.getElementById('updLater').onclick = () => { bar.hidden = true; };
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });
+  setInterval(checkForUpdate, 900000);      // 15 min, nur waehrend sichtbar
+  setTimeout(checkForUpdate, 10000);        // nicht in den Boot draengeln
+
   const _shareTop = document.getElementById('openShareTop');
   if (_shareTop) _shareTop.addEventListener('click', () => openShareSheet(''));
   document.getElementById('openMembers').addEventListener('click', () => {

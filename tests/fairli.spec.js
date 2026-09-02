@@ -2278,28 +2278,121 @@ test.describe('Fairli', () => {
     expect(await page.locator('.chore .cname', { hasText: 'Müll rausbringen' }).count()).toBe(1);
   });
 
-  test('Sortierung: Standard «Nach Erstellung» stabil, Umschalten auf Alphabetisch ordnet um und persistiert (v4.33.0)', async ({ context, page }) => {
+  test('Kachel-Sortierung: Standard ist ALPHABETISCH; «Nach Erstellung» stellt die Erstellreihenfolge her und persistiert (v4.33.0/v4.111.0)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);
-    // Neue Kachel: kein Pin — landet in «Nach Erstellung» HINTEN, mit Flash
     await page.locator('.chip', { hasText: 'Mira' }).click();
     await page.locator('#openAdd').click();
     await page.locator('#cName').fill('Aaa Ganz Neu');
     await page.locator('#saveChore').click();
-    const cids = await page.locator('.chore[data-cid] .cname').allTextContents();
-    expect(cids[cids.length - 1]).toBe('Aaa Ganz Neu');   // trotz Alpha-erstem Namen: hinten (Erstellzeit!)
-    // Einstellungen zeigen den Standard
-    await page.locator('#openSettings').click();
-    await expect(page.locator('#setSort .setval')).toHaveText('Nach Erstellung');
-    await page.locator('#setSort').click();
-    await page.locator('#sortSheet [data-sort="alpha"]').click();
-    // Alphabetische Reihenfolge der Kachelnamen prüfen
+    // v4.111.0: Standard alphabetisch — der neue Name steht VORN, weil er
+    // vorn hingehört, nicht weil er neu ist.
     const names = await page.locator('.chore[data-cid] .cname').allTextContents();
-    const sorted = names.slice().sort((a, b) => a.localeCompare(b, 'de', { sensitivity: 'base' }));
-    expect(names).toEqual(sorted);
+    expect(names).toEqual(names.slice().sort((a, b) => a.localeCompare(b, 'de', { sensitivity: 'base' })));
+    expect(names[0]).toBe('Aaa Ganz Neu');
+    // Einstellungen: neue Beschriftung, neuer Standard
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setSort .setlabel')).toHaveText('Kachel-Sortierung');
+    await expect(page.locator('#setSort .setval')).toHaveText('Alphabetisch');
+    await page.locator('#setSort').click();
+    await expect(page.locator('#sortSheet h2')).toHaveText('Kachel-Sortierung');
+    await page.locator('#sortSheet [data-sort="created"]').click();
+    // Nach Erstellung: die frische Kachel landet HINTEN, trotz Alpha-erstem Namen
+    const byAge = await page.locator('.chore[data-cid] .cname').allTextContents();
+    expect(byAge[byAge.length - 1]).toBe('Aaa Ganz Neu');
     await page.reload();
     await page.locator('#openSettings').click();
-    await expect(page.locator('#setSort .setval')).toHaveText('Alphabetisch');   // persistiert
+    await expect(page.locator('#setSort .setval')).toHaveText('Nach Erstellung');   // persistiert
+  });
+
+  test('«Nach Nutzung» ist MEINE Nutzung: derselbe Haushalt ordnet für zwei Personen verschieden (v4.111.0)', async ({ context, page }) => {
+    // Familie: Mira wäscht, Timon kocht. Beide sehen ihre eigene Aufgabe vorn —
+    // eine Haushalts-Rangliste wäre für beide der Durchschnitt und damit für
+    // niemanden richtig (Maintainer + Familie, 23.08.2026).
+    const CH = [
+      { id: 'c-wash', name: 'Wäsche machen', points: 2, family_id: FAM },
+      { id: 'c-cook', name: 'Kochen', points: 2, family_id: FAM },
+      { id: 'c-idle', name: 'Zzz Nie getippt', points: 1, family_id: FAM },
+    ];
+    const log = [];
+    for (let i = 0; i < 5; i++) log.push({ id: 'lw' + i, chore_id: 'c-wash', chore_name: 'Wäsche machen',
+      member_id: 'm-mira', member_name: 'Mira', points: 2, done_at: weekSafeAgo((i + 2) * 3600e3), family_id: FAM });
+    for (let i = 0; i < 5; i++) log.push({ id: 'lc' + i, chore_id: 'c-cook', chore_name: 'Kochen',
+      member_id: 'm-chris', member_name: 'Timon', points: 2, done_at: weekSafeAgo((i + 2) * 3600e3), family_id: FAM });
+    await mockBackend(context, { logRows: () => log });
+    // NACH mockBackend registrieren: die zuletzt gesetzte Route gewinnt.
+    await context.route(`${SB}/rest/v1/chores*`, r =>
+      r.request().method() === 'GET'
+        ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(CH) })
+        : r.fallback());
+    await page.addInitScript(() => { try { localStorage.setItem('haushalt.sort', 'usage'); } catch {} });
+    await page.goto(`${BASE}/f/${FAM}`);
+    const first = () => page.locator('.chore[data-cid] .cname').first();
+    await page.locator('.chip', { hasText: 'Mira' }).click();
+    await expect(first()).toHaveText('Wäsche machen');
+    // Chip-Wechsel ist ein ORDNUNGS-Wechsel: der Reihenfolge-Cache hängt an `me`
+    await page.locator('.chip', { hasText: 'Timon' }).click();
+    await expect(first()).toHaveText('Kochen');
+    // Nie getippte Aufgaben bleiben hinten — für beide
+    const names = await page.locator('.chore[data-cid] .cname').allTextContents();
+    expect(names[names.length - 1]).toBe('Zzz Nie getippt');
+  });
+
+  // ---- Update-Banner mit Neu-laden-Knopf (v4.111.0) ----------------------
+  // Serviert die Versions-Sonde eine ANDERE APP_VERSION als die laufende App.
+  async function serveNewerBuild(context, version = '9.9.9') {
+    await context.route(
+      url => url.pathname.endsWith('/chores/index.html') && url.searchParams.has('fresh'),
+      r => r.fulfill({ status: 200, contentType: 'text/html',
+        body: `<script>const APP_VERSION = '${version}';</script>` }));
+  }
+
+  test('Update-Banner (v4.111.0): läuft eine neuere Version live, gibt es einen Knopf — nicht nur einen Hinweis', async ({ context, page }) => {
+    await mockBackend(context);
+    await serveNewerBuild(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('#updBar')).toBeHidden();       // erst nach der Sonde
+    // Die Sonde läuft beim Zurückkommen in den Vordergrund
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect(page.locator('#updBar')).toBeVisible();
+    await expect(page.locator('#updBar .ubmain')).toContainText('Neue Version');
+    // Der Knopf ist ein KNOPF, kein Link auf die Release-Notes
+    const btn = page.locator('#updReload');
+    await expect(btn).toHaveText('Neu laden');
+    // … und er lädt wirklich neu (Marke überlebt das nicht)
+    await page.evaluate(() => { window.__preReload = 1; });
+    await btn.click();
+    await expect(btn).toHaveText('Lädt …');
+    await expect.poll(() => page.evaluate(() => window.__preReload), { timeout: 9000 }).toBeUndefined();
+  });
+
+  test('Update-Banner: steht die gleiche Version live, bleibt er weg (v4.111.0)', async ({ context, page }) => {
+    await mockBackend(context);
+    const live = /APP_VERSION = '([^']+)'/.exec(
+      readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'index.html'), 'utf8'))[1];
+    await serveNewerBuild(context, live);      // identisch → kein Anlass
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await page.waitForTimeout(600);
+    await expect(page.locator('#updBar')).toBeHidden();
+  });
+
+  test('Update-Banner: «×» legt ihn weg, ohne die App zu behelligen (v4.111.0)', async ({ context, page }) => {
+    await mockBackend(context);
+    await serveNewerBuild(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect(page.locator('#updBar')).toBeVisible();
+    await page.locator('#updLater').click();
+    await expect(page.locator('#updBar')).toBeHidden();
+    // Kein zweites Angebot für dieselbe Version — der Banner nervt nicht nach
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await page.waitForTimeout(600);
+    await expect(page.locator('#updBar')).toBeHidden();
+    // Und die App ist normal bedienbar geblieben
+    await page.locator('.chip', { hasText: 'Mira' }).click();
+    await page.locator('.chore', { hasText: 'Müll rausbringen' }).click();
+    await expect(page.locator('#toast')).toContainText('+2 für Mira');
   });
 
   test('Punkte-Ansicht rendert: Balken, Krone, Zähler — nie wieder t-Shadowing (v4.32.0)', async ({ context, page }) => {

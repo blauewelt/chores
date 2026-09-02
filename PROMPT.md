@@ -127,6 +127,21 @@ umgebucht (`bumpTotals` -1/+1); `logged_by` bleibt, weil es protokolliert,
 wer erfasst hat — nicht, fuer wen.
 
 
+## Kachel-Sortierung (v4.111.0)
+
+Drei Modi pro Geraet: **alphabetisch (Standard)**, nach Erstellung, nach
+Nutzung. «Nach Nutzung» zaehlt die Eintraege der AKTIVEN PERSON; die
+Haushalts-Zahl entscheidet nur bei Gleichstand. Der Chip-Wechsel aendert
+darum die Reihenfolge.
+
+## Update-Banner (v4.111.0)
+
+Die App fragt die ausgelieferte index.html nach ihrer APP_VERSION (beim
+Zurueckkommen, alle 15 min, 10 s nach dem Start). Weicht sie ab, erscheint
+«Neue Version von Fairli» mit einem Knopf «Neu laden», der zuerst den
+Service Worker erneuert und dann neu laedt.
+
+
 ## Verbuchungs-Toast (v4.108.0)
 
 Nach jedem Verbuchen zeigt der Toast «+N für X» zusaetzlich den Knopf

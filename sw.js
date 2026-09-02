@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v214';   // v4.110.0 Kachelkunst: 503 nicht mehr cachen, Erzeugung gestaffelt
+const CACHE = 'haushalt-v215';   // v4.111.0 Kachel-Sortierung (alpha default, Nutzung pro Person) + Update-Banner
 const SHELL = [
   './',
   './index.html',
@@ -52,6 +52,11 @@ self.addEventListener('activate', e => {
 // App-Shell: cache-first; alles andere (z. B. Google Fonts): network-first mit Cache-Fallback
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // Versions-Sonde der App (v4.110.0): index.html?fresh=<ts> fragt, welche
+  // Version LIVE steht. Die darf der SW weder beantworten noch ablegen —
+  // sonst sammelt der Cache eine Zeile pro Abfrage, und die Antwort waere
+  // ausgerechnet die alte Fassung, die die Sonde entlarven soll.
+  if (new URL(e.request.url).searchParams.has('fresh')) return;
   // PERSOENLICHES MANIFEST (v4.56.0): gleiche Herkunft statt data:-URL, damit
   // Chrome auf Android eine echte App (WebAPK) bauen kann. Der Service Worker
   // erzeugt es aus den Parametern — auf einem statischen Host waere das sonst

@@ -1,3 +1,59 @@
+## 2026-09-02 — v4.111.0 (SW haushalt-v215): tile sorting is now personal, alphabetical by default — and «there's a new version» finally has a button
+
+### Sorting (maintainer, with the family)
+
+- **«Nach Nutzung» means MY usage.** «If I do a lot of washing, washing should
+  be first.» The ranking was built from the whole household's log, which orders
+  the tiles by the average of everyone and is therefore right for nobody. Now
+  `choreOrder()` counts the ACTIVE person's entries first; the household count
+  survives as the SECOND criterion, so a new person — or an untouched chore —
+  still gets a sensible order instead of an alphabetical wall. It only decides
+  where the personal count ties, which is usually at zero.
+- The order cache therefore keys on `me` as well: switching the «Ich bin» chip
+  is now an ORDER change, and without the key the previous person's order would
+  simply stay on screen.
+- Tombstoned rows no longer count towards usage (`deleted_at`, v4.63.0) — a
+  chore deleted from the history was still voting on tile position.
+- **The default is alphabetical.** «Nach Erstellung» was the most stable order
+  but not the most findable one: you know what a chore is called, not when it
+  was created. Devices that ever chose keep their choice (the key is only
+  written on choosing); everyone else moves with this update.
+- **«Sortierung» → «Kachel-Sortierung»** in the settings and in the sheet
+  title. «Sorting» alone did not say sorting of WHAT — the app also sorts
+  people and history.
+
+### «Neue Version von Fairli» with a Reload button
+
+- Maintainer: the app said it had news, and then people did not know what to
+  do — reload how, exactly? The news banner leads to the release notes, not to
+  the update, and an installed PWA has no reload button of its own while
+  Android keeps it alive for days.
+- Modelled on `blauewelt/earth`, which solves the same problem without a
+  service worker: ask the SERVED index.html for its version number and offer a
+  one-tap action when it differs from ours. Checked on returning to the
+  foreground, every 15 min while visible, and once 10 s after boot.
+- **Deliberately version-based, not service-worker-state-based.** `waiting`
+  never happens here — `sw.js` calls `skipWaiting()` inside install — and a
+  state that does not occur is no trigger.
+- **The button does more than `location.reload()`.** The SW answers navigations
+  cache-first with the OLD shell, so a plain reload would return the same page
+  and bring the banner straight back — a button that visibly does nothing. It
+  updates the registration first (skipWaiting → controllerchange → the existing
+  reload handler), with a 1.5 s `location.reload()` as the net for devices
+  without a SW.
+- `sw.js` now passes `?fresh=…` straight through, uncached: otherwise the probe
+  would collect one cache entry per call AND be answered with exactly the old
+  version it exists to expose.
+- The news banner steps aside while the update banner is up — «there is news»
+  and «reload to get it» side by side is noise, and only one of them is an
+  action. «×» dismisses for this version and does not nag again.
+- i18n: «Kachel-Sortierung» replaces «Sortierung»; three new keys («Neue
+  Version von Fairli», «Neu laden», «Lädt …») across all 19 files.
+- Five tests: alphabetical default + «Nach Erstellung» still puts a fresh tile
+  last; the same household ordering differently for two people and untouched
+  chores staying last; banner appears on a newer live version and really
+  reloads; stays away when versions match; «×» dismisses without nagging or
+  breaking the app.
 ## 2026-08-28 — v4.110.0 (SW haushalt-v214): a single 503 could brick one tile's art forever
 
 - Reported as «one tile is stuck generating the art» with a screenshot of the
