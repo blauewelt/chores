@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v215';   // v4.111.0 Kachel-Sortierung (alpha default, Nutzung pro Person) + Update-Banner
+const CACHE = 'haushalt-v216';   // v4.112.0 Verbuchungs-Toast nennt den Stand des Eintrags
 const SHELL = [
   './',
   './index.html',

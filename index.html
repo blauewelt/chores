@@ -772,7 +772,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.111.0';
+  const APP_VERSION = '4.112.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -3444,7 +3444,7 @@
       bumpTotals(m.id, choreLike.points, 0);   // Punkte wachsen, Zeilenzahl nicht (v4.65.0-Lücke)
       upsertRemote('log', [recent]);   // v4.47.5: Punkte-Zusammenlegung pull-geschützt
       try { if (navigator.vibrate) navigator.vibrate(12); } catch {}
-      toastLogged(recent, choreLike.points, m.name);
+      toastLogged(recent, m.name);   // recent.points = Stand NACH dem Aufaddieren
       return true;
     }
     const entry = {
@@ -3476,7 +3476,7 @@
     state.log.unshift(entry);
     bumpTotals(entry.member_id, entry.points || 0, 1);   // Gesamt sofort mitziehen (v4.65.0)
     try { if (navigator.vibrate) navigator.vibrate(12); } catch {}
-    toastLogged(entry, choreLike.points, m.name);
+    toastLogged(entry, m.name);
     createRemote('log', entry);
     return true;
   }
@@ -3492,8 +3492,20 @@
   // §11: «Was verspricht die UI — und haelt sie es?»). Der Aktions-Toast
   // steht ausserdem 5 s statt 1.8 s — die Sekunde, in der man den Fehler
   // bemerkt, ist genau diese.
-  function toastLogged(entry, points, name) {
-    const msg = t('+{p} für {name}', { p: points, name });
+  // v4.112.0: Der Toast nennt den STAND des Eintrags, nicht den Zuwachs des
+  // einen Tipps. Wer eine Kachel mehrmals hintereinander tippt, liest jetzt
+  // «+1», «+2», «+3» — und nicht dreimal «+1». Anlass (Maintainer 28.08.):
+  // «zeig plus zwei, wenn ich nochmal tippe». Das war ausserdem eine echte
+  // Unstimmigkeit, nicht nur ein Wunsch: die 1-h-Zusammenlegung (v4.35.0)
+  // addiert auf DIESELBE Verlaufs-Zeile, die Zeile las also laengst «6»,
+  // waehrend der Toast stur «+2» meldete. Toast und Verlauf sagen ab jetzt
+  // dasselbe — und «Ändern» oeffnet genau die Zeile mit genau der Zahl.
+  // BEWUSST der Eintrags-Stand und kein eigener Tipp-Zaehler: das Fenster,
+  // in dem «hintereinander» gilt, ist bereits definiert (1 h, dieselbe
+  // Person, dieselbe Sache). Ein zweites, kuerzeres Fenster nur fuer den
+  // Toast haette zwei Wahrheiten ueber denselben Vorgang erzeugt.
+  function toastLogged(entry, name) {
+    const msg = t('+{p} für {name}', { p: entry.points, name });
     // Verteidigung in der Tiefe: sollte der Eintrag ausnahmsweise nicht
     // editierbar sein, gibt es keinen Knopf statt eines Knopfes ins Leere.
     if (!canEditLog(entry)) { toast(msg); return; }

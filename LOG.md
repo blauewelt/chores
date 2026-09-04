@@ -1,3 +1,24 @@
+## 2026-08-28 — v4.112.0 (SW haushalt-v216): the booking toast counts along
+
+- Maintainer request: tapping a tile several times in a row should read «+1»,
+  «+2», «+3» — not «+1» three times over.
+- It was also a real inconsistency, not only a preference. The 1 h merge
+  (v4.35.0) adds the points onto the SAME history row, so the row already read
+  «+6» while the toast kept reporting the increment of the single tap. Toast
+  and Verlauf now say the same thing, and «Ändern» opens exactly the row that
+  carries exactly that number.
+- `toastLogged` therefore names the entry's **standing total** (`entry.points`)
+  instead of the per-tap increment; the `points` argument is gone, since both
+  call sites had to pass the same thing anyway. A 2-point tile reads +2, +4, +6.
+- **Deliberately the entry's total, not a separate tap counter.** The window in
+  which «in a row» holds is already defined — same person, same thing, within
+  an hour. A second, shorter window just for the toast would have produced two
+  truths about one event. The visible consequence: a tap 50 minutes after an
+  earlier one shows the combined total, because that IS what the row now holds.
+- Two tests (v4.112.0): a 1-point tile tapped three times must read +1/+2/+3
+  and leave ONE history row at +3; a 2-point tile must read +2/+4. Both were
+  verified red against the old increment-toast before being made green.
+
 ## 2026-09-02 — v4.111.0 (SW haushalt-v215): tile sorting is now personal, alphabetical by default — and «there's a new version» finally has a button
 
 ### Sorting (maintainer, with the family)

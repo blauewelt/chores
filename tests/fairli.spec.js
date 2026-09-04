@@ -636,6 +636,44 @@ test.describe('Fairli', () => {
     await expect(page.locator('.entry')).toHaveCount(2);             // plus die alte Zeile
   });
 
+  test('Toast zählt mit: mehrmals hintereinander getippt heisst +1, +2, +3 — nicht dreimal +1 (v4.112.0)', async ({ context, page }) => {
+    // Wunsch des Maintainers (28.08.) und zugleich eine echte Unstimmigkeit:
+    // die 1-h-Zusammenlegung addiert auf DIESELBE Verlaufs-Zeile, die Zeile
+    // las also laengst «+3», waehrend der Toast stur den Zuwachs des einen
+    // Tipps meldete. Toast und Verlauf muessen dasselbe sagen.
+    await mockBackend(context, { logRows: () => [] });
+    await context.route(`${SB}/rest/v1/chores*`, route => {
+      if (route.request().method() !== 'GET') return route.fulfill({ status: 204, body: '' });
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify([{ id: 'c-eins', name: 'Tisch decken', points: 1, note: null, family_id: FAM }]) });
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.locator('.chip', { hasText: 'Mira' }).click();
+    const tile = page.locator('.chore', { hasText: 'Tisch decken' });
+    const toast = page.locator('#toast');
+    for (const erwartet of ['+1 für Mira', '+2 für Mira', '+3 für Mira']) {
+      await tile.click();
+      await expect(toast).toContainText(erwartet);
+      await page.waitForTimeout(320);          // Geister-Klick-Filter (250 ms)
+    }
+    // Der Verlauf sagt dasselbe wie der letzte Toast — EINE Zeile, +3
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('.entry')).toHaveCount(1);
+    await expect(page.locator('.entry .pts').first()).toHaveText('+3');
+  });
+
+  test('Toast zählt in den Schritten der Kachel: eine 2-Punkte-Kachel meldet +2, +4 (v4.112.0)', async ({ context, page }) => {
+    await mockBackend(context, { logRows: () => [] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.locator('.chip', { hasText: 'Mira' }).click();
+    const tile = page.locator('.chore', { hasText: 'Müll rausbringen' });   // 2 Punkte
+    await tile.click();
+    await expect(page.locator('#toast')).toContainText('+2 für Mira');
+    await page.waitForTimeout(320);
+    await tile.click();
+    await expect(page.locator('#toast')).toContainText('+4 für Mira');
+  });
+
   test('Folge-Tipp zählt NIE auf einen Grabstein: nach Löschen erzeugt der nächste Tipp eine NEUE sichtbare Zeile (v4.101.0, Live-Bug 29.07.)', async ({ context, page }) => {
     // Live-Hergang: Eintrag gelöscht (Grabstein bleibt in state.log), Kachel
     // erneut getippt → die 1-h-Zusammenlegung fand den GELOESCHTEN Eintrag,
