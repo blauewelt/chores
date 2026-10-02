@@ -1,3 +1,97 @@
+## 2026-10-02 — v4.113.0 (SW haushalt-v217, BETA only): brand trial «Variante 3» — the face logo, a monochrome redesign and line-art tiles, behind families.beta
+
+- Maintainer request: try the brand draft («fairli-brand-entwurf», Variante 3)
+  in the real app, for his own household only. The draft is about SHAPES, not
+  final colours: a rounded navy square with two thick white rings (the two
+  «o» of a percent sign) and a round-capped smile (the percent slash, bent) —
+  «spielerisch, simpel, sympathisch».
+- **Gate = `families.beta`**, free since v4.77.0. Mechanism: ONE class on
+  `<html>` (`brand3`), ONE delimited CSS block of scoped overrides at the end
+  of the main stylesheet, ONE helper (`brandOn()` reads the class; `__brand()`
+  in the head sets class + cache + favicon/touch icon + theme-color). No
+  scattered `if (BETA)`. Without the class not a single rule of the block
+  applies — every pre-existing test runs untouched and green, and the flag-off
+  screenshots match v4.112.0.
+- **No flicker (§7).** BETA is only known after the first sync, so the answer
+  is cached per family in `haushalt.brand3:<fam>` and the very first head
+  script sets the class before first paint. The pull writes the cache in BOTH
+  directions — switching the flag off reverts on the next sync. `brandOn()` is
+  part of the pull's UI fingerprint: without it, a device booting with the
+  cached class and then learning «beta off» saw no data change, skipped the
+  redraw and kept the new art URLs on screen (caught by the «Beta wieder aus»
+  test, red before the fix). Entry/first-run screens (no family) stay old.
+- **Logo** hand-written SVG (stroked rings r 12.5 / width 9.6, smile as a
+  cubic with round caps, width 14.6, traced from page 5 and overlaid on it).
+  It lives ONCE, as a data URI in a CSS custom property, and replaces
+  `#headLogo` and the splash `<img>` via `content:` — the same nodes, so the
+  splash→header FLIP still measures them, and it is right in the first paint.
+  New files `icon-b3-192/512/512-maskable.png` (rendered from the SVG; the
+  maskable one keeps the face inside the 80 % safe circle) back the dynamic
+  favicon + apple-touch-icon swap. **`manifest.json` and the existing
+  `icon-*.png` are deliberately UNCHANGED**: the installed home-screen icon is
+  global to all households and stays as is for the trial (a test guards that
+  the manifest does not mention the new files). On iOS, «Zum Home-Bildschirm»
+  done FROM a beta household now picks up the face via apple-touch-icon.
+- **Design system** derived from the logo: near-black navy ground #12151F,
+  surfaces #1B1D31 (the icon's tile), white ink #F5F5F1, greys for muted text
+  and hairlines; no blue, no gold. Selection is INVERSION (white pill, dark
+  ink) — tabs, period, date chips, «Ich bin» chip, the ✓ option in list sheets
+  (those used accent-coloured text, which would have been white on white).
+  Person colours survive as identity only, drawn as RINGS (chip, points card,
+  filter pill, people list) and the history band. Tiles echo the icon's
+  rounded square; the points pill is a thick white ring-pill; sliders get a
+  ring thumb; bars are round-capped white strokes. Bricolage weights calmer
+  (700/650), no gradient title, no all-caps labels. Empty states show the
+  face. The booking toast winks (page 7) — CSS only, a `logged` class set by
+  `toastLogged()`, animation off under reduced motion. Red only for delete /
+  error. Skipped: an animated splash loader (needs inline SVG in the boot
+  markup; not worth the first-paint risk for a trial).
+- **Tile art** under the flag: prompt `thick white outline drawing: <subject>,
+  object illustration on pure black, rounded line caps, uniform stroke weight,
+  centered, minimal, monochrome white on black, no text, no letters, no words,
+  no captions, no labels` (subject still `c.art || name + note`, model/seed
+  unchanged). Chosen from a comparison sheet of 6 phrasings × 8 subjects
+  (02.10.): every phrasing containing «icon»/«pictogram» made flux typeset the
+  German chore name into the picture («Rasen mehen»); only this framing stayed
+  text-free. In the tile the art is blended with `mix-blend-mode:screen` (black
+  vanishes into the navy) plus `grayscale(1) contrast(1.8)` (flux sometimes
+  paints the «black» dark grey, which would show as a lighter box). Review
+  round (02.10.): at FULL white, no opacity dimming, in the lower ~58 % of the
+  tile, right-aligned and scaled up so the subject sits right of the +N pill,
+  never under it; the history bleed keeps its navy scrim only on the left
+  40 % where the text runs, so the motif itself stays white.
+- A second comparison round tried to push from white-FILLED silhouettes to
+  hollow outlines (3 phrasings × the same 8 subjects: «line drawing with very
+  thick white strokes … unfilled outlines only, hollow shapes, black
+  interior, no solid white areas»; the current prompt + «unfilled outlines
+  only, hollow shapes»; «hollow outline drawing … every shape unfilled»).
+  None was clearly better: two of them returned EMPTY black frames for 2–4 of
+  8 subjects, one inverted to a white background, and fills persisted. The
+  prompt above stays. Known limit, unchanged from
+  before: German verb phrases still mislead the model («Staubsaugen» → a
+  fish); English Bild-Ideen fix it.
+- The URL changes, so every tile of a beta household regenerates once — through
+  the unchanged v4.110.0 path (cors artFetch, ART_PAR=3, retry/backoff). All
+  art URLs (tile, history bleed, warmArt, edit preview) come from the one
+  `choreArt()`, which reads `brandOn()`, so they always agree.
+- Six tests (both engines): flag off = old logo/token/prompt/favicon/theme and
+  no cache; flag on = class, SVG logo, new token, new prompt, swapped favicon +
+  touch icon + theme-color, icon files served, manifest untouched; second boot
+  with the sync delayed 2.5 s has the class, the splash logo and the new prompt
+  at DOMContentLoaded; flag off again reverts and clears the cache; entry
+  screen stays old even with a cache entry; one render test across every view
+  under the flag (board, toast wink, points, history ± bleed, entry sheet, time
+  picker, add sheet, settings, people). Red against v4.112.0 (the two off-state
+  guards pass there by design); negative control: removing the head-script
+  cache read turns the second-boot test red.
+- How a household gets the flag: there is no UI for it — the maintainer sets
+  `families.beta = true` for his family row in the Supabase SQL editor (the
+  column comes from `20260726010000_beta_goal.sql`; RLS lets clients update
+  families only with the write key, and the client never writes `beta`).
+- APP_VERSION 4.113.0, SW cache haushalt-v217 (new icons precached). No
+  user-facing strings, no i18n keys, no release notes — invisible to every
+  other household.
+
 ## 2026-08-28 — v4.112.0 (SW haushalt-v216): the booking toast counts along
 
 - Maintainer request: tapping a tile several times in a row should read «+1»,

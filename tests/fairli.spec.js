@@ -5025,3 +5025,148 @@ test.describe('Service Worker (echt)', () => {
     await expect(page.locator('#newsBar')).toBeHidden();
   });
 });
+
+// ---------- v4.113.0: Marken-Test «Variante 3» hinter families.beta ----------
+// Zusage nach aussen: ohne Beta ist die App pixelgleich mit v4.112.0 (alle
+// Bestandstests laufen unveraendert). Mit Beta: html.brand3, neues Logo,
+// monochromes Design, neuer Kachelbild-Prompt — schon im ERSTEN Paint des
+// naechsten Starts (Cache pro Familie), und wieder weg, sobald der Abgleich
+// beta=false liefert.
+test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
+  const B3 = { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] };
+  const tileSrc = page => page.locator('.chore[data-cid="c-1"] img.art').getAttribute('src');
+  const accent = page => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
+
+  test('Ohne Beta: altes Logo, alte Farben, alter Kachel-Prompt, kein Cache-Eintrag', async ({ context, page }) => {
+    await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await page.waitForTimeout(500);
+    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+    expect(await accent(page)).toBe('#84B2FF');
+    await expect(page.locator('#headLogo')).toHaveAttribute('src', /icon-192\.png/);
+    expect(await page.locator('#headLogo').evaluate(el => getComputedStyle(el).content)).not.toContain('svg');
+    expect(decodeURIComponent(await tileSrc(page))).toContain('minimalist flat vector illustration');
+    expect(decodeURIComponent(await tileSrc(page))).not.toContain('outline drawing');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /icon-192\.png/);
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#141A17');
+    expect(await page.evaluate(f => localStorage.getItem('haushalt.brand3:' + f), FAM)).toBeNull();
+  });
+
+  test('Mit Beta: Klasse, Logo im Kopf, neue Farben, neuer Prompt, Favicon + Statusleiste', async ({ context, page }) => {
+    await mockBackend(context, B3);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    expect(await accent(page)).toBe('#F5F5F1');
+    expect(await page.locator('#headLogo').evaluate(el => getComputedStyle(el).content)).toContain('svg');
+    await expect.poll(async () => decodeURIComponent(await tileSrc(page))).toContain('thick white outline drawing: Müll rausbringen, nur Restmüll');
+    expect(decodeURIComponent(await tileSrc(page))).not.toContain('minimalist flat vector');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /icon-b3-192\.png/);
+    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', /icon-b3-192\.png/);
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#12151F');
+    expect(await page.evaluate(f => localStorage.getItem('haushalt.brand3:' + f), FAM)).toBe('1');
+    // Die neuen Icon-Dateien gibt es wirklich (sonst zeigt das Favicon ins Leere)
+    for (const f of ['icon-b3-192.png', 'icon-b3-512.png', 'icon-b3-512-maskable.png']) {
+      const r = await page.request.get(`${BASE}/${f}`);
+      expect(r.status(), f).toBe(200);
+      expect(r.headers()['content-type']).toContain('image/png');
+    }
+    // manifest.json bleibt global unveraendert (Homescreen-Symbol aller Haushalte)
+    const man = await (await page.request.get(`${BASE}/manifest.json`)).json();
+    expect(JSON.stringify(man.icons)).not.toContain('icon-b3');
+  });
+
+  test('Zweiter Start: brand3 steht VOR dem Abgleich (erster Paint) — Splash und Kachel schon im neuen Bild', async ({ context, page }) => {
+    await mockBackend(context, B3);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    // Abgleich beim zweiten Start kuenstlich verzoegern: was jetzt steht, kam aus dem Cache
+    await context.route(`${SB}/rest/v1/families**`, async r => { await new Promise(res => setTimeout(res, 2500)); await r.fallback(); });
+    await context.addInitScript(() => {
+      document.addEventListener('DOMContentLoaded', () => {
+        const sp = document.querySelector('#splash img');
+        window.__b3probe = {
+          cls: document.documentElement.classList.contains('brand3'),
+          splash: sp ? getComputedStyle(sp).content : '',
+          theme: document.querySelector('meta[name="theme-color"]').content,
+        };
+      });
+    });
+    await page.reload();
+    const probe = await page.waitForFunction(() => window.__b3probe).then(h => h.jsonValue());
+    expect(probe.cls).toBe(true);
+    expect(probe.splash).toContain('svg');
+    expect(probe.theme).toBe('#12151F');
+    expect(decodeURIComponent(await tileSrc(page))).toContain('outline drawing');
+  });
+
+  test('Beta wieder aus: der naechste Abgleich stellt das alte Bild her und raeumt den Cache', async ({ context, page }) => {
+    let beta = true;
+    await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta }] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    beta = false;
+    await page.reload();
+    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+    expect(await page.evaluate(f => localStorage.getItem('haushalt.brand3:' + f), FAM)).toBeNull();
+    await expect.poll(async () => decodeURIComponent(await tileSrc(page))).toContain('minimalist flat vector illustration');
+    expect(await accent(page)).toBe('#84B2FF');
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#141A17');
+  });
+
+  test('Einstieg ohne Familie bleibt beim alten Bild, auch mit Cache-Eintrag', async ({ context, page }) => {
+    await blockExternal(context);
+    await context.addInitScript(f => localStorage.setItem('haushalt.brand3:' + f, '1'), FAM);
+    await page.goto(`${BASE}/`);
+    await expect(page.locator('#newFam')).toBeVisible();
+    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+  });
+
+  test('Render unter brand3: Aufgaben, Punkte, Verlauf (mit/ohne Kachelbilder), Sheets, Zeit-Picker, Toast', async ({ context, page }) => {
+    await mockBackend(context, B3);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    const bg = loc => loc.evaluate(el => getComputedStyle(el).backgroundColor);
+    // Aufgaben: Kachel sichtbar, gewaehlter Tab invertiert (weiss)
+    await expect(page.locator('.chore[data-cid="c-1"] .cname')).toHaveText('Müll rausbringen');
+    expect(await bg(page.locator('.tab[aria-selected="true"]'))).toBe('rgb(245, 245, 241)');
+    expect(await bg(page.locator('.chore[data-cid="c-1"]'))).toBe('rgb(27, 29, 49)');
+    // Toast nach dem Verbuchen: zwinkert
+    await page.locator('.chip[data-mid="m-chris"]').click();
+    await page.locator('.chore[data-cid="c-1"]').click();
+    await expect(page.locator('#toast')).toContainText('+2 für Timon');
+    await expect(page.locator('#toast')).toHaveClass(/logged/);
+    expect(await page.locator('#toast').evaluate(el => getComputedStyle(el, '::before').backgroundImage)).toContain('svg');
+    // Punkte
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('.score')).toHaveCount(2);
+    await expect(page.locator('.score .bar i').first()).toBeVisible();
+    // Verlauf ohne und mit Kachelbildern (Anschnitt) — dieselbe Prompt-Funktion
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('.entry.vrow').first()).toBeVisible();
+    await page.evaluate(() => localStorage.setItem('haushalt.logart', '1'));
+    await page.reload();
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    const eart = page.locator('.entry.vrow.bleed .eartb img').first();
+    await expect(eart).toHaveCount(1);
+    expect(decodeURIComponent(await eart.getAttribute('src'))).toContain('outline drawing');
+    // Eintrag bearbeiten + Zeit-Picker
+    await page.locator('.entry[data-editlog]').first().click();
+    await expect(page.locator('#logSheet')).toBeVisible();
+    await page.locator('#lTime').click();
+    await expect(page.locator('#timeSheet')).toBeVisible();
+    await expect(page.locator('#timeSheet .day.sel')).toHaveCount(1);
+    await page.keyboard.press('Escape'); await page.keyboard.press('Escape');
+    // Aufgabe anlegen, Einstellungen, Personen
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await page.locator('#openAdd').click();
+    await expect(page.locator('#choreSheet')).toBeVisible();
+    expect(await bg(page.locator('#saveChore'))).toBe('rgb(245, 245, 241)');
+    await page.locator('#cancelChore').click();
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#settingsSheet')).toBeVisible();
+    await page.locator('#closeSettings').click();
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await expect(page.locator('#memberSheet .prow')).toHaveCount(2);
+  });
+});

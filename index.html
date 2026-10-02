@@ -25,6 +25,21 @@
       } catch (e) {}
     }
     if (isUser) document.documentElement.classList.add('userlink');
+    // v4.113.0 Marken-Test «Variante 3» (families.beta): den Schalter kennt
+    // erst der erste Abgleich — der Boot liest darum die zuletzt GESEHENE
+    // Antwort pro Familie und setzt html.brand3 VOR dem ersten Paint (§7).
+    // Ohne Familie (Einstieg) bleibt es beim alten Bild.
+    try {
+      var bm = decodeURIComponent(s).match(/f\/([a-z0-9-]{4,64})/i), bf = bm && bm[1].toLowerCase();
+      if (!bf) {
+        var ks = ['haushalt.route.family', 'haushalt.route.user', 'haushalt.route'];
+        for (var i = 0; i < ks.length && !bf; i++) {
+          var rr = JSON.parse(localStorage.getItem(ks[i]));
+          if (rr && rr.family) bf = rr.family;
+        }
+      }
+      if (bf && localStorage.getItem('haushalt.brand3:' + bf) === '1') document.documentElement.classList.add('brand3');
+    } catch (e) {}
   })();
 </script>
 <style>
@@ -36,6 +51,22 @@
 <meta name="theme-color" content="#141A17">
 <link rel="apple-touch-icon" href="/chores/icon-192.png?v=48">
 <link rel="icon" href="/chores/icon-192.png?v=48" sizes="192x192" type="image/png">
+<script>
+  // v4.113.0: EIN Schalter fuer den Marken-Test — Klasse, Cache pro Familie,
+  // Favicon/Touch-Icon und Statusleistenfarbe. Das Homescreen-Symbol
+  // (manifest.json + icon-*.png) bleibt bewusst global und unveraendert.
+  window.__brand = function (on, fam) {
+    on = !!on;
+    var de = document.documentElement;
+    de.classList.toggle('brand3', on);
+    if (fam) { try { if (on) localStorage.setItem('haushalt.brand3:' + fam, '1'); else localStorage.removeItem('haushalt.brand3:' + fam); } catch (e) {} }
+    var set = function (sel, attr, v) { var el = document.querySelector(sel); if (el && el.getAttribute(attr) !== v) el.setAttribute(attr, v); };
+    set('link[rel="icon"]', 'href', on ? '/chores/icon-b3-192.png?v=1' : '/chores/icon-192.png?v=48');
+    set('link[rel="apple-touch-icon"]', 'href', on ? '/chores/icon-b3-192.png?v=1' : '/chores/icon-192.png?v=48');
+    set('meta[name="theme-color"]', 'content', on ? '#12151F' : '#141A17');
+  };
+  if (document.documentElement.classList.contains('brand3')) window.__brand(true);
+</script>
 <style>
   /* GDPR (v4.85.0): Schrift selbst gehostet — kein IP-Transfer mehr an Google
      Fonts. Variable Font, deckt 500/700/800 aus einer Datei. */
@@ -588,6 +619,181 @@
      statt wie ein Knopf. max-content nimmt die einzeilige Wunschbreite,
      85vw deckelt lange Saetze weiterhin. */
   #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  /* ====================================================================
+     MARKEN-TEST «VARIANTE 3» (v4.113.0) — gilt NUR unter html.brand3
+     (families.beta, siehe __brand im Kopf). Ohne Klasse greift keine
+     einzige Regel dieses Blocks: alle anderen Haushalte sehen v4.112.0
+     pixelgleich. Alles hier leitet sich aus dem Logo ab: weisse, dicke,
+     rund abgeschlossene Striche und Ringe auf fast schwarzem Navy.
+     Monochrom — Auswahl = INVERSION (weiss gefuellt, dunkle Schrift),
+     nicht Farbe. Rot nur fuer Zerstoerendes/Fehler. Personenfarben bleiben
+     als Identitaet (Ringe/Bandleisten), sind aber keine Chrome-Farbe.
+     ==================================================================== */
+  html.brand3{
+    --bg:#12151F; --card:#1B1D31; --raise:#24273F; --well:#151826; --ink:#F5F5F1; --muted:#A3A6BC;
+    --line:#31354F; --accent:#F5F5F1; --accent-press:#D3D4DE; --gold:#F5F5F1; --red:#FF8A80;
+    --onink:#12151F; --radius:20px; --shadow:none; --artframe:rgba(245,245,241,.3);
+    --b3-logo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%231B1D31'/%3E%3Cg fill='none' stroke='%23fff' stroke-linecap='round'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6'/%3E%3Ccircle cx='70.7' cy='31.2' r='12.5' stroke-width='9.6'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6'/%3E%3C/g%3E%3C/svg%3E");
+    --b3-wink:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%2312151F'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6'/%3E%3Cpath d='M58.2 33.4A12.5 12.5 0 0 1 83.2 32.2' stroke-width='9.6'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
+  }
+  /* Logo: dieselben <img>-Knoten (Splash-FLIP misst sie), nur der Inhalt
+     wechselt — rein per CSS, darum schon im ersten Paint richtig. */
+  html.brand3 #headLogo, html.brand3 #splash img{content:var(--b3-logo)}
+  html.brand3 #headLogo{border-radius:24%}
+  /* Kopf: ruhige, grosse, geometrische Schrift — kein Verlauf mehr */
+  html.brand3 header h1{background:none; color:var(--ink); -webkit-text-fill-color:currentColor;
+    font-weight:700; letter-spacing:-.035em}
+  html.brand3 .iconbtn{background:transparent; border:2px solid var(--line); font-weight:600}
+  html.brand3 .syncdot{background:#4A4E6A} html.brand3 .syncdot.on{background:var(--ink)}
+  /* Personen: Auswahl = Inversion; der Punkt wird zum RING in Personenfarbe */
+  html.brand3 .iam .lbl{text-transform:none; letter-spacing:0; font-size:14px; font-weight:600}
+  html.brand3 .chip{background:transparent; border:2px solid var(--line); padding:5px 14px 5px 6px}
+  html.brand3 .chip[aria-pressed="true"]{background:var(--ink); color:var(--onink); border-color:var(--ink); box-shadow:none}
+  html.brand3 .chip .dot, html.brand3 .filterpill .dot, html.brand3 .score .dot{
+    background:transparent !important; border:4px solid; border-color:var(--pc, currentColor);
+    color:var(--ink); font-size:0}
+  html.brand3 #searchBar{background:var(--well); border:2px solid var(--line)}
+  /* Tabs, Zeitraum, Datums-Chips: Pillen, gewaehlt = weiss */
+  html.brand3 .tab, html.brand3 .period button, html.brand3 .dpick .dchips button{
+    background:transparent; border:2px solid var(--line); color:var(--muted)}
+  html.brand3 .tab[aria-selected="true"], html.brand3 .period button[aria-pressed="true"],
+  html.brand3 .dpick .dchips button[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:var(--onink)}
+  html.brand3 .tab:focus-visible, html.brand3 button:focus-visible, html.brand3 input:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+  /* Kacheln: das abgerundete Quadrat des Icons. Navy statt Aufgabenfarbe,
+     die weisse Strichzeichnung legt sich per screen ins Navy (Schwarz
+     verschwindet), dezent rechts unten, damit Name/Notiz lesbar bleiben. */
+  html.brand3 .chore{background:var(--card); border:2px solid var(--line); border-radius:26px;
+    box-shadow:none; padding:18px 16px 16px}
+  html.brand3 .chore:active{transform:scale(.98); box-shadow:none; background:var(--raise)}
+  /* Review 02.10. (Koordination): VOLLES Weiss — kein Abdunkeln; grau darf nur
+     aus dem Blend kommen. Gross: untere ~58 % der Kachel, rechtsbuendig; das
+     Motiv sitzt mittig in dieser Box und bleibt so rechts der +N-Pille. */
+  html.brand3 .chore .art{mix-blend-mode:screen; object-fit:contain; object-position:50% 100%;
+    width:62%; height:58%; inset:auto 0 0 auto; filter:grayscale(1) contrast(1.8);
+    transform:scale(1.35); transform-origin:55% 80%}
+  html.brand3 .chore .art.ok{opacity:1}
+  html.brand3 .chore::after{background:none}
+  html.brand3 .chore .cname{font-family:var(--display); font-weight:650; font-size:17.5px; letter-spacing:-.02em;
+    -webkit-hyphens:auto; hyphens:auto;
+    text-shadow:0 0 6px var(--card), 0 0 2px var(--card)}
+  html.brand3 .chore .cnote{color:var(--muted); text-shadow:0 0 4px var(--card)}
+  html.brand3 .chore .pts{color:var(--ink); background:var(--card); border:3px solid var(--ink);
+    font-weight:700; font-size:18px; padding:2px 13px; line-height:1.25}
+  html.brand3 .chore .edit{color:var(--muted)}
+  html.brand3 .chore.oneoff{background:transparent; border:2px dashed var(--line)}
+  html.brand3 .chore.oneoff .pts{border-style:dashed; border-color:var(--muted); color:var(--muted); background:transparent}
+  html.brand3 .chore.flash{animation:b3flash .5s ease}
+  @keyframes b3flash{0%{background:var(--ink)} 100%{background:var(--card)}}
+  html.brand3 .chore:has(img.art:not(.ok))::after{background:linear-gradient(100deg,transparent 30%,rgba(245,245,241,.06) 50%,transparent 70%);
+    background-size:200% 100%}
+  /* Edit-Vorschau = dieselbe Kachel */
+  html.brand3 .artprevtile:active{transform:none; background:var(--card)}
+  /* Punkte: Zahlen gross und ruhig; Balken als dicke, rund abgeschlossene
+     weisse Striche (der Schrägstrich des %), Spur im Navy. */
+  html.brand3 .score{background:var(--card); border:2px solid var(--line); border-radius:22px; padding:16px}
+  html.brand3 .score .dot{width:30px; height:30px; flex-basis:30px}
+  html.brand3 .score .num{font-weight:700; letter-spacing:-.03em}
+  html.brand3 .score .num.hit{color:var(--ink)}
+  html.brand3 .score .bar{height:12px; background:var(--well); box-shadow:inset 0 0 0 1px var(--line)}
+  html.brand3 .score .bar i{background:var(--ink) !important}
+  html.brand3 .score .bar .over{background-color:var(--ink) !important;
+    background-image:repeating-linear-gradient(115deg, rgba(18,21,31,.55) 0 4px, rgba(18,21,31,0) 4px 9px)}
+  html.brand3 .score .bar .tick{width:4px; margin-left:-2px; border-radius:2px; box-shadow:0 0 0 3px var(--card)}
+  html.brand3 .scoresep{font-size:13px; letter-spacing:0}
+  html.brand3 .wkchart i{background:var(--ink); opacity:.35; border-radius:999px 999px 3px 3px}
+  html.brand3 .wkchart i.cur{opacity:1}
+  html.brand3 .wkgoal{border-top-color:var(--ink)}
+  /* Verlauf */
+  html.brand3 .dayhead{text-transform:none; letter-spacing:-.01em; font-family:var(--display); font-weight:600;
+    font-size:16px; color:var(--ink); margin:22px 4px 10px}
+  html.brand3 .entry{background:var(--card); border:2px solid var(--line); border-radius:18px}
+  html.brand3 button.entry{background:var(--card)}
+  html.brand3 button.entry:active{background:var(--raise)}
+  html.brand3 div.entry{border:2px solid transparent}
+  html.brand3 .entry .pts{color:var(--ink); font-weight:700}
+  html.brand3 .entry.vrow .pband{width:6px; left:8px; top:14px; bottom:14px; border-radius:999px}
+  html.brand3 .entry.vrow{padding-left:24px}
+  html.brand3 .entry .mchip{color:var(--onink)}
+  html.brand3 .logsum{font-size:14px}
+  html.brand3 .filterpill{background:transparent; border:2px solid var(--line)}
+  /* Anschnitt-Modus: Strichzeichnung per screen, Schleier im Navy */
+  /* grayscale+contrast: flux malt das «Schwarz» manchmal dunkelgrau — das
+     wuerde mit screen als helles Rechteck sichtbar; so wird es echtes Schwarz. */
+  html.brand3 .entry .eart{mix-blend-mode:screen; filter:grayscale(1) contrast(1.8)}
+  html.brand3 .entry .eart.ok{opacity:1}
+  /* Schleier nur noch links, wo der Text ueber das Motiv laeuft — der Rest
+     des Motivs bleibt reinweiss (Review 02.10.). */
+  html.brand3 .entry .eartb::after{background:linear-gradient(90deg, rgba(27,29,49,.75) 0, rgba(27,29,49,0) 40%)}
+  html.brand3 .entry.vrow.bleed .what{text-shadow:0 0 6px var(--card), 0 0 2px var(--card)}
+  /* Leerer Zustand: das Gesicht lädt zum ersten Tipp ein */
+  html.brand3 .empty::before{content:''; display:block; width:64px; height:64px; margin:0 auto 18px;
+    border-radius:24%; background:var(--b3-logo) center/cover}
+  html.brand3 .empty b{font-weight:650; font-size:20px; letter-spacing:-.02em}
+  /* FAB: weisser Kreis, dunkles Plus */
+  html.brand3 .fab{background:var(--ink); color:var(--onink); box-shadow:0 0 0 6px var(--bg); font-weight:300; font-size:34px}
+  html.brand3 .fab:active{background:var(--accent-press)}
+  /* Sheets */
+  html.brand3 dialog{background:var(--card); border-radius:28px 28px 0 0}
+  html.brand3 dialog::backdrop{background:rgba(8,9,15,.7)}
+  html.brand3 .grabber{width:44px; height:5px; background:#4A4E6A}
+  html.brand3 .sheet h2, html.brand3 .sheetbar h2{font-weight:650; letter-spacing:-.02em}
+  html.brand3 .field label{font-size:14px}
+  html.brand3 .field input[type=text], html.brand3 .field input[type=number], html.brand3 .field input[type=url],
+  html.brand3 .field input[type=password], html.brand3 .mrow input[type=text], html.brand3 .mrow input[type=number],
+  html.brand3 .timefield, html.brand3 .dpick .trow select{background:var(--well); border:2px solid var(--line); border-radius:14px}
+  html.brand3 .btn{background:transparent; border:2px solid var(--line); border-radius:999px; font-weight:700}
+  html.brand3 .btn.primary{background:var(--ink); border-color:var(--ink); color:var(--onink)}
+  html.brand3 .btn.primary:active{background:var(--accent-press)}
+  html.brand3 .btn.ghost{background:transparent; border-color:var(--line); color:var(--ink)}
+  html.brand3 .btn.danger{border-color:var(--red); color:var(--red)}
+  html.brand3 .ptsrow output{color:var(--ink); font-weight:700}
+  /* Regler: Spur weiss gefuellt, Daumen = dicker weisser RING */
+  html.brand3 input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(to right, var(--ink) var(--fill,20%), var(--well) var(--fill,20%));
+    box-shadow:inset 0 0 0 1px var(--line)}
+  html.brand3 input[type=range]::-webkit-slider-thumb{background:var(--card); border:6px solid var(--ink); box-shadow:none}
+  html.brand3 input[type=range]::-moz-range-track{background:var(--well)}
+  html.brand3 input[type=range]::-moz-range-progress{background:var(--ink)}
+  html.brand3 input[type=range]::-moz-range-thumb{background:var(--card); border:6px solid var(--ink)}
+  html.brand3 .menupop{background:var(--raise); border:2px solid var(--line); border-radius:20px; box-shadow:0 12px 30px rgba(0,0,0,.5)}
+  html.brand3 .menuitem{border-radius:14px}
+  html.brand3 .menuitem:active{background:rgba(245,245,241,.08)}
+  /* Gewaehlte Option in Listen-Sheets (Sprache, Sortierung, Max. Punkte):
+     bisher Akzentschrift — hier Inversion, sonst waere Weiss auf Weiss. */
+  html.brand3 .menuitem[style*="var(--accent)"]{background:var(--ink); color:var(--onink) !important}
+  html.brand3 .prow{background:var(--well); border:2px solid var(--line); border-radius:16px}
+  html.brand3 .prow .swatch{background:transparent !important; border:5px solid; border-color:var(--pc, var(--muted)); border-radius:50%}
+  html.brand3 .addmember{border:2px dashed var(--line); border-radius:999px}
+  html.brand3 .dpick .mnav button{background:transparent; border:2px solid var(--line); border-radius:999px}
+  html.brand3 .dpick .day{border-radius:999px}
+  /* WebKit malt <select> sonst nativ hell (Screenshot iPhone 02.10.) */
+  html.brand3 .dpick .trow select{-webkit-appearance:none; appearance:none; color:var(--ink); padding-right:34px;
+    background:var(--well) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%23A3A6BC' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") right 12px center/12px 8px no-repeat}
+  html.brand3 .x, html.brand3 .barbtn{border-radius:999px}
+  html.brand3 .dpick .day.today{box-shadow:inset 0 0 0 2px var(--line)}
+  html.brand3 .dpick .day.sel{background:var(--ink); color:var(--onink)}
+  /* Einladen/Installieren */
+  html.brand3 .shbtn{background:var(--ink); color:var(--onink)}
+  html.brand3 .savenote{background:transparent; border:2px solid var(--ink)}
+  html.brand3 .shapp{background:var(--well)}
+  html.brand3 .qrtog{background:transparent; border:2px solid var(--line)}
+  html.brand3 .qrtog.on{background:var(--ink); color:var(--onink); border-color:var(--ink)}
+  html.brand3 .install{background:var(--well); border:2px solid var(--line); border-radius:20px}
+  html.brand3 .pbadge{background:var(--raise); border:1px solid var(--line)}
+  /* Banner */
+  html.brand3 #newsBar, html.brand3 #updBar{background:var(--card); border:2px solid var(--line); border-radius:999px}
+  html.brand3 #newsBar a{color:var(--ink)}
+  html.brand3 #updBar{border-color:var(--ink)}
+  html.brand3 #updBar .ubgo{background:var(--ink); color:var(--onink)}
+  html.brand3 #installBar{background:var(--card); border:2px solid var(--line); border-radius:999px}
+  /* Toast: weisse Pille, die Aktion als dunkle, unterstrichene Schrift;
+     nach dem Verbuchen zwinkert das Gesicht (Seite 7 des Entwurfs). */
+  html.brand3 #toast{background:var(--ink); color:var(--onink)}
+  html.brand3 #toast .tact{color:var(--onink); text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:3px}
+  html.brand3 #toast.logged::before{content:''; display:inline-block; width:22px; height:22px; margin:-3px 8px -5px -6px;
+    background:var(--b3-wink) center/contain no-repeat}
+  html.brand3 #toast.logged.show::before{animation:b3wink .5s cubic-bezier(.3,1.6,.5,1)}
+  @keyframes b3wink{from{transform:rotate(-18deg) scale(.6)}}
   @media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important} }
 </style>
 </head>
@@ -772,7 +978,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.112.0';
+  const APP_VERSION = '4.113.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1595,15 +1801,29 @@
     };
     im.src = url;
   }
+  // v4.113.0 Marken-Test: EIN Helfer statt verstreuter BETA-Abfragen. Er
+  // liest die Klasse, die Boot (Cache) und Abgleich (families.beta) setzen —
+  // so stimmen Kachel, Verlauf, Vorwaermen und Edit-Vorschau immer ueberein.
+  const brandOn = () => document.documentElement.classList.contains('brand3');
+  const ART_STYLE = ', minimalist flat vector illustration, single subject, centered, ' +
+    'dark moody background, vibrant accent color, no text, no words';
+  // Variante 3: weisse, runde Striche auf Schwarz — wie das Logo. Das Schwarz
+  // verschwindet in der Kachel per mix-blend-mode:screen im Navy.
+  // Vergleichsblatt 02.10.2026 (6 Varianten x 8 Motive, LOG v4.113.0): JEDE
+  // Formulierung mit «icon»/«pictogram»/«line icon» liess flux die deutschen
+  // Aufgabennamen als Schrift ins Bild setzen («Rasen mehen»). Nur die
+  // «outline drawing: <Motiv>, object illustration»-Rahmung blieb schriftfrei.
+  const ART_PRE_B3 = 'thick white outline drawing: ';
+  const ART_STYLE_B3 = ', object illustration on pure black, rounded line caps, uniform stroke weight, ' +
+    'centered, minimal, monochrome white on black, no text, no letters, no words, no captions, no labels';
   const choreArt = c => 'https://gen.pollinations.ai/image/' +
     // Bild-Idee (c.art, v4.53.0 im Sheet sichtbar) schlaegt alles: sie ist der
     // ganze Prompt. Sonst Name + Notiz (v4.46.2). Hintergrund: kurze deutsche
     // Verbphrasen («Rasen mähen») geben dem Modell wenig Bildhaftes —
     // eine englische Beschreibung trifft deutlich besser (Vergleichsblatt
     // 19.07.2026, vom Maintainer beurteilt).
-    encodeURIComponent((c.art || [c.name, c.note].filter(Boolean).join(', ')) +
-      ', minimalist flat vector illustration, single subject, centered, ' +
-      'dark moody background, vibrant accent color, no text, no words') +
+    encodeURIComponent((brandOn() ? ART_PRE_B3 : '') + (c.art || [c.name, c.note].filter(Boolean).join(', ')) +
+      (brandOn() ? ART_STYLE_B3 : ART_STYLE)) +
     '?model=flux&width=440&height=300&key=pk_s3BNDnxTvRHULT3z&seed=' + choreSeed(c.id);
   const palette = ['#2F6B4F','#B8860B','#3A6EA5','#B23A2E','#7A4FA0','#3E8E7E'];
 
@@ -1639,6 +1859,7 @@
   });
 
   if (!FAMILY) {
+    window.__brand(false);    // v4.113.0: Einstieg ohne Familie = altes Bild
     const last = loadRoute();
     const goto = (fam, slug) => {
       saveRoute({ family: fam, userSlug: slug || null });
@@ -1968,7 +2189,7 @@
     // Bringt der Server nichts Neues, wird NICHT neu gezeichnet — vorher
     // ersetzte jeder 20-s-Pull die Kachelliste, und ein Tipp im selben
     // Moment konnte auf die frisch getauschte Kachel fallen.
-    const uiFingerprint = () => JSON.stringify([state.members, state.chores, state.log, state.famName, state.totalsAll, RETENTION, me]);
+    const uiFingerprint = () => JSON.stringify([state.members, state.chores, state.log, state.famName, state.totalsAll, RETENTION, me, brandOn()]);
     const fpBefore = uiFingerprint();
     try {
       // Egress-Diaet (v4.36.0): schlanke Spalten; Log per DELTA, wenn ein
@@ -2032,6 +2253,11 @@
       {
         RETENTION = (fam[0] && fam[0].retention_days) || null;   // v4.52.0
         BETA = !!(fam[0] && fam[0].beta);                         // v4.67.0
+        // v4.113.0: families.beta = Marken-Test Variante 3. Cache + Klasse in
+        // BEIDE Richtungen — wer den Schalter verliert, sieht beim naechsten
+        // Abgleich wieder das alte Bild. BETA steht im Fingerabdruck, damit
+        // der Wechsel neu zeichnet (andere Kachelbild-URLs).
+        window.__brand(BETA, FAMILY);
         // v4.73.0 (Beta): Das Familien-GEHEIMNIS steht in der Adressleiste —
         // link = auth, also ein Zugang auf Dauer-Anzeige. Es leckt nicht nur
         // per Screenshot (Maintainer-Befund Android: der Teilen-Fluss haengt
@@ -2714,7 +2940,7 @@
     const locked = !isAdmin() && shown.length < 2;
     iam.innerHTML = '<span class="lbl">Ich bin</span>' + shown.map(m =>
       `<button class="chip" data-mid="${m.id}" aria-pressed="${me === m.id}" ${locked ? 'style="cursor:default"' : ''}>
-        <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>${esc(m.name)}
+        <span class="dot" style="background:${esc(m.color)}; --pc:${esc(m.color)}">${esc(initial(m.name))}</span>${esc(m.name)}
       </button>`).join('') + (USER_SLUG && !shown.length ? '<span class="lbl">…</span>' : '');
     // Mehrzeilig? Dann jede Zeile zentrieren — der Umbruch wirkt gewollt,
     // nicht uebergelaufen. Einzeilig bleibt linksbuendig wie immer.
@@ -2833,7 +3059,7 @@
           <div class="score" data-mid="${m.id}" role="button" tabindex="0"
                aria-label="${esc(t('Verlauf von {name} anzeigen', { name: m.name }))}">
             <div class="top">
-              <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>
+              <span class="dot" style="background:${esc(m.color)}; --pc:${esc(m.color)}">${esc(initial(m.name))}</span>
               <span class="name">${esc(m.name)}${i === 0 && tot[m.id].pts > 0 ? ' 👑' : ''}</span>
               ${g
                 // Mit Ziel entscheidet die ZIELERREICHUNG die Rangliste — sie ALLEIN
@@ -2878,7 +3104,7 @@
       let lastDay = null;
       const fm = LOGFILTER ? memberById(LOGFILTER) : null;
       const pill = fm ? `<button class="filterpill" id="clearLogFilter" aria-label="${esc(t('Filter entfernen'))}">
-          <span class="dot" style="background:${esc(fm.color)}">${esc(initial(fm.name))}</span>${esc(t(LOGWEEK ? 'Nur {name} · diese Woche' : 'Nur {name}', { name: fm.name }))}<span class="fx">×</span>
+          <span class="dot" style="background:${esc(fm.color)}; --pc:${esc(fm.color)}">${esc(initial(fm.name))}</span>${esc(t(LOGWEEK ? 'Nur {name} · diese Woche' : 'Nur {name}', { name: fm.name }))}<span class="fx">×</span>
         </button>` : '';
       // Summen-Banner (v4.66.0): summiert die ANGEZEIGTEN Eintraege (Person,
       // Woche, Suche, ohne Grabsteine). Fehlen aeltere Zeilen (300er-Fenster,
@@ -2980,6 +3206,7 @@
   function toast(msg, action) {
     const t = document.getElementById('toast');
     t.textContent = '';
+    t.classList.remove('logged');
     t.append(msg);
     if (action) {
       const b = document.createElement('button');
@@ -3272,7 +3499,7 @@
         <label>${t('Person')}</label>
         <div class="chiprow" id="lWho">${opts.map(m =>
           `<button type="button" class="chip" data-mid="${esc(m.id)}" aria-pressed="${m.id === first.member_id}">
-            <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>${esc(m.name)}
+            <span class="dot" style="background:${esc(m.color)}; --pc:${esc(m.color)}">${esc(initial(m.name))}</span>${esc(m.name)}
           </button>`).join('')}</div>
       </div>`;
       })()}
@@ -3508,8 +3735,10 @@
     const msg = t('+{p} für {name}', { p: entry.points, name });
     // Verteidigung in der Tiefe: sollte der Eintrag ausnahmsweise nicht
     // editierbar sein, gibt es keinen Knopf statt eines Knopfes ins Leere.
-    if (!canEditLog(entry)) { toast(msg); return; }
-    toast(msg, { label: t('Ändern'), fn: () => openLoggedEntry(entry.id) });
+    if (!canEditLog(entry)) toast(msg);
+    else toast(msg, { label: t('Ändern'), fn: () => openLoggedEntry(entry.id) });
+    // v4.113.0: Marker fuer das Zwinkern (nur unter html.brand3 sichtbar, reines CSS)
+    document.getElementById('toast').classList.add('logged');
   }
   function openLoggedEntry(id) {
     // In den Verlauf wechseln: die Korrektur passiert im Kontext, und nach
@@ -3806,7 +4035,7 @@
     const wrap = document.getElementById('memberRows');
     wrap.innerHTML = state.members.map(m =>
       `<button type="button" class="prow" data-pid="${m.id}" aria-label="${esc(m.name || t('Person'))}">
-        <span class="swatch" style="background:${esc(m.color)}"></span>
+        <span class="swatch" style="background:${esc(m.color)}; --pc:${esc(m.color)}"></span>
         <span class="pname">${esc(m.name) || '—'}</span>
         ${m.admin ? `<span class="assistbadge" title="${t('Admin')}">🔑</span>` : ''}
         ${m.assisted ? `<span class="assistbadge" title="${t('Ohne eigenes Telefon')}">📵</span>` : ''}
@@ -4290,7 +4519,7 @@
       const qr = qrDataUrl(url);
       return `<div class="shrow">
         <div class="shhead">
-          <span class="dot" style="background:${esc(m.color)}">${esc(initial(m.name))}</span>
+          <span class="dot" style="background:${esc(m.color)}; --pc:${esc(m.color)}">${esc(initial(m.name))}</span>
           <span class="shname">${esc(m.name || '—')}${m.admin ? ' <span title="' + t('Admin') + '">🔑</span>' : ''}${own && m.id === own.id ? ' <span style="font-weight:400;color:var(--muted);font-size:12.5px">(du)</span>' : ''}</span>
           ${qr ? `<button class="qrtog" aria-label="${t('QR-Code anzeigen')}">QR</button>` : ''}
           <button class="shbtn" data-share="${esc(url)}" data-name="${esc(m.name || '')}">${t('Einladen')}</button>

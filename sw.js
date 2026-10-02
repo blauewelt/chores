@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v216';   // v4.112.0 Verbuchungs-Toast nennt den Stand des Eintrags
+const CACHE = 'haushalt-v217';   // v4.113.0 Marken-Test Variante 3 (families.beta)
 const SHELL = [
   './',
   './index.html',
@@ -28,7 +28,10 @@ const SHELL = [
   './i18n/zh.json',
   './icon-192.png',
   './icon-512.png',
-  './icon-512-maskable.png'
+  './icon-512-maskable.png',
+  './icon-b3-192.png',        // v4.113.0 Marken-Test: Favicon/Touch-Icon nur fuer Beta-Haushalte
+  './icon-b3-512.png',
+  './icon-b3-512-maskable.png'
 ];
 
 self.addEventListener('install', e => {

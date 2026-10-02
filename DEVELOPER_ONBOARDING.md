@@ -424,12 +424,39 @@ crown, counter. **NEVER name a variable `t`** (it shadows i18n; live bug
 Punkte tab empty).
 
 **`families.beta` is NOT the weekly goal any more (v4.74.0).** The goal
-shipped to every household; the flag now gates exactly ONE thing, the
-v4.73.0 address-bar stripping, until the device checks in §12 pass.
-The settings row is labelled «Beta: Adressleiste» accordingly, and a
-test guards that switching it off does NOT take the goal away — that
-coupling would have silently removed a shipped feature from any
-household that left the beta.
+shipped to every household; a test guards that switching beta off does
+NOT take the goal away — that coupling would have silently removed a
+shipped feature from any household that left the beta. (v4.74.0–v4.76.0
+it gated the address-bar stripping; un-gated in v4.77.0.)
+
+**Since v4.113.0 `families.beta` gates the brand trial «Variante 3»** and
+nothing else. How a household gets it: no UI — set `families.beta = true`
+on its row in the Supabase SQL editor (column from
+`20260726010000_beta_goal.sql`; the client only READS it, `families?select=*`).
+Mechanism, keep it this way when the trial grows:
+- ONE class `html.brand3`, ONE CSS block at the end of the main stylesheet
+  (all rules prefixed `html.brand3`), ONE helper `brandOn()` (reads the
+  class). Do not add `if (BETA)` elsewhere; ask `brandOn()`.
+- First paint: the head script reads `haushalt.brand3:<fam>` and sets the
+  class before anything renders; `window.__brand(on, fam)` (defined right
+  after the icon links) sets/clears class + cache + favicon/apple-touch-icon
+  + theme-color and is called from pull() after BETA is read, in BOTH
+  directions. `brandOn()` is in pull's UI fingerprint — otherwise a device
+  that booted with the cached class and learns «beta off» skips the redraw.
+- No family (entry screen) → `__brand(false)`; first-run families have no
+  cache and beta NULL → old look.
+- Logo = data-URI SVG in `--b3-logo`, swapped onto `#headLogo` and the
+  splash `<img>` via CSS `content:` (same nodes → the FLIP still works).
+  manifest.json and `icon-*.png` are untouched on purpose (home-screen icon
+  is global); `icon-b3-*.png` exist only for the favicon/touch-icon swap.
+- Colours: tokens are redefined on `html.brand3`; the old hard-coded
+  colours (#161D19 wells, #252F29 tracks, rgba blues/golds, the gradient
+  title) are overridden in the same block. New UI must use the variables,
+  or add its override there. Selection = inversion (white fill,
+  `--onink` text), never a hue; person colours only as rings (`--pc` on
+  `.dot`/`.swatch`).
+- Un-gating later = delete the class check, not a mass write of beta=true
+  (same reasoning as v4.74.0).
 
 **Goal card (v4.70.0/.1) — ONE lead figure, and that is the
 ranking criterion.** With a weekly goal the app ranks by GOAL
@@ -727,6 +754,19 @@ server-side fetches need the Referer header (e.g. via a
 Playwright request context); rate limits → backoff between requests.
 Error path: `artRetry` with 3 backoff attempts (Pollinations throttles
 on mass repaints).
+
+**Brand trial (v4.113.0, only under `html.brand3`):** `choreArt()` uses
+`'thick white outline drawing: ' + subject + ', object illustration on pure
+black, rounded line caps, uniform stroke weight, centered, minimal,
+monochrome white on black, no text, no letters, no words, no captions, no
+labels'` (subject, model and seed unchanged). Phrasings with «icon» or
+«pictogram» made flux write the German chore name INTO the image — see the
+v4.113.0 LOG entry for the comparison. The tile blends the art with
+`mix-blend-mode:screen` + `grayscale(1) contrast(1.8)` so the black ground
+disappears into the navy — at full white (never dim it with opacity), lower
+~58 % of the tile, right of the +N pill. «Unfilled/hollow outline» wording
+was tried and rejected (empty frames, inverted backgrounds — LOG v4.113.0). Every art URL still comes from `choreArt()` alone
+(tile, history bleed, warmArt, edit preview) — it reads `brandOn()`.
 
 **App icon (since v4.36.3):** four rounded color tiles on a dark
 background — like the chore board. icon-192/512/512-maskable (maskable:
@@ -1141,7 +1181,8 @@ the plausible-sounding fix (DNS flag, UI automation) did not.
 - ~~Un-gate the address-bar stripping~~ DONE in v4.77.0: the row is
   visible for every household (not on iOS — a switch that cannot work is
   a broken promise), consent is the only gate, default off. families.beta
-  gates nothing any more and is free for the next experiment. The
+  gates nothing any more and is free for the next experiment (since
+  v4.113.0 it is taken by the brand trial «Variante 3», §8). The
   localStorage-loss trade-off stands, made visible in the confirmation:
   with the secret stripped, a device that loses storage has no fallback
   in bookmark or history — entry screen + QR are the rescue path.
