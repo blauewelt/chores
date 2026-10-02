@@ -1,4 +1,11 @@
-const CACHE = 'haushalt-v217';   // v4.113.0 Marken-Test Variante 3 (families.beta)
+const CACHE = 'haushalt-v218';   // v4.113.1 Kachelkunst: Polaritaet (brand3) + gedrosselte Erzeugung
+// v4.113.1: Kachelkunst hat einen EIGENEN, versionsfesten Cache. Bis v4.113.0
+// lag sie im versionierten CACHE — und den loescht `activate` bei JEDEM Deploy.
+// Folge: nach jedem Deploy forderte jedes Geraet jedes Kachelbild neu an,
+// also genau die Massen-Erzeugung, die Pollinations drosselt.
+const ART_CACHE = 'haushalt-art-1';
+const ART_MAX = 400;               // Eintraege; aelteste fliegen zuerst
+const isArtUrl = u => { const h = new URL(u).hostname; return h === 'gen.pollinations.ai' || h === 'image.pollinations.ai'; };
 const SHELL = [
   './',
   './index.html',
@@ -45,11 +52,28 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    // Kachelkunst aus alten haushalt-Caches in den versionsfesten Kunst-Cache
+    // UMZIEHEN, bevor sie geloescht werden — sonst loest genau dieser Deploy
+    // noch einmal die Neu-Erzeugung aller Bilder aus. Nur echte Bilder (ok +
+    // image/*); alles andere stirbt mit dem alten Cache (v4.110.0-Regel).
+    try {
+      const art = await caches.open(ART_CACHE);
+      for (const k of keys) {
+        if (k === CACHE || k === ART_CACHE || !k.startsWith('haushalt-v')) continue;
+        const old = await caches.open(k);
+        for (const req of await old.keys()) {
+          if (!isArtUrl(req.url) || await art.match(req)) continue;
+          const r = await old.match(req);
+          if (r && r.ok && (r.headers.get('content-type') || '').startsWith('image/')) await art.put(req, r);
+        }
+      }
+      await artTrim(art);
+    } catch {}
+    await Promise.all(keys.filter(k => k !== CACHE && k !== ART_CACHE).map(k => caches.delete(k)));
+    await self.clients.claim();
+  })());
 });
 
 // App-Shell: cache-first; alles andere (z. B. Google Fonts): network-first mit Cache-Fallback
@@ -152,45 +176,131 @@ self.addEventListener('fetch', e => {
 // UNGECACHT durch, sodass artRetry/warmArt tatsaechlich wieder ans Netz
 // kommen. Der Preis ist Geduld: ein volles Raster fuellt sich gestaffelt —
 // die Kacheln blenden ohnehin einzeln ein.
-const ART_PAR = 3;
-let artRunning = 0;
-const artQueue = [];
-function artSlot() {
-  if (artRunning < ART_PAR) { artRunning++; return Promise.resolve(); }
-  return new Promise(r => artQueue.push(r));
+// ---------- Drosselung (v4.113.1) ----------
+// Befund (Maintainer, 02.10.2026): der neue brand3-Prompt liess ALLE Kacheln
+// eines Haushalts zugleich neu erzeugen, und Pollinations antwortete mit 429.
+// Was v4.110.0 tat und was fehlte:
+//  - ART_PAR = 3 gleichzeitig, aber KEIN Abstand: jede fertige Anfrage startete
+//    sofort die naechste — ein Dauerfeuer von drei.
+//  - Ein 429/503 ging direkt ans <img>; dessen artRetry wartete 5/10/15 s und
+//    stellte sich hinten an — waehrenddessen liefen alle anderen weiter in die
+//    Sperre. Jede Kachel wich EINZELN aus, die Schlange nie als Ganzes.
+//  - Der Deckel (3 Versuche) hing am <img>-Element. Jeder Re-Render (Sync,
+//    Tab-Wechsel) baute neue Elemente mit frischem Zaehler — und die Anfragen
+//    der verworfenen Elemente blieben im SW eingereiht: Doppel-Erzeugungen.
+//  - Sichtbar oder nicht, Vorwaermen oder Kachel: alles FIFO in einer Reihe.
+// Jetzt: EINE Schlange mit Prioritaet (sichtbar 0 · Kachel 1 · Vorwaermen 2),
+// hoechstens ART.par Erzeugungen gleichzeitig, mindestens ART.gap ms zwischen
+// zwei Starts, gleiche URL = EINE Erzeugung fuer alle Wartenden. Ein 429/5xx
+// pausiert die GANZE Schlange (exponentiell + Zufall, Retry-After hat Vorrang),
+// der Versuch stellt sich VORNE wieder an; nach ART.tries Versuchen geht der
+// Fehler UNGECACHT an die Seite — die laesst die Kachel bis zum naechsten
+// App-Start bildlos. Cache-Treffer gehen nie in die Schlange.
+// Werte aus einer Messung am 02.10.2026 (29 echte Erzeugungen, LOG v4.113.1):
+// Pulk 10 → ein 429 «Retry after 1.46s» (Retry-After: 2), Pulk 4/6 und
+// 2 parallel mit 1,5 s Abstand → fehlerfrei; eine Erzeugung dauert 5–8 s.
+const ART = { par: 2, gap: 1200, base: 4000, max: 60000, tries: 3, wait: 240000 };
+let artRunning = 0, artLastStart = 0, artCoolUntil = 0, artStrikes = 0, artTimer = null;
+const artQueue = [];               // { url, prio, tries, resolve, since, event }
+const artInflight = new Map();     // url → Promise<Response> (eine Erzeugung fuer alle)
+
+self.addEventListener('message', e => {
+  const d = e.data || {};
+  // Test-Haken (haushalt.artpace, von der Seite weitergereicht): Zeiten stauchen.
+  if (d.type === 'art-pace' && d.cfg && typeof d.cfg === 'object') {
+    for (const k of ['par', 'gap', 'base', 'max', 'tries', 'wait']) {
+      const v = +d.cfg[k]; if (Number.isFinite(v) && v >= 0) ART[k] = k === 'par' ? Math.max(1, Math.min(4, v)) : v;
+    }
+    artPump();
+  }
+  // Die Seite meldet, welche wartenden Bilder gerade im Bild sind → nach vorn.
+  if (d.type === 'art-prio' && Array.isArray(d.urls)) {
+    for (const j of artQueue) if (d.urls.includes(j.url)) j.prio = 0;
+    artPump();
+  }
+});
+
+async function artTrim(cache) {
+  try {
+    const keys = await cache.keys();
+    for (let i = 0; i < keys.length - ART_MAX; i++) await cache.delete(keys[i]);
+  } catch {}
 }
-function artRelease() {
-  const next = artQueue.shift();
-  if (next) next();            // Platz direkt weitergereicht, artRunning bleibt
-  else artRunning--;
-}
+
 async function artFetch(request, event) {
   const hit = await caches.match(request);
-  if (hit) return hit;         // im Cache liegen ab jetzt NUR gepruefte Bilder
-  await artSlot();
+  if (hit) return hit;         // im Cache liegen NUR gepruefte Bilder — sofort, nie in der Schlange
+  const prio = request.destination === 'image' ? 1 : 2;   // fetch() = Vorwaermen
+  let p = artInflight.get(request.url);
+  if (p) {
+    // Dieselbe URL wartet schon (Re-Render, Vorwaermen): mitwarten statt neu
+    // erzeugen; eine sichtbare Kachel hebt ein Vorwaermen auf ihre Stufe.
+    const q = artQueue.find(j => j.url === request.url);
+    if (q && prio < q.prio) q.prio = prio;
+  } else {
+    p = new Promise(resolve => {
+      artQueue.push({ url: request.url, prio, tries: 0, resolve, since: Date.now(), event });
+    });
+    artInflight.set(request.url, p);
+    p.then(() => artInflight.delete(request.url));
+    artPump();
+  }
+  // Jede wartende Anfrage bekommt eine eigene Kopie; das Original bleibt ungelesen.
+  return (await p).clone();
+}
+
+function artFail() { return new Response('', { status: 503, statusText: 'art throttled' }); }
+
+function artPump() {
+  if (artTimer) { clearTimeout(artTimer); artTimer = null; }
+  const now = Date.now();
+  for (let i = artQueue.length - 1; i >= 0; i--) {
+    if (now - artQueue[i].since > ART.wait) artQueue.splice(i, 1)[0].resolve(artFail());
+  }
+  if (!artQueue.length || artRunning >= ART.par) return;
+  const wait = Math.max(artCoolUntil - now, artLastStart + ART.gap - now);
+  if (wait > 0) { artTimer = setTimeout(artPump, wait); return; }
+  let bi = 0;
+  for (let i = 1; i < artQueue.length; i++) if (artQueue[i].prio < artQueue[bi].prio) bi = i;
+  const job = artQueue.splice(bi, 1)[0];
+  artRunning++; artLastStart = now;
+  artRun(job).finally(() => { artRunning--; artPump(); });
+  if (artQueue.length) artPump();   // plant den naechsten Start nach ART.gap
+}
+
+async function artRun(job) {
+  job.tries++;
+  let resp = null, retryAfter = 0;
   try {
-    let resp;
-    try {
-      // mode:'cors' statt der no-cors-Anfrage des <img> — nur so ist der
-      // Status sichtbar. Eine CORS-Antwort bedient das <img> genauso.
-      resp = await fetch(request.url, { mode: 'cors', credentials: 'omit' });
-    } catch {
-      // Sollte Pollinations je die CORS-Kopfzeile verlieren, faellt der
-      // Bilderdienst nicht aus: wir liefern die opake Antwort durch,
-      // verzichten dann aber aufs Cachen (Status nicht pruefbar).
-      return await fetch(request);
-    }
+    // mode:'cors' statt der no-cors-Anfrage des <img> — nur so ist der
+    // Status sichtbar. Eine CORS-Antwort bedient das <img> genauso.
+    resp = await fetch(job.url, { mode: 'cors', credentials: 'omit' });
+  } catch {
+    // Sollte Pollinations je die CORS-Kopfzeile verlieren, faellt der
+    // Bilderdienst nicht aus: opake Antwort durchreichen, aber nicht cachen
+    // (Status nicht pruefbar). Nur ein echter Netzfehler bleibt ein Fehlschlag.
+    try { job.resolve(await fetch(job.url, { mode: 'no-cors', credentials: 'omit' })); return; } catch {}
+  }
+  if (resp) {
     if (resp.ok && (resp.headers.get('content-type') || '').startsWith('image/')) {
+      artStrikes = 0;
       const copy = resp.clone();
       // waitUntil statt fire-and-forget: das Schreiben haelt die Antwort nicht
       // auf, ueberlebt aber garantiert das Ende des fetch-Handlers.
-      const write = caches.open(CACHE).then(c => c.put(request, copy)).catch(() => {});
-      if (event && event.waitUntil) event.waitUntil(write);
+      const write = caches.open(ART_CACHE).then(c => c.put(job.url, copy).then(() => artTrim(c))).catch(() => {});
+      if (job.event && job.event.waitUntil) { try { job.event.waitUntil(write); } catch {} }
+      job.resolve(resp);
+      return;
     }
-    return resp;
-  } catch {
-    return new Response('', { status: 503, statusText: 'art offline' });
-  } finally {
-    artRelease();
+    if (![429, 502, 503, 504].includes(resp.status)) { job.resolve(resp); return; }   // z. B. 400: kein Wiederholen
+    const ra = resp.headers.get('retry-after');
+    if (ra) retryAfter = /^\d+(\.\d+)?$/.test(ra.trim()) ? +ra * 1000 : Math.max(0, Date.parse(ra) - Date.now()) || 0;
   }
+  // Drosselung (oder Netz weg): die GANZE Schlange pausiert.
+  artStrikes++;
+  const back = Math.min(ART.max, ART.base * 2 ** (artStrikes - 1));
+  const cool = Math.max(back, Math.min(retryAfter, 300000)) + Math.random() * 0.5 * back;   // Retry-After hat Vorrang
+  artCoolUntil = Math.max(artCoolUntil, Date.now() + cool);
+  if (job.tries < ART.tries) { artQueue.unshift(job); return; }   // vorne wieder anstellen
+  job.resolve(resp || artFail());                                  // gedeckelt: Fehler ungecacht an die Seite
 }

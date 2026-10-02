@@ -170,6 +170,34 @@ async function suppressOnboarding(context) {
   }, FAM);
 }
 
+// ---------- v4.113.1: Kachelbild-Polaritaet + Drosselung der Bilderzeugung ----------
+// Fixture-Bilder (88x60 PNG): dunkle Striche auf WEISS (so lieferte Pollinations
+// zwei Kacheln des Maintainers), weisse Striche auf Schwarz (der Normalfall) und
+// ein grosses weiss GEFUELLTES Motiv auf Schwarz (~60 % weiss) — das darf trotz
+// viel Weiss NICHT invertiert werden (gemessen wird nur der Rand).
+const PNG_DARK_ON_WHITE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAFgAAAA8CAIAAABtkuovAAABKElEQVR42u2bQQqEMAxFbZhT9P5nyyFczcKNRBgE+5N2fF22EOzzm/yU2vZ93xjbZiAABCAAAQhAAAIQgAAEIEaOjy50710R1t1XUoSIgi6yrUVBF78Nb8PPTzlcxrrgthCFEHOsLlQ5QpTS1kuW+AhAAAJnKbEDuiw7I4gfle9YysdhU1FI86b1igg7DG/+vNp7z9SFVVFw9+s+w2SmLqyKQomPnitH3BH83ybLJy82RxQ2oRxKRIGzBAQgADETiPslINllJ4F4UgJyygdNVzqI+8ZZfRRer4jA4oojTGZ6quw23N1Dr/1eZzln01VzVHfskzPL4j3jLAFRCOLtF0XUx406l9EU/2skGOThidaWeMqE+FwUUX4aVA1AAAIQgAAEIADxpvEFRNmHOzCpWVcAAAAASUVORK5CYII=', 'base64');
+const PNG_WHITE_ON_BLACK = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAFgAAAA8CAIAAABtkuovAAABCklEQVR42u2awQ6EMAgFhez//3L34MWg2ZjYB2WdOWqC7UgobbptAAAAAAAA8zFd6DGGZMQmGbP3sqCL7L0s6OKbdJTT01gX3BtZCDHn5oWqRohKWr9i2Q5EIAIRl3wKv31Z9nVVdkURP1a+/VW+Dl/KQlpvWp8RYYbhzx/fjjEy88KrLJjZeZ7hYWZeeJWFkj56rRpxJ+H/tlg++bE5SeELpkNJUtBZIgIRiFhJxP0lILnLThLxZAnIWT7YdKWLuN84q4/C6zMiuDjrCA8ze6rsbbiZhb32ezvLNTddNUd1+zw5syyeM50lIgpFvP2iiPq4UddlWK900BVabzHKhPhcFAEAAACAOXwBP1F7WNsCGzsAAAAASUVORK5CYII=', 'base64');
+const PNG_FILLED_ON_BLACK = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAFgAAAA8CAIAAABtkuovAAABYElEQVR42u2ayw6FIAxEsWEh//+xbO/iJob4gCL2IQ5bwWQOQ50Sl3VdA0YIBAQAARAAARAAwR6RPzXn/Dp5KSXmzIWTI96IoBcHTU+BKYGmp8AUQl+gwJFDH6HQFIXPZxXElHaoS4MjAAIgRiO2TuCzKk/Rif7jU2Ui0Q+C08lqOKIhhVORu2kpJR0WUZ9CXdj2dFuiw4JcUbjyS9eZcgqiLH69G1sukWZBynXBz9tsAtXIIdcplvQWO0ibgpzbQc0U6DUAAiAAwlOydJggxEFIlHq5z4fS0RjZUgU7iIN4dgNF04S4I8quqXdvyyXSmUo7WfJZ3Gvebw+li5mcc3nRUpHHvMh6K4gdC747Jryz3FQxT8fMt9jH8mmu3xKEuWb0GgBxG4ROqjUZV9LgiBaIKU1REUXmbZ8HCu2jMQ2LphAaf8UEFALzX2yH+edBBN0gEKgAAiAAAiAAAgj+4wdi8pPrqAgfUAAAAABJRU5ErkJggg==', 'base64');
+const POL_CHORES = [
+  { id: 'c-dk', name: 'Fenster putzen', points: 1, note: 'innen', art: null, family_id: FAM },
+  { id: 'c-wh', name: 'Blumen giessen', points: 1, note: null, art: null, family_id: FAM },
+  { id: 'c-fi', name: 'Brot backen', points: 1, note: null, art: null, family_id: FAM },
+];
+// Art-Route nach Motiv: CORS-Kopfzeile wie bei Pollinations (sonst scheitert
+// das crossorigin-<img> unter brand3). hold(): Antworten zurueckhalten.
+async function routePolarityArt(context, { hold = null } = {}) {
+  const calls = [];
+  await context.route('**://gen.pollinations.ai/**', async r => {
+    const u = decodeURIComponent(r.request().url());
+    calls.push(u);
+    if (hold) await hold();
+    const body = u.includes('Fenster putzen') ? PNG_DARK_ON_WHITE
+      : u.includes('Brot backen') ? PNG_FILLED_ON_BLACK : PNG_WHITE_ON_BLACK;
+    return r.fulfill({ status: 200, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, body });
+  });
+  return calls;
+}
+
 test.describe('Fairli', () => {
 
   test('persönlicher Link: verriegelte Sicht, keine Admin-Buttons (Bug v4.13.1/v4.13.2)', async ({ context, page }) => {
@@ -1826,6 +1854,11 @@ test.describe('Fairli', () => {
     });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
+    // v4.113.1: der SW wiederholt 429/503 jetzt SELBST (globale Pause, Deckel).
+    // Dieser Test prueft das CACHING — darum tries:1, also wie bisher genau ein
+    // Netz-Versuch pro Anfrage (die Drosselung prueft ihr eigener Test).
+    await page.evaluate(() => navigator.serviceWorker.controller.postMessage({ type: 'art-pace', cfg: { tries: 1, gap: 0 } }));
+    await page.waitForTimeout(100);
     const url = 'https://gen.pollinations.ai/image/kachelprobe?model=flux&seed=4711';
     // Der Cache-Schreibvorgang laeuft im SW per waitUntil NEBEN der Antwort —
     // darum kurz nachfassen statt einmalig zu schauen (sonst misst der Test
@@ -1844,6 +1877,174 @@ test.describe('Fairli', () => {
     // Und der Treffer wird danach aus dem Cache bedient, nicht erneut geholt
     expect(await ask(url)).toBe(true);
     expect(calls).toBe(2);
+  });
+
+  // ---------- v4.113.1: Bilderzeugung gedrosselt (alle Haushalte) ----------
+  // Zeiten kommen ueber den Test-Haken haushalt.artpace (die App reicht ihn an
+  // den SW weiter) — gestaucht statt echter Wartezeiten. Gemessen wird an der
+  // Route: dort kommen die Fetches des SW an.
+  const ART_PACE_T = { par: 2, gap: 300, base: 400, max: 4000, tries: 3 };
+  const probeChores = names => names.map((n, i) => ({ id: 'c-t' + i, name: n, points: 1, note: null, art: null, family_id: FAM }));
+  async function swArtSetup(context, page, pace) {
+    await context.addInitScript(p => { try { localStorage.setItem('haushalt.artpace', JSON.stringify(p)); } catch {} }, pace);
+    let list = [];
+    await mockBackend(context);
+    await context.route(`${SB}/rest/v1/chores*`, r => r.request().method() === 'GET'
+      ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(list) }) : r.fallback());
+    return { setList: l => { list = l; } };
+  }
+
+  test('@sw Drosselung: hoechstens PAR Erzeugungen gleichzeitig, Starts im Abstand GAP, jede URL nur einmal, Cache-Treffer warten nicht (v4.113.1)', async ({ context, page }) => {
+    const ctl = await swArtSetup(context, page, ART_PACE_T);
+    const starts = []; let inflight = 0, maxIn = 0;
+    await context.route('**://gen.pollinations.ai/**', async r => {
+      const u = r.request().url();
+      starts.push({ t: Date.now(), u }); inflight++; maxIn = Math.max(maxIn, inflight);
+      await new Promise(res => setTimeout(res, decodeURIComponent(u).includes('Langsam') ? 2500 : 400));
+      inflight--;
+      return r.fulfill({ status: 200, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, body: PNG_WHITE_ON_BLACK });
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
+    // Ab jetzt SW-kontrolliert: acht frische, ungecachte Kacheln auf einmal
+    ctl.setList(probeChores(['Probe A', 'Probe B', 'Probe C', 'Probe D', 'Probe E', 'Probe F', 'Probe G', 'Probe H']));
+    starts.length = 0; maxIn = 0;
+    await page.reload();
+    await expect.poll(() => page.locator('.chore[data-cid^="c-t"] img.art.ok').count(), { timeout: 20000 }).toBe(8);
+    expect(maxIn).toBeLessThanOrEqual(2);
+    const probe = starts.filter(s => decodeURIComponent(s.u).includes('Probe '));
+    expect(probe.length).toBe(8);                                        // jede URL genau einmal (kein Doppel nach Re-Render)
+    expect(new Set(probe.map(s => s.u)).size).toBe(8);
+    const ts = starts.map(s => s.t).sort((a, b) => a - b);
+    for (let i = 1; i < ts.length; i++) expect(ts[i] - ts[i - 1]).toBeGreaterThanOrEqual(ART_PACE_T.gap - 60);
+    // Cache-Treffer stehen NICHT hinter laufenden Erzeugungen an
+    const cachedUrl = await page.locator('.chore[data-cid="c-t0"] img.art').getAttribute('src');
+    await page.evaluate(() => { for (let i = 0; i < 4; i++) { const im = new Image(); im.src = 'https://gen.pollinations.ai/image/Langsam%20' + i + '?seed=' + i; } });
+    await expect.poll(() => inflight).toBe(2);
+    const res = await page.evaluate(async u => {
+      const t = performance.now(); const r = await fetch(u, { mode: 'cors' }); await r.blob();
+      return { ms: performance.now() - t, ok: r.ok };
+    }, cachedUrl);
+    expect(res.ok).toBe(true);
+    expect(res.ms).toBeLessThan(400);
+    expect(starts.filter(s => s.u === cachedUrl).length).toBe(1);        // kein zweiter Netz-Aufruf
+  });
+
+  test('@sw Drosselung: 429 pausiert die GANZE Schlange (Retry-After), danach geht es weiter; Fehlversuche gedeckelt, kein Endlos-Loop (v4.113.1)', async ({ context, page }) => {
+    const ctl = await swArtSetup(context, page, { ...ART_PACE_T, gap: 100 });
+    const starts = []; let t429 = 0; const per = {};
+    await context.route('**://gen.pollinations.ai/**', async r => {
+      const u = decodeURIComponent(r.request().url());
+      starts.push({ t: Date.now(), u });
+      const key = u.includes('Kaputt') ? 'kaputt' : u.includes('Probe A') ? 'a' : 'x';
+      per[key] = (per[key] || 0) + 1;
+      const cors = { 'access-control-allow-origin': '*', 'access-control-expose-headers': '*' };
+      if (key === 'a' && per.a === 1) {
+        await new Promise(res => setTimeout(res, 150));
+        t429 = Date.now();
+        return r.fulfill({ status: 429, contentType: 'application/json', headers: { ...cors, 'retry-after': '1' },
+          body: '{"error":"Rate limit exceeded","retryAfterSeconds":1}' });
+      }
+      if (key === 'kaputt') return r.fulfill({ status: 503, contentType: 'application/json', headers: cors, body: '{"detail":"Queue full"}' });
+      await new Promise(res => setTimeout(res, 200));
+      return r.fulfill({ status: 200, contentType: 'image/png', headers: cors, body: PNG_WHITE_ON_BLACK });
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
+    ctl.setList(probeChores(['Probe A', 'Probe B', 'Probe C', 'Probe D', 'Kaputt']));
+    starts.length = 0;
+    await page.reload();
+    // Alle gesunden Kacheln kommen an — die Schlange ist nach der Pause weitergelaufen
+    for (const cid of ['c-t0', 'c-t1', 'c-t2', 'c-t3']) {
+      await expect(page.locator(`.chore[data-cid="${cid}"] img.art`)).toHaveClass(/\bok\b/, { timeout: 15000 });
+    }
+    expect(t429).toBeGreaterThan(0);
+    // Waehrend der Abkuehlung (Retry-After 1 s) startet NICHTS — auch keine andere Kachel
+    const during = starts.filter(s => s.t > t429 + 20 && s.t < t429 + 1000 - 50);
+    expect(during.map(s => s.u.slice(34, 70))).toEqual([]);
+    expect(per.a).toBe(2);                                               // genau ein Wiederholversuch
+    // Die dauerhaft kaputte Kachel: hoechstens `tries` Versuche, dann still bildlos
+    await expect(page.locator('.chore[data-cid="c-t4"] img.art')).toHaveCount(0, { timeout: 15000 });
+    expect(per.kaputt).toBe(ART_PACE_T.tries);
+    // Re-Render (Tab hin und zurueck) startet KEINEN neuen Versuch in dieser Sitzung
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await page.waitForTimeout(1500);
+    expect(per.kaputt).toBe(ART_PACE_T.tries);
+    await expect(page.locator('.chore[data-cid="c-t4"] img.art')).toHaveCount(0);
+    await expect(page.locator('.chore[data-cid="c-t4"] .cname')).toHaveText('Kaputt');
+  });
+
+  test('@sw Kachelkunst ueberlebt den Deploy: activate zieht echte Bilder aus alten haushalt-Caches in den Kunst-Cache um, Fehler nicht (v4.113.1)', async ({ context, page }) => {
+    // Bis v4.113.0 lag die Kunst im versionierten Cache, und activate loeschte
+    // ihn bei JEDEM Deploy → jedes Geraet erzeugte danach jedes Bild neu.
+    await mockBackend(context);
+    const calls = [];
+    await context.route('**://gen.pollinations.ai/**', r => { calls.push(r.request().url());
+      return r.fulfill({ status: 200, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, body: PNG_WHITE_ON_BLACK }); });
+    // Ein «alter Deploy»: Cache haushalt-v100 mit einem echten Bild und einer Fehlerantwort,
+    // angelegt auf einer Seite OHNE Service Worker (privacy.html)
+    await page.goto(`${BASE}/privacy.html`);
+    const good = 'https://gen.pollinations.ai/image/altbild?seed=1', bad = 'https://gen.pollinations.ai/image/altfehler?seed=2';
+    await page.evaluate(async ([g, b, png]) => {
+      const c = await caches.open('haushalt-v100');
+      const bytes = Uint8Array.from(atob(png), ch => ch.charCodeAt(0));
+      await c.put(g, new Response(bytes, { headers: { 'content-type': 'image/png' } }));
+      await c.put(b, new Response('{"detail":"Queue full"}', { status: 503, headers: { 'content-type': 'application/json' } }));
+    }, [good, bad, PNG_WHITE_ON_BLACK.toString('base64')]);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
+    const st = await page.evaluate(async ([g, b]) => {
+      const keys = await caches.keys();
+      const art = await caches.open('haushalt-art-1');
+      return { keys, good: !!(await art.match(g)), bad: !!(await caches.match(b)) };
+    }, [good, bad]);
+    expect(st.keys).not.toContain('haushalt-v100');      // alter Cache weg …
+    expect(st.good).toBe(true);                          // … sein echtes Bild umgezogen
+    expect(st.bad).toBe(false);                          // die Fehlerantwort NICHT (v4.110.0)
+    const n = calls.length;
+    const ok = await page.evaluate(async g => (await fetch(g, { mode: 'cors' })).ok, good);
+    expect(ok).toBe(true);
+    expect(calls.length).toBe(n);                        // aus dem Kunst-Cache, nicht neu erzeugt
+  });
+
+  test('@sw Polaritaet: Pixel lesbar beim Erstbesuch, ueber den SW vom Netz UND aus dem SW-Cache (v4.113.1)', async ({ context, page }) => {
+    await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] });
+    await context.route(`${SB}/rest/v1/chores*`, r => r.request().method() === 'GET'
+      ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(POL_CHORES) }) : r.fallback());
+    const calls = await routePolarityArt(context);
+    const dk = page.locator('.chore[data-cid="c-dk"] img.art');
+    const fen = () => calls.filter(u => u.includes('Fenster putzen')).length;
+    // 1) Erstbesuch (Seite wird erst danach vom SW kontrolliert)
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(dk).toHaveClass(/\bartinv\b/);
+    await expect(dk).toHaveClass(/\bok\b/);
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
+    const forget = () => page.evaluate(async () => {
+      localStorage.removeItem('haushalt.artinv');
+      return true;
+    });
+    // 2) Ueber den SW vom Netz: Kunst aus allen Caches raeumen, Urteil vergessen
+    await page.evaluate(async () => {
+      for (const k of await caches.keys()) {
+        const c = await caches.open(k);
+        for (const r of await c.keys()) if (r.url.includes('pollinations')) await c.delete(r);
+      }
+    });
+    await forget();
+    const n1 = fen();
+    await page.reload();
+    await expect(dk).toHaveClass(/\bartinv\b/);
+    expect(fen()).toBe(n1 + 1);
+    const url = await dk.getAttribute('src');
+    await expect.poll(() => page.evaluate(u => caches.match(u).then(Boolean), url)).toBe(true);
+    // 3) Aus dem SW-Cache: kein Netz-Aufruf, Pixel trotzdem lesbar
+    await forget();
+    await page.reload();
+    await expect(dk).toHaveClass(/\bartinv\b/);
+    await expect(dk).toHaveClass(/\bok\b/);
+    expect(fen()).toBe(n1 + 1);
+    await expect(page.locator('.chore[data-cid="c-wh"] img.art')).not.toHaveClass(/artinv/);
   });
 
   test('Ersteinrichtung (v4.57.0): «Wer bist du?» — Gewählte wird Admin, Ersteller landet auf IHREM persönlichen Link', async ({ context, page }) => {
@@ -5168,5 +5369,175 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     await page.locator('#closeSettings').click();
     await page.evaluate(() => document.getElementById('openMembers').click());
     await expect(page.locator('#memberSheet .prow')).toHaveCount(2);
+  });
+});
+
+// ---------- v4.113.1: Kachelbild-Polaritaet (nur brand3) + Wiederholungen ohne SW ----------
+// Befund vom Geraet des Maintainers: Pollinations lieferte fuer zwei Kacheln
+// dunkle Striche auf WEISSEM Grund; mit mix-blend-mode:screen wurde daraus
+// ein greller weisser Kasten ueber Notiz und Titel. Der Client misst den
+// RAND des Bildes und invertiert hellen Grund (invert(1) VOR grayscale/contrast).
+test.describe('Kachelbild-Polaritaet unter brand3 (v4.113.1)', () => {
+  const B3 = { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] };
+  const now = new Date().toISOString();
+  const LOGP = [
+    { id: 'l-p1', chore_id: 'c-dk', chore_name: 'Fenster putzen', chore_note: 'innen', member_id: 'm-mira', member_name: 'Mira', points: 1, done_at: now, created_at: now, family_id: FAM },
+    { id: 'l-p2', chore_id: 'c-wh', chore_name: 'Blumen giessen', chore_note: '', member_id: 'm-mira', member_name: 'Mira', points: 1, done_at: now, created_at: now, family_id: FAM },
+  ];
+  const polChores = context => context.route(`${SB}/rest/v1/chores*`, r => r.request().method() === 'GET'
+    ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(POL_CHORES) }) : r.fallback());
+  const tileImg = (page, cid) => page.locator(`.chore[data-cid="${cid}"] img.art`);
+  const filt = loc => loc.evaluate(el => getComputedStyle(el).filter);
+
+  test('Dunkel-auf-Weiss wird invertiert, Weiss-auf-Schwarz und gefuelltes Motiv nicht — Kachel, Verlauf, Eintrag- und Aufgaben-Vorschau', async ({ context, page }) => {
+    await mockBackend(context, { ...B3, logRows: () => LOGP });
+    await polChores(context);
+    let gate = null;
+    await routePolarityArt(context, { hold: () => gate });
+    await page.addInitScript(() => { try { localStorage.setItem('haushalt.logart', '1'); } catch {} });
+    let release; gate = new Promise(r => { release = r; });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    // Solange das Urteil fehlt, bleibt das Bild unsichtbar (kein weisser Blitz)
+    const dk = tileImg(page, 'c-dk');
+    await expect(dk).toHaveCount(1);
+    expect(await dk.evaluate(el => el.classList.contains('ok') || el.classList.contains('artinv'))).toBe(false);
+    expect(await dk.evaluate(el => getComputedStyle(el).opacity)).toBe('0');
+    release(); gate = null;
+    await expect(dk).toHaveClass(/\bok\b/);
+    await expect(dk).toHaveClass(/\bartinv\b/);
+    expect(await filt(dk)).toMatch(/^invert\(1\)/);                    // invert ZUERST
+    expect(await filt(dk)).toContain('grayscale');
+    for (const cid of ['c-wh', 'c-fi']) {
+      await expect(tileImg(page, cid)).toHaveClass(/\bok\b/);
+      await expect(tileImg(page, cid)).not.toHaveClass(/artinv/);
+      expect(await filt(tileImg(page, cid))).not.toContain('invert');
+    }
+    // Urteil ist gespeichert (begrenzte Karte pro Bild-URL)
+    const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('haushalt.artinv') || '{}'));
+    expect(Object.values(stored).filter(v => v === 1).length).toBe(1);
+    expect(Object.values(stored).filter(v => v === 0).length).toBeGreaterThanOrEqual(2);
+    // Verlauf mit Kachelbildern
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    const rowImg = txt => page.locator('.entry.vrow', { hasText: txt }).locator('img.eart');
+    await expect(rowImg('Fenster putzen')).toHaveClass(/\bartinv\b/);
+    await expect(rowImg('Fenster putzen')).toHaveClass(/\bok\b/);
+    expect(await filt(rowImg('Fenster putzen'))).toMatch(/^invert\(1\)/);
+    await expect(rowImg('Blumen giessen')).toHaveClass(/\bok\b/);
+    await expect(rowImg('Blumen giessen')).not.toHaveClass(/artinv/);
+    // Eintrag-Vorschau
+    await page.locator('.entry', { hasText: 'Fenster putzen' }).click();
+    await expect(page.locator('#lArtPrev')).toHaveClass(/\bartinv\b/);
+    await expect(page.locator('#lArtPrev')).toHaveClass(/\bok\b/);
+    expect(await filt(page.locator('#lArtPrev'))).toMatch(/^invert\(1\)/);
+    await page.locator('#closeLog').click();
+    // Aufgaben-Vorschau: dunkle Kachel invertiert, danach dieselbe <img> fuer eine helle Kachel NICHT
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await page.locator('[data-edit="c-dk"]').click();
+    await expect(page.locator('#cArtPrev')).toHaveClass(/\bartinv\b/);
+    await expect(page.locator('#cArtPrev')).toHaveClass(/\bok\b/);
+    expect(await filt(page.locator('#cArtPrev'))).toMatch(/^invert\(1\)/);
+    await page.locator('#cancelChore').click();
+    await page.locator('[data-edit="c-wh"]').click();
+    await expect(page.locator('#cArtPrev')).toHaveClass(/\bok\b/);
+    await expect(page.locator('#cArtPrev')).not.toHaveClass(/artinv/);
+    await page.locator('#cancelChore').click();
+    // Naechster Start: bekanntes Urteil steht schon beim Einfuegen in der Klasse
+    await context.addInitScript(() => {
+      new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) {
+        const im = n.querySelector && n.querySelector('.chore[data-cid="c-dk"] img.art');
+        if (im && !window.__dkAtInsert) window.__dkAtInsert = im.className;
+      } }).observe(document, { childList: true, subtree: true });
+    });
+    await page.reload();
+    await expect(dk).toHaveClass(/\bartinv\b/);
+    expect(await page.evaluate(() => window.__dkAtInsert)).toContain('artinv');
+  });
+
+  test('Ohne Beta: kein crossorigin, keine Polaritaets-Klasse, KEINE Canvas-Arbeit, kein Speicher-Eintrag', async ({ context, page }) => {
+    await context.addInitScript(() => {
+      window.__px = 0;
+      const g = CanvasRenderingContext2D.prototype.getImageData;
+      CanvasRenderingContext2D.prototype.getImageData = function (...a) { window.__px++; return g.apply(this, a); };
+    });
+    await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }], logRows: () => LOGP });
+    await polChores(context);
+    await routePolarityArt(context);
+    await page.addInitScript(() => { try { localStorage.setItem('haushalt.logart', '1'); } catch {} });
+    await page.goto(`${BASE}/f/${FAM}`);
+    const dk = tileImg(page, 'c-dk');
+    await expect(dk).toHaveClass(/\bok\b/);
+    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+    await expect(page.locator('img.artinv')).toHaveCount(0);
+    expect(await dk.getAttribute('crossorigin')).toBeNull();
+    expect(await filt(dk)).toBe('none');
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('.entry.vrow', { hasText: 'Fenster putzen' }).locator('img.eart')).toHaveClass(/\bok\b/);
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await page.locator('[data-edit="c-dk"]').click();
+    await expect(page.locator('#cArtPrev')).toHaveClass(/\bok\b/);
+    expect(await page.locator('#cArtPrev').getAttribute('crossorigin')).toBeNull();
+    await expect(page.locator('img.artinv')).toHaveCount(0);
+    expect(await page.evaluate(() => window.__px)).toBe(0);
+    expect(await page.evaluate(() => localStorage.getItem('haushalt.artinv'))).toBeNull();
+  });
+
+  test('Nicht lesbare Pixel (Bild ohne CORS) → keine Inversion, kein Fehler, Bild bleibt sichtbar, kein Urteil gespeichert', async ({ context, page }) => {
+    await mockBackend(context, B3);
+    await polChores(context);
+    await routePolarityArt(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(tileImg(page, 'c-dk')).toHaveClass(/\bartinv\b/);
+    const r = await page.evaluate(async () => {
+      const im = new Image();                      // KEIN crossOrigin → Canvas wird «tainted»
+      im.className = 'art';
+      const u = 'https://gen.pollinations.ai/image/Fenster%20putzen%20ohne%20cors?seed=7';
+      await new Promise((res, rej) => { im.onload = res; im.onerror = rej; im.src = u; });
+      document.querySelector('.chore[data-cid="c-wh"]').appendChild(im);
+      const before = Object.keys(JSON.parse(localStorage.getItem('haushalt.artinv') || '{}')).length;
+      try { window.artOk(im); } catch (e) { return { err: String(e) }; }
+      const st = JSON.parse(localStorage.getItem('haushalt.artinv') || '{}');
+      return { cls: im.className, n: Object.keys(st).length, before };
+    });
+    expect(r.err).toBeUndefined();
+    expect(r.cls).toContain('ok');
+    expect(r.cls).not.toContain('artinv');
+    expect(r.n).toBe(r.before);
+  });
+});
+
+test.describe('Kachelbilder ohne Service Worker: Wiederholungen ueber EINE Schlange (v4.113.1)', () => {
+  test('Fehlversuche sind pro Bild gedeckelt, danach still bildlos, und ein Re-Render startet keinen neuen Versuch', async ({ context, page }) => {
+    await context.addInitScript(() => { try { localStorage.setItem('haushalt.artpace', JSON.stringify({ base: 200, max: 800, tries: 3 })); } catch {} });
+    await mockBackend(context);
+    const per = {};
+    await context.route('**://gen.pollinations.ai/**', r => {
+      const u = decodeURIComponent(r.request().url());
+      const k = u.includes('Müll') ? 'm' : 'star';
+      per[k] = (per[k] || 0) + 1;
+      return r.fulfill({ status: 503, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: '{"detail":"Queue full"}' });
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    // Erst die Kachel (sonst ist «0 Bilder» trivial wahr, bevor sie ueberhaupt steht)
+    await expect(page.locator('.chore[data-cid="c-1"] .cname')).toBeVisible();
+    await expect.poll(() => per.m || 0).toBeGreaterThanOrEqual(1);
+    await expect(page.locator('.chore[data-cid="c-1"] img.art')).toHaveCount(0, { timeout: 10000 });
+    await expect(page.locator('#oneOffTile img.art')).toHaveCount(0, { timeout: 10000 });
+    // Gedeckelt: die Schlange loest pro Bild hoechstens tries-1 = 2 Runden aus.
+    // Ohne SW fragt jeder Render (Cache-Paint beim Boot, Render nach dem Abgleich)
+    // sein frisches <img> selbst an — bis zum Aufgeben; danach nie wieder.
+    expect(per.m).toBeLessThanOrEqual(4);
+    expect(per.star).toBeLessThanOrEqual(4);
+    // Es WURDE wiederholt (mehr als die zwei Erst-Anfragen). WebKit beantwortet
+    // eine Runde fuer ein gerade gescheitertes Bild manchmal aus dem Speicher,
+    // ohne Netz — darum nur «mindestens eine echte Wiederholung».
+    expect(per.m + per.star).toBeGreaterThanOrEqual(3);
+    const m0 = per.m;
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await page.waitForTimeout(1200);
+    expect(per.m).toBe(m0);
+    await expect(page.locator('.chore[data-cid="c-1"] img.art')).toHaveCount(0);
+    await expect(page.locator('.chore[data-cid="c-1"] .cname')).toHaveText('Müll rausbringen');
   });
 });

@@ -1,3 +1,146 @@
+## 2026-10-02 — v4.113.1 (SW haushalt-v218): brand trial art no longer turns into a white box, and art generation is paced (pacing applies to all households)
+
+### A — inverted art under brand3 (BETA only)
+
+- Maintainer screenshot from a real Android device, flag on: two tiles showed a
+  WHITE rectangle with dark line art over the right half of the tile, covering
+  the note and part of the title. Pollinations had returned the NEGATIVE of the
+  v4.113.0 prompt (dark lines on a white ground) for those two seeds; with
+  `mix-blend-mode:screen` a white ground stays white. The other tiles were fine.
+  The prompt cannot rule this out — the v4.113.0 comparison round had already
+  seen one phrasing «invert to a white background».
+- **Fix: measure each image on the client and invert a light ground.** After
+  load, `artPolarity()` draws the image into a 44×30 canvas and takes the mean
+  luminance of the 2-px BORDER only — a large white-FILLED subject on black
+  (washing machine, bread) must not flip. Above 0.5 the image gets `.artinv`,
+  and the CSS puts `invert(1)` FIRST: `invert(1) grayscale(1) contrast(1.8)`,
+  then screen, exactly as before.
+- Reading pixels needs CORS, so under brand3 every art `<img>` carries
+  `crossorigin="anonymous"` (Pollinations sends `access-control-allow-origin: *`,
+  and the SW already fetched art with `mode:'cors'` since v4.110.0). Checked in
+  all three load paths: first visit without a service worker, through the SW
+  from the network, and from the SW cache — all readable (`@sw` test). Where
+  pixels are NOT readable (tainted canvas, any exception) the check returns
+  null: no inversion, no stored verdict, the image is shown anyway — it never
+  throws and never blocks a tile.
+- **The verdict is remembered per art URL** (prompt + seed = the same image) in
+  `haushalt.artinv`, a hashed, bounded map (300 entries, oldest out), so the
+  next render writes `.artinv` straight into the markup. An image WITHOUT a
+  verdict stays at opacity 0 until the check has run, then fades in — no white
+  flash. This needed one more rule than expected: `.chore .art{opacity:.55}`
+  outranks `img.art{opacity:0}`, so a loaded-but-unchecked image would have
+  shown at 55 %; `html.brand3 img.art:not(.ok){opacity:0}` closes that.
+- **One helper for every place art is shown**: `artTag()` builds the `<img>` for
+  board tiles, the one-off tile, history rows and the entry-sheet preview;
+  `artBind()` does the same for the fixed `<img>` of the task edit sheet (the
+  debounced Bild-Idee swap judges the preloaded image before swapping). Without
+  brand3 `artTag()` returns the previous markup character for character; no
+  canvas, no storage (test-guarded). Flag-off screenshots (board, history with
+  tile images, edit sheet; Pixel + iPhone) are pixel-identical to v4.113.0.
+
+### B — pacing art generation (all households; no rendering change)
+
+- The v4.113.0 prompt change gave every tile of a beta household a new URL at
+  once and the maintainer hit Pollinations' rate limit. **What the v4.110.0
+  pipeline actually did for a board of ~30 uncached tiles:**
+  1. Every `<img>` starts at render (Chrome's lazy-load margin is 1250–2500 px,
+     so on a phone nearly the whole board counts as «near»). With the SW the
+     `ART_PAR = 3` semaphore let three run, but with NO spacing: each finished
+     request started the next one immediately — a steady stream of three.
+     Without a SW (first visit) there was no limit at all.
+  2. A 429/503 went straight back to the `<img>`; `artRetry` waited 5/10/15 s
+     and re-requested — through the SW semaphore, but at the BACK of the queue
+     and while every other tile kept running into the limit. Each tile backed
+     off on its own; the queue as a whole never paused. Retry-After was never
+     read.
+  3. The cap (3 retries) lived on the `<img>` ELEMENT. Every re-render (each
+     sync, tab switch, visibility change) built fresh elements with a fresh
+     counter, and the requests of discarded elements stayed queued in the SW —
+     so the same URL could be generated twice, and over a session the retries
+     were effectively unbounded.
+  4. `warmArt` (history pre-warm) retried 5× on its own timers and competed in
+     the same FIFO; visible tiles had no priority over off-screen ones.
+  5. Art lived in the VERSIONED SW cache, and `activate` deletes every other
+  cache — so **every deploy re-requested every tile's art on every device**.
+- **Measured 02.10.2026** (29 real generations with unique seeds, Referer
+  blauewelt.github.io): burst of 4 → 0 errors; burst of 10 → one `429`
+  `{"error":"Rate limit exceeded","message":"Rate limit exceeded. Retry after
+  1.46s. Use secret keys (sk_*) for unlimited requests."}` with
+  `Retry-After: 2`, answered in ~1 s; burst of 6 → 0 errors; 2 in flight with
+  1.5 s spacing × 8 → 0 errors. A generation takes 5–8 s. Responses carry
+  `cache-control: public, max-age=31536000, immutable` and
+  `access-control-expose-headers: *` (so Retry-After is readable in the SW).
+  The `pk_` key is shared by every Fairli device; whether the limit is per key
+  or per client IP is not known.
+- **Chosen pacing** (in `sw.js`, `ART`): at most **2** uncached generations in
+  flight, at least **1.2 s** between two starts; on 429/502/503/504 or a network
+  error a **global cool-down** that pauses the whole queue: 4 s × 2^(strikes−1),
+  capped at 60 s, plus 0–50 % jitter, and Retry-After wins when longer. The
+  failed request goes back to the FRONT of the queue; **3 attempts per URL**,
+  then the error goes uncached to the page. Requests that waited more than 4 min
+  are answered with a 503 (bounded, never an endless loop). Throughput is about
+  one tile per 3 s, so a fully uncached 30-tile board fills in ~1.5 min — slower
+  than before on purpose; visible tiles come first.
+- **One queue with priority**: tiles currently on screen (the page posts their
+  URLs after each render and on scroll) → other tile images → background
+  pre-warm (`fetch()` from the page, destination ''). The same URL is ONE
+  generation for every waiting request (re-render, history row, pre-warm).
+  **Cache hits never enter the queue** (checked first, test-guarded).
+- **Page side**: with a SW the page no longer retries at all — the SW already
+  did, paced — it gives up quietly: the URL goes into `ARTFAIL` (memory only),
+  the tile is rendered without art until the next app open. Without a SW
+  (first visit, private mode) retries run through ONE page queue with the same
+  growing global backoff, at most 2 retry rounds per URL shared by all `<img>`
+  of that URL; the initial requests of that first visit are still the
+  browser's own (deferring `src` would have changed rendering and every test
+  that reads it). `warmArt` now waits until no visible tile is loading, runs
+  one at a time and has no retries of its own.
+- **Art survives deploys**: new cache `haushalt-art-1`, kept by `activate`,
+  bounded to 400 entries. On this deploy `activate` MOVES real images (ok +
+  `image/*`) out of the old `haushalt-v*` caches before deleting them, so
+  v4.113.1 itself does not trigger a regeneration wave; error responses are
+  not carried over (v4.110.0 rule unchanged: cors fetch, only real images
+  cached, errors pass through uncached).
+- Test hook: `localStorage['haushalt.artpace']` (JSON: par, gap, base, max,
+  tries) compresses the timings; the page forwards it to the SW at boot and on
+  controllerchange.
+
+### Tests (all seen red against v4.113.0 first, except the flag-off guard)
+
+- brand3, both engines: dark-on-white fixture → `.artinv`, computed filter
+  starts with `invert(1)`, hidden (opacity 0, no `.ok`) while the pixels are
+  pending; white-on-black and a ~60 %-white filled subject → no class; same on
+  the history row, the entry-sheet and the task-edit preview (and the edit
+  preview drops the class for the next, normal tile); on the next start the
+  class is in the markup at insertion. Flag off: no crossorigin, no class, zero
+  `getImageData` calls, no storage key (green on v4.113.0 by design). A
+  non-CORS image passed to `artOk` → no throw, no inversion, no verdict.
+- `@sw`: 8 uncached tiles → never more than 2 in flight, starts ≥ gap apart,
+  each URL fetched once; a cached hit answers in < 400 ms while 2 slow
+  generations run. A 429 with Retry-After 1 → no start of ANY tile during the
+  cool-down, then the queue resumes; a permanently failing tile gets exactly 3
+  attempts, ends art-less, and a re-render does not try again. Polarity readable
+  on first visit, via SW network and from SW cache. Art in an old `haushalt-v*`
+  cache survives activate, a cached 503 does not.
+- No SW, both engines: a permanently failing tile ends art-less within the cap
+  and a re-render adds no request. (WebKit sometimes answers a retry of a
+  just-failed image from memory without touching the network, so the test only
+  requires one real retry.)
+- The v4.110.0 `@sw` caching test now sets `tries:1` through the hook: the SW
+  retries throttles itself now, and that test pins CACHING (503 never stored,
+  the next request reaches the network, then served from cache) — its
+  assertions are unchanged; pacing has its own tests.
+- Negative controls: removing the global cool-down turns the 429 test red;
+  measuring the whole image instead of the border turns the polarity test red
+  (the filled fixture flips).
+- Visual check via the Pages mimic, Pixel + iPhone: inverted fixture vs normal
+  fixture on the board, history with tile images, entry sheet and edit sheet,
+  plus two real Pollinations draws of the reported chores (with fictional
+  chore IDs, so different seeds — both came back white-on-black). Not covered:
+  the maintainer's exact two images (their seeds come from real chore IDs) —
+  to be confirmed on his device.
+- APP_VERSION 4.113.1, SW cache haushalt-v218. No user-facing strings.
+
 ## 2026-10-02 — v4.113.0 (SW haushalt-v217, BETA only): brand trial «Variante 3» — the face logo, a monochrome redesign and line-art tiles, behind families.beta
 
 - Maintainer request: try the brand draft («fairli-brand-entwurf», Variante 3)

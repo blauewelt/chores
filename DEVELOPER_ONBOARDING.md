@@ -751,9 +751,25 @@ moody background, vibrant accent color, no text, no words'` — NO
 «household chore» framing (it overrode the subject). The `pk_` key is
 client-safe, but REFERRER-LOCKED to blauewelt.github.io —
 server-side fetches need the Referer header (e.g. via a
-Playwright request context); rate limits → backoff between requests.
-Error path: `artRetry` with 3 backoff attempts (Pollinations throttles
-on mass repaints).
+Playwright request context).
+
+**Request pacing (v4.113.1, all households) — the SW owns it.** Measured
+02.10.2026: a burst of 10 draws one `429` («Retry after 1.46s», header
+`Retry-After: 2`), bursts of 4–6 and 2-in-flight with spacing do not; a
+generation takes 5–8 s; the `pk_` key is shared by every Fairli device.
+`sw.js` `ART`: ≤ 2 uncached generations in flight, ≥ 1.2 s between starts,
+one priority queue (on-screen tiles, which the page reports after render and
+on scroll → other tiles → background pre-warm), the same URL = one generation
+for all waiters, cache hits never queue. 429/5xx/network error = GLOBAL
+cool-down (4 s doubling, max 60 s, +0–50 % jitter, Retry-After wins), the
+request retries from the queue FRONT, 3 attempts per URL, then the error goes
+uncached to the page. The page then gives up quietly (`ARTFAIL`, memory only:
+art-less tile until the next app open). Without a SW the page serializes its
+own retries (one global queue, ≤ 2 rounds per URL shared by all `<img>` of
+that URL). Do not add per-`<img>` retry timers again — they were the
+stampede. Art lives in `haushalt-art-1` (kept across deploys, ≤ 400 entries;
+`activate` migrates real images out of old `haushalt-v*` caches). Test hook:
+`localStorage['haushalt.artpace']` compresses the timings (forwarded to the SW).
 
 **Brand trial (v4.113.0, only under `html.brand3`):** `choreArt()` uses
 `'thick white outline drawing: ' + subject + ', object illustration on pure
@@ -767,6 +783,21 @@ disappears into the navy — at full white (never dim it with opacity), lower
 ~58 % of the tile, right of the +N pill. «Unfilled/hollow outline» wording
 was tried and rejected (empty frames, inverted backgrounds — LOG v4.113.0). Every art URL still comes from `choreArt()` alone
 (tile, history bleed, warmArt, edit preview) — it reads `brandOn()`.
+
+**Polarity (v4.113.1, brand3 only).** flux sometimes returns the NEGATIVE —
+dark lines on white — which screen-blends into a glaring white box. The
+client measures each image: 44×30 canvas, mean luminance of the 2-px BORDER
+(a white-filled subject must not flip), > 0.5 → `.artinv` with
+`filter: invert(1) grayscale(1) contrast(1.8)` (invert FIRST). Needs readable
+pixels, hence `crossorigin="anonymous"` on every brand3 art `<img>`; unreadable
+(tainted/any error) → null → no inversion, shown anyway, nothing stored. The
+verdict is cached per art URL in `haushalt.artinv` (hashed keys, ≤ 300), so
+the class is in the markup on the next render; an image without a verdict
+stays at opacity 0 until checked (`html.brand3 img.art:not(.ok)` — note that
+`.chore .art{opacity:.55}` would otherwise show it). ALL art markup goes
+through `artTag()` (tile, one-off, history, entry preview) or `artBind()`
+(the fixed task-edit `<img>`); without brand3 both produce the old markup
+exactly and do no canvas work. New places that show art must use them.
 
 **App icon (since v4.36.3):** four rounded color tiles on a dark
 background — like the chore board. icon-192/512/512-maskable (maskable:

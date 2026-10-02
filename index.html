@@ -673,6 +673,13 @@
     width:62%; height:58%; inset:auto 0 0 auto; filter:grayscale(1) contrast(1.8);
     transform:scale(1.35); transform-origin:55% 80%}
   html.brand3 .chore .art.ok{opacity:1}
+  /* v4.113.1 Polaritaet: manche Bilder kommen INVERS (dunkle Striche auf weissem
+     Grund) — mit screen wird Weiss zum grellen Kasten ueber Notiz und Titel.
+     artPolarity() misst den Bildrand; heller Grund → .artinv, invert(1) ZUERST,
+     danach dieselbe Kette wie immer. Bis das Urteil steht, bleibt das Bild
+     unsichtbar (.chore .art haette sonst .55 — ein halber weisser Blitz). */
+  html.brand3 img.art:not(.ok){opacity:0}
+  html.brand3 .chore .art.artinv{filter:invert(1) grayscale(1) contrast(1.8)}
   html.brand3 .chore::after{background:none}
   html.brand3 .chore .cname{font-family:var(--display); font-weight:650; font-size:17.5px; letter-spacing:-.02em;
     -webkit-hyphens:auto; hyphens:auto;
@@ -722,6 +729,7 @@
      wuerde mit screen als helles Rechteck sichtbar; so wird es echtes Schwarz. */
   html.brand3 .entry .eart{mix-blend-mode:screen; filter:grayscale(1) contrast(1.8)}
   html.brand3 .entry .eart.ok{opacity:1}
+  html.brand3 .entry .eart.artinv{filter:invert(1) grayscale(1) contrast(1.8)}
   /* Schleier nur noch links, wo der Text ueber das Motiv laeuft — der Rest
      des Motivs bleibt reinweiss (Review 02.10.). */
   html.brand3 .entry .eartb::after{background:linear-gradient(90deg, rgba(27,29,49,.75) 0, rgba(27,29,49,0) 40%)}
@@ -978,7 +986,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.113.0';
+  const APP_VERSION = '4.113.1';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1763,22 +1771,176 @@
   // sw.js nur noch geprüfte Bilder cacht, erreichen die Retries wieder das
   // Netz — und die Drosselung selbst mildert die Staffelung im SW.
   const ARTOK = new Set();
-  window.artOk = img => { ARTOK.add(img.src); img.classList.add('ok'); };
-  window.artRetry = img => {
-    const n = (+img.dataset.retry || 0) + 1;
-    if (n > 3) { img.remove(); return; }
-    img.dataset.retry = n;
-    const src = img.src;
-    setTimeout(() => { img.src = ''; img.src = src; }, n * 5000);
+  // v4.113.1: Aufgegebene Bilder DIESER Sitzung. Die Kachel bleibt bildlos bis
+  // zum naechsten App-Start — vorher baute jeder Re-Render ein neues <img> mit
+  // frischem Zaehler, und die Wiederholungen hoerten nie wirklich auf.
+  const ARTFAIL = new Set();
+  // Test-Haken: haushalt.artpace staucht die Zeiten (Seite UND Service Worker).
+  let ARTPACE = { base: 4000, max: 60000, tries: 3 };
+  try { const ap = JSON.parse(localStorage.getItem('haushalt.artpace') || 'null'); if (ap) ARTPACE = { ...ARTPACE, ...ap }; } catch {}
+  const artSwPace = () => {
+    try {
+      const ctl = navigator.serviceWorker && navigator.serviceWorker.controller;
+      const ap = localStorage.getItem('haushalt.artpace');
+      if (ctl && ap) ctl.postMessage({ type: 'art-pace', cfg: JSON.parse(ap) });
+    } catch {}
   };
+  artSwPace();
+  try { if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('controllerchange', artSwPace); } catch {}
+  const artCtl = () => { try { return !!(navigator.serviceWorker && navigator.serviceWorker.controller); } catch { return false; } };
+
+  // ---------- Polaritaet der Kachelkunst (v4.113.1, nur brand3) ----------
+  // Pollinations liefert ab und zu das NEGATIV des Prompts: dunkle Linien auf
+  // weissem Grund. Unter brand3 (screen-Blend) wird daraus ein weisser Kasten.
+  // Gemessen wird nur der RAND (2 px eines 44×30-Abbilds): ein grosses, weiss
+  // GEFUELLTES Motiv auf Schwarz darf nicht kippen. Mittlere Helligkeit > 0,5
+  // → heller Grund → .artinv. Das Urteil haengt an der Bild-URL (Prompt + Seed
+  // = dasselbe Bild) und liegt begrenzt in localStorage, damit der naechste
+  // Render die Klasse schon im Markup traegt. Pixel brauchen CORS — darum
+  // crossorigin="anonymous" unter brand3. Nicht lesbar (tainted, Fehler):
+  // null → keine Inversion, kein Urteil, das Bild erscheint trotzdem.
+  const LS_ARTINV = 'haushalt.artinv', ARTINV_MAX = 300;
+  let ARTINV = null, artCv = null;
+  const artKey = u => {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < u.length; i++) { h ^= u.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return 'u' + h.toString(36) + u.length.toString(36);     // 'u' davor: keine Zahl-Schluessel (Reihenfolge!)
+  };
+  const artInvMap = () => {
+    if (!ARTINV) { try { ARTINV = JSON.parse(localStorage.getItem(LS_ARTINV) || '{}') || {}; } catch { ARTINV = {}; } }
+    return ARTINV;
+  };
+  const artVerdict = u => { const v = artInvMap()[artKey(u)]; return v === 0 || v === 1 ? v : null; };
+  function artVerdictSet(u, v) {
+    const m = artInvMap(), k = artKey(u);
+    delete m[k]; m[k] = v;                                    // zuletzt gesehen = zuletzt verdraengt
+    const ks = Object.keys(m);
+    for (let i = 0; i < ks.length - ARTINV_MAX; i++) delete m[ks[i]];
+    try { localStorage.setItem(LS_ARTINV, JSON.stringify(m)); } catch {}
+  }
+  function artPolarity(img) {
+    try {
+      const w = 44, h = 30;
+      if (!artCv) artCv = document.createElement('canvas');
+      artCv.width = w; artCv.height = h;
+      const cx = artCv.getContext('2d', { willReadFrequently: true });
+      cx.drawImage(img, 0, 0, w, h);
+      const d = cx.getImageData(0, 0, w, h).data;
+      let sum = 0, n = 0;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        if (x > 1 && x < w - 2 && y > 1 && y < h - 2) continue;
+        const i = (y * w + x) * 4;
+        sum += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; n++;
+      }
+      return n && sum / n / 255 > 0.5 ? 1 : 0;
+    } catch { return null; }
+  }
+  // Urteil aus dem Speicher oder frisch gemessen (und dann gemerkt)
+  function artJudge(img, url) {
+    let v = artVerdict(url);
+    if (v === null) { v = artPolarity(img); if (v !== null) artVerdictSet(url, v); }
+    return v;
+  }
+  // EIN Markup-Helfer fuer jedes Kachelbild (Kachel, Einmalig, Verlauf,
+  // Eintrag-Vorschau). Ohne brand3 liefert er Zeichen fuer Zeichen das
+  // bisherige <img>. Mit brand3: crossorigin, bekannte .artinv sofort, und
+  // .ok nur, wenn das Urteil schon feststeht — sonst blendet artOk() nach
+  // der Messung ein (kein weisser Blitz).
+  function artTag(url, cls, attrs = '') {
+    if (ARTFAIL.has(url)) return '';
+    const b3 = brandOn();
+    const v = b3 ? artVerdict(url) : null;
+    const ok = ARTOK.has(url) && (!b3 || v !== null);
+    return `<img${attrs} class="${cls}${v === 1 ? ' artinv' : ''}${ok ? ' ok' : ''}" src="${url}" alt=""${b3 ? ' crossorigin="anonymous"' : ''} loading="lazy" onload="artOk(this)" onerror="artRetry(this)">`;
+  }
+  // Dasselbe fuer das feste <img> der Aufgaben-Vorschau (#cArtPrev).
+  function artBind(img, url) {
+    const b3 = brandOn();
+    if (b3) img.crossOrigin = 'anonymous'; else img.removeAttribute('crossorigin');
+    img.classList.remove('ok');
+    img.classList.toggle('artinv', b3 && !!url && artVerdict(url) === 1);
+    img.onload = () => {
+      if (brandOn()) img.classList.toggle('artinv', artJudge(img, img.src) === 1);
+      img.classList.add('ok');
+    };
+    img.onerror = () => img.classList.remove('ok');   // Rahmen bleibt, kein Kaputt-Icon
+    if (url) img.src = url;
+  }
+  window.artOk = img => {
+    if (brandOn()) img.classList.toggle('artinv', artJudge(img, img.src) === 1);
+    ARTOK.add(img.src); img.classList.add('ok');
+    ARTRQ.delete(img.src); artRqStrikes = 0;
+  };
+  // Bild-Fehler. Geschichte: v4.98.0 wiederholte 3x mit Backoff PRO <img>;
+  // v4.110.0 fand, dass der SW diese Versuche mit einer gecachten 503 beantwortet
+  // hatte. v4.113.1: MIT Service Worker hat der bereits gedrosselt wiederholt
+  // (globale Pause, Retry-After, Deckel) — die Seite gibt dann still auf. OHNE
+  // Service Worker (Erstbesuch, privater Modus) laufen Wiederholungen durch EINE
+  // Seiten-Schlange: eine nach der anderen, mit wachsendem Abstand fuer alle,
+  // gedeckelt pro URL. Danach bleibt die Kachel bis zum naechsten Start bildlos.
+  // Gezaehlt werden die Wiederholungs-RUNDEN, die die Schlange pro URL
+  // ausloest (hoechstens tries-1), nicht <img>-Fehler: alle Elemente einer URL
+  // (Kachel, Verlauf, Re-Render) teilen sich eine Runde — sonst verbrennt ein
+  // Re-Render, dessen frisches <img> sofort scheitert, das Budget in Sekunden.
+  const ARTRQ = new Map();           // url → { rounds, els, queued }
+  const artRq = [];
+  let artRqT = null, artRqStrikes = 0;
+  const artRqDelay = () => Math.min(ARTPACE.max, ARTPACE.base * 2 ** Math.max(0, artRqStrikes - 1)) * (1 + Math.random() * 0.5);
+  function artRqNext() {
+    artRqT = null;
+    const url = artRq.shift();
+    const st = url && ARTRQ.get(url);
+    if (st) {
+      st.queued = false; st.rounds++;
+      const els = [...st.els].filter(e => e.isConnected);
+      st.els.clear();
+      // NICHT erst src='' setzen: ein leeres src feuert selbst ein error-Event,
+      // das die Runde als gescheitert zaehlen wuerde, bevor das Netz gefragt ist.
+      els.forEach(e => { e.src = url; });
+    }
+    if (artRq.length) artRqT = setTimeout(artRqNext, artRqDelay());
+  }
+  window.artRetry = img => {
+    const url = img.src;
+    if (!url || ARTFAIL.has(url) || artCtl()) { if (url) ARTFAIL.add(url); img.remove(); return; }
+    let st = ARTRQ.get(url);
+    if (!st) ARTRQ.set(url, st = { rounds: 0, els: new Set(), queued: false });
+    st.els.add(img);
+    if (st.queued) return;                                   // wartet schon auf die naechste Runde
+    if (st.rounds >= ARTPACE.tries - 1) {
+      ARTFAIL.add(url); ARTRQ.delete(url);
+      st.els.forEach(e => e.remove());
+      return;
+    }
+    st.queued = true; artRqStrikes++;
+    artRq.push(url);
+    if (!artRqT) artRqT = setTimeout(artRqNext, artRqDelay());
+  };
+  // Die Seite sagt dem SW, welche wartenden Bilder gerade im Bild sind — die
+  // zieht er vor (Scrollen ueberholt so die Schlange).
+  const artInView = i => { const r = i.getBoundingClientRect(); return r.width > 0 && r.bottom > 0 && r.top < innerHeight; };
+  let artPrioT = null;
+  function artPrioHint() {
+    if (!artCtl()) return;
+    clearTimeout(artPrioT);
+    artPrioT = setTimeout(() => {
+      const urls = [...document.querySelectorAll('img.art:not(.ok)')].filter(i => i.getAttribute('src') && artInView(i)).map(i => i.src).slice(0, 40);
+      if (urls.length) { try { navigator.serviceWorker.controller.postMessage({ type: 'art-prio', urls }); } catch {} }
+    }, 250);
+  }
+  document.addEventListener('scroll', artPrioHint, { passive: true, capture: true });
   // v4.98.0: Kachelkunst im HINTERGRUND vorwaermen. Anlass (Maintainer 29.07.):
   // «Speichern & verbuchen» einer FRISCHEN Kachel legt sofort einen Verlaufs-
   // Eintrag an, doch Pollinations erzeugt das Bild erst in den naechsten
-  // Sekunden — die Verlaufs-Zeile blieb bildlos (und ein <img>-Fehler nach 3
-  // Retries entfernte es ganz). warmArt() laedt das Bild losgeloest von jedem
-  // sichtbaren <img>, traegt es bei Erfolg in ARTOK (→ SW-Cache) und rendert
-  // den Verlauf einmalig nach, sobald es da ist. Dedupliziert ueber artWarm.
+  // Sekunden — die Verlaufs-Zeile blieb bildlos. warmArt() laedt das Bild
+  // losgeloest von jedem sichtbaren <img>, traegt es bei Erfolg in ARTOK
+  // (→ SW-Cache) und rendert den Verlauf einmalig nach. Dedupliziert ueber artWarm.
+  // v4.113.1: erst wenn keine SICHTBARE Kachel mehr wartet, eins nach dem
+  // anderen, ohne eigene Wiederholungen (mit SW als fetch() = niedrigste Stufe
+  // in seiner Schlange; ohne SW als Bild, damit der HTTP-Cache es behaelt).
   const artWarm = new Set();
+  const artWarmQ = [];
+  let artWarmT = null, artWarmWaits = 0;
   let warmRerenderT = null;
   function scheduleLogRerender() {
     if (view !== 'log') return;
@@ -1788,18 +1950,32 @@
   function warmArt(c) {
     if (!c) return;
     const url = choreArt(c);
-    if (ARTOK.has(url) || artWarm.has(url)) return;
-    artWarm.add(url);
-    const im = new Image();
-    let tries = 0;
-    im.onload = () => { artWarm.delete(url); ARTOK.add(url); scheduleLogRerender(); };
-    im.onerror = () => {
-      // Erstgenerierung kann zaeh sein (Pollinations rechnet) — geduldig
-      // wiederholen mit Backoff, aber irgendwann aufgeben (kein Endlos-Loop).
-      if (++tries <= 5) setTimeout(() => { im.src = ''; im.src = url; }, tries * 4000);
-      else artWarm.delete(url);
+    if (ARTOK.has(url) || ARTFAIL.has(url) || artWarm.has(url)) return;
+    artWarm.add(url); artWarmQ.push(url);
+    if (!artWarmT) artWarmT = setTimeout(artWarmNext, 400);
+  }
+  function artWarmNext() {
+    artWarmT = null;
+    if (!artWarmQ.length) return;
+    const busy = [...document.querySelectorAll('img.art:not(.ok)')].some(i => i.getAttribute('src') && artInView(i));
+    if (busy && artWarmWaits++ < 40) { artWarmT = setTimeout(artWarmNext, 1500); return; }
+    artWarmWaits = 0;
+    const url = artWarmQ.shift();
+    const done = ok => {
+      artWarm.delete(url);
+      if (ok) { ARTOK.add(url); scheduleLogRerender(); }
+      if (artWarmQ.length && !artWarmT) artWarmT = setTimeout(artWarmNext, 400);
     };
-    im.src = url;
+    if (ARTOK.has(url) || ARTFAIL.has(url)) { artWarm.delete(url); done(false); return; }
+    if (artCtl()) {
+      fetch(url, { mode: 'cors', credentials: 'omit' }).then(r => done(r.ok)).catch(() => done(false));
+    } else {
+      const im = new Image();
+      if (brandOn()) im.crossOrigin = 'anonymous';
+      im.onload = () => { if (brandOn()) artJudge(im, url); done(true); };
+      im.onerror = () => done(false);
+      im.src = url;
+    }
   }
   // v4.113.0 Marken-Test: EIN Helfer statt verstreuter BETA-Abfragen. Er
   // liest die Klasse, die Boot (Cache) und Abgleich (families.beta) setzen —
@@ -2975,14 +3151,14 @@
       // «Einmalig» ist IMMER die erste Kachel (oben links verankert):
       // eintragen ohne neue Kachel — gegen die Kachel-Inflation.
       const oneOffTile = `<button class="chore oneoff" id="oneOffTile" style="min-height:104px">
-          <img class="art${ARTOK.has(choreArt({ id: 'oneoff-star-v2', name: 'Sternschnuppe', art: 'a single glowing shooting star with a bright trail across a night sky' })) ? ' ok' : ''}" src="${choreArt({ id: 'oneoff-star-v2', name: 'Sternschnuppe', art: 'a single glowing shooting star with a bright trail across a night sky' })}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)">
+          ${artTag(choreArt({ id: 'oneoff-star-v2', name: 'Sternschnuppe', art: 'a single glowing shooting star with a bright trail across a night sky' }), 'art')}
           <span class="cname">${t('Einmalig')}</span>
           <span class="cnote">${t('eintragen ohne Kachel')}</span>
           <span class="pts">＋</span>
         </button>`;
       listEl.innerHTML = `<div class="grid">` + (QUERY.trim() ? '' : oneOffTile) + ordered.map(c =>
             `<button class="chore" data-cid="${c.id}" style="--c:${choreColor(c.id)}; --dk:${artDim(c)}; min-height:${tileMinH(c.points)}px">
-              <img class="art${ARTOK.has(choreArt(c)) ? ' ok' : ''}" src="${choreArt(c)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)">
+              ${artTag(choreArt(c), 'art')}
               <span class="cname">${esc(c.name)}</span>
               ${c.note ? `<span class="cnote">${esc(c.note)}</span>` : ''}
               <span class="pts">${c.points >= 10 ? '★ ' : ''}+${c.points}</span>
@@ -2992,6 +3168,7 @@
           ? `<div class="empty"><b>${t('Nichts gefunden')}</b>${t('Keine Aufgabe passt zu «{q}».', { q: QUERY.trim() })}</div>`
           : `<div class="empty"><b>${t('Noch keine Aufgaben')}</b>${t('Lege mit + die erste an – z. B. «Geschirrspüler ausräumen, 3 Punkte».')}</div>`);
       listEl.querySelectorAll('img.art:not(.ok)').forEach(i => { if (i.complete && i.naturalWidth) artOk(i); });
+      artPrioHint();
     } else if (view === 'scores') {
       // WICHTIG: nie `t` nennen — das schattet die i18n-Funktion t()!
       // (Live-Bug v4.27–v4.31: «t is not a function», Punkte-Tab leer)
@@ -3155,7 +3332,8 @@
             if (LOGART_ON && ac && ac.name === e.chore_name) {
               const au = choreArt(ac);
               if (!ARTOK.has(au)) warmArt(ac);
-              art = `<span class="eartb" style="--dk:${artDim(ac)}"><img class="art eart${ARTOK.has(au) ? ' ok' : ''}" src="${au}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)"></span>`;
+              const tag = artTag(au, 'art eart');
+              art = tag ? `<span class="eartb" style="--dk:${artDim(ac)}">${tag}</span>` : '';
             }
             const inner = `
               ${band}
@@ -3184,6 +3362,7 @@
       // Bilder, die beim Rendern schon fertig geladen waren (SW-Cache!),
       // feuern kein onload mehr — nachziehen wie im Kachel-Zweig.
       listEl.querySelectorAll('img.art:not(.ok)').forEach(i => { if (i.complete && i.naturalWidth) artOk(i); });
+      artPrioHint();
     }
   }
 
@@ -3464,7 +3643,7 @@
         // Kachelkunst nicht, das Bild bleibt also fest.
         const ac = first.chore_id ? state.chores.find(x => x.id === first.chore_id) : null;
         return ac && ac.name === first.chore_name
-          ? `<div class="artprevslot" id="lArtPrevWrap"><div class="chore artprevtile" id="lArtPrevW" aria-hidden="true"><img id="lArtPrev" class="art${ARTOK.has(choreArt(ac)) ? ' ok' : ''}" src="${choreArt(ac)}" alt="" loading="lazy" onload="artOk(this)" onerror="artRetry(this)"><span class="cname" id="lArtName"></span><span class="cnote" id="lArtNote"></span><span class="pts" id="lArtPts"></span></div></div>`
+          ? `<div class="artprevslot" id="lArtPrevWrap"><div class="chore artprevtile" id="lArtPrevW" aria-hidden="true">${artTag(choreArt(ac), 'art', ' id="lArtPrev"')}<span class="cname" id="lArtName"></span><span class="cnote" id="lArtNote"></span><span class="pts" id="lArtPts"></span></div></div>`
           : '';
       })()}
       <div class="field">
@@ -3793,8 +3972,11 @@
         const w = document.getElementById('cArtPrevW');
         w.classList.add('busy');
         const me = (artPrevLoad = new Image());
+        if (brandOn()) me.crossOrigin = 'anonymous';
         me.onload = () => {
           if (me !== artPrevLoad) return;
+          // brand3: Urteil am vorgeladenen Bild faellen, Klasse VOR dem Tausch
+          if (brandOn()) prev.classList.toggle('artinv', artJudge(me, url) === 1);
           ARTOK.add(url); prev.src = url; prev.classList.add('ok');
           w.classList.remove('busy');
         };
@@ -3906,10 +4088,8 @@
     // reservieren (tileMinH von MAXPTS bzw. dem aktuellen Wert, falls hoeher)
     // — so bleiben die Felder darunter stehen, wenn man die Punkte zieht.
     prevWrap.style.minHeight = (c && !oneOffMode) ? tileMinH(Math.max(MAXPTS, c.points)) + 'px' : '';
-    prev.classList.remove('ok');
-    prev.onload = () => prev.classList.add('ok');
-    prev.onerror = () => prev.classList.remove('ok');   // Rahmen bleibt, kein Kaputt-Icon
-    if (c && !oneOffMode) prev.src = choreArt(c);
+    // v4.113.1: derselbe Bild-Helfer wie ueberall (brand3: CORS + Polaritaet)
+    artBind(prev, c && !oneOffMode ? choreArt(c) : null);
     // v4.95.0: Die Vorschau IST eine echte .chore-Kachel — Farbe, Name, Notiz
     // und Punkte wie im Aufgaben-Tab setzen (Punkte macht setPtsSlider).
     // v4.100.0: dieselbe Fuellroutine wie im Eintrag-Edit. Farbe (Aufgabenfarbe),
