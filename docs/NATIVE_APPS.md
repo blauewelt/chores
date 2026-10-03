@@ -4,8 +4,9 @@ Design doc. Status: **DRAFT for maintainer review**, 3 October 2026.
 Nothing here is built yet. Code anchors refer to v4.113.1.
 
 Decided so far (3 October 2026): no Play test has been started yet; Fairli
-moves to the maintainer's own domain `blueworld.li` before anything is
-uploaded to a store (§6.3).
+moves to the maintainer's own domain before anything is uploaded to a
+store: `fairli.blauewelt.org`, Android package id `org.blauewelt.fairli`
+(§6.3).
 
 Fairli today is a web app that can be installed to the home screen (a
 Progressive Web App, PWA). For Google Play it is packaged as a Trusted Web
@@ -51,7 +52,7 @@ Chrome). There is no iOS App Store app. This document plans the step to
 | Phase | What | Surfaces it reaches | Size |
 |---|---|---|---|
 | 0 | Decisions (§8); Play developer account | — | maintainer |
-| 0b | Move the app to its own address on `blueworld.li` (§6.3), then build the Android bundle against it and start the Play closed test | all | medium |
+| 0b | Move the app to `fairli.blauewelt.org` (§6.3), then build the Android bundle against it and start the Play closed test | all | medium |
 | 1 | Notifications over Web Push | browser PWA, Android store app, iOS home-screen PWA | medium |
 | 2 | Voice logging, in-app mic, behind a household flag | all | medium |
 | 3 | Play Store release 1.1.0 with notifications on | Android | small (after the 14-day gate) |
@@ -365,18 +366,21 @@ What it takes:
 Until then, iOS households are served by the home-screen PWA, which gets
 phases 1 and 2 in full.
 
-### 6.3 The move to blueworld.li — before any store upload
+### 6.3 The move to fairli.blauewelt.org — before any store upload
 
-**Decided 3 October 2026:** Fairli gets its own address on the maintainer's
-domain. Proposed: **`fairli.blueworld.li`**, app at the root path.
+**Decided 3 October 2026:** Fairli moves to **`fairli.blauewelt.org`**, app
+at the root path. `blauewelt.org` was chosen over `blueworld.li` because it
+matches the developer name shown in the stores («Blauewelt») and the GitHub
+organisation, `.org` is the more familiar ending in a shared link, and the
+domain is already on Cloudflare. `blueworld.li` stays a forwarder.
 
-Why a subdomain of its own and not `blueworld.li/fairli`: stored household
+Why a subdomain of its own and not `blauewelt.org/fairli`: stored household
 links, the service worker, push subscriptions, the Android asset-links
 proof and iOS Universal Links are all scoped to the origin (scheme + host).
 A dedicated host keeps Fairli's storage apart from the other blauewelt
 apps, gives it its own `/.well-known/` (today the Android proof lives in a
-different repo), and leaves the bare domain free — it currently forwards to
-the earth app.
+different repo), and keeps it apart from the earth app, which is served
+under `blauewelt.org/earth/`.
 
 Why now: everything above binds to the address. Moving after launch would
 drop every notification subscription and unlink every store install. Before
@@ -403,14 +407,15 @@ key.
   Shared links and QR codes (`/fairli/…` alias repo, `/chores/f/…`) keep
   working through the same forwarder.
 - **Android package name:** nothing is uploaded yet, so the permanent
-  package id can still follow the domain: `li.blueworld.fairli` instead of
+  package id follows the domain: `org.blauewelt.fairli` instead of
   `io.github.blauewelt.fairli`. The asset-links file moves to
-  `fairli.blueworld.li/.well-known/` inside this repo.
+  `fairli.blauewelt.org/.well-known/` inside this repo.
 - Supabase needs no change (no origin restriction on the publishable key —
   to confirm).
 
-Needed from the maintainer: confirm the host name, and one DNS record for
-it at the domain's registrar (the name servers are Infomaniak's).
+Needed from the maintainer: access to the Cloudflare account that holds
+`blauewelt.org`, to add the host and the hosting project (or do those two
+steps by hand from instructions).
 
 ---
 
@@ -468,8 +473,8 @@ shell → Keychain linking → push extension → Siri shortcut → review.
 3. **iOS go/no-go.** USD 99 a year, a Mac build path, review risk, and the
    largest piece of work in this document. Proposed: decide after phases 1
    and 2 are live — they are what makes the app defensible in review.
-4. ~~Domain~~ — decided: move to `blueworld.li` (§6.3). Open: confirm the
-   host name `fairli.blueworld.li` and the package id `li.blueworld.fairli`.
+4. ~~Domain~~ — decided: `fairli.blauewelt.org`, package id
+   `org.blauewelt.fairli` (§6.3).
 5. ~~Play Console status~~ — answered: no test started yet.
 
 ## 9. Sources
