@@ -1,3 +1,59 @@
+## 2026-10-03 — v4.114.1 (SW haushalt-v220, BETA only): the splash face winks once on app start
+
+- Maintainer request: «Can you make the logo wink on startup?» Under
+  `html.brand3` only, the boot splash face winks its right eye (viewer's right,
+  as on page 7 of the brand draft: the ring becomes the closed arc) once, then
+  the splash → header flight continues as before.
+- **How (CSS only, the `<img>` is untouched):** a new `--b3-lid` data URI — the
+  SAME 100-unit viewBox and the SAME userSpaceOnUse gradient as `--b3-logo` —
+  holds only an eyelid: a disc in the tile colour `#1B1D31` (r 18.8) that covers
+  the right ring, plus the wink arc in the gradient. It is drawn by
+  `#splash::after`, absolutely positioned on the centre of the splash (104 px,
+  same box as the splash `<img>`: measured 154/367.5 on Pixel, 143/280 on
+  iPhone, identical for both). Only its opacity animates: `b3splashwink`, 520 ms
+  after a 220 ms delay (so the face is seen open first), hard two-frame cut,
+  closed for ~150 ms (30 %–59 %). A cross-fade version was tried first — its
+  in-between frames showed a ghosted half ring; the hard cut matches the
+  draft's two-frame wink. No smile lift (not attempted): the smile is part
+  of the `<img>`, and that element's transform belongs to the FLIP.
+- **Why first paint and the FLIP are safe:** no markup change, no inline SVG,
+  no script before first paint — the lid is a pseudo-element of the existing
+  overlay, absolutely positioned (it does not take part in the flex centring),
+  starts at opacity 0, and its SVG lives in the already-parsed stylesheet. The
+  FLIP still measures `#splash img` and `#headLogo` exactly as before; when the
+  morph starts it adds `.morph` to `#splash`, which hides the lid
+  (`display:none`), so the lid can never be left behind while the logo flies.
+  Frame sequence (both devices): every open frame is pixel-identical to the
+  frame before the wink, and the closed frames differ only inside the right-eye
+  box — no jump in size or position.
+- **Fast boots — the wink finishes, bounded.** The morph used to start at
+  max(DOMContentLoaded, 550 ms after navigation start). It now waits for the
+  wink's `finished` promise (`#splash.getAnimations({subtree:true})`), capped
+  at `WINK_CAP = 600` ms; if no wink animation is running (old look, reduced
+  motion, wink already over on a slow boot, API missing) it goes immediately
+  as before. Chose «finish on the splash» over «carry the wink over to the
+  header logo»: at 38 px a wink is barely visible and would collide with the
+  title appearing. Measured on the mocked fast boot: the splash now stays
+  230–410 ms longer (Pixel ~230–310, iPhone ~300–410), morph exactly at the
+  wink's end; first paint unchanged; flag off the morph still starts at 550 ms.
+  On real devices the boot (sync, fonts) usually takes longer than the wink, so
+  the extra is often zero.
+- `prefers-reduced-motion: reduce` → no lid, no animation (an explicit rule:
+  the global `*{animation:none}` does not match pseudo-elements). Only on a real
+  start: the lid belongs to `#splash`, which is removed after the hand-over, so
+  re-renders never wink. Flag off: no rule applies; flag-off board/history
+  screenshots pixel-identical to v4.114.0. The toast wink from v4.114.0 stays.
+- Tests (Marken-Test Variante 3, both engines): «v4.114.1 Mit Beta» — second
+  boot with the cached flag: `::after` runs `b3splashwink` with the gradient lid,
+  `animationstart` and `animationend` fire, the end is ≤ the morph start
+  (MutationObserver on the img's transform), the morph comes < 850 ms after its
+  old time, the splash is gone < 730 ms after the morph, and switching tabs
+  brings no splash back — red against v4.114.0, and red again when the wait is
+  removed (the wink is cut off, no `animationend`). «Reduzierte Bewegung» and
+  «Ohne Beta» — `animationName` none, no events (pass on both by design).
+  Existing splash/flicker tests untouched and green.
+- APP_VERSION 4.114.1, SW cache haushalt-v220 (art cache haushalt-art-1 kept).
+
 ## 2026-10-03 — v4.114.0 (SW haushalt-v219, BETA only): the brand trial gets the old Fairli colours back — a blue → white → violet gradient in the face logo and a few accents
 
 - Maintainer request after showing the trial to his family: the old

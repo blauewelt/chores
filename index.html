@@ -636,6 +636,10 @@
     --onink:#12151F; --radius:20px; --shadow:none; --artframe:rgba(245,245,241,.3);
     --b3-logo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='10' y1='0' x2='90' y2='0'%3E%3Cstop offset='0' stop-color='%2384B2FF'/%3E%3Cstop offset='.34' stop-color='%23F5F5F1'/%3E%3Cstop offset='.66' stop-color='%23F5F5F1'/%3E%3Cstop offset='1' stop-color='%23B98AE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='%231B1D31'/%3E%3Cg fill='none' stroke='url(%23g)' stroke-linecap='round'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6'/%3E%3Ccircle cx='70.7' cy='31.2' r='12.5' stroke-width='9.6'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6'/%3E%3C/g%3E%3C/svg%3E");
     --b3-wink:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='10' y1='0' x2='90' y2='0'%3E%3Cstop offset='0' stop-color='%2384B2FF'/%3E%3Cstop offset='.34' stop-color='%23F5F5F1'/%3E%3Cstop offset='.66' stop-color='%23F5F5F1'/%3E%3Cstop offset='1' stop-color='%23B98AE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%231B1D31'/%3E%3Cg fill='none' stroke='url(%23g)'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6'/%3E%3Cpath d='M58.2 33.4A12.5 12.5 0 0 1 83.2 32.2' stroke-width='9.6' stroke-linecap='round'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
+    /* v4.114.1 Zwinkern beim Start: NUR das Augenlid — gleiche viewBox, gleiches
+       Verlaufsfeld wie --b3-logo; deckt den rechten Ring mit Kachelfarbe ab und
+       zeichnet den Bogen. Liegt als #splash::after UEBER dem Splash-<img>. */
+    --b3-lid:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='10' y1='0' x2='90' y2='0'%3E%3Cstop offset='0' stop-color='%2384B2FF'/%3E%3Cstop offset='.34' stop-color='%23F5F5F1'/%3E%3Cstop offset='.66' stop-color='%23F5F5F1'/%3E%3Cstop offset='1' stop-color='%23B98AE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='70.7' cy='31.2' r='18.8' fill='%231B1D31'/%3E%3Cpath d='M58.2 33.4A12.5 12.5 0 0 1 83.2 32.2' fill='none' stroke='url(%23g)' stroke-width='9.6' stroke-linecap='round'/%3E%3C/svg%3E");
     /* v4.114.0 Farbe: der alte Fairli-Verlauf (Titel #EAF1EB→--accent #84B2FF,
        Icon-Kacheln blau #428BF0/#8EC2FD … violett #9E59C8/#CBA0E5) als
        blau → weiss → violett. EINE Stelle: Stopps + fertiger --b3-grad.
@@ -826,6 +830,18 @@
     background:linear-gradient(var(--card),var(--card)) padding-box, var(--b3-grad) border-box}
   html.brand3 .score .bar i{background:var(--b3-grad) !important}
   html.brand3 .tab:focus-visible, html.brand3 button:focus-visible, html.brand3 input:focus-visible{outline-color:var(--b3-blue)}
+  /* v4.114.1 Start-Zwinkern: ein absolut positioniertes Augenlid ueber dem
+     zentrierten 104-px-Splash-Logo. Das <img> selbst (FLIP misst es) bleibt
+     unberuehrt; animiert wird nur die Deckkraft des Lids. 220 ms nach dem
+     ersten Paint, Geste 520 ms, davon ~150 ms geschlossen (harter Zwei-Bild-
+     Wechsel wie Seite 7 — eine Ueberblendung zeigte halbe Geisterringe). Der Morph wartet
+     auf das Ende (Deckel: 600 ms), .morph blendet das Lid sicher aus. */
+  html.brand3 #splash::after{content:''; position:absolute; left:50%; top:50%; width:104px; height:104px;
+    margin:-52px 0 0 -52px; background:var(--b3-lid) center/100% 100% no-repeat; opacity:0;
+    pointer-events:none; animation:b3splashwink .52s .22s step-end both}
+  html.brand3 #splash.morph::after{display:none}
+  @keyframes b3splashwink{0%{opacity:0} 30%{opacity:1} 59%{opacity:0} 100%{opacity:0}}
+  @media (prefers-reduced-motion: reduce){ html.brand3 #splash::after{animation:none; display:none} }
   @media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important} }
 </style>
 </head>
@@ -1010,7 +1026,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.114.0';
+  const APP_VERSION = '4.114.1';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -3543,18 +3559,33 @@
     const icon = sp.querySelector('img');
     const MIN = 550;                                  // ms ab navigationStart
     const finish = () => { document.documentElement.classList.remove('splash'); sp.remove(); };
+    // v4.114.1 (nur brand3): das Start-Zwinkern (#splash::after, reines CSS)
+    // darf zu Ende laufen, bevor das Logo in den Kopf fliegt — hoechstens
+    // WINK_CAP ms zusaetzlich. Laeuft keine Animation (alter Look, reduzierte
+    // Bewegung, schon vorbei, API fehlt), geht es sofort weiter wie bisher.
+    const WINK_CAP = 600;
+    function afterWink(go) {
+      let w = null;
+      try { w = sp.getAnimations({ subtree: true }).find(a => a.animationName === 'b3splashwink'); } catch (e) {}
+      if (!w || !brandOn()) return go();
+      let done = false;
+      const once = () => { if (!done) { done = true; go(); } };
+      w.finished.then(once, once);
+      setTimeout(once, WINK_CAP);
+    }
     function morph() {
       const target = document.getElementById('headLogo');
       if (!target || matchMedia('(prefers-reduced-motion: reduce)').matches) return finish();
       const a = icon.getBoundingClientRect(), b = target.getBoundingClientRect();
       if (!a.width || !b.width) return finish();
+      sp.classList.add('morph');
       // border-radius NICHT animieren: scale() verkleinert die 24px optisch
       // auf ~6px — genau der Ziel-Radius des Kopf-Logos.
       icon.style.transform = `translate(${b.left - a.left}px, ${b.top - a.top}px) scale(${b.width / a.width})`;
       sp.style.background = 'transparent';
       setTimeout(finish, 480);
     }
-    const arm = () => setTimeout(morph, Math.max(0, MIN - performance.now()));
+    const arm = () => setTimeout(() => afterWink(morph), Math.max(0, MIN - performance.now()));
     if (document.readyState !== 'loading') arm();
     else addEventListener('DOMContentLoaded', arm);
   })();

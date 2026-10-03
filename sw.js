@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v219';   // v4.114.0 Marken-Test: Verlauf blau-weiss-violett (Logo + icon-b3-*.png neu)
+const CACHE = 'haushalt-v220';   // v4.114.1 Marken-Test: Splash-Logo zwinkert beim Start
 // v4.113.1: Kachelkunst hat einen EIGENEN, versionsfesten Cache. Bis v4.113.0
 // lag sie im versionierten CACHE — und den loescht `activate` bei JEDEM Deploy.
 // Folge: nach jedem Deploy forderte jedes Geraet jedes Kachelbild neu an,

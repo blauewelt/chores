@@ -303,6 +303,14 @@ edge function for per-person manifests. Decide on an own domain first.
   is never visible beforehand); the overlay is ALWAYS pointer-events:none;
   timeouts instead of transitionend (the global reduced-motion rule
   suppresses transitions).
+  **Start wink (v4.114.1, brand3 only):** `#splash::after` draws an eyelid
+  (`--b3-lid`, same viewBox/gradient as `--b3-logo`) over the centred splash
+  `<img>` and animates ONLY its opacity (`b3splashwink`, 220 ms delay, 520 ms,
+  hard cut). Never put the wink into the `<img>` or the boot markup — the FLIP
+  measures that node. The morph waits for the wink's `finished` promise, capped
+  at `WINK_CAP` 600 ms, and adds `.morph` to `#splash`, which hides the lid.
+  Reduced motion needs its own rule there: the global `*{animation:none}` does
+  not match pseudo-elements.
 - **RULE (19.07.2026, maintainer): every change to the art prompt is
   backed by a BEFORE/AFTER comparison sheet** — the same tiles, the same
   seed, variants side by side as an image, judged by a human. Prompt
@@ -469,6 +477,8 @@ Mechanism, keep it this way when the trial grows:
   ring, focus outline (`--b3-blue`). NOT on: the selected tab/period/chips
   (selection stays inversion), percentage numerals (gradient-clipped text
   drops the `<small>%` in Chrome), person rings, red, body text, tile art.
+  The splash face winks once on a real start (v4.114.1, see §7); the toast
+  wink is separate (`--b3-wink`).
   Off switch: `--b3-grad: linear-gradient(var(--ink),var(--ink))` +
   `--b3-blue: var(--ink)`. New accents must come from `--b3-grad`, never a
   new literal.

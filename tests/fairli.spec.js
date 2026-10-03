@@ -5435,6 +5435,78 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--b3-grad').trim())).toBe('');
     await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=48');
   });
+
+  // v4.114.1: das Splash-Logo zwinkert beim echten Start einmal (#splash::after,
+  // reines CSS-Augenlid); der Morph in den Kopf wartet darauf, hoechstens 600 ms.
+  const winkProbe = () => {
+    const P = window.__wink = { start: null, end: null, morph: null, gone: null, dcl: null, name: null, after: null };
+    const isW = e => e.animationName === 'b3splashwink' && e.pseudoElement === '::after';
+    document.addEventListener('animationstart', e => { if (isW(e)) P.start = performance.now(); }, true);
+    document.addEventListener('animationend', e => { if (isW(e)) P.end = performance.now(); }, true);
+    document.addEventListener('DOMContentLoaded', () => {
+      P.dcl = performance.now();
+      const sp = document.getElementById('splash');
+      const cs = sp && getComputedStyle(sp, '::after');
+      P.name = cs ? cs.animationName : null; P.after = cs ? cs.backgroundImage : null;
+      const img = sp && sp.querySelector('img');
+      if (img) new MutationObserver(() => { if (P.morph == null && img.style.transform) P.morph = performance.now(); })
+        .observe(img, { attributes: true, attributeFilter: ['style'] });
+      new MutationObserver(() => { if (P.gone == null && !document.getElementById('splash')) P.gone = performance.now(); })
+        .observe(document.body, { childList: true });
+    });
+  };
+
+  test('v4.114.1 Mit Beta: Start-Zwinkern laeuft einmal, DANN fliegt das Logo in den Kopf — begrenzt', async ({ context, page }) => {
+    await mockBackend(context, B3);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    await expect(page.locator('#splash')).toHaveCount(0);
+    await context.addInitScript(winkProbe);
+    await page.reload();
+    await expect(page.locator('#splash')).toHaveCount(0);
+    await expect(page.locator('#headLogo')).toHaveCSS('opacity', '1');
+    const P = await page.evaluate(() => window.__wink);
+    expect(P.name).toBe('b3splashwink');
+    expect(decodeURIComponent(P.after)).toContain('linearGradient');   // gleiches Verlaufsfeld
+    expect(P.start).not.toBeNull();
+    expect(P.end).not.toBeNull();
+    expect(P.morph).not.toBeNull();
+    // Reihenfolge: erst zu Ende gezwinkert, dann der Morph (gleiche Messung wie bisher)
+    expect(P.end).toBeLessThanOrEqual(P.morph + 1);
+    // Begrenzt: der Morph kommt hoechstens ~600 ms nach seinem alten Zeitpunkt
+    expect(P.morph - Math.max(550, P.dcl)).toBeLessThan(600 + 250);
+    expect(P.gone - P.morph).toBeLessThan(480 + 250);
+    // Nur beim Start: kein Splash, kein Lid, keine weitere Animation nach dem Rendern
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await expect(page.locator('#splash')).toHaveCount(0);
+  });
+
+  test('v4.114.1 Reduzierte Bewegung: kein Zwinkern, Splash raeumt sich wie bisher', async ({ context, page }) => {
+    await mockBackend(context, B3);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    await context.addInitScript(winkProbe);
+    await page.reload();
+    await expect(page.locator('#splash')).toHaveCount(0);
+    const P = await page.evaluate(() => window.__wink);
+    expect(P.name).toBe('none');
+    expect(P.start).toBeNull();
+    expect(P.end).toBeNull();
+  });
+
+  test('v4.114.1 Ohne Beta: kein Augenlid, keine Animation am Splash', async ({ context, page }) => {
+    await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }] });
+    await context.addInitScript(winkProbe);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('#splash')).toHaveCount(0);
+    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+    const P = await page.evaluate(() => window.__wink);
+    expect(P.name).toBe('none');
+    expect(P.after).toBe('none');
+    expect(P.start).toBeNull();
+  });
 });
 
 // ---------- v4.113.1: Kachelbild-Polaritaet (nur brand3) + Wiederholungen ohne SW ----------
