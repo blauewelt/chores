@@ -448,13 +448,30 @@ Mechanism, keep it this way when the trial grows:
 - Logo = data-URI SVG in `--b3-logo`, swapped onto `#headLogo` and the
   splash `<img>` via CSS `content:` (same nodes → the FLIP still works).
   manifest.json and `icon-*.png` are untouched on purpose (home-screen icon
-  is global); `icon-b3-*.png` exist only for the favicon/touch-icon swap.
+  is global); `icon-b3-*.png` exist only for the favicon/touch-icon swap
+  (since v4.114.0 with the gradient face, links `?v=2` — bump it whenever the
+  PNGs change, together with the SW cache).
 - Colours: tokens are redefined on `html.brand3`; the old hard-coded
   colours (#161D19 wells, #252F29 tracks, rgba blues/golds, the gradient
   title) are overridden in the same block. New UI must use the variables,
   or add its override there. Selection = inversion (white fill,
   `--onink` text), never a hue; person colours only as rings (`--pc` on
   `.dot`/`.swatch`).
+- **Gradient (v4.114.0):** the old Fairli colours as blue → white → violet,
+  tokens `--b3-blue #84B2FF` (old `--accent`), `--b3-white #F5F5F1`,
+  `--b3-violet #B98AE0` (old icon's violet tile, lifted) and the ready
+  `--b3-grad` (100deg, white plateau 34–66 %). The face in `--b3-logo` and
+  `--b3-wink` uses the same stops as an SVG `linearGradient`
+  (userSpaceOnUse, treatment «c»: white middle, tinted ends — see LOG
+  v4.114.0 for why not diagonal or two-coloured eyes). Colour ONLY on: the
+  household title (gradient text), FAB + `.btn.primary` (gradient fill, dark
+  `--onink` ink — ≥ 6.7:1 on the darkest stop), points bars, slider thumb
+  ring, focus outline (`--b3-blue`). NOT on: the selected tab/period/chips
+  (selection stays inversion), percentage numerals (gradient-clipped text
+  drops the `<small>%` in Chrome), person rings, red, body text, tile art.
+  Off switch: `--b3-grad: linear-gradient(var(--ink),var(--ink))` +
+  `--b3-blue: var(--ink)`. New accents must come from `--b3-grad`, never a
+  new literal.
 - Un-gating later = delete the class check, not a mass write of beta=true
   (same reasoning as v4.74.0).
 
@@ -798,6 +815,12 @@ stays at opacity 0 until checked (`html.brand3 img.art:not(.ok)` — note that
 through `artTag()` (tile, one-off, history, entry preview) or `artBind()`
 (the fixed task-edit `<img>`); without brand3 both produce the old markup
 exactly and do no canvas work. New places that show art must use them.
+
+**Brand-trial icons (v4.114.0):** `icon-b3-192/512/512-maskable.png` are
+rendered in Chromium from the SAME SVG as `--b3-logo` (full-bleed `#1B1D31`,
+no rounded corners — the OS masks; maskable = the face group scaled 0.658
+about the centre, inside the 80 % safe circle). Tile art stays white line art
+under the gradient — the colour lives in the face and the accents only.
 
 **App icon (since v4.36.3):** four rounded color tiles on a dark
 background — like the chore board. icon-192/512/512-maskable (maskable:

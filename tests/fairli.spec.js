@@ -5362,13 +5362,78 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     await page.getByRole('tab', { name: 'Aufgaben' }).click();
     await page.locator('#openAdd').click();
     await expect(page.locator('#choreSheet')).toBeVisible();
-    expect(await bg(page.locator('#saveChore'))).toBe('rgb(245, 245, 241)');
+    // v4.114.0: Primaerknopf traegt den Verlauf, dunkle Schrift (vorher: flach weiss)
+    expect(await page.locator('#saveChore').evaluate(el => getComputedStyle(el).backgroundImage)).toContain('linear-gradient');
+    expect(await page.locator('#saveChore').evaluate(el => getComputedStyle(el).color)).toBe('rgb(18, 21, 31)');
     await page.locator('#cancelChore').click();
     await page.locator('#openSettings').click();
     await expect(page.locator('#settingsSheet')).toBeVisible();
     await page.locator('#closeSettings').click();
     await page.evaluate(() => document.getElementById('openMembers').click());
     await expect(page.locator('#memberSheet .prow')).toHaveCount(2);
+  });
+
+  // v4.114.0: «ein bisschen Farbe» — der alte Fairli-Verlauf blau → weiss → violett
+  // im Logo (alle Stellen) und in wenigen Akzenten; ohne Beta bleibt alles alt.
+  const GRAD = { blue: 'rgb(132, 178, 255)', white: 'rgb(245, 245, 241)', violet: 'rgb(185, 138, 224)' };
+  const css = (loc, prop, pseudo) => loc.evaluate((el, a) => getComputedStyle(el, a[1] || null)[a[0]], [prop, pseudo]);
+
+  test('v4.114.0 Mit Beta: Logo mit Verlauf (Kopf, Splash, Leerzustand, Zwinkern) und Verlauf auf Titel, FAB, Primaerknopf, Punktebalken', async ({ context, page }) => {
+    await mockBackend(context, B3);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    // Logo-Daten-URI traegt eine Verlaufsdefinition mit den drei Stopps
+    const logo = decodeURIComponent(await css(page.locator('#headLogo'), 'content'));
+    expect(logo).toContain('linearGradient');
+    for (const hex of ['#84B2FF', '#F5F5F1', '#B98AE0']) expect(logo).toContain(hex);
+    expect(logo).toContain("stroke='url(#g)'");
+    expect(decodeURIComponent(await css(page.locator('#splash img'), 'content'))).toContain('linearGradient');
+    const empty = await page.evaluate(() => { const d = document.createElement('div'); d.className = 'empty'; document.body.appendChild(d);
+      const v = getComputedStyle(d, '::before').backgroundImage; d.remove(); return decodeURIComponent(v); });
+    expect(empty).toContain('linearGradient');
+    // Tokens an EINER Stelle
+    const tok = await page.evaluate(() => { const s = getComputedStyle(document.documentElement);
+      return ['--b3-blue', '--b3-white', '--b3-violet', '--b3-grad'].map(k => s.getPropertyValue(k).trim()); });
+    expect(tok.slice(0, 3)).toEqual(['#84B2FF', '#F5F5F1', '#B98AE0']);
+    expect(tok[3]).toContain('linear-gradient');
+    // Akzente: Verlauf als background-image, die Stopps aus den Tokens
+    for (const sel of ['header h1', '#openAdd', '#saveChore']) {
+      const bi = await css(page.locator(sel), 'backgroundImage');
+      expect(bi, sel).toContain('linear-gradient');
+      for (const c of Object.values(GRAD)) expect(bi, sel).toContain(c);
+    }
+    expect(await css(page.locator('#openAdd'), 'color')).toBe('rgb(18, 21, 31)');
+    // Auswahl bleibt Inversion: der gewaehlte Tab ist weiter flach weiss
+    expect(await css(page.locator('.tab[aria-selected="true"]'), 'backgroundImage')).toBe('none');
+    // Personenringe bleiben Personenfarbe
+    expect(await css(page.locator('.chip .dot').first(), 'backgroundImage')).toBe('none');
+    // Favicon/Touch-Icon mit neuem Cache-Buster (die weissen PNGs duerfen nicht haengen bleiben)
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-b3-192.png?v=2');
+    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-b3-192.png?v=2');
+    // Zwinkern im Toast
+    await page.locator('.chip[data-mid="m-chris"]').click();
+    await page.locator('.chore[data-cid="c-1"]').click();
+    await expect(page.locator('#toast')).toHaveClass(/logged/);
+    expect(decodeURIComponent(await css(page.locator('#toast'), 'backgroundImage', '::before'))).toContain('linearGradient');
+    // Punkte: Balken mit Verlauf
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('.score .bar i').first()).toBeVisible();
+    expect(await css(page.locator('.score .bar i').first(), 'backgroundImage')).toContain('linear-gradient');
+  });
+
+  test('v4.114.0 Ohne Beta: altes Logo, alter Titelverlauf, flacher Akzent-FAB, keine Verlaufs-Tokens', async ({ context, page }) => {
+    await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await page.waitForTimeout(500);
+    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+    await expect(page.locator('#headLogo')).toHaveAttribute('src', '/chores/icon-192.png?v=48');
+    expect(await css(page.locator('#headLogo'), 'content')).not.toContain('linearGradient');
+    expect(await css(page.locator('header h1'), 'backgroundImage')).toBe('linear-gradient(100deg, rgb(234, 241, 235), rgb(132, 178, 255))');
+    expect(await css(page.locator('#openAdd'), 'backgroundImage')).toBe('none');
+    expect(await css(page.locator('#openAdd'), 'backgroundColor')).toBe('rgb(132, 178, 255)');
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--b3-grad').trim())).toBe('');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=48');
   });
 });
 

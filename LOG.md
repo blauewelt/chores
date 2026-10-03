@@ -1,3 +1,77 @@
+## 2026-10-03 — v4.114.0 (SW haushalt-v219, BETA only): the brand trial gets the old Fairli colours back — a blue → white → violet gradient in the face logo and a few accents
+
+- Maintainer request after showing the trial to his family: the old
+  blue-to-violet of the previous logo «is actually not bad» — try it in the new
+  logo (the white becomes blue, white, violet) so the app keeps a bit of colour.
+  Everything below is under `html.brand3` only (families.beta).
+- **The original colours, found first:** the flag-off title gradient is
+  `#EAF1EB → --accent #84B2FF`; sampled from `icon-512.png`, the old app icon's
+  blue tile runs `#8EC2FD → #428BF0 → #2469E2`, the slate tile
+  `#A3B7E4 → #4260B4`, the violet tile `#CBA0E5 → #9E59C8 → #863AB4`, the roof
+  `#D4E5F7 → #2E5FB8`. Stops used: **blue `#84B2FF`** (the old accent, ≈ the
+  blue tile's top), **white `#F5F5F1`** (brand3 ink), **violet `#B98AE0`**
+  (the violet tile's mid tone lifted towards its top so dark ink on it stays
+  well above AA). Defined ONCE in the brand3 token block: `--b3-blue`,
+  `--b3-white`, `--b3-violet` and a ready
+  `--b3-grad: linear-gradient(100deg, blue, white 34%, white 66%, violet)`.
+- **Logo — three treatments compared** at 38 px (header), 104 px (splash) and
+  512 px on the navy ground (contact sheet `contact-7-logo-options.png`, outside
+  the repo): (a) one diagonal gradient across the mark, blue top-left → white →
+  violet bottom-right; (b) left eye blue, right eye violet, smile blue → white →
+  violet; (c) softer: one horizontal gradient where white holds the middle third
+  and blue/violet only tint the outer ends. **Chosen: (c).** It stays one white,
+  friendly face at 38 px, the white clearly owns the centre, and it is
+  mirror-symmetric like the shape itself. (a) washed the right eye out to plain
+  white and put no blue on the smile — lopsided, and the diagonal sheen is the
+  generic «AI gradient»; (b) is the most colourful but loses the white almost
+  entirely (a narrow stripe in the smile), and at 38 px the eyes read as two
+  differently coloured dots rather than one face.
+- The gradient is an SVG `linearGradient` with `gradientUnits=userSpaceOnUse`,
+  so rings and smile share one colour field. Applied everywhere the face
+  appears: `--b3-logo` (header `#headLogo`, splash `<img>`, empty-state
+  `::before`) and `--b3-wink` — the toast's wink, which used to be dark strokes
+  on the white pill, is now the same navy tile with the gradient wink (a
+  blue→white→violet stroke would vanish into a white pill). `icon-b3-192/512/
+  512-maskable.png` re-rendered from the same SVG in Chromium (maskable keeps the
+  v4.113.0 geometry: face scaled 0.658 about the centre, inside the 80 % safe
+  circle); favicon/touch-icon links now `?v=2` so devices do not keep the white
+  ones (file names unchanged, SW precache list unchanged, cache bumped).
+- **Colour in the app — restrained, from `--b3-grad` only.** Kept: the
+  household title (gradient text, as the old look had), the floating + button
+  and primary sheet buttons (gradient fill, dark `#12151F` ink), the points bars
+  (each bar is a stroke like the smile), the slider thumb ring (gradient ring via
+  padding-box/border-box), and the keyboard focus ring in `--b3-blue`. Tried and
+  dropped: the active tab pill (with the title and FAB the board got busy, and
+  it broke «selection = inversion»), and the percentage numerals in Punkte
+  (gradient-clipped text loses the `<small>%` in Chrome, and on two digits it
+  only reached blue→white). First pass used one white point at 50 %; the FAB
+  then looked like a glossy orb with a hard white band — the white plateau
+  (34–66 %, same as the logo) fixed that. Not coloured: person rings, red,
+  body text, tile art (stays white line art).
+- **Contrast** (dark ink on gradient fills): `#12151F` on violet `#B98AE0`
+  6.7:1 (darkest stop), on blue `#84B2FF` 8.5:1, on white 16.7:1 — AA for normal
+  text everywhere. The gradient title on the `#12151F` ground has the same
+  ratios. Focus ring blue on the ground 8.5:1.
+- **Turning the colour off again (one place, the brand3 token block):** set
+  `--b3-grad` to `linear-gradient(var(--ink), var(--ink))` and `--b3-blue` to
+  `var(--ink)` — every accent is white again. The logo is the two data URIs
+  right above them (`--b3-logo`, `--b3-wink`), which carry the same three hex
+  values; restore their `stroke` to `#fff` / `#12151F` for the flat face.
+- Flag-off: no rule outside the brand3 block changed; Pixel + iPhone flag-off
+  board and history screenshots are pixel-identical to v4.113.1.
+  `icon-192/512`, `manifest.json`, art prompt/pacing/caching/inversion untouched;
+  `haushalt-art-1` survives the bump.
+- Tests (Marken-Test Variante 3): new «v4.114.0 Mit Beta» (logo/splash/empty/
+  wink data URIs contain the `linearGradient` with the three stops; title, FAB,
+  primary button and points bar compute a gradient `background-image` with all
+  three colours; tab stays flat white; person ring has no gradient; favicon
+  `?v=2`) — red against v4.113.1; «v4.114.0 Ohne Beta» (old logo src, old title
+  gradient, flat accent FAB, no `--b3-grad`) — passes on both by design. Changed
+  one existing assertion: the render test pinned `#saveChore` to flat white
+  `rgb(245, 245, 241)`; it now expects a gradient image and dark ink.
+- APP_VERSION 4.114.0, SW cache haushalt-v219. No strings, no i18n, no release
+  notes — invisible to every other household.
+
 ## 2026-10-02 — v4.113.1 (SW haushalt-v218): brand trial art no longer turns into a white box, and art generation is paced (pacing applies to all households)
 
 ### A — inverted art under brand3 (BETA only)
