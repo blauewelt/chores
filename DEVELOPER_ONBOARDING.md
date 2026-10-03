@@ -1122,6 +1122,10 @@ the plausible-sounding fix (DNS flag, UI automation) did not.
 
 ## 12. Known open items / deferred
 
+- **Store apps, notifications, voice logging — DESIGN DRAFT 03.10.2026,
+  awaiting maintainer decisions:** `docs/NATIVE_APPS.md`. Read it before
+  touching `sw.js` push handling, `twa/`, or adding `supabase/functions/`.
+
 - **Per-member permissions server-side:** the v4.38.0 permissions are
   client-side. All link holders (including personal ones — the family
   part sits in their URL) share the same family write key; real
