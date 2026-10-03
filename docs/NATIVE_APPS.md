@@ -3,6 +3,10 @@
 Design doc. Status: **DRAFT for maintainer review**, 3 October 2026.
 Nothing here is built yet. Code anchors refer to v4.113.1.
 
+Decided so far (3 October 2026): no Play test has been started yet; Fairli
+moves to the maintainer's own domain `blueworld.li` before anything is
+uploaded to a store (§6.3).
+
 Fairli today is a web app that can be installed to the home screen (a
 Progressive Web App, PWA). For Google Play it is packaged as a Trusted Web
 Activity (TWA: a thin Android app that shows the web app full-screen through
@@ -46,14 +50,16 @@ Chrome). There is no iOS App Store app. This document plans the step to
 
 | Phase | What | Surfaces it reaches | Size |
 |---|---|---|---|
-| 0 | Decisions (§8), start the Play closed test, settle the domain | — | maintainer |
+| 0 | Decisions (§8); Play developer account | — | maintainer |
+| 0b | Move the app to its own address on `blueworld.li` (§6.3), then build the Android bundle against it and start the Play closed test | all | medium |
 | 1 | Notifications over Web Push | browser PWA, Android store app, iOS home-screen PWA | medium |
 | 2 | Voice logging, in-app mic, behind a household flag | all | medium |
 | 3 | Play Store release 1.1.0 with notifications on | Android | small (after the 14-day gate) |
 | 4 | iOS App Store app: Capacitor shell, Apple push, Siri shortcut | iOS | large |
 | 5 | Assistant integrations (Gemini App Functions, Siri AI) | Android, iOS | when available |
 
-Phases 1 and 2 are independent of each other and of the stores. Phase 0
+Phases 1 and 2 are independent of each other and of the stores, but both
+come after the move (push subscriptions are bound to the address). Phase 0b
 contains the one long wait: Google requires new personal developer accounts
 to run a closed test with 12 testers for 14 days before production.
 
@@ -320,7 +326,8 @@ view. The notification extension (§6.2) needs the same. The text-accepting
 | Updates | Every web deploy is live at once | Bundled files; store release per change, or an extra live-update layer |
 | Native code (App Functions) | Possible by adding Kotlin to the generated project | Yes |
 
-Release 1.1.0 = notifications on, monochrome icon, Android 16 target. Native
+Release 1.1.0 = new host and package id (§6.3), notifications on,
+monochrome icon, Android 16 target. Native
 code is added only when App Functions become callable.
 
 ### 6.2 iOS — a real project
@@ -358,14 +365,52 @@ What it takes:
 Until then, iOS households are served by the home-screen PWA, which gets
 phases 1 and 2 in full.
 
-### 6.3 Decide the domain first
+### 6.3 The move to blueworld.li — before any store upload
 
-Push subscriptions, stored household links, the Android asset-links proof
-and iOS Universal Links are all bound to the origin
-`blauewelt.github.io`. A later move to a custom domain (already an open
-item in DEVELOPER_ONBOARDING §12) would silently drop every notification
-subscription and unlink every store install. Either move before phase 1
-ships widely, or decide to stay.
+**Decided 3 October 2026:** Fairli gets its own address on the maintainer's
+domain. Proposed: **`fairli.blueworld.li`**, app at the root path.
+
+Why a subdomain of its own and not `blueworld.li/fairli`: stored household
+links, the service worker, push subscriptions, the Android asset-links
+proof and iOS Universal Links are all scoped to the origin (scheme + host).
+A dedicated host keeps Fairli's storage apart from the other blauewelt
+apps, gives it its own `/.well-known/` (today the Android proof lives in a
+different repo), and leaves the bare domain free — it currently forwards to
+the earth app.
+
+Why now: everything above binds to the address. Moving after launch would
+drop every notification subscription and unlink every store install. Before
+launch it costs each existing household one re-install of the home-screen
+icon and nothing else — the data is on the server and the link carries the
+key.
+
+**How (proposal, to be detailed before building):**
+
+- **Run both addresses in parallel; never hard-switch.** Pointing GitHub
+  Pages' custom-domain setting at the new host would turn the old address
+  into an HTTP redirect. Installed apps would then be stuck on their cached
+  old version forever (a service worker refuses a redirected update), with
+  their stored link unreachable. Instead the new address is served
+  separately from the same `main` branch — the earlier "option D"
+  (Cloudflare Pages) fits; to verify — and the old address stays alive.
+- **The app must run under both `/chores/` and `/`.** `BASE` is already
+  derived at runtime, but about 15 places in `index.html`, 7 in `sw.js`,
+  plus `404.html`, `manifest.json` and the tests hardcode `/chores/`.
+- **The old address becomes a forwarder that carries the household along.**
+  A release on the old origin reads the stored route and sends the device
+  to the same route on the new host, where it is saved again; the user is
+  then asked to install the icon from there. Stays in place for months.
+  Shared links and QR codes (`/fairli/…` alias repo, `/chores/f/…`) keep
+  working through the same forwarder.
+- **Android package name:** nothing is uploaded yet, so the permanent
+  package id can still follow the domain: `li.blueworld.fairli` instead of
+  `io.github.blauewelt.fairli`. The asset-links file moves to
+  `fairli.blueworld.li/.well-known/` inside this repo.
+- Supabase needs no change (no origin restriction on the publishable key —
+  to confirm).
+
+Needed from the maintainer: confirm the host name, and one DNS record for
+it at the domain's registrar (the name servers are Infomaniak's).
 
 ---
 
@@ -374,12 +419,20 @@ ships widely, or decide to stay.
 **Phase 0 — maintainer**
 
 1. Answer the decisions in §8.
-2. Play Console: confirm where the app stands; if not yet done, upload the
-   signed bundle to closed testing and invite 12 testers — the 14 days
-   start only then. Add Google's app-signing fingerprint to
-   `assetlinks.json`.
+2. Play developer account (USD 25, identity verification can take days).
+   The upload itself waits for phase 0b.
 3. Register for the App Functions early-access programme (free, no
    commitment).
+
+**Phase 0b — the move, then the Play test**
+
+1. Detailed migration plan and tests for §6.3; app runs under both paths.
+2. New address live in parallel; forwarder release on the old one;
+   maintainer's household moves first.
+3. Android bundle 1.1.0 built against the new host, new package id,
+   notifications enabled in the shell, Android 16 target. Upload to closed
+   testing, 12 testers, 14 days. Add Google's app-signing fingerprint to
+   the asset-links file.
 
 **Phase 1 — notifications** (one intent-board claim: `push`)
 
@@ -415,9 +468,9 @@ shell → Keychain linking → push extension → Siri shortcut → review.
 3. **iOS go/no-go.** USD 99 a year, a Mac build path, review risk, and the
    largest piece of work in this document. Proposed: decide after phases 1
    and 2 are live — they are what makes the app defensible in review.
-4. **Domain.** Custom domain now, or stay on `blauewelt.github.io` for
-   good (§6.3).
-5. **Play Console status** — has the closed test started?
+4. ~~Domain~~ — decided: move to `blueworld.li` (§6.3). Open: confirm the
+   host name `fairli.blueworld.li` and the package id `li.blueworld.fairli`.
+5. ~~Play Console status~~ — answered: no test started yet.
 
 ## 9. Sources
 

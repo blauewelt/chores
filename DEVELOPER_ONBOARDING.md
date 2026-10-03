@@ -1227,7 +1227,8 @@ the plausible-sounding fix (DNS flag, UI automation) did not.
   (approved, never commissioned).
 - **TTL for inactive FAMILIES** (whole households, not entries):
   still open — v4.52.0 only covers the history.
-- **Custom Domain** (fairli.app/ch) + option D (Cloudflare, private
+- **Custom Domain** — DECIDED 03.10.2026: `blueworld.li`, see
+  `docs/NATIVE_APPS.md` §6.3. Formerly: (fairli.app/ch) + option D (Cloudflare, private
   repos, per-person manifests) — fix the domain before any URL migration.
 - Android person shortcuts = browser tab (accepted; the real fix =
   option D). iOS standalone can clear storage under space pressure →
