@@ -5331,7 +5331,8 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     // Aufgaben: Kachel sichtbar, gewaehlter Tab invertiert (weiss)
     await expect(page.locator('.chore[data-cid="c-1"] .cname')).toHaveText('Müll rausbringen');
     expect(await bg(page.locator('.tab[aria-selected="true"]'))).toBe('rgb(245, 245, 241)');
-    expect(await bg(page.locator('.chore[data-cid="c-1"]'))).toBe('rgb(27, 29, 49)');
+    // v4.115.0: Kachel in ihrem Ton (c-1 → violett; vorher dunkel rgb(27, 29, 49))
+    expect(await bg(page.locator('.chore[data-cid="c-1"]'))).toBe('rgb(220, 201, 242)');
     // Toast nach dem Verbuchen: zwinkert
     await page.locator('.chip[data-mid="m-chris"]').click();
     await page.locator('.chore[data-cid="c-1"]').click();
@@ -5362,8 +5363,9 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     await page.getByRole('tab', { name: 'Aufgaben' }).click();
     await page.locator('#openAdd').click();
     await expect(page.locator('#choreSheet')).toBeVisible();
-    // v4.114.0: Primaerknopf traegt den Verlauf, dunkle Schrift (vorher: flach weiss)
-    expect(await page.locator('#saveChore').evaluate(el => getComputedStyle(el).backgroundImage)).toContain('linear-gradient');
+    // v4.115.0: Primaerknopf wieder flach weiss (v4.114.0: Verlauf), dunkle Schrift
+    expect(await page.locator('#saveChore').evaluate(el => getComputedStyle(el).backgroundImage)).toBe('none');
+    expect(await bg(page.locator('#saveChore'))).toBe('rgb(245, 245, 241)');
     expect(await page.locator('#saveChore').evaluate(el => getComputedStyle(el).color)).toBe('rgb(18, 21, 31)');
     await page.locator('#cancelChore').click();
     await page.locator('#openSettings').click();
@@ -5386,7 +5388,7 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     const logo = decodeURIComponent(await css(page.locator('#headLogo'), 'content'));
     expect(logo).toContain('linearGradient');
     for (const hex of ['#84B2FF', '#F5F5F1', '#B98AE0']) expect(logo).toContain(hex);
-    expect(logo).toContain("stroke='url(#g)'");
+    expect(logo).toContain("stroke='url(#gb)'");   // v4.115.0: je Auge ein eigener Verlauf
     expect(decodeURIComponent(await css(page.locator('#splash img'), 'content'))).toContain('linearGradient');
     const empty = await page.evaluate(() => { const d = document.createElement('div'); d.className = 'empty'; document.body.appendChild(d);
       const v = getComputedStyle(d, '::before').backgroundImage; d.remove(); return decodeURIComponent(v); });
@@ -5396,20 +5398,20 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
       return ['--b3-blue', '--b3-white', '--b3-violet', '--b3-grad'].map(k => s.getPropertyValue(k).trim()); });
     expect(tok.slice(0, 3)).toEqual(['#84B2FF', '#F5F5F1', '#B98AE0']);
     expect(tok[3]).toContain('linear-gradient');
-    // Akzente: Verlauf als background-image, die Stopps aus den Tokens
+    // v4.115.0: seit die Kacheln Farbe tragen, sind Titel, FAB und Primaerknopf
+    // wieder schlicht (v4.114.0 trugen sie --b3-grad)
     for (const sel of ['header h1', '#openAdd', '#saveChore']) {
-      const bi = await css(page.locator(sel), 'backgroundImage');
-      expect(bi, sel).toContain('linear-gradient');
-      for (const c of Object.values(GRAD)) expect(bi, sel).toContain(c);
+      expect(await css(page.locator(sel), 'backgroundImage'), sel).toBe('none');
     }
+    expect(await css(page.locator('#openAdd'), 'backgroundColor')).toBe(GRAD.white);
     expect(await css(page.locator('#openAdd'), 'color')).toBe('rgb(18, 21, 31)');
     // Auswahl bleibt Inversion: der gewaehlte Tab ist weiter flach weiss
     expect(await css(page.locator('.tab[aria-selected="true"]'), 'backgroundImage')).toBe('none');
     // Personenringe bleiben Personenfarbe
     expect(await css(page.locator('.chip .dot').first(), 'backgroundImage')).toBe('none');
     // Favicon/Touch-Icon mit neuem Cache-Buster (die weissen PNGs duerfen nicht haengen bleiben)
-    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-b3-192.png?v=2');
-    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-b3-192.png?v=2');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-b3-192.png?v=3');
+    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-b3-192.png?v=3');
     // Zwinkern im Toast
     await page.locator('.chip[data-mid="m-chris"]').click();
     await page.locator('.chore[data-cid="c-1"]').click();
@@ -5418,7 +5420,7 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     // Punkte: Balken mit Verlauf
     await page.getByRole('tab', { name: 'Punkte' }).click();
     await expect(page.locator('.score .bar i').first()).toBeVisible();
-    expect(await css(page.locator('.score .bar i').first(), 'backgroundImage')).toContain('linear-gradient');
+    expect(await css(page.locator('.score .bar i').first(), 'backgroundImage')).toBe('none');   // v4.115.0: wieder weiss
   });
 
   test('v4.114.0 Ohne Beta: altes Logo, alter Titelverlauf, flacher Akzent-FAB, keine Verlaufs-Tokens', async ({ context, page }) => {
@@ -5448,6 +5450,9 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
       const sp = document.getElementById('splash');
       const cs = sp && getComputedStyle(sp, '::after');
       P.name = cs ? cs.animationName : null; P.after = cs ? cs.backgroundImage : null;
+      if (sp && cs) { const r = sp.querySelector('img').getBoundingClientRect();
+        P.geo = { img: [r.left, r.top, r.width, r.height],
+          lid: [parseFloat(cs.left) + parseFloat(cs.marginLeft), parseFloat(cs.top) + parseFloat(cs.marginTop), parseFloat(cs.width), parseFloat(cs.height)] }; }
       const img = sp && sp.querySelector('img');
       if (img) new MutationObserver(() => { if (P.morph == null && img.style.transform) P.morph = performance.now(); })
         .observe(img, { attributes: true, attributeFilter: ['style'] });
@@ -5468,6 +5473,8 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     const P = await page.evaluate(() => window.__wink);
     expect(P.name).toBe('b3splashwink');
     expect(decodeURIComponent(P.after)).toContain('linearGradient');   // gleiches Verlaufsfeld
+    // v4.115.0: das Lid deckt das Splash-Logo exakt (gleiche Box, kein Sprung)
+    for (let i = 0; i < 4; i++) expect(Math.abs(P.geo.lid[i] - P.geo.img[i])).toBeLessThan(0.51);
     expect(P.start).not.toBeNull();
     expect(P.end).not.toBeNull();
     expect(P.morph).not.toBeNull();
@@ -5507,6 +5514,101 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     expect(P.after).toBe('none');
     expect(P.start).toBeNull();
   });
+
+  // v4.115.0: zweifarbige Augen (links weiss→blau, rechts weiss→violett, Mund
+  // weiss) und Kacheln in drei Farben (data-tone aus der stabilen id).
+  const toneOf = id => { let h = 2166136261; for (const ch of String(id)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; } return 'wbv'[h % 3]; };
+  const TONE_BG = { w: 'rgb(245, 245, 241)', b: 'rgb(199, 219, 255)', v: 'rgb(220, 201, 242)' };
+  const TCH = [
+    { id: 'c-1', name: 'Müll rausbringen', points: 2, note: 'nur Restmüll', family_id: FAM },
+    { id: 'c-3', name: 'Abwaschen', points: 1, note: null, family_id: FAM },
+    { id: 'c-cat', name: 'Katze füttern', points: 1, note: null, family_id: FAM },
+    { id: 'c-z9', name: 'Zimmer lüften', points: 3, note: 'morgens', family_id: FAM },
+  ];
+  const tchRoute = context => context.route(`${SB}/rest/v1/chores*`, r => r.request().method() === 'GET'
+    ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(TCH) }) : r.fallback());
+
+  test('v4.115.0 Logo: zwei Augen-Verlaeufe (blau, violett), weisser Mund; Lid und Zwinker-Kachel nutzen denselben Violett-Verlauf', async ({ context, page }) => {
+    await mockBackend(context, B3);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    const logo = decodeURIComponent(await css(page.locator('#headLogo'), 'content'));
+    const grad = id => (logo.match(new RegExp(`<linearGradient id='${id}'[\\s\\S]*?</linearGradient>`)) || [''])[0];
+    expect(grad('gb')).toContain('#84B2FF'); expect(grad('gb')).toContain('#F5F5F1'); expect(grad('gb')).not.toContain('#B98AE0');
+    expect(grad('gv')).toContain('#B98AE0'); expect(grad('gv')).toContain('#F5F5F1'); expect(grad('gv')).not.toContain('#84B2FF');
+    expect(logo).toMatch(/<circle cx='26'[^>]*stroke='url\(#gb\)'/);
+    expect(logo).toMatch(/<circle cx='70.7'[^>]*stroke='url\(#gv\)'/);
+    expect(logo).toMatch(/<path d='M16.7 68.3[^>]*stroke='#F5F5F1'/);   // Mund flach weiss
+    const lid = await page.evaluate(() => decodeURIComponent(getComputedStyle(document.documentElement).getPropertyValue('--b3-lid')));
+    const wink = await page.evaluate(() => decodeURIComponent(getComputedStyle(document.documentElement).getPropertyValue('--b3-wink')));
+    expect(lid).toContain(grad('gv'));
+    expect(wink).toContain(grad('gv')); expect(wink).toContain(grad('gb'));
+  });
+
+  test('v4.115.0 Kacheln: genau drei Toene, fest pro id (Neuladen, andere Sortierung), dunkle Tinte, Vorschau gleich', async ({ context, page }) => {
+    await mockBackend(context, B3);
+    await tchRoute(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    await expect(page.locator('.chore[data-cid]')).toHaveCount(TCH.length);
+    const read = () => page.locator('.chore[data-cid]').evaluateAll(els => els.map(e => [e.dataset.cid, e.dataset.tone]));
+    const first = await read();
+    for (const [id, tone] of first) expect(tone, id).toBe(toneOf(id));
+    expect(new Set(first.map(x => x[1]))).toEqual(new Set(['w', 'b', 'v']));
+    // Gefuellte Kachel: Flaeche = Ton, Titel/Pille dunkel, Notiz gedaempft dunkel
+    for (const c of TCH) {
+      const tile = page.locator(`.chore[data-cid="${c.id}"]`);
+      expect(await css(tile, 'backgroundColor'), c.id).toBe(TONE_BG[toneOf(c.id)]);
+      expect(await css(tile.locator('.cname'), 'color')).toBe('rgb(18, 21, 31)');
+      expect(await css(tile.locator('.pts'), 'color')).toBe('rgb(18, 21, 31)');
+    }
+    expect(await css(page.locator('.chore[data-cid="c-1"] .cnote'), 'color')).toBe('rgb(71, 75, 99)');
+    // «Einmalig» bekommt keinen Ton und bleibt dunkel
+    expect(await page.locator('#oneOffTile').getAttribute('data-tone')).toBeNull();
+    expect(await css(page.locator('#oneOffTile'), 'backgroundColor')).not.toBe(TONE_BG.w);
+    // Andere Sortierung + Neuladen: dieselbe Farbe je Aufgabe
+    await page.evaluate(() => localStorage.setItem('haushalt.sort', 'created'));
+    await page.reload();
+    await expect(page.locator('.chore[data-cid]')).toHaveCount(TCH.length);
+    expect(Object.fromEntries(await read())).toEqual(Object.fromEntries(first));
+    // Edit-Vorschau traegt denselben Ton
+    await page.locator('[data-edit="c-cat"]').click();
+    await expect(page.locator('#cArtPrevW')).toHaveAttribute('data-tone', toneOf('c-cat'));
+    await page.locator('#cancelChore').click();
+  });
+
+  test('v4.115.0 Kunst auf hellen Kacheln: dunkel per multiply — normal invertiert, .artinv NICHT; erst nach dem Urteil sichtbar', async ({ context, page }) => {
+    await mockBackend(context, B3);
+    await context.route(`${SB}/rest/v1/chores*`, r => r.request().method() === 'GET'
+      ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(POL_CHORES) }) : r.fallback());
+    let gate = null;
+    await routePolarityArt(context, { hold: () => gate });
+    let release; gate = new Promise(r => { release = r; });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    const img = cid => page.locator(`.chore[data-cid="${cid}"] img.art`);
+    await expect(img('c-dk')).toHaveCount(1);
+    expect(await css(img('c-dk'), 'opacity')).toBe('0');            // ohne Urteil unsichtbar
+    release(); gate = null;
+    await expect(img('c-dk')).toHaveClass(/\bartinv\b/);
+    await expect(img('c-dk')).toHaveClass(/\bok\b/);
+    await expect(img('c-wh')).toHaveClass(/\bok\b/);
+    for (const cid of ['c-dk', 'c-wh', 'c-fi']) expect(await css(img(cid), 'mixBlendMode'), cid).toBe('multiply');
+    expect(await css(img('c-dk'), 'filter')).not.toContain('invert');   // kam dunkel-auf-weiss: bleibt so
+    expect(await css(img('c-wh'), 'filter')).toMatch(/^invert\(1\)/);  // weiss-auf-schwarz → dunkel
+    expect(await css(img('c-fi'), 'filter')).toMatch(/^invert\(1\)/);
+  });
+
+  test('v4.115.0 Ohne Beta: keine Kachel-Toene, Kacheln wie bisher', async ({ context, page }) => {
+    await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }] });
+    await tchRoute(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid]')).toHaveCount(TCH.length);
+    await page.waitForTimeout(400);
+    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+    await expect(page.locator('.chore[data-tone]')).toHaveCount(0);
+    expect(await css(page.locator('.chore[data-cid="c-1"] img.art'), 'mixBlendMode')).toBe('normal');
+  });
 });
 
 // ---------- v4.113.1: Kachelbild-Polaritaet (nur brand3) + Wiederholungen ohne SW ----------
@@ -5543,12 +5645,14 @@ test.describe('Kachelbild-Polaritaet unter brand3 (v4.113.1)', () => {
     release(); gate = null;
     await expect(dk).toHaveClass(/\bok\b/);
     await expect(dk).toHaveClass(/\bartinv\b/);
-    expect(await filt(dk)).toMatch(/^invert\(1\)/);                    // invert ZUERST
+    // v4.115.0 (gefuellte Kacheln): das URTEIL bleibt .artinv, aber auf heller
+    // Kachel braucht dunkel-auf-weiss KEIN invert (vorher: invert ZUERST)
+    expect(await filt(dk)).not.toContain('invert');
     expect(await filt(dk)).toContain('grayscale');
     for (const cid of ['c-wh', 'c-fi']) {
       await expect(tileImg(page, cid)).toHaveClass(/\bok\b/);
       await expect(tileImg(page, cid)).not.toHaveClass(/artinv/);
-      expect(await filt(tileImg(page, cid))).not.toContain('invert');
+      expect(await filt(tileImg(page, cid))).toMatch(/^invert\(1\)/);   // v4.115.0: weiss-auf-schwarz → dunkel (vorher: kein invert)
     }
     // Urteil ist gespeichert (begrenzte Karte pro Bild-URL)
     const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('haushalt.artinv') || '{}'));
@@ -5566,14 +5670,14 @@ test.describe('Kachelbild-Polaritaet unter brand3 (v4.113.1)', () => {
     await page.locator('.entry', { hasText: 'Fenster putzen' }).click();
     await expect(page.locator('#lArtPrev')).toHaveClass(/\bartinv\b/);
     await expect(page.locator('#lArtPrev')).toHaveClass(/\bok\b/);
-    expect(await filt(page.locator('#lArtPrev'))).toMatch(/^invert\(1\)/);
+    expect(await filt(page.locator('#lArtPrev'))).not.toContain('invert');   // v4.115.0: Vorschau = gefuellte Kachel
     await page.locator('#closeLog').click();
     // Aufgaben-Vorschau: dunkle Kachel invertiert, danach dieselbe <img> fuer eine helle Kachel NICHT
     await page.getByRole('tab', { name: 'Aufgaben' }).click();
     await page.locator('[data-edit="c-dk"]').click();
     await expect(page.locator('#cArtPrev')).toHaveClass(/\bartinv\b/);
     await expect(page.locator('#cArtPrev')).toHaveClass(/\bok\b/);
-    expect(await filt(page.locator('#cArtPrev'))).toMatch(/^invert\(1\)/);
+    expect(await filt(page.locator('#cArtPrev'))).not.toContain('invert');   // v4.115.0: Vorschau = gefuellte Kachel
     await page.locator('#cancelChore').click();
     await page.locator('[data-edit="c-wh"]').click();
     await expect(page.locator('#cArtPrev')).toHaveClass(/\bok\b/);

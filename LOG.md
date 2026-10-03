@@ -1,3 +1,83 @@
+## 2026-10-03 — v4.115.0 (SW haushalt-v221, BETA only): two-colour eyes in the face, chore tiles in three colours
+
+- Maintainer, after v4.114: not sure about the gradient across the face. «How
+  about one eye is a white to blue gradient and the other a white to violet?
+  The mouth stays white. … The tiles could be coloured in one of the three
+  colours (white, light blue, light violet).» Everything below is under
+  `html.brand3` only (families.beta); flag-off board/history on Pixel + iPhone
+  is pixel-identical to v4.114.1.
+- **Logo.** Left eye white → blue `#84B2FF`, right eye white → violet
+  `#B98AE0`, mouth flat `#F5F5F1`; one `linearGradient` per eye
+  (`gb`/`gv`, userSpaceOnUse). Three directions compared at 38/104/512 px
+  (sheet `contact-9-logo-options.png`, outside the repo): (i) white on the inner
+  side, colour outside; (ii) white at the top, colour at the bottom; (iii) radial,
+  white inner edge → colour outer edge. **Chosen: (ii).** Both eyes carry their
+  colour in the same place, so at 38 px it reads as one face with a blue and a
+  violet eye, white clearly present at the top of each ring (a little like
+  smiling eyes). (i) reads as each eye lit from the side rather than as a
+  coloured eye; (iii) reads as a neon glow/halo, the least
+  friendly. Applied to `--b3-logo` (header, splash, empty state), `--b3-wink`
+  (toast tile: blue eye + violet closed arc) and `--b3-lid` (the v4.114.1 start
+  wink: the lid's arc uses the SAME `gv` field, so it winks the violet eye;
+  frame sequence: open frames pixel-identical, changes only inside the
+  right-eye box). `icon-b3-192/512/512-maskable.png` re-rendered from the SVG,
+  links `?v=3`.
+- **Tiles in three colours.** `choreTone(id)` = FNV-1a of the chore's stable id
+  mod 3 → `data-tone="w|b|v"` on every board tile and on both preview tiles
+  (task edit, entry edit), only under brand3 (flag-off markup unchanged). Not
+  from position, so sorting/adding never recolours; same on every device.
+  Balanced (30 000 random 8-char ids: 10022/9896/10082). Runs of one colour are
+  possible (no position input by design — not worth breaking determinism).
+  The «Einmalig» tile has no tone and stays dark and dashed.
+- **Two variants behind ONE switch: `<html data-b3tiles="fill|stroke">`** (a
+  static attribute in index.html — no JS, no first-paint risk, inert without
+  brand3). Live: **A `fill`** — tile = colour, `--b3-tw #F5F5F1`,
+  `--b3-tb #C7DBFF`, `--b3-tv #DCC9F2` (pastel tints of the eye colours), ink
+  `--b3-tink #12151F` for title and the +N pill (dark outline pill), muted
+  `--b3-tmuted #474B63` for note and pencil. Art goes DARK: after the
+  v4.113.1 polarity it is white-on-black, so `invert(1) grayscale(1)
+  contrast(1.8)` + `mix-blend-mode:multiply`; an image that arrived
+  dark-on-white (`.artinv`) gets NO invert (`grayscale(1) contrast(1.8)`).
+  The polarity helper still decides the class, CSS turns class + mode into
+  the final filter in one place; hidden-until-verdict unchanged. Opacity .82:
+  white-FILLED subjects (bread, a pot) would otherwise be solid black blocks;
+  this way «black» is a deep shade of the tile colour. Pressed = brightness
+  .88, new-tile flash = brightness .6 → 1, skeleton shimmer dark. The white
+  toast pill gets a navy halo (like the FAB) so it does not merge with a white
+  tile. **B `stroke`** (screenshots only): dark tile, border, +N pill and line
+  art in the tile colour (art tinted via sepia/hue-rotate) — elegant but the
+  tinted art is pale and the colour hardly reads; A passed every check, so A
+  ships. Switch: change the attribute to `stroke`. Revert the tiles: remove the
+  attribute (or delete the v4.115.0 tile rules).
+- **v4.114.0 accents re-evaluated** now that the tiles carry colour: household
+  title, FAB, primary sheet buttons, slider thumb ring and points bars are
+  plain white again (gradient FAB over a violet tile was noisy). Kept: the
+  blue keyboard focus ring. `--b3-grad` stays defined as a token for a quick
+  return (re-insert the five rules from the v4.114.0 entry). History rows stay
+  dark with white art — a per-row colour cue was considered and left out (the
+  list is already scannable by person band + text).
+- **Contrast** (WCAG): ink `#12151F` on white/blue/violet 16.7 / 13.0 / 11.9:1;
+  muted `#474B63` 7.8 / 6.1 / 5.6:1 — AA for normal text on all three fills.
+  Person rings sit on the navy ground (chips row, points), not on tiles —
+  unchanged.
+- Tests (Marken-Test Variante 3, both engines), red against v4.114.1:
+  «v4.115.0 Logo» (separate `gb`/`gv` gradients, eye→gradient mapping, white
+  mouth, lid and wink tile share `gv`); «Kacheln» (exactly three tones, equal to
+  an independent FNV-1a of the id, stable across reload and another sort order,
+  tone fills, dark ink, muted note, Einmalig untoned, edit preview same tone);
+  «Kunst auf hellen Kacheln» (multiply; `.artinv` without invert, normal and
+  filled art with invert first; opacity 0 before the verdict); «Ohne Beta» (no
+  `data-tone`, normal blend). The v4.114.1 wink test also asserts the lid box
+  equals the splash `<img>` box. **Changed assertions:** render test — `c-1`
+  tile background (was navy `rgb(27,29,49)`, now its tone) and `#saveChore`
+  (was gradient, now flat white); v4.114.0 «Mit Beta» — `stroke='url(#g)'` →
+  `url(#gb)`, title/FAB/save button and points bar `background-image` (were
+  gradient, now `none`), favicon `?v=2` → `?v=3`; v4.113.1 polarity test — the
+  FILTER on board tile, entry preview and edit preview (verdict classes
+  unchanged; on light tiles `.artinv` has no invert and white-on-black art is
+  inverted — history-row assertions unchanged).
+- APP_VERSION 4.115.0, SW cache haushalt-v221 (art cache haushalt-art-1 kept).
+
 ## 2026-10-03 — v4.114.1 (SW haushalt-v220, BETA only): the splash face winks once on app start
 
 - Maintainer request: «Can you make the logo wink on startup?» Under

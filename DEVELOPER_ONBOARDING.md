@@ -457,7 +457,7 @@ Mechanism, keep it this way when the trial grows:
   splash `<img>` via CSS `content:` (same nodes → the FLIP still works).
   manifest.json and `icon-*.png` are untouched on purpose (home-screen icon
   is global); `icon-b3-*.png` exist only for the favicon/touch-icon swap
-  (since v4.114.0 with the gradient face, links `?v=2` — bump it whenever the
+  (since v4.115.0 the two-colour eyes, links `?v=3` — bump it whenever the
   PNGs change, together with the SW cache).
 - Colours: tokens are redefined on `html.brand3`; the old hard-coded
   colours (#161D19 wells, #252F29 tracks, rgba blues/golds, the gradient
@@ -465,6 +465,20 @@ Mechanism, keep it this way when the trial grows:
   or add its override there. Selection = inversion (white fill,
   `--onink` text), never a hue; person colours only as rings (`--pc` on
   `.dot`/`.swatch`).
+- **Eyes + tiles (v4.115.0) — supersedes most of the gradient bullet below.**
+  Logo: left eye white→blue (`gb`), right eye white→violet (`gv`), white at the
+  top / colour at the bottom of each ring, mouth flat white; `--b3-lid` and
+  `--b3-wink` reuse the same gradient defs (the start wink closes the violet
+  eye). Tiles: `choreTone(id)` (FNV-1a of the stable id mod 3, never position)
+  → `data-tone="w|b|v"`, emitted only under brand3 on board tiles and on both
+  preview tiles (`paintPreviewTile` takes `id`). ONE switch:
+  `<html data-b3tiles="fill|stroke">` — `fill` (live) = pastel fill
+  `--b3-tw/--b3-tb/--b3-tv`, ink `--b3-tink`, muted `--b3-tmuted` (≥ 5.6:1 on
+  all three), art inverted + `multiply` at .82 (`.artinv` = NO invert);
+  `stroke` = dark tile, coloured border/pill/tinted art. «Einmalig» has no
+  tone. Title, FAB, primary buttons, slider, points bars are plain white again
+  (colour lives in eyes + tiles); `--b3-grad` is kept as an unused token. New
+  places that show a tile must pass the chore id so the tone matches.
 - **Gradient (v4.114.0):** the old Fairli colours as blue → white → violet,
   tokens `--b3-blue #84B2FF` (old `--accent`), `--b3-white #F5F5F1`,
   `--b3-violet #B98AE0` (old icon's violet tile, lifted) and the ready
@@ -826,7 +840,13 @@ through `artTag()` (tile, one-off, history, entry preview) or `artBind()`
 (the fixed task-edit `<img>`); without brand3 both produce the old markup
 exactly and do no canvas work. New places that show art must use them.
 
-**Brand-trial icons (v4.114.0):** `icon-b3-192/512/512-maskable.png` are
+**Tile art on light tiles (v4.115.0, `data-b3tiles="fill"`):** the polarity
+verdict is unchanged (`.artinv` = arrived dark-on-white); on a toned tile the
+CSS turns it the other way round — white-on-black art gets `invert(1)` first
+and `mix-blend-mode:multiply`, `.artinv` art gets no invert. History rows stay
+dark with white screen-blended art.
+
+**Brand-trial icons (v4.114.0, eyes since v4.115.0, links `?v=3`):** `icon-b3-192/512/512-maskable.png` are
 rendered in Chromium from the SAME SVG as `--b3-logo` (full-bleed `#1B1D31`,
 no rounded corners — the OS masks; maskable = the face group scaled 0.658
 about the centre, inside the 80 % safe circle). Tile art stays white line art

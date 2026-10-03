@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-b3tiles="fill">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
@@ -61,8 +61,8 @@
     de.classList.toggle('brand3', on);
     if (fam) { try { if (on) localStorage.setItem('haushalt.brand3:' + fam, '1'); else localStorage.removeItem('haushalt.brand3:' + fam); } catch (e) {} }
     var set = function (sel, attr, v) { var el = document.querySelector(sel); if (el && el.getAttribute(attr) !== v) el.setAttribute(attr, v); };
-    set('link[rel="icon"]', 'href', on ? '/chores/icon-b3-192.png?v=2' : '/chores/icon-192.png?v=48');
-    set('link[rel="apple-touch-icon"]', 'href', on ? '/chores/icon-b3-192.png?v=2' : '/chores/icon-192.png?v=48');
+    set('link[rel="icon"]', 'href', on ? '/chores/icon-b3-192.png?v=3' : '/chores/icon-192.png?v=48');
+    set('link[rel="apple-touch-icon"]', 'href', on ? '/chores/icon-b3-192.png?v=3' : '/chores/icon-192.png?v=48');
     set('meta[name="theme-color"]', 'content', on ? '#12151F' : '#141A17');
   };
   if (document.documentElement.classList.contains('brand3')) window.__brand(true);
@@ -634,12 +634,12 @@
     --bg:#12151F; --card:#1B1D31; --raise:#24273F; --well:#151826; --ink:#F5F5F1; --muted:#A3A6BC;
     --line:#31354F; --accent:#F5F5F1; --accent-press:#D3D4DE; --gold:#F5F5F1; --red:#FF8A80;
     --onink:#12151F; --radius:20px; --shadow:none; --artframe:rgba(245,245,241,.3);
-    --b3-logo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='10' y1='0' x2='90' y2='0'%3E%3Cstop offset='0' stop-color='%2384B2FF'/%3E%3Cstop offset='.34' stop-color='%23F5F5F1'/%3E%3Cstop offset='.66' stop-color='%23F5F5F1'/%3E%3Cstop offset='1' stop-color='%23B98AE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='%231B1D31'/%3E%3Cg fill='none' stroke='url(%23g)' stroke-linecap='round'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6'/%3E%3Ccircle cx='70.7' cy='31.2' r='12.5' stroke-width='9.6'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6'/%3E%3C/g%3E%3C/svg%3E");
-    --b3-wink:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='10' y1='0' x2='90' y2='0'%3E%3Cstop offset='0' stop-color='%2384B2FF'/%3E%3Cstop offset='.34' stop-color='%23F5F5F1'/%3E%3Cstop offset='.66' stop-color='%23F5F5F1'/%3E%3Cstop offset='1' stop-color='%23B98AE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%231B1D31'/%3E%3Cg fill='none' stroke='url(%23g)'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6'/%3E%3Cpath d='M58.2 33.4A12.5 12.5 0 0 1 83.2 32.2' stroke-width='9.6' stroke-linecap='round'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
+    --b3-logo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='gb' gradientUnits='userSpaceOnUse' x1='0' y1='15.8' x2='0' y2='50.4'%3E%3Cstop offset='.15' stop-color='%23F5F5F1'/%3E%3Cstop offset='.85' stop-color='%2384B2FF'/%3E%3C/linearGradient%3E%3ClinearGradient id='gv' gradientUnits='userSpaceOnUse' x1='0' y1='13.9' x2='0' y2='48.5'%3E%3Cstop offset='.15' stop-color='%23F5F5F1'/%3E%3Cstop offset='.85' stop-color='%23B98AE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='%231B1D31'/%3E%3Cg fill='none' stroke-linecap='round'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6' stroke='url(%23gb)'/%3E%3Ccircle cx='70.7' cy='31.2' r='12.5' stroke-width='9.6' stroke='url(%23gv)'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6' stroke='%23F5F5F1'/%3E%3C/g%3E%3C/svg%3E");
+    --b3-wink:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='gb' gradientUnits='userSpaceOnUse' x1='0' y1='15.8' x2='0' y2='50.4'%3E%3Cstop offset='.15' stop-color='%23F5F5F1'/%3E%3Cstop offset='.85' stop-color='%2384B2FF'/%3E%3C/linearGradient%3E%3ClinearGradient id='gv' gradientUnits='userSpaceOnUse' x1='0' y1='13.9' x2='0' y2='48.5'%3E%3Cstop offset='.15' stop-color='%23F5F5F1'/%3E%3Cstop offset='.85' stop-color='%23B98AE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%231B1D31'/%3E%3Cg fill='none' stroke-linecap='round'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6' stroke='url(%23gb)'/%3E%3Cpath d='M58.2 33.4A12.5 12.5 0 0 1 83.2 32.2' stroke-width='9.6' stroke='url(%23gv)'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6' stroke='%23F5F5F1'/%3E%3C/g%3E%3C/svg%3E");
     /* v4.114.1 Zwinkern beim Start: NUR das Augenlid — gleiche viewBox, gleiches
        Verlaufsfeld wie --b3-logo; deckt den rechten Ring mit Kachelfarbe ab und
        zeichnet den Bogen. Liegt als #splash::after UEBER dem Splash-<img>. */
-    --b3-lid:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='10' y1='0' x2='90' y2='0'%3E%3Cstop offset='0' stop-color='%2384B2FF'/%3E%3Cstop offset='.34' stop-color='%23F5F5F1'/%3E%3Cstop offset='.66' stop-color='%23F5F5F1'/%3E%3Cstop offset='1' stop-color='%23B98AE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='70.7' cy='31.2' r='18.8' fill='%231B1D31'/%3E%3Cpath d='M58.2 33.4A12.5 12.5 0 0 1 83.2 32.2' fill='none' stroke='url(%23g)' stroke-width='9.6' stroke-linecap='round'/%3E%3C/svg%3E");
+    --b3-lid:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='gv' gradientUnits='userSpaceOnUse' x1='0' y1='13.9' x2='0' y2='48.5'%3E%3Cstop offset='.15' stop-color='%23F5F5F1'/%3E%3Cstop offset='.85' stop-color='%23B98AE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='70.7' cy='31.2' r='18.8' fill='%231B1D31'/%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M58.2 33.4A12.5 12.5 0 0 1 83.2 32.2' stroke-width='9.6' stroke='url(%23gv)'/%3E%3C/g%3E%3C/svg%3E");
     /* v4.114.0 Farbe: der alte Fairli-Verlauf (Titel #EAF1EB→--accent #84B2FF,
        Icon-Kacheln blau #428BF0/#8EC2FD … violett #9E59C8/#CBA0E5) als
        blau → weiss → violett. EINE Stelle: Stopps + fertiger --b3-grad.
@@ -647,6 +647,8 @@
        und --b3-blue auf var(--ink) setzen (die Logo-Daten-URIs direkt darueber
        tragen dieselben drei Hex-Werte). */
     --b3-blue:#84B2FF; --b3-white:#F5F5F1; --b3-violet:#B98AE0;
+    /* v4.115.0 Kachelfarben (Pastell aus blau/violett) + Tinte auf hellem Grund */
+    --b3-tw:#F5F5F1; --b3-tb:#C7DBFF; --b3-tv:#DCC9F2; --b3-tink:#12151F; --b3-tmuted:#474B63;
     --b3-grad:linear-gradient(100deg, var(--b3-blue), var(--b3-white) 34%, var(--b3-white) 66%, var(--b3-violet));
   }
   /* Logo: dieselben <img>-Knoten (Splash-FLIP misst sie), nur der Inhalt
@@ -814,22 +816,46 @@
     background:var(--b3-wink) center/contain no-repeat}
   html.brand3 #toast.logged.show::before{animation:b3wink .5s cubic-bezier(.3,1.6,.5,1)}
   @keyframes b3wink{from{transform:rotate(-18deg) scale(.6)}}
-  /* v4.114.0 «ein bisschen Farbe»: nur hier, nur aus --b3-grad. Monochrom
-     bleibt die Basis, Auswahl bleibt Inversion; Personenringe, Rot und
-     Fliesstext bekommen KEINE Farbe. Dunkle Schrift auf dem Verlauf:
-     #12151F auf #B98AE0 (dunkelster Stopp) 6.7:1, auf #F5F5F1 16.7:1. */
-  html.brand3 header h1{background:var(--b3-grad); -webkit-background-clip:text; background-clip:text;
-    color:transparent; -webkit-text-fill-color:transparent}
-  html.brand3 .fab{background:var(--b3-grad); color:var(--onink)}
-  html.brand3 .fab:active{background:var(--b3-grad); filter:brightness(.88)}
-  html.brand3 .btn.primary{background:var(--b3-grad) border-box; border-color:transparent; color:var(--onink)}
-  html.brand3 .btn.primary:active{background:var(--b3-grad) border-box; filter:brightness(.88)}
-  html.brand3 input[type=range]::-webkit-slider-thumb{border-color:transparent;
-    background:linear-gradient(var(--card),var(--card)) padding-box, var(--b3-grad) border-box}
-  html.brand3 input[type=range]::-moz-range-thumb{border-color:transparent;
-    background:linear-gradient(var(--card),var(--card)) padding-box, var(--b3-grad) border-box}
-  html.brand3 .score .bar i{background:var(--b3-grad) !important}
+  /* v4.114.0 «ein bisschen Farbe» → v4.115.0: seit die KACHELN Farbe tragen,
+     sind Titel, FAB, Primaerknoepfe, Regler und Punktebalken wieder schlicht
+     weiss (sonst zu bunt). Der Verlauf --b3-grad bleibt als Token stehen;
+     Zurueckholen = die fuenf Regeln aus LOG v4.114.0 hier wieder einsetzen.
+     Farbe lebt jetzt in den Augen und den Kacheln; Fokusring bleibt blau. */
   html.brand3 .tab:focus-visible, html.brand3 button:focus-visible, html.brand3 input:focus-visible{outline-color:var(--b3-blue)}
+  /* v4.115.0 Kacheln in drei Farben (weiss / hellblau / hellviolett), Ton aus
+     choreTone(id) als data-tone. EIN Schalter: <html data-b3tiles="fill|stroke">.
+     fill (A) = farbige Flaeche, dunkle Tinte, Kunst DUNKEL per multiply;
+     stroke (B) = dunkle Kachel, Rand/Pille/Strichzeichnung in der Farbe.
+     «Einmalig» hat keinen Ton und bleibt dunkel/gestrichelt. */
+  html.brand3 .chore[data-tone="w"]{--tf:var(--b3-tw)}
+  html.brand3 .chore[data-tone="b"]{--tf:var(--b3-tb)}
+  html.brand3 .chore[data-tone="v"]{--tf:var(--b3-tv)}
+  html.brand3[data-b3tiles="fill"] .chore[data-tone]{background:var(--tf); border-color:var(--tf); color:var(--b3-tink)}
+  html.brand3[data-b3tiles="fill"] .chore[data-tone]:active{background:var(--tf); filter:brightness(.88)}
+  html.brand3[data-b3tiles="fill"] .chore[data-tone] .cname{color:var(--b3-tink); text-shadow:0 0 6px var(--tf), 0 0 2px var(--tf)}
+  html.brand3[data-b3tiles="fill"] .chore[data-tone] .cnote{color:var(--b3-tmuted); text-shadow:0 0 4px var(--tf)}
+  html.brand3[data-b3tiles="fill"] .chore[data-tone] .pts{color:var(--b3-tink); background:var(--tf); border-color:var(--b3-tink)}
+  html.brand3[data-b3tiles="fill"] .chore[data-tone] .edit{color:var(--b3-tmuted)}
+  /* Kunst: nach der Polaritaet ist sie weiss-auf-schwarz → invertieren und
+     multiplizieren = dunkle Striche, Grund verschwindet in der Farbe. Deckkraft
+     .82: weiss GEFUELLTE Motive (Brot, Topf) wuerden sonst schwarze Kloetze —
+     so wird «Schwarz» ein tiefer Ton der Kachelfarbe. Ein
+     Bild, das schon dunkel-auf-weiss kam (.artinv), braucht KEIN invert. */
+  html.brand3[data-b3tiles="fill"] .chore[data-tone] .art.ok{opacity:.82}
+  html.brand3[data-b3tiles="fill"] .chore[data-tone] .art{mix-blend-mode:multiply; filter:invert(1) grayscale(1) contrast(1.8)}
+  html.brand3[data-b3tiles="fill"] .chore[data-tone] .art.artinv{filter:grayscale(1) contrast(1.8)}
+  html.brand3[data-b3tiles="fill"] .chore[data-tone].flash{animation:b3flashL .5s ease}
+  @keyframes b3flashL{0%{filter:brightness(.6)} 100%{filter:none}}
+  html.brand3[data-b3tiles="fill"] .chore[data-tone]:has(img.art:not(.ok))::after{
+    background:linear-gradient(100deg,transparent 30%,rgba(18,21,31,.08) 50%,transparent 70%); background-size:200% 100%}
+  /* Weisse Toast-Pille ueber hellen Kacheln: Navy-Hof wie beim FAB */
+  html.brand3[data-b3tiles="fill"] #toast{box-shadow:0 0 0 4px var(--bg), 0 10px 28px rgba(0,0,0,.45)}
+  html.brand3[data-b3tiles="stroke"] .chore[data-tone]{border-color:var(--tf)}
+  html.brand3[data-b3tiles="stroke"] .chore[data-tone] .pts{border-color:var(--tf); color:var(--tf)}
+  html.brand3[data-b3tiles="stroke"] .chore[data-tone="b"] .art{filter:grayscale(1) contrast(1.8) brightness(.8) sepia(1) saturate(2.6) hue-rotate(178deg) brightness(1.15)}
+  html.brand3[data-b3tiles="stroke"] .chore[data-tone="v"] .art{filter:grayscale(1) contrast(1.8) brightness(.8) sepia(1) saturate(2.4) hue-rotate(228deg) brightness(1.15)}
+  html.brand3[data-b3tiles="stroke"] .chore[data-tone="b"] .art.artinv{filter:invert(1) grayscale(1) contrast(1.8) brightness(.8) sepia(1) saturate(2.6) hue-rotate(178deg) brightness(1.15)}
+  html.brand3[data-b3tiles="stroke"] .chore[data-tone="v"] .art.artinv{filter:invert(1) grayscale(1) contrast(1.8) brightness(.8) sepia(1) saturate(2.4) hue-rotate(228deg) brightness(1.15)}
   /* v4.114.1 Start-Zwinkern: ein absolut positioniertes Augenlid ueber dem
      zentrierten 104-px-Splash-Logo. Das <img> selbst (FLIP misst es) bleibt
      unberuehrt; animiert wird nur die Deckkraft des Lids. 220 ms nach dem
@@ -1026,7 +1052,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.114.1';
+  const APP_VERSION = '4.115.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1790,6 +1816,14 @@
     sh.showModal();
   }
 
+  // v4.115.0 Marken-Test: Kachelton (w/b/v) aus der STABILEN id — eigener
+  // FNV-1a-Hash, damit Sortieren/Anlegen nie umfaerbt und jedes Geraet gleich
+  // faerbt. Nur unter brand3 im Markup (data-tone); ohne brand3 wird es nie gelesen.
+  const choreTone = id => {
+    let h = 2166136261;
+    for (const ch of String(id)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+    return 'wbv'[h % 3];
+  };
   const choreColor = id => {
     let x = 0; for (const ch of String(id)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
     return CHORE_COLORS[x % CHORE_COLORS.length];
@@ -3197,7 +3231,7 @@
           <span class="pts">＋</span>
         </button>`;
       listEl.innerHTML = `<div class="grid">` + (QUERY.trim() ? '' : oneOffTile) + ordered.map(c =>
-            `<button class="chore" data-cid="${c.id}" style="--c:${choreColor(c.id)}; --dk:${artDim(c)}; min-height:${tileMinH(c.points)}px">
+            `<button class="chore" data-cid="${c.id}"${brandOn() ? ` data-tone="${choreTone(c.id)}"` : ''} style="--c:${choreColor(c.id)}; --dk:${artDim(c)}; min-height:${tileMinH(c.points)}px">
               ${artTag(choreArt(c), 'art')}
               <span class="cname">${esc(c.name)}</span>
               ${c.note ? `<span class="cnote">${esc(c.note)}</span>` : ''}
@@ -3765,7 +3799,7 @@
       // Slot in Hoehe der groessten moeglichen Kachel reservieren, damit die
       // Felder darunter beim Punkte-Ziehen NICHT springen (wie im Aufgabe-Edit).
       if (lslot) lslot.style.minHeight = tileMinH(Math.max(MAXPTS, +first.points || 0)) + 'px';
-      paintPreviewTile(lTile, { colour: lac ? choreColor(lac.id) : null, opacity: artDim(lac),
+      paintPreviewTile(lTile, { id: lac && lac.id, colour: lac ? choreColor(lac.id) : null, opacity: artDim(lac),
         name: first.chore_name, note: first.chore_note || '', points: +first.points || 0 });
       sh.querySelector('#lName').addEventListener('input', e => { const nm = lTile.querySelector('.cname'); if (nm) nm.textContent = e.target.value; });
       sh.querySelector('#lNote').addEventListener('input', e => { const nt = lTile.querySelector('.cnote'); if (nt) nt.textContent = e.target.value; });
@@ -4083,6 +4117,8 @@
     if (!tileEl) return;
     tileEl.style.setProperty('--c', o.colour || 'var(--line)');
     tileEl.style.setProperty('--dk', String(o.opacity != null ? o.opacity : 1));
+    // v4.115.0: dieselbe Kachelfarbe wie auf dem Brett (nur brand3)
+    if (brandOn() && o.id) tileEl.dataset.tone = choreTone(o.id); else delete tileEl.dataset.tone;
     const nm = tileEl.querySelector('.cname'); if (nm) nm.textContent = o.name || '';
     const nt = tileEl.querySelector('.cnote'); if (nt) nt.textContent = o.note || '';
     setTilePreviewPts(tileEl, o.points || 0);
@@ -4150,7 +4186,7 @@
     // v4.100.0: dieselbe Fuellroutine wie im Eintrag-Edit. Farbe (Aufgabenfarbe),
     // Abdunkelung (gespeicherter opacity-Wert, Regler ausgeblendet seit v4.97.0),
     // Name, Notiz und Punkte — genau wie im Aufgaben-Tab.
-    paintPreviewTile(prevW, { colour: c ? choreColor(c.id) : null, opacity: artDim(c),
+    paintPreviewTile(prevW, { id: c && !oneOffMode && c.id, colour: c ? choreColor(c.id) : null, opacity: artDim(c),
       name: c ? c.name : '', note: c && c.note ? c.note : '',
       points: +document.getElementById('cPts').value });
     choreDirty = false;
