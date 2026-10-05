@@ -5338,7 +5338,8 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     await page.locator('.chore[data-cid="c-1"]').click();
     await expect(page.locator('#toast')).toContainText('+2 für Timon');
     await expect(page.locator('#toast')).toHaveClass(/logged/);
-    expect(await page.locator('#toast').evaluate(el => getComputedStyle(el, '::before').backgroundImage)).toContain('svg');
+    // v4.116.0: das Gesicht ist ein Inline-SVG im Toast (vorher ::before mit --b3-wink)
+    await expect(page.locator('#toast .tface svg')).toHaveCount(1);
     // Punkte
     await page.getByRole('tab', { name: 'Punkte' }).click();
     await expect(page.locator('.score')).toHaveCount(2);
@@ -5416,7 +5417,7 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     await page.locator('.chip[data-mid="m-chris"]').click();
     await page.locator('.chore[data-cid="c-1"]').click();
     await expect(page.locator('#toast')).toHaveClass(/logged/);
-    expect(decodeURIComponent(await css(page.locator('#toast'), 'backgroundImage', '::before'))).toContain('linearGradient');
+    expect(await page.locator('#toast .tface').innerHTML()).toContain('linearGradient');   // v4.116.0: Inline-SVG statt ::before
     // Punkte: Balken mit Verlauf
     await page.getByRole('tab', { name: 'Punkte' }).click();
     await expect(page.locator('.score .bar i').first()).toBeVisible();
@@ -5461,34 +5462,8 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     });
   };
 
-  test('v4.114.1 Mit Beta: Start-Zwinkern laeuft einmal, DANN fliegt das Logo in den Kopf — begrenzt', async ({ context, page }) => {
-    await mockBackend(context, B3);
-    await page.goto(`${BASE}/f/${FAM}`);
-    await expect(page.locator('html')).toHaveClass(/brand3/);
-    await expect(page.locator('#splash')).toHaveCount(0);
-    await context.addInitScript(winkProbe);
-    await page.reload();
-    await expect(page.locator('#splash')).toHaveCount(0);
-    await expect(page.locator('#headLogo')).toHaveCSS('opacity', '1');
-    const P = await page.evaluate(() => window.__wink);
-    expect(P.name).toBe('b3splashwink');
-    expect(decodeURIComponent(P.after)).toContain('linearGradient');   // gleiches Verlaufsfeld
-    // v4.115.0: das Lid deckt das Splash-Logo exakt (gleiche Box, kein Sprung)
-    for (let i = 0; i < 4; i++) expect(Math.abs(P.geo.lid[i] - P.geo.img[i])).toBeLessThan(0.51);
-    expect(P.start).not.toBeNull();
-    expect(P.end).not.toBeNull();
-    expect(P.morph).not.toBeNull();
-    // Reihenfolge: erst zu Ende gezwinkert, dann der Morph (gleiche Messung wie bisher)
-    expect(P.end).toBeLessThanOrEqual(P.morph + 1);
-    // Begrenzt: der Morph kommt hoechstens ~600 ms nach seinem alten Zeitpunkt
-    expect(P.morph - Math.max(550, P.dcl)).toBeLessThan(600 + 250);
-    expect(P.gone - P.morph).toBeLessThan(480 + 250);
-    // Nur beim Start: kein Splash, kein Lid, keine weitere Animation nach dem Rendern
-    await page.getByRole('tab', { name: 'Punkte' }).click();
-    await page.getByRole('tab', { name: 'Aufgaben' }).click();
-    await expect(page.locator('#splash')).toHaveCount(0);
-  });
-
+  // v4.116.0: «v4.114.1 Mit Beta» (CSS-Augenlid b3splashwink) entfernt — abgeloest
+  // durch «v4.116.0 Start: ?face=…» (gleiche Reihenfolge- und Kappen-Messung).
   test('v4.114.1 Reduzierte Bewegung: kein Zwinkern, Splash raeumt sich wie bisher', async ({ context, page }) => {
     await mockBackend(context, B3);
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -5539,10 +5514,12 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     expect(logo).toMatch(/<circle cx='26'[^>]*stroke='url\(#gb\)'/);
     expect(logo).toMatch(/<circle cx='70.7'[^>]*stroke='url\(#gv\)'/);
     expect(logo).toMatch(/<path d='M16.7 68.3[^>]*stroke='#F5F5F1'/);   // Mund flach weiss
-    const lid = await page.evaluate(() => decodeURIComponent(getComputedStyle(document.documentElement).getPropertyValue('--b3-lid')));
-    const wink = await page.evaluate(() => decodeURIComponent(getComputedStyle(document.documentElement).getPropertyValue('--b3-wink')));
-    expect(lid).toContain(grad('gv'));
-    expect(wink).toContain(grad('gv')); expect(wink).toContain(grad('gb'));
+    // v4.116.0: --b3-lid/--b3-wink gibt es nicht mehr; das bewegte Gesicht
+    // (Inline-SVG) traegt dieselben zwei Verlaeufe wie das Logo
+    const face = await page.evaluate(() => { window.__face('wink', 0); const h = document.querySelector('.b3face').innerHTML; window.__face(null); return h; });
+    const stops = h => [...h.matchAll(/y1=["']([\d.]+)["'][^>]*y2=["']([\d.]+)["'][^]*?stop-color=["'](#\w+)["'][^]*?stop-color=["'](#\w+)["']/g)].map(m => m.slice(1).join(' '));
+    expect(stops(face)).toHaveLength(2);
+    expect(stops(face)).toEqual(stops(logo));
   });
 
   test('v4.115.0 Kacheln: genau drei Toene, fest pro id (Neuladen, andere Sortierung), dunkle Tinte, Vorschau gleich', async ({ context, page }) => {
@@ -5563,9 +5540,9 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
       expect(await css(tile.locator('.pts'), 'color')).toBe('rgb(18, 21, 31)');
     }
     expect(await css(page.locator('.chore[data-cid="c-1"] .cnote'), 'color')).toBe('rgb(71, 75, 99)');
-    // «Einmalig» bekommt keinen Ton und bleibt dunkel
+    // «Einmalig» bekommt keinen Ton — seit v4.116.0 aber eine eigene Farbe (Mint, vorher dunkel)
     expect(await page.locator('#oneOffTile').getAttribute('data-tone')).toBeNull();
-    expect(await css(page.locator('#oneOffTile'), 'backgroundColor')).not.toBe(TONE_BG.w);
+    expect(await css(page.locator('#oneOffTile'), 'backgroundColor')).toBe('rgb(181, 227, 204)');
     // Andere Sortierung + Neuladen: dieselbe Farbe je Aufgabe
     await page.evaluate(() => localStorage.setItem('haushalt.sort', 'created'));
     await page.reload();
@@ -5608,6 +5585,291 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     await expect(page.locator('html')).not.toHaveClass(/brand3/);
     await expect(page.locator('.chore[data-tone]')).toHaveCount(0);
     expect(await css(page.locator('.chore[data-cid="c-1"] img.art'), 'mixBlendMode')).toBe('normal');
+  });
+});
+
+// ---------- v4.116.0: «Einmalig» als Geschwister-Kachel + lebendiges Gesicht (nur brand3) ----------
+// Maintainer: die Einmalig-Kachel blieb seit v4.115.0 dunkel/gestrichelt und sah
+// aus wie aus einer anderen App → gefuellt in einem Pastellgruen derselben
+// Familie, dunkle Tinte, gestrichelte dunkle Kontur als «besonders»-Hinweis.
+// Und: das Start-Zwinkern (v4.114.1) war ein Bildwechsel (Flackern) statt einer
+// Bewegung → echte, animierte Ausdruecke auf der Geometrie des Gesichts
+// (Inline-SVG ueber dem unveraenderten <img>), zufaellig am Start, im Toast,
+// selten ein Blinzeln im Kopf; Schmollmund NUR, wenn man diese Woche Letzte(r) ist.
+test.describe('Einmalig-Kachel + Gesicht (v4.116.0)', () => {
+  const B3 = { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: true }] };
+  const OFF = { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }] };
+  const css = (loc, prop, pseudo) => loc.evaluate((el, a) => getComputedStyle(el, a[1] || null)[a[0]], [prop, pseudo]);
+  const MINT = 'rgb(181, 227, 204)';      // --b3-tg #B5E3CC
+  const INK = 'rgb(18, 21, 31)';
+  const meIs = (context, mid) => context.addInitScript(([f, m]) => {
+    if (!sessionStorage.getItem('fairli.meSet')) { localStorage.setItem('haushalt.me:' + f + ':admin', m); sessionStorage.setItem('fairli.meSet', '1'); }
+  }, [FAM, mid]);
+
+  test('v4.116.0 Einmalig unter brand3: gefuellt (Mint), dunkle Tinte und Pille, gestrichelte dunkle Kontur, Kunst wie die Geschwister', async ({ context, page }) => {
+    await mockBackend(context, B3);
+    await routePolarityArt(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    const tile = page.locator('#oneOffTile');
+    await expect(tile).toBeVisible();
+    expect(await css(tile, 'backgroundColor')).toBe(MINT);
+    expect(await css(tile, 'borderTopStyle')).toBe('dashed');
+    expect(await css(tile, 'borderTopColor')).toMatch(/^rgba\(18, 21, 31, 0\.\d+\)$|^rgb\(18, 21, 31\)$/);
+    expect(await css(tile.locator('.cname'), 'color')).toBe(INK);
+    expect(await css(tile.locator('.cnote'), 'color')).toBe('rgb(71, 75, 99)');
+    expect(await css(tile.locator('.pts'), 'color')).toBe(INK);
+    expect(await css(tile.locator('.pts'), 'borderTopColor')).toBe(INK);
+    // Kunst: dunkle Linien per multiply — normal invertiert, .artinv nicht
+    const art = tile.locator('img.art');
+    await expect(art).toHaveClass(/\bok\b/);
+    expect(await css(art, 'mixBlendMode')).toBe('multiply');
+    expect(await css(art, 'filter')).toMatch(/^invert\(1\)/);
+    await art.evaluate(el => el.classList.add('artinv'));
+    expect(await css(art, 'filter')).not.toContain('invert');
+    // Kontrast (WCAG AA) der Tinte auf dem Gruen — gerechnet, nicht geschaetzt
+    const ratio = await page.evaluate(() => {
+      const L = h => { const c = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
+        return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+      const g = getComputedStyle(document.documentElement).getPropertyValue('--b3-tg').trim();
+      return [(L(g) + .05) / (L('#12151F') + .05), (L(g) + .05) / (L('#474B63') + .05)];
+    });
+    expect(ratio[0]).toBeGreaterThan(7);       // Titel/Pille: AAA
+    expect(ratio[1]).toBeGreaterThan(4.5);     // Notiz: AA
+    // Schalter stroke: dunkle Kachel, Rand und Pille in Gruen
+    await page.evaluate(() => document.documentElement.setAttribute('data-b3tiles', 'stroke'));
+    expect(await css(tile, 'backgroundColor')).not.toBe(MINT);
+    expect(await css(tile, 'borderTopColor')).toBe(MINT);
+    expect(await css(tile.locator('.pts'), 'color')).toBe(MINT);
+    expect(await css(tile.locator('.cname'), 'color')).not.toBe(INK);
+  });
+
+  test('v4.116.0 Einmalig ohne Beta: unveraendert (dunkel, gestrichelt, gedaempfte Schrift)', async ({ context, page }) => {
+    await mockBackend(context, OFF);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('#oneOffTile')).toBeVisible();
+    await page.waitForTimeout(400);
+    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+    const tile = page.locator('#oneOffTile');
+    expect(await css(tile, 'backgroundColor')).toBe('rgb(26, 34, 48)');
+    expect(await css(tile, 'borderTopStyle')).toBe('dashed');
+    expect(await css(tile, 'borderTopColor')).toBe('rgb(42, 52, 71)');
+    expect(await css(tile.locator('.cname'), 'color')).toBe('rgb(145, 161, 184)');
+    expect(await tile.getAttribute('data-tone')).toBeNull();
+  });
+
+  // Jeder Ausdruck: die richtigen Teile bewegen sich, Dauer <= ~900 ms, Ende = neutral.
+  test('v4.116.0 Gesicht: jeder erzwungene Ausdruck bewegt die richtigen Teile und endet im neutralen Gesicht', async ({ context, page }) => {
+    await mockBackend(context, B3);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    await expect(page.locator('#splash')).toHaveCount(0);
+    for (const n of ['wink', 'smirk', 'blink', 'blink2', 'frown']) {
+      const r = await page.evaluate(async name => {
+        const S = [[], [], [], []];
+        const p = window.__face(name);
+        const t0 = performance.now();
+        await new Promise(res => { const f = () => {
+          const b = document.querySelector('.b3face');
+          if (b) { const ps = b.querySelectorAll('path'); [0, 1, 2].forEach(i => S[i].push(ps[i].getAttribute('d'))); S[3].push(b.querySelector('g').getAttribute('transform')); }
+          if (b && performance.now() - t0 < 1500) requestAnimationFrame(f); else res(); }; f(); });
+        const end = await p;
+        const log = window.__face.log.filter(x => x.n === name).pop();
+        // Mund: Kontrollpunkte UEBER den Enden = umgedrehter Bogen (Schmollmund)
+        const inverted = S[2].some(d => { const v = d.match(/-?[\d.]+/g).map(Number); return v[3] < v[1] - 2 && v[5] < v[7] - 2; });
+        return { n: S.map(a => new Set(a).size), end, N: window.__face.N, overlay: !!document.querySelector('.b3face'),
+          dur: log && log.t1 - log.t0, inverted, frames: S[0].length };
+      }, n);
+      // rAF-Takt: headless WebKit auf CI liefert nur ~25 Bilder/s (blink 300 ms = 7 Bilder)
+      expect(r.frames, n).toBeGreaterThan(4);
+      expect(r.end, n).toEqual(r.N);                       // endet neutral
+      expect(r.overlay, n).toBe(false);                    // Ueberlagerung wieder weg → das <img> zeigt das Gesicht
+      expect(r.dur, n).toBeLessThanOrEqual(950);
+      const [l, rt, m] = r.n;
+      if (n === 'wink') { expect(l, n).toBe(1); expect(rt, n).toBeGreaterThan(3); expect(m, n).toBeGreaterThan(2); }
+      if (n.startsWith('blink')) { expect(l, n).toBeGreaterThan(2); expect(rt, n).toBeGreaterThan(2); expect(m, n).toBe(1); }
+      if (n === 'smirk') { expect(m, n).toBeGreaterThan(3); }
+      if (n === 'frown') { expect(r.inverted, n).toBe(true); }
+      else expect(r.inverted, n).toBe(false);
+    }
+    // Neutral = exakt die Logo-Geometrie (Augen r 12.5 um (26,33.1)/(70.7,31.2), Mund-Kurve)
+    const geo = await page.evaluate(() => { window.__face('wink', 0); const b = document.querySelector('.b3face');
+      const ps = [...b.querySelectorAll('path')].map(p => p.getBBox()).map(r => [r.x, r.y, r.width, r.height].map(v => Math.round(v * 10) / 10));
+      const m = b.querySelectorAll('path')[2].getAttribute('d'); window.__face(null); return { ps, m }; });
+    expect(geo.ps[0]).toEqual([13.5, 20.6, 25, 25]);
+    expect(geo.ps[1]).toEqual([58.2, 18.7, 25, 25]);
+    expect(geo.m.replace(/\s+/g, ' ')).toBe('M16.7 68.3C38 80.2 63 80.2 84.6 68.3');
+    // Unbekannter Name: nichts passiert
+    expect(await page.evaluate(() => window.__face('gibtsnicht'))).toBeNull();
+  });
+
+  // Start: ?face= erzwingt den Ausdruck auf dem Splash; der Morph wartet darauf,
+  // begrenzt (WINK_CAP) — auch fuer den laengsten Ausdruck.
+  const bootProbe = () => {
+    const P = window.__boot = { morph: null, gone: null, dcl: null, geo: null, boxes: 0 };
+    document.addEventListener('DOMContentLoaded', () => {
+      P.dcl = performance.now();
+      const sp = document.getElementById('splash'); const img = sp && sp.querySelector('img');
+      if (img) new MutationObserver(() => { if (P.morph == null && img.style.transform) P.morph = performance.now(); })
+        .observe(img, { attributes: true, attributeFilter: ['style'] });
+      if (sp) new MutationObserver(() => { const b = sp.querySelector('.b3face');
+        if (b) { P.boxes++; if (!P.geo) { const r = img.getBoundingClientRect(), q = b.getBoundingClientRect();
+          P.geo = { img: [r.left, r.top, r.width, r.height], face: [q.left, q.top, q.width, q.height] }; } } })
+        .observe(sp, { childList: true });
+      new MutationObserver(() => { if (P.gone == null && !document.getElementById('splash')) P.gone = performance.now(); })
+        .observe(document.body, { childList: true });
+    });
+  };
+
+  test('v4.116.0 Start: ?face=frown laeuft auf dem Splash zu Ende, DANN der Morph — innerhalb der alten Kappe', async ({ context, page }) => {
+    await mockBackend(context, B3);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    await expect(page.locator('#splash')).toHaveCount(0);
+    await context.addInitScript(bootProbe);
+    for (const n of ['frown', 'wink']) {
+      await page.goto(`${BASE}/?face=${n}`);   // Wurzel + gespeicherte Route (404-Uebergabe verwirft die Query)
+      await expect(page.locator('#splash')).toHaveCount(0);
+      await expect(page.locator('#headLogo')).toHaveCSS('opacity', '1');
+      const P = await page.evaluate(() => window.__boot);
+      const L = await page.evaluate(() => window.__face.log.filter(x => x.w === 'splash'));
+      expect(L.length, n).toBe(1);
+      expect(L[0].n, n).toBe(n);
+      expect(L[0].t1, n).not.toBeNull();
+      expect(P.morph, n).not.toBeNull();
+      expect(L[0].t1, n).toBeLessThanOrEqual(P.morph + 1);           // erst zu Ende, dann Morph
+      expect(L[0].t0, n).toBeGreaterThan(100);                       // erst offen gesehen
+      expect(P.morph - Math.max(550, P.dcl), n).toBeLessThan(600 + 250);   // WINK_CAP unveraendert
+      expect(P.gone - P.morph, n).toBeLessThan(480 + 250);
+      for (let i = 0; i < 4; i++) expect(Math.abs(P.geo.face[i] - P.geo.img[i]), n).toBeLessThan(0.51);   // deckt das <img> exakt
+      // Waehrend des Morphs ist die Ueberlagerung schon weg (das <img> fliegt allein)
+      expect(await page.locator('.b3face').count()).toBe(0);
+    }
+    // ?face=none: kein Ausdruck, Morph wie bisher
+    await page.goto(`${BASE}/?face=none`);
+    await expect(page.locator('#splash')).toHaveCount(0);
+    expect(await page.evaluate(() => window.__face.log.length)).toBe(0);
+  });
+
+  test('v4.116.0 Schmollmund nur fuer die Letzte(n) der Woche — nicht bei Gleichstand aller, nicht allein, nicht im gemischten Ein-Personen-Block', async ({ context, page }) => {
+    let members = MEMBERS, log = [];
+    const row = (mid, pts, ago = 3600e3) => ({ id: 'l-' + mid + pts + ago, chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null,
+      member_id: mid, member_name: mid, points: pts, done_at: weekSafeAgo(ago), family_id: FAM });
+    await mockBackend(context, { ...B3, memberRows: () => members, logRows: () => log });
+    await meIs(context, 'm-chris');
+    const last = async () => { await page.reload(); await expect(page.locator('html')).toHaveClass(/brand3/);
+      await expect(page.locator('.chip[data-mid="m-chris"]')).toBeVisible(); await page.waitForTimeout(200);
+      return page.evaluate(() => [window.__face.last('m-chris'), window.__face.last('m-mira'), window.__face.last('m-kim')]); };
+    await page.goto(`${BASE}/f/${FAM}`);
+    // Montagmorgen: alle 0 → niemand ist «Letzte(r)»
+    expect(await last()).toEqual([false, false, false]);
+    // Mira 5, Timon 0 → Timon ist Letzter
+    log = [row('m-mira', 5)];
+    expect(await last()).toEqual([true, false, false]);
+    // Punkte-Tab zeigt Timon zuletzt (gleiche Reihung)
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('.score').last()).toContainText('Timon');
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    // Alte Eintraege zaehlen nicht (nur «Diese Woche»)
+    log = [{ ...row('m-mira', 5), done_at: '2026-07-10T10:00:00Z' }];
+    expect(await last()).toEqual([false, false, false]);
+    // Drei Personen, Timon und Kim gleichauf hinten (0), Mira vorne → beide Letzte
+    members = [...MEMBERS, { id: 'm-kim', name: 'Kim', color: '#C04A9A', family_id: FAM, url_slug: 'slugkim01' }];
+    log = [row('m-mira', 3)];
+    expect(await last()).toEqual([true, false, true]);
+    // Gleichstand ALLER mit Punkten → niemand
+    log = [row('m-mira', 2), row('m-chris', 2), row('m-kim', 2)];
+    expect(await last()).toEqual([false, false, false]);
+    // Allein im Haushalt → nie
+    members = [MEMBERS[0]]; log = [row('m-chris', 0)];
+    expect((await last())[0]).toBe(false);
+    // Gemischt: Mira mit Ziel (0 %), Timon ohne Ziel allein im unteren Block → kein Vergleich, kein Schmollen
+    members = [MEMBERS[0], { ...MEMBERS[1], goal: 10 }]; log = [row('m-chris', 3)];
+    expect(await last()).toEqual([false, false, false]);
+    // Beide mit Ziel: Reihung nach Zielerreichung (Timon 3/4 = 75 % vor Mira 5/10 = 50 %) → Mira Letzte, trotz mehr Punkten
+    members = [{ ...MEMBERS[0], goal: 4 }, { ...MEMBERS[1], goal: 10 }]; log = [row('m-chris', 3), row('m-mira', 5)];
+    expect(await last()).toEqual([false, true, false]);
+  });
+
+  test('v4.116.0 Start-Auswahl: Schmollmund nur unter seiner Bedingung (Zufall erzwungen)', async ({ context, page }) => {
+    let log = [];
+    const row = (mid, pts) => ({ id: 'l-' + mid + pts, chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null,
+      member_id: mid, member_name: mid, points: pts, done_at: weekSafeAgo(3600e3), family_id: FAM });
+    await mockBackend(context, { ...B3, logRows: () => log });
+    await meIs(context, 'm-chris');
+    await context.addInitScript(() => { Math.random = () => 0; });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    // Der Start entscheidet aus dem GESPEICHERTEN Stand (vor dem ersten Abgleich):
+    // einmal laden = neuer Stand im Cache, zweites Laden = Entscheidung darauf.
+    const boot = async () => { await page.reload(); await expect(page.locator('#splash')).toHaveCount(0);
+      await page.waitForTimeout(300); await page.reload(); await expect(page.locator('#splash')).toHaveCount(0);
+      return page.evaluate(() => window.__face.log.filter(x => x.w === 'splash').map(x => x.n)); };
+    log = [row('m-mira', 4)];                  // Timon Letzter → Zufall 0 waehlt den Schmollmund
+    expect(await boot()).toEqual(['frown']);
+    log = [row('m-mira', 4), row('m-chris', 6)];   // Timon vorne → nie Schmollmund
+    expect(await boot()).not.toContain('frown');
+    log = [];                                   // alle 0 → nie Schmollmund
+    expect(await boot()).not.toContain('frown');
+  });
+
+  test('v4.116.0 Reduzierte Bewegung: kein Ausdruck, keine Ueberlagerung, Toast-Gesicht steht still', async ({ context, page }) => {
+    await mockBackend(context, B3);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    await context.addInitScript(bootProbe);
+    await page.goto(`${BASE}/?face=wink`);
+    await expect(page.locator('#splash')).toHaveCount(0);
+    const P = await page.evaluate(() => window.__boot);
+    expect(P.boxes).toBe(0);
+    expect(await page.evaluate(() => window.__face.log.length)).toBe(0);
+    expect(await page.evaluate(() => window.__face('blink'))).toBeNull();
+    expect(await page.evaluate(() => window.__face.idle())).toBe(false);
+    await page.locator('.chip[data-mid="m-chris"]').click();
+    await page.locator('.chore[data-cid="c-1"]').click();
+    const tf = page.locator('#toast .tface');
+    await expect(tf).toHaveCount(1);
+    await page.waitForTimeout(400);
+    expect(await tf.evaluate(el => el.getAnimations({ subtree: true }).length)).toBe(0);
+    expect(await page.evaluate(() => window.__face.log.length)).toBe(0);
+  });
+
+  test('v4.116.0 Toast und Kopf: Gesicht im Toast spielt einen Ausdruck; seltenes Blinzeln im Kopf, nie ueber offenem Dialog', async ({ context, page }) => {
+    await mockBackend(context, B3);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    await expect(page.locator('#splash')).toHaveCount(0);
+    await page.locator('.chip[data-mid="m-chris"]').click();
+    await page.locator('.chore[data-cid="c-1"]').click();
+    const tf = page.locator('#toast .tface');
+    await expect(tf).toHaveCount(1);
+    const svg = await tf.evaluate(el => el.innerHTML);
+    for (const hex of ['#84B2FF', '#F5F5F1', '#B98AE0']) expect(svg).toContain(hex);
+    await expect.poll(() => page.evaluate(() => window.__face.log.filter(x => x.w === 'toast').length)).toBe(1);
+    expect(['wink', 'smirk']).toContain(await page.evaluate(() => window.__face.log.find(x => x.w === 'toast').n));
+    // Kopf: Blinzeln nur, wenn sichtbar und kein Dialog offen
+    expect(await page.evaluate(() => window.__face.idle())).toBe(true);
+    await expect.poll(() => page.evaluate(() => window.__face.log.filter(x => x.w === 'head').length)).toBe(1);
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#settingsSheet')).toBeVisible();
+    expect(await page.evaluate(() => window.__face.idle())).toBe(false);
+  });
+
+  test('v4.116.0 Ohne Beta: kein Gesicht, kein Ausdruck, kein Toast-Gesicht', async ({ context, page }) => {
+    await mockBackend(context, OFF);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await context.addInitScript(bootProbe);
+    await page.goto(`${BASE}/?face=wink`);
+    await expect(page.locator('#splash')).toHaveCount(0);
+    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+    expect((await page.evaluate(() => window.__boot)).boxes).toBe(0);
+    expect(await page.evaluate(() => window.__face && window.__face('wink'))).toBeFalsy();
+    await page.locator('.chip[data-mid="m-chris"]').click();
+    await page.locator('.chore[data-cid="c-1"]').click();
+    await expect(page.locator('#toast')).toContainText('+2 für Timon');
+    await expect(page.locator('#toast .tface')).toHaveCount(0);
   });
 });
 

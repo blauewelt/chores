@@ -1,3 +1,109 @@
+## 2026-10-05 — v4.116.0 (SW haushalt-v223, BETA only): the «Einmalig» tile joins the coloured tiles, and the face gets real, animated expressions
+
+Everything below is under `html.brand3` only (families.beta). Flag-off board,
+history and toast on Pixel + iPhone viewports are pixel-identical to v4.115.1
+(compared with the art-less skeleton shimmer switched off — its phase is
+time-dependent in both versions).
+
+### A — «Einmalig» (one-off) tile in mint
+
+- Maintainer: «Should the one-off tile be adapted to the other ones, maybe a
+  slightly different colour, e.g. a shade of green? (also in this black font)».
+  Since v4.115.0 every chore tile is a pastel fill with dark ink; the one-off
+  tile stayed dark, dashed and muted and looked like it came from another app.
+- **Colour: mint `#B5E3CC`** (`--b3-tg`). The three tints sit at OKLCH lightness
+  0.864–0.888 and chroma 0.054–0.059, so the candidates were taken at L 0.876,
+  C 0.057 with three hues and compared on the real board (sheet
+  `greens-compare.png`, outside the repo): sage `#C0E1C0` (H 145), mint
+  `#B5E3CC` (H 163), aqua-mint `#ADE3D9` (H 182). Aqua was too close to the
+  light-blue tile next to it; sage read yellow-olive and dull beside the cool
+  blue and violet; mint is clearly green and clearly a sibling.
+- **Same rules as the toned tiles:** every v4.115.0 `fill` rule now reads
+  `.chore:is([data-tone],.oneoff)` — dark ink `--b3-tink` for title and the ＋
+  pill (now a solid dark outline like the +N pills), muted `--b3-tmuted` note,
+  art dark via `invert(1)` + `multiply` at .82, `.artinv` without invert,
+  pressed/flash/skeleton the same. **Special cue kept:** the dashed outline,
+  now dark (`rgba(18,21,31,.5)`) on the mint, plus the ＋ — it creates a one-off
+  entry instead of logging a standing chore. `stroke` variant defined too: dark
+  tile, mint dashed border and pill, art tinted mint (sepia + hue-rotate 80°).
+  The tile still has no `data-tone` (it is not a chore).
+- **Contrast (WCAG):** ink `#12151F` on mint 12.9:1, muted `#474B63` 6.0:1 —
+  AA for normal text (ink even AAA).
+
+### B — animated face expressions
+
+- Maintainer: the v4.114.1 start wink (an overlay that swapped the eye for an arc
+  for ~150 ms) «reads as a flicker, not a wink»; wanted several properly animated
+  expressions at random, plus a frown only for whoever is last this week.
+- **Mechanism (`FACE` in the script, before the splash code):** an INLINE SVG of
+  the same face is laid exactly over an existing `<img>` (`#splash img`,
+  `#headLogo`) for the duration of one expression and removed afterwards; the
+  `<img>` nodes the splash → header FLIP measures are untouched. Ending pose =
+  neutral = the logo, so removing the overlay is invisible. Eyes are paths made
+  of two half-ellipses (top bulge `t`, bottom bulge `b`; `b < 0` bends the lower
+  lid UP into the closed «happy arc»), mouth is one cubic. A pose is 16 numbers
+  (both eyes t/b/dy, eight mouth coordinates, tilt, head dy); an expression is a
+  timeline `[ms, pose]` with smoothstep easing, drawn per frame with
+  `requestAnimationFrame` via `setAttribute('d')` — no CSS `d` (Safari cannot
+  animate it), no SMIL, no library, no assets. The gradients are the logo's
+  (`gb`/`gv`, userSpaceOnUse, ids made unique per instance).
+- **Expressions** (frame strips `strip-*.png`, 104 px and header size, outside
+  the repo): **wink** 700 ms — the violet eye's lower lid rises to the arc while
+  the upper drops a little, head tilts 5°, right mouth corner lifts, then the
+  eye overshoots open; **smirk** 860 ms — lopsided grin (right corner up, left
+  flatter) and both eyes narrow from below into smiling eyes; **blink** 300 ms
+  (≈ 90 ms fully closed, eyes close into a relaxed ‿) and **blink2** 530 ms
+  (double); **frown** 880 ms — a short pout (inverted, narrower mouth, heavy
+  lids, head dips) that bounces into a bigger-than-normal smile and settles.
+- **Where:** start-up on the splash — random: 20 % plain face, 30 % wink, 15 %
+  blink, 10 % double blink, 25 % smirk; starts 180 ms after navigation start so
+  the face is seen open first. Toast after logging — the static wink became a
+  small inline face that pops in (old `b3wink` pop) and plays a wink (65 %) or
+  smirk; never the frown (logging is a good moment). Header — a rare idle blink
+  every 20–40 s, only while the page is visible, the logo on screen, no dialog
+  open and nothing else animating.
+- **Frown rule:** only at start-up, every second start, and only when the active
+  person (`me`) is LAST this week by the Punkte tab's «Diese Woche» ordering
+  (same two blocks: with goal by attainment, without goal by points; the lower
+  block is «behind»). Last = in the lower block nobody is behind you AND someone
+  is ahead; a shared last place counts, a tie of everyone (Monday morning, all
+  at 0; or all equal) never does; fewer than two people in the block never
+  does (so a lone goal-less member in the mixed state is not compared across
+  registers). Decided from the stored state at boot, i.e. as of the last sync.
+- **Splash timing:** the morph waits for the expression's promise, still capped
+  at `WINK_CAP = 600` ms (unchanged), and clears the overlay first so only the
+  `<img>` flies. Longest case (frown): starts at 180 ms, ends ≈ 1060 ms, the old
+  cap ends at 1150 ms. The `#splash::after` lid, `--b3-lid`, `--b3-wink` and
+  `b3splashwink` are gone.
+- **Reduced motion:** no expression anywhere (no overlay, no idle blink, debug
+  hook refuses), the toast shows the face standing still in the wink pose.
+- **Debug hook:** `/chores/?face=wink|smirk|blink|blink2|frown|none` forces the
+  start expression (on the root URL — the 404 hand-off drops the query on deep
+  links; the head script reads it before routing rewrites the URL).
+  `__face('wink')` plays on the header logo, `__face('wink', ms)` freezes one
+  frame, `__face(null)` clears, `__face.last(id)`, `__face.log`, `__face.idle()`.
+- **Size:** `index.html` +8.4 KB raw / +3.9 KB gzip including comments; the
+  engine code alone is ≈ 6.4 KB raw / 2.9 KB gzip — over the «well under 4 KB»
+  guidance in raw bytes (poses, the debug hook and the ranking rule cost more
+  than expected), within it on the wire. No new files, no network.
+- Tests («Einmalig-Kachel + Gesicht (v4.116.0)», 9, red against v4.115.0 except
+  the two flag-off ones, which pass by design): one-off filled/ink/dashed/art
+  rules + contrast + stroke variant; flag-off one-off unchanged; each forced
+  expression moves the right parts (wink: right eye only; blink: eyes only;
+  frown: mouth inverts) and ends neutral within 950 ms, overlay removed, neutral
+  geometry = logo geometry; `?face=` on the splash finishes before the morph and
+  within the old cap, overlay box = `<img>` box; frown condition (all-zero, old
+  entries, ties, alone, mixed blocks, goal attainment) cross-checked with the
+  Punkte tab; start pick with `Math.random` forced; reduced motion; toast face +
+  idle blink blocked by an open dialog; flag off. **Changed assertions:** render
+  test and «v4.114.0 Mit Beta» — toast face is `#toast .tface svg` (was
+  `::before` with `--b3-wink`); «v4.115.0 Logo» — the moving face carries the
+  same two gradients as the logo (was: `--b3-lid`/`--b3-wink` tokens);
+  «v4.115.0 Kacheln» — Einmalig background is mint (was: not white/dark).
+  **Removed:** «v4.114.1 Mit Beta» (CSS lid), superseded by «v4.116.0 Start».
+- APP_VERSION 4.116.0, SW cache haushalt-v223 (art cache haushalt-art-1 kept). Icon
+  cache-busters unchanged (no icon changed). No strings, no i18n, no release notes.
+
 ## 2026-10-05 — v4.115.1 (SW haushalt-v222): the weekly goal survives a sync while the person sheet is open; a service-worker swap never reloads the page under the user
 
 Two field reports from the maintainer, one patch release.

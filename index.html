@@ -25,6 +25,9 @@
       } catch (e) {}
     }
     if (isUser) document.documentElement.classList.add('userlink');
+    // v4.116.0: ?face=wink|smirk|blink|blink2|frown|none erzwingt den Start-Ausdruck
+    // (nur brand3; vor dem Routen gelesen, das die Query wegschreibt)
+    var fq = /[?&]face=(\w+)/.exec(location.search); if (fq) window.__faceQ = fq[1];
     // v4.113.0 Marken-Test «Variante 3» (families.beta): den Schalter kennt
     // erst der erste Abgleich — der Boot liest darum die zuletzt GESEHENE
     // Antwort pro Familie und setzt html.brand3 VOR dem ersten Paint (§7).
@@ -635,11 +638,6 @@
     --line:#31354F; --accent:#F5F5F1; --accent-press:#D3D4DE; --gold:#F5F5F1; --red:#FF8A80;
     --onink:#12151F; --radius:20px; --shadow:none; --artframe:rgba(245,245,241,.3);
     --b3-logo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='gb' gradientUnits='userSpaceOnUse' x1='0' y1='15.8' x2='0' y2='50.4'%3E%3Cstop offset='.15' stop-color='%23F5F5F1'/%3E%3Cstop offset='.85' stop-color='%2384B2FF'/%3E%3C/linearGradient%3E%3ClinearGradient id='gv' gradientUnits='userSpaceOnUse' x1='0' y1='13.9' x2='0' y2='48.5'%3E%3Cstop offset='.15' stop-color='%23F5F5F1'/%3E%3Cstop offset='.85' stop-color='%23B98AE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='%231B1D31'/%3E%3Cg fill='none' stroke-linecap='round'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6' stroke='url(%23gb)'/%3E%3Ccircle cx='70.7' cy='31.2' r='12.5' stroke-width='9.6' stroke='url(%23gv)'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6' stroke='%23F5F5F1'/%3E%3C/g%3E%3C/svg%3E");
-    --b3-wink:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='gb' gradientUnits='userSpaceOnUse' x1='0' y1='15.8' x2='0' y2='50.4'%3E%3Cstop offset='.15' stop-color='%23F5F5F1'/%3E%3Cstop offset='.85' stop-color='%2384B2FF'/%3E%3C/linearGradient%3E%3ClinearGradient id='gv' gradientUnits='userSpaceOnUse' x1='0' y1='13.9' x2='0' y2='48.5'%3E%3Cstop offset='.15' stop-color='%23F5F5F1'/%3E%3Cstop offset='.85' stop-color='%23B98AE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%231B1D31'/%3E%3Cg fill='none' stroke-linecap='round'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6' stroke='url(%23gb)'/%3E%3Cpath d='M58.2 33.4A12.5 12.5 0 0 1 83.2 32.2' stroke-width='9.6' stroke='url(%23gv)'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6' stroke='%23F5F5F1'/%3E%3C/g%3E%3C/svg%3E");
-    /* v4.114.1 Zwinkern beim Start: NUR das Augenlid — gleiche viewBox, gleiches
-       Verlaufsfeld wie --b3-logo; deckt den rechten Ring mit Kachelfarbe ab und
-       zeichnet den Bogen. Liegt als #splash::after UEBER dem Splash-<img>. */
-    --b3-lid:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='gv' gradientUnits='userSpaceOnUse' x1='0' y1='13.9' x2='0' y2='48.5'%3E%3Cstop offset='.15' stop-color='%23F5F5F1'/%3E%3Cstop offset='.85' stop-color='%23B98AE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='70.7' cy='31.2' r='18.8' fill='%231B1D31'/%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M58.2 33.4A12.5 12.5 0 0 1 83.2 32.2' stroke-width='9.6' stroke='url(%23gv)'/%3E%3C/g%3E%3C/svg%3E");
     /* v4.114.0 Farbe: der alte Fairli-Verlauf (Titel #EAF1EB→--accent #84B2FF,
        Icon-Kacheln blau #428BF0/#8EC2FD … violett #9E59C8/#CBA0E5) als
        blau → weiss → violett. EINE Stelle: Stopps + fertiger --b3-grad.
@@ -649,6 +647,8 @@
     --b3-blue:#84B2FF; --b3-white:#F5F5F1; --b3-violet:#B98AE0;
     /* v4.115.0 Kachelfarben (Pastell aus blau/violett) + Tinte auf hellem Grund */
     --b3-tw:#F5F5F1; --b3-tb:#C7DBFF; --b3-tv:#DCC9F2; --b3-tink:#12151F; --b3-tmuted:#474B63;
+    /* v4.116.0 «Einmalig»: Mint aus derselben Familie (OKLCH L .876 C .057 wie blau/violett, H 163) */
+    --b3-tg:#B5E3CC;
     --b3-grad:linear-gradient(100deg, var(--b3-blue), var(--b3-white) 34%, var(--b3-white) 66%, var(--b3-violet));
   }
   /* Logo: dieselben <img>-Knoten (Splash-FLIP misst sie), nur der Inhalt
@@ -812,9 +812,8 @@
      nach dem Verbuchen zwinkert das Gesicht (Seite 7 des Entwurfs). */
   html.brand3 #toast{background:var(--ink); color:var(--onink)}
   html.brand3 #toast .tact{color:var(--onink); text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:3px}
-  html.brand3 #toast.logged::before{content:''; display:inline-block; width:22px; height:22px; margin:-3px 8px -5px -6px;
-    background:var(--b3-wink) center/contain no-repeat}
-  html.brand3 #toast.logged.show::before{animation:b3wink .5s cubic-bezier(.3,1.6,.5,1)}
+  html.brand3 #toast .tface{position:static; display:inline-block; width:22px; height:22px; margin:-3px 8px -5px -6px;
+    vertical-align:baseline; animation:b3wink .5s cubic-bezier(.3,1.6,.5,1)}
   @keyframes b3wink{from{transform:rotate(-18deg) scale(.6)}}
   /* v4.114.0 «ein bisschen Farbe» → v4.115.0: seit die KACHELN Farbe tragen,
      sind Titel, FAB, Primaerknoepfe, Regler und Punktebalken wieder schlicht
@@ -826,48 +825,51 @@
      choreTone(id) als data-tone. EIN Schalter: <html data-b3tiles="fill|stroke">.
      fill (A) = farbige Flaeche, dunkle Tinte, Kunst DUNKEL per multiply;
      stroke (B) = dunkle Kachel, Rand/Pille/Strichzeichnung in der Farbe.
-     «Einmalig» hat keinen Ton und bleibt dunkel/gestrichelt. */
+     «Einmalig» hat keinen Ton, aber seit v4.116.0 eine eigene Farbe (Mint). */
   html.brand3 .chore[data-tone="w"]{--tf:var(--b3-tw)}
   html.brand3 .chore[data-tone="b"]{--tf:var(--b3-tb)}
   html.brand3 .chore[data-tone="v"]{--tf:var(--b3-tv)}
-  html.brand3[data-b3tiles="fill"] .chore[data-tone]{background:var(--tf); border-color:var(--tf); color:var(--b3-tink)}
-  html.brand3[data-b3tiles="fill"] .chore[data-tone]:active{background:var(--tf); filter:brightness(.88)}
-  html.brand3[data-b3tiles="fill"] .chore[data-tone] .cname{color:var(--b3-tink); text-shadow:0 0 6px var(--tf), 0 0 2px var(--tf)}
-  html.brand3[data-b3tiles="fill"] .chore[data-tone] .cnote{color:var(--b3-tmuted); text-shadow:0 0 4px var(--tf)}
-  html.brand3[data-b3tiles="fill"] .chore[data-tone] .pts{color:var(--b3-tink); background:var(--tf); border-color:var(--b3-tink)}
-  html.brand3[data-b3tiles="fill"] .chore[data-tone] .edit{color:var(--b3-tmuted)}
+  html.brand3 .chore.oneoff{--tf:var(--b3-tg)}
+  html.brand3[data-b3tiles="fill"] .chore:is([data-tone],.oneoff){background:var(--tf); border-color:var(--tf); color:var(--b3-tink)}
+  html.brand3[data-b3tiles="fill"] .chore:is([data-tone],.oneoff):active{background:var(--tf); filter:brightness(.88)}
+  html.brand3[data-b3tiles="fill"] .chore:is([data-tone],.oneoff) .cname{color:var(--b3-tink); text-shadow:0 0 6px var(--tf), 0 0 2px var(--tf)}
+  html.brand3[data-b3tiles="fill"] .chore:is([data-tone],.oneoff) .cnote{color:var(--b3-tmuted); text-shadow:0 0 4px var(--tf)}
+  html.brand3[data-b3tiles="fill"] .chore:is([data-tone],.oneoff) .pts{color:var(--b3-tink); background:var(--tf); border-color:var(--b3-tink)}
+  html.brand3[data-b3tiles="fill"] .chore:is([data-tone],.oneoff) .edit{color:var(--b3-tmuted)}
   /* Kunst: nach der Polaritaet ist sie weiss-auf-schwarz → invertieren und
      multiplizieren = dunkle Striche, Grund verschwindet in der Farbe. Deckkraft
      .82: weiss GEFUELLTE Motive (Brot, Topf) wuerden sonst schwarze Kloetze —
      so wird «Schwarz» ein tiefer Ton der Kachelfarbe. Ein
      Bild, das schon dunkel-auf-weiss kam (.artinv), braucht KEIN invert. */
-  html.brand3[data-b3tiles="fill"] .chore[data-tone] .art.ok{opacity:.82}
-  html.brand3[data-b3tiles="fill"] .chore[data-tone] .art{mix-blend-mode:multiply; filter:invert(1) grayscale(1) contrast(1.8)}
-  html.brand3[data-b3tiles="fill"] .chore[data-tone] .art.artinv{filter:grayscale(1) contrast(1.8)}
-  html.brand3[data-b3tiles="fill"] .chore[data-tone].flash{animation:b3flashL .5s ease}
+  html.brand3[data-b3tiles="fill"] .chore:is([data-tone],.oneoff) .art.ok{opacity:.82}
+  html.brand3[data-b3tiles="fill"] .chore:is([data-tone],.oneoff) .art{mix-blend-mode:multiply; filter:invert(1) grayscale(1) contrast(1.8)}
+  html.brand3[data-b3tiles="fill"] .chore:is([data-tone],.oneoff) .art.artinv{filter:grayscale(1) contrast(1.8)}
+  html.brand3[data-b3tiles="fill"] .chore:is([data-tone],.oneoff).flash{animation:b3flashL .5s ease}
   @keyframes b3flashL{0%{filter:brightness(.6)} 100%{filter:none}}
-  html.brand3[data-b3tiles="fill"] .chore[data-tone]:has(img.art:not(.ok))::after{
+  html.brand3[data-b3tiles="fill"] .chore:is([data-tone],.oneoff):has(img.art:not(.ok))::after{
     background:linear-gradient(100deg,transparent 30%,rgba(18,21,31,.08) 50%,transparent 70%); background-size:200% 100%}
   /* Weisse Toast-Pille ueber hellen Kacheln: Navy-Hof wie beim FAB */
   html.brand3[data-b3tiles="fill"] #toast{box-shadow:0 0 0 4px var(--bg), 0 10px 28px rgba(0,0,0,.45)}
-  html.brand3[data-b3tiles="stroke"] .chore[data-tone]{border-color:var(--tf)}
-  html.brand3[data-b3tiles="stroke"] .chore[data-tone] .pts{border-color:var(--tf); color:var(--tf)}
+  html.brand3[data-b3tiles="stroke"] .chore:is([data-tone],.oneoff){border-color:var(--tf)}
+  html.brand3[data-b3tiles="stroke"] .chore:is([data-tone],.oneoff) .pts{border-color:var(--tf); color:var(--tf)}
   html.brand3[data-b3tiles="stroke"] .chore[data-tone="b"] .art{filter:grayscale(1) contrast(1.8) brightness(.8) sepia(1) saturate(2.6) hue-rotate(178deg) brightness(1.15)}
   html.brand3[data-b3tiles="stroke"] .chore[data-tone="v"] .art{filter:grayscale(1) contrast(1.8) brightness(.8) sepia(1) saturate(2.4) hue-rotate(228deg) brightness(1.15)}
   html.brand3[data-b3tiles="stroke"] .chore[data-tone="b"] .art.artinv{filter:invert(1) grayscale(1) contrast(1.8) brightness(.8) sepia(1) saturate(2.6) hue-rotate(178deg) brightness(1.15)}
   html.brand3[data-b3tiles="stroke"] .chore[data-tone="v"] .art.artinv{filter:invert(1) grayscale(1) contrast(1.8) brightness(.8) sepia(1) saturate(2.4) hue-rotate(228deg) brightness(1.15)}
-  /* v4.114.1 Start-Zwinkern: ein absolut positioniertes Augenlid ueber dem
-     zentrierten 104-px-Splash-Logo. Das <img> selbst (FLIP misst es) bleibt
-     unberuehrt; animiert wird nur die Deckkraft des Lids. 220 ms nach dem
-     ersten Paint, Geste 520 ms, davon ~150 ms geschlossen (harter Zwei-Bild-
-     Wechsel wie Seite 7 — eine Ueberblendung zeigte halbe Geisterringe). Der Morph wartet
-     auf das Ende (Deckel: 600 ms), .morph blendet das Lid sicher aus. */
-  html.brand3 #splash::after{content:''; position:absolute; left:50%; top:50%; width:104px; height:104px;
-    margin:-52px 0 0 -52px; background:var(--b3-lid) center/100% 100% no-repeat; opacity:0;
-    pointer-events:none; animation:b3splashwink .52s .22s step-end both}
-  html.brand3 #splash.morph::after{display:none}
-  @keyframes b3splashwink{0%{opacity:0} 30%{opacity:1} 59%{opacity:0} 100%{opacity:0}}
-  @media (prefers-reduced-motion: reduce){ html.brand3 #splash::after{animation:none; display:none} }
+  /* v4.116.0 «Einmalig» als Geschwister: dieselben Regeln (oben per :is) in
+     eigenem Mint --b3-tg; «besonders» bleibt die gestrichelte DUNKLE Kontur
+     (legt einen Eintrag an statt eine Aufgabe zu verbuchen) und das ＋. */
+  html.brand3[data-b3tiles="fill"] .chore.oneoff{border-color:rgba(18,21,31,.5)}
+  html.brand3[data-b3tiles="fill"] .chore.oneoff .pts{border-style:solid}
+  html.brand3[data-b3tiles="stroke"] .chore.oneoff{background:var(--card)}
+  html.brand3[data-b3tiles="stroke"] .chore.oneoff .cname{color:var(--ink)}
+  html.brand3[data-b3tiles="stroke"] .chore.oneoff .pts{border-style:solid}
+  html.brand3[data-b3tiles="stroke"] .chore.oneoff .art{filter:grayscale(1) contrast(1.8) brightness(.8) sepia(1) saturate(2.2) hue-rotate(80deg) brightness(1.15)}
+  html.brand3[data-b3tiles="stroke"] .chore.oneoff .art.artinv{filter:invert(1) grayscale(1) contrast(1.8) brightness(.8) sepia(1) saturate(2.2) hue-rotate(80deg) brightness(1.15)}
+  /* v4.116.0 Gesicht: Inline-SVG-Ueberlagerung fuer die Dauer eines Ausdrucks
+     (FACE im Skript) — deckt das <img> exakt, das selbst unberuehrt bleibt. */
+  html.brand3 .b3face{position:absolute; display:block; pointer-events:none; z-index:2}
+  html.brand3 .b3face svg{display:block}
   @media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important} }
 </style>
 </head>
@@ -1052,7 +1054,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.115.1';
+  const APP_VERSION = '4.116.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -3618,6 +3620,125 @@
     }
   });
 
+  // ---------- Gesicht: Ausdruecke (v4.116.0, nur brand3) ----------
+  // Statt eines Bildwechsels (v4.114.1) bewegt sich die echte Geometrie: ein
+  // Inline-SVG desselben Gesichts liegt fuer die Dauer des Ausdrucks UEBER dem
+  // <img> (dessen Box die FLIP misst — es bleibt unberuehrt) und verschwindet
+  // danach; Ende = neutral = Logo, also kein Sprung. Augen = Pfad aus zwei
+  // Halbellipsen (oben t, unten b; b < 0 = Bogen nach oben), Mund = eine
+  // kubische Kurve. Pose = 16 Zahlen, Zeitleiste = [ms, Pose], rAF + Glaettung
+  // (kein CSS-d: Safari kann es nicht). Dauer je Ausdruck <= 880 ms.
+  const FACE = (() => {
+    const N = [12.5, 12.5, 0, 12.5, 12.5, 0, 16.7, 68.3, 38, 80.2, 63, 80.2, 84.6, 68.3, 0, 0];
+    const P = o => N.map((v, i) => i in o ? o[i] : v);   // Pose = neutral + Abweichungen (Index → Wert)
+    const shut = (t, dy) => ({ 0: t, 1: -t, 2: dy, 3: t, 4: -t, 5: dy });
+    const WC = P({ 3: 9, 4: -9, 5: 1.5, 7: 68.8, 9: 80.8, 10: 64.5, 11: 81.8, 12: 85.8, 13: 63.6, 14: -5, 15: -1 });
+    const BC = P(shut(-3, 2)), SM = P({ 0: 11, 1: 4.5, 3: 11.5, 4: 6, 6: 21, 7: 72, 8: 40, 9: 78.4, 10: 66, 11: 80.6, 12: 87.4, 13: 59.6, 14: -2.5 });
+    const FR = P({ 0: 8.5, 2: 2, 3: 8.5, 5: 2, 6: 27, 7: 78, 8: 40, 9: 69.5, 10: 60, 11: 69.5, 12: 73, 13: 78, 15: 2.5 });
+    const HA = P({ 1: 7, 4: 7, 6: 15.5, 7: 66, 8: 37.5, 9: 83.5, 10: 63.5, 11: 83.5, 12: 85.8, 13: 66, 15: -1 });
+    const E = {
+      wink: [[0, N], [170, WC], [380, WC], [540, P({ 3: 13.6, 4: 13.6, 14: 1.2, 13: 67 })], [700, N]],
+      blink: [[0, N], [70, BC], [160, BC], [300, N]],
+      blink2: [[0, N], [70, BC], [140, BC], [260, N], [330, BC], [390, BC], [530, N]],
+      smirk: [[0, N], [260, SM], [580, SM], [860, N]],
+      frown: [[0, N], [240, FR], [470, FR], [700, HA], [880, N]],
+    };
+    const ease = x => x * x * (3 - 2 * x);
+    const at = (tl, ms) => {
+      let i = 1; while (i < tl.length - 1 && ms > tl[i][0]) i++;
+      const [t0, a] = tl[i - 1], [t1, b] = tl[i], k = ease(Math.min(1, Math.max(0, (ms - t0) / (t1 - t0))));
+      return a.map((v, j) => v + (b[j] - v) * k);
+    };
+    const f = v => Math.round(v * 100) / 100;
+    const eye = (x, y, t, b) => { const k = .5523, q = (u, v) => f(x + u * 12.5) + ' ' + f(y + v);
+      return `M${q(-1, 0)}C${q(-1, -k * t)} ${q(-k, -t)} ${q(0, -t)}C${q(k, -t)} ${q(1, -k * t)} ${q(1, 0)}C${q(1, k * b)} ${q(k, b)} ${q(0, b)}C${q(-k, b)} ${q(-1, k * b)} ${q(-1, 0)}Z`; };
+    const draw = (el, p) => { const [l, r, m] = el.querySelectorAll('path'), q = i => f(p[i]) + ' ' + f(p[i + 1]);
+      l.setAttribute('d', eye(26, 33.1 + p[2], p[0], p[1])); r.setAttribute('d', eye(70.7, 31.2 + p[5], p[3], p[4]));
+      m.setAttribute('d', `M${q(6)}C${q(8)} ${q(10)} ${q(12)}`);
+      el.querySelector('g').setAttribute('transform', `translate(0 ${f(p[15])}) rotate(${f(p[14])} 50 52)`); };
+    let seq = 0;
+    const make = rx => { const u = 'fc' + (++seq), s = document.createElement('span');
+      const g = (id, y, c) => `<linearGradient id="${u + id}" gradientUnits="userSpaceOnUse" x1="0" y1="${y}" x2="0" y2="${f(y + 34.6)}"><stop offset=".15" stop-color="#F5F5F1"/><stop offset=".85" stop-color="${c}"/></linearGradient>`;
+      s.className = 'b3face';
+      s.innerHTML = `<svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true"><defs>${g('b', 15.8, '#84B2FF')}${g('v', 13.9, '#B98AE0')}</defs>`
+        + `<rect width="100" height="100" rx="${rx}" fill="#1B1D31"/><g fill="none" stroke-linecap="round" stroke-linejoin="round">`
+        + `<path stroke-width="9.6" stroke="url(#${u}b)"/><path stroke-width="9.6" stroke="url(#${u}v)"/><path stroke-width="14.6" stroke="#F5F5F1"/></g></svg>`;
+      draw(s, N); return s; };
+    // Ueber ein <img> legen: in dessen Elternknoten, absolut, Versatz nachgemessen
+    // (unabhaengig davon, welcher Vorfahr positioniert ist).
+    const over = img => { const a = img.getBoundingClientRect(), br = getComputedStyle(img).borderTopLeftRadius;
+      const s = make(f(br.endsWith('%') ? parseFloat(br) : parseFloat(br) * 100 / a.width || 0));
+      s.style.cssText = `left:0;top:0;width:${a.width}px;height:${a.height}px`;
+      img.parentNode.appendChild(s); const b = s.getBoundingClientRect();
+      s.style.left = (a.left - b.left) + 'px'; s.style.top = (a.top - b.top) + 'px'; return s; };
+    const calm = () => !brandOn() || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const log = [], live = new Set();
+    // Spielt einen Ausdruck auf el (eigenes Gesicht) — Promise mit der Endpose.
+    function play(el, name, w, own) {
+      const tl = E[name], T = tl[tl.length - 1][0], rec = { n: name, w, t0: performance.now(), t1: null };
+      log.push(rec); live.add(el);
+      return new Promise(res => { const step = now => {
+        const ms = now - rec.t0, p = at(tl, Math.max(0, ms));
+        if (ms < T && live.has(el)) { draw(el, p); requestAnimationFrame(step); return; }
+        draw(el, N); rec.t1 = performance.now(); live.delete(el); if (own) el.remove(); res(N.slice()); };
+        requestAnimationFrame(step); });
+    }
+    const stop = () => { live.forEach(el => { live.delete(el); if (el.parentNode && !el.closest('#toast')) el.remove(); }); };
+    // Diese Woche Letzte(r)? Gleiche Reihung wie der Punkte-Tab (zwei Bloecke:
+    // mit Ziel nach Erreichung, ohne Ziel nach Punkten; der untere Block ist
+    // «hinten»). Letzte(r) = im unteren Block niemand dahinter UND jemand
+    // davor — Gleichstand aller (Montagmorgen) ist also nie «Letzte(r)», ein
+    // geteilter letzter Platz schon. Weniger als zwei im Block: nie.
+    function last(id) {
+      if (!id || state.members.length < 2) return false;
+      const since = weekStart(), pts = {};
+      state.members.forEach(m => pts[m.id] = 0);
+      state.log.forEach(e => { if (!e.deleted_at && e.done_at >= since && e.member_id in pts) pts[e.member_id] += e.points || 0; });
+      const free = state.members.filter(m => !m.goal), blk = free.length ? free : state.members;
+      const me_ = blk.find(m => m.id === id); if (!me_ || blk.length < 2) return false;
+      const v = m => [m.goal ? pts[m.id] / m.goal : pts[m.id], pts[m.id]];
+      const c = m => { const a = v(m), b = v(me_); return (a[0] - b[0]) || (a[1] - b[1]); };
+      return blk.some(m => c(m) > 0) && !blk.some(m => c(m) < 0);
+    }
+    // Start: meist ein Ausdruck, manchmal einfach das Gesicht. Wer Letzte(r)
+    // ist, bekommt jeden zweiten Start den Schmollmund — der loest sich in ein
+    // Laecheln auf (aufmunternd, nie strafend).
+    function pick() {
+      const q = window.__faceQ; if (q) return E[q] ? q : null;
+      if (last(me) && Math.random() < .5) return 'frown';
+      const r = Math.random();
+      return r < .2 ? null : r < .5 ? 'wink' : r < .65 ? 'blink' : r < .75 ? 'blink2' : 'smirk';
+    }
+    // Kopf-Logo: selten blinzeln (20–40 s), nur sichtbar, ohne offenen Dialog.
+    const head = () => document.getElementById('headLogo');
+    function idle() {
+      const h = head(); if (calm() || !h || document.hidden || document.querySelector('.b3face:not(.tface), dialog[open]')
+        || document.documentElement.classList.contains('splash')) return false;
+      const r = h.getBoundingClientRect(); if (!r.width || r.bottom < 0) return false;
+      play(over(h), Math.random() < .8 ? 'blink' : 'blink2', 'head', true); return true;
+    }
+    const tick = () => setTimeout(() => { idle(); tick(); }, 20000 + Math.random() * 20000);
+    // Toast: ein eigenes kleines Gesicht; spielt nach dem Aufpoppen zwinkern
+    // oder schmunzeln. Reduzierte Bewegung: steht still im Zwinkern.
+    function toastFace(t) {
+      const s = make(24); s.classList.add('tface'); t.prepend(s);
+      if (calm()) draw(s, WC); else setTimeout(() => s.isConnected && play(s, Math.random() < .65 ? 'wink' : 'smirk', 'toast'), 260);
+    }
+    // Debug/Tests: __face('wink') spielt im Kopf, __face('wink', ms) friert ein
+    // Bild ein (Bildstreifen), __face(null) raeumt auf; ?face=… erzwingt den Start.
+    const dbg = (name, ms, el) => {
+      if (name == null) { stop(); document.querySelectorAll('.b3face.dbg').forEach(x => x.remove()); return null; }
+      if (!E[name] || !brandOn() || (ms == null && calm())) return null;
+      const box = el || head(); if (!box) return null;
+      if (ms != null) { let s = document.querySelector('.b3face.dbg'); if (!s) { s = over(box); s.classList.add('dbg'); }
+        const p = at(E[name], ms); draw(s, p); return p; }
+      return play(over(box), name, 'head', true);
+    };
+    dbg.N = N.slice(); dbg.log = log; dbg.last = id => last(id === undefined ? me : id); dbg.idle = idle;
+    window.__face = dbg;
+    return { play, over, stop, pick, tick, toastFace, calm };
+  })();
+
   // ---------- Boot-Splash → Kopf-Logo (v4.39.0) ----------
   // FLIP: Icon-Rechteck → #headLogo-Rechteck. KEIN transitionend (die
   // globale reduced-motion-Regel toetet Transitions → Event kaeme nie),
@@ -3627,22 +3748,30 @@
     if (!sp) return;
     const icon = sp.querySelector('img');
     const MIN = 550;                                  // ms ab navigationStart
-    const finish = () => { document.documentElement.classList.remove('splash'); sp.remove(); };
-    // v4.114.1 (nur brand3): das Start-Zwinkern (#splash::after, reines CSS)
-    // darf zu Ende laufen, bevor das Logo in den Kopf fliegt — hoechstens
-    // WINK_CAP ms zusaetzlich. Laeuft keine Animation (alter Look, reduzierte
-    // Bewegung, schon vorbei, API fehlt), geht es sofort weiter wie bisher.
+    const finish = () => { FACE.stop(); document.documentElement.classList.remove('splash'); sp.remove(); };
+    // v4.114.1 → v4.116.0 (nur brand3): der Start-Ausdruck (FACE.pick: Zwinkern,
+    // Blinzeln, Schmunzeln, manchmal nichts; Schmollmund nur fuer Letzte) startet
+    // 180 ms nach Navigationsbeginn als Ueberlagerung des Splash-<img> und darf
+    // zu Ende laufen, bevor das Logo in den Kopf fliegt — hoechstens WINK_CAP ms
+    // zusaetzlich (unveraendert). Kein Ausdruck (alter Look, reduzierte
+    // Bewegung, Zufall) → sofort weiter wie bisher. Der Morph raeumt die
+    // Ueberlagerung zuerst weg (FACE.stop): es fliegt nur das <img>.
     const WINK_CAP = 600;
+    let boot = null;
+    if (!FACE.calm()) {
+      const n = FACE.pick();
+      if (n) boot = new Promise(r => setTimeout(r, Math.max(0, 180 - performance.now())))
+        .then(() => sp.isConnected && !sp.classList.contains('morph') ? FACE.play(FACE.over(icon), n, 'splash', true) : null);
+    }
     function afterWink(go) {
-      let w = null;
-      try { w = sp.getAnimations({ subtree: true }).find(a => a.animationName === 'b3splashwink'); } catch (e) {}
-      if (!w || !brandOn()) return go();
+      if (!boot || !brandOn()) return go();
       let done = false;
       const once = () => { if (!done) { done = true; go(); } };
-      w.finished.then(once, once);
+      boot.then(once, once);
       setTimeout(once, WINK_CAP);
     }
     function morph() {
+      FACE.stop();
       const target = document.getElementById('headLogo');
       if (!target || matchMedia('(prefers-reduced-motion: reduce)').matches) return finish();
       const a = icon.getBoundingClientRect(), b = target.getBoundingClientRect();
@@ -3655,6 +3784,7 @@
       setTimeout(finish, 480);
     }
     const arm = () => setTimeout(() => afterWink(morph), Math.max(0, MIN - performance.now()));
+    FACE.tick();                                      // seltenes Blinzeln im Kopf (prueft brand3 selbst)
     if (document.readyState !== 'loading') arm();
     else addEventListener('DOMContentLoaded', arm);
   })();
@@ -4047,8 +4177,10 @@
     // editierbar sein, gibt es keinen Knopf statt eines Knopfes ins Leere.
     if (!canEditLog(entry)) toast(msg);
     else toast(msg, { label: t('Ändern'), fn: () => openLoggedEntry(entry.id) });
-    // v4.113.0: Marker fuer das Zwinkern (nur unter html.brand3 sichtbar, reines CSS)
-    document.getElementById('toast').classList.add('logged');
+    // v4.113.0: Marker; v4.116.0: unter brand3 ein kleines, lebendiges Gesicht
+    const tEl = document.getElementById('toast');
+    tEl.classList.add('logged');
+    if (brandOn()) FACE.toastFace(tEl);
   }
   function openLoggedEntry(id) {
     // In den Verlauf wechseln: die Korrektur passiert im Kontext, und nach

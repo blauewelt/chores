@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v222';   // v4.115.1 Wochenziel ueberlebt den Abgleich bei offenem Sheet; SW-Wechsel laedt nie mehr unter dem Finger neu
+const CACHE = 'haushalt-v223';   // v4.116.0 Marken-Test: Einmalig-Kachel in Mint, bewegte Gesichts-Ausdruecke (Zwinkern, Schmunzeln, Blinzeln, Schmollmund)
 // v4.113.1: Kachelkunst hat einen EIGENEN, versionsfesten Cache. Bis v4.113.0
 // lag sie im versionierten CACHE — und den loescht `activate` bei JEDEM Deploy.
 // Folge: nach jedem Deploy forderte jedes Geraet jedes Kachelbild neu an,

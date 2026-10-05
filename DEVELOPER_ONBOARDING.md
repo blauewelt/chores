@@ -318,14 +318,15 @@ edge function for per-person manifests. Decide on an own domain first.
   is never visible beforehand); the overlay is ALWAYS pointer-events:none;
   timeouts instead of transitionend (the global reduced-motion rule
   suppresses transitions).
-  **Start wink (v4.114.1, brand3 only):** `#splash::after` draws an eyelid
-  (`--b3-lid`, same viewBox/gradient as `--b3-logo`) over the centred splash
-  `<img>` and animates ONLY its opacity (`b3splashwink`, 220 ms delay, 520 ms,
-  hard cut). Never put the wink into the `<img>` or the boot markup — the FLIP
-  measures that node. The morph waits for the wink's `finished` promise, capped
-  at `WINK_CAP` 600 ms, and adds `.morph` to `#splash`, which hides the lid.
-  Reduced motion needs its own rule there: the global `*{animation:none}` does
-  not match pseudo-elements.
+  **Start expression (v4.116.0, brand3 only; replaces the v4.114.1 CSS lid):**
+  `FACE.pick()` chooses wink / blink / double blink / smirk / nothing (frown
+  only for whoever is last this week, see §8 «Face expressions»); 180 ms after
+  navigation start `FACE.over(icon)` lays an INLINE SVG of the face exactly over
+  the splash `<img>` and animates it, then removes it (end pose = neutral = the
+  logo). Never animate or restyle the `<img>` itself and never put the face in
+  the boot markup — the FLIP measures that node. The morph waits for the
+  expression's promise, capped at `WINK_CAP` 600 ms, and calls `FACE.stop()`
+  first so only the `<img>` flies. Reduced motion → no expression.
 - **RULE (19.07.2026, maintainer): every change to the art prompt is
   backed by a BEFORE/AFTER comparison sheet** — the same tiles, the same
   seed, variants side by side as an image, judged by a human. Prompt
@@ -409,7 +410,7 @@ one meaning, no symbol. In sheets, fields are normal, directly editable
 inputs — without focus on opening, no keyboard pops up either; do NOT
 build static-text constructions.
 - The one-off tile is ALWAYS the first grid element (dashed, shooting
-  star). All logging runs through `recordEntry(choreLike)`; chore_id may
+  star; under brand3 mint-filled since v4.116.0). All logging runs through `recordEntry(choreLike)`; chore_id may
   be null.
 - ONE form sheet, three modes: New (primary «Speichern + eintragen»,
   ghost «Nur speichern»), Edit, One-off. The FAB is context-sensitive:
@@ -482,23 +483,25 @@ Mechanism, keep it this way when the trial grows:
   `.dot`/`.swatch`).
 - **Eyes + tiles (v4.115.0) — supersedes most of the gradient bullet below.**
   Logo: left eye white→blue (`gb`), right eye white→violet (`gv`), white at the
-  top / colour at the bottom of each ring, mouth flat white; `--b3-lid` and
-  `--b3-wink` reuse the same gradient defs (the start wink closes the violet
-  eye). Tiles: `choreTone(id)` (FNV-1a of the stable id mod 3, never position)
+  top / colour at the bottom of each ring, mouth flat white; the animated face
+  (`FACE.make`, v4.116.0) builds the same two gradients — change both together
+  (a test compares them). Tiles: `choreTone(id)` (FNV-1a of the stable id mod 3, never position)
   → `data-tone="w|b|v"`, emitted only under brand3 on board tiles and on both
   preview tiles (`paintPreviewTile` takes `id`). ONE switch:
   `<html data-b3tiles="fill|stroke">` — `fill` (live) = pastel fill
   `--b3-tw/--b3-tb/--b3-tv`, ink `--b3-tink`, muted `--b3-tmuted` (≥ 5.6:1 on
   all three), art inverted + `multiply` at .82 (`.artinv` = NO invert);
   `stroke` = dark tile, coloured border/pill/tinted art. «Einmalig» has no
-  tone. Title, FAB, primary buttons, slider, points bars are plain white again
+  tone but (v4.116.0) its own mint `--b3-tg #B5E3CC`: every `fill`/`stroke`
+  rule is written `.chore:is([data-tone],.oneoff)`, plus a dark DASHED outline
+  and the ＋ as the «special» cue (new tile rules must keep the `:is`). Title, FAB, primary buttons, slider, points bars are plain white again
   (colour lives in eyes + tiles); `--b3-grad` is kept as an unused token. New
   places that show a tile must pass the chore id so the tone matches.
 - **Gradient (v4.114.0):** the old Fairli colours as blue → white → violet,
   tokens `--b3-blue #84B2FF` (old `--accent`), `--b3-white #F5F5F1`,
   `--b3-violet #B98AE0` (old icon's violet tile, lifted) and the ready
-  `--b3-grad` (100deg, white plateau 34–66 %). The face in `--b3-logo` and
-  `--b3-wink` uses the same stops as an SVG `linearGradient`
+  `--b3-grad` (100deg, white plateau 34–66 %). The face in `--b3-logo` (and
+  `--b3-wink`, removed in v4.116.0) used the same stops as an SVG `linearGradient`
   (userSpaceOnUse, treatment «c»: white middle, tinted ends — see LOG
   v4.114.0 for why not diagonal or two-coloured eyes). Colour ONLY on: the
   household title (gradient text), FAB + `.btn.primary` (gradient fill, dark
@@ -506,11 +509,30 @@ Mechanism, keep it this way when the trial grows:
   ring, focus outline (`--b3-blue`). NOT on: the selected tab/period/chips
   (selection stays inversion), percentage numerals (gradient-clipped text
   drops the `<small>%` in Chrome), person rings, red, body text, tile art.
-  The splash face winks once on a real start (v4.114.1, see §7); the toast
-  wink is separate (`--b3-wink`).
+  The face animates (v4.116.0) — see «Face expressions» below and §7.
   Off switch: `--b3-grad: linear-gradient(var(--ink),var(--ink))` +
   `--b3-blue: var(--ink)`. New accents must come from `--b3-grad`, never a
   new literal.
+- **Face expressions (v4.116.0) — `FACE` in the script, right before the splash
+  code.** Inline-SVG overlay over an existing `<img>` (splash, `#headLogo`) or
+  its own element (toast `.tface`); geometry in viewBox 100: eyes = two
+  half-ellipses (t/b bulges, `b < 0` = lower lid bent up = closed «happy arc»),
+  mouth = one cubic; pose = 16 numbers, expression = `[ms, pose]` timeline,
+  smoothstep, drawn with rAF + `setAttribute('d')`. NOT CSS `d` (Safari), no
+  SMIL, no library. Expressions: wink 700, smirk 860, blink 300, blink2 530,
+  frown 880 ms (≤ 900 is the budget). Triggers: start (random, see §7), toast
+  after logging (wink or smirk — never the frown), header idle blink every
+  20–40 s (visible, logo on screen, no `dialog[open]`, nothing else playing).
+  **Frown = only for the active person LAST this week** (`last(id)`): same two
+  blocks as the Punkte tab, lower block is «behind»; last = nobody behind AND
+  someone ahead in that block; ties of everyone (Monday, all 0) never; blocks of
+  one never. Keep it gentle — the pout always resolves into a smile. Reduced
+  motion: nothing animates, the toast face stands in the wink pose. Debug:
+  `/chores/?face=wink|smirk|blink|blink2|frown|none` (root URL — the 404
+  hand-off drops queries on deep links), `__face(name[, ms[, el]])`,
+  `__face(null)`, `__face.last(id)`, `__face.log`, `__face.idle()`.
+  Preview of all expressions + the tile greens: built outside the repo (LOG
+  v4.116.0).
 - Un-gating later = delete the class check, not a mass write of beta=true
   (same reasoning as v4.74.0).
 
@@ -1158,6 +1180,13 @@ centralization is mechanical:
   rebase onto origin/main, read the LIVE version, increment. deploy.mjs
   guards this: pushing an index.html/sw.js whose version/cache EQUALS
   the remote's aborts (exit 3) — that equality is exactly the collision.
+- **Local test runs: your OWN mimic port (05.10.2026).** Parallel sessions
+  share one machine; `playwright.config.js` uses port 8080 with
+  `reuseExistingServer` locally, so a second session silently tests the FIRST
+  session's files (it happened: a harness rendered the other clone's
+  index.html). Use an untracked local config with a unique port and
+  `reuseExistingServer:false` (never deploy it), and check `ls -l
+  /proc/<pid>/cwd` of whatever already listens before trusting a run.
 - **Intent board (`scripts/wip.mjs`) — the substitute for talking.**
   `wip.mjs claim "<area>"` at task START, `wip.mjs done` when finished,
   `wip.mjs list` before starting anything. If a foreign claim overlaps
