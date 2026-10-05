@@ -6,7 +6,7 @@ A static single-file app on GitHub Pages, Supabase as the sync backend,
 end-to-end encryption for new and migrated households.
 This document is the shortcut for a new session (human or AI):
 architecture, all design decisions WITH rationale, and the painfully
-learned platform quirks. As of: v4.37.1 (17.07.2026).
+learned platform quirks. As of: v4.115.1 (05.10.2026).
 
 ---
 
@@ -54,10 +54,13 @@ learned platform quirks. As of: v4.37.1 (17.07.2026).
    (~2–3 min).
 
 The SW loads the shell with `{cache:'reload'}` (GitHub Pages caches with
-max-age=600). Update mechanics: skipWaiting + clients.claim +
-controllerchange reload; changes take effect on the NEXT app open —
-the first start after a deploy only downloads (important for support
-questions: "close it once and reopen").
+max-age=600). Update mechanics: skipWaiting + clients.claim; the page
+reloads on `controllerchange` ONLY when nobody is looking (since v4.115.1 —
+see §8 «Update banner»): hidden page, the «Neu laden» button, or the first
+3 s of a start before any touch. Otherwise the update bar appears and the
+reload happens the next time the app goes to the background. So a deploy
+reaches a device at its next app open or app switch, never mid-use
+(support answer: "switch away from the app once and come back").
 
 ## 3. Data model (Supabase)
 
@@ -142,6 +145,18 @@ sit unprotected alongside a running pull:
 - **`pendingDeletes`/`pendingCreates`** bridge until the server commit.
 - **New write paths go through `deleteRemote()`/`createRemote()`/`push()`** —
   never fire `sb()` directly.
+- **Marked-but-not-yet-synced rows are overlaid too (v4.115.1).** `reconcile()`
+  keeps rows carrying a `markChanged` mark (`changedMembers`) as the LOCAL
+  object — same identity, so an open sheet stays live — including local-only
+  rows (an unnamed new person). Without it every pull while the person sheet
+  was open orphaned the sheet's row and the close-sync sent the OLD values
+  (live bug «Wochenziel», 10/2026). A new table that syncs on close must
+  register its marks in `localDirtyRows()`.
+- **A sheet that holds a row across time re-resolves it by id at the gesture
+  / at save** (`live()` in the person sheet, `slugSelf()` in Mein Name,
+  `state.log.find` in the entry sheet). Adoption ALWAYS assigns fresh objects,
+  even when nothing changed — a captured object is an orphan after at most
+  20 s.
 - **NEVER write via push() inside pull()** — that invalidates your own
   snapshot (backfill lesson v4.36.2). If pull has to write something
   afterwards (e.g. write_key_hash backfill): raw fetch AFTER the state
@@ -622,6 +637,18 @@ navigations cache-first with the old shell, so a plain `location.reload()`
 would return the same page and the banner with it. `sw.js` passes `?fresh=`
 through uncached — never cache the probe, or it answers with the very version
 it exists to expose. The news banner hides while this one is up.
+**No reload under the user (v4.115.1).** `controllerchange` used to reload
+unconditionally — after every deploy a return to the app hard-reloaded it a
+second later (mid-tap, splash replaying). Now: button tapped (`reloadAsked`) →
+reload; page hidden → reload; first `BOOT_RELOAD_MS` (3 s) with no
+pointer/touch/key/wheel yet → reload; else `swPending = true`, show this bar,
+reload on the next hide. `reloadSafe()` blocks every automatic reload while a
+`dialog[open]`, the first-run setup, the delete-undo window (`pendingUndo` — a
+reload would silently undo the delete) or a `push()` write
+(`pushesInFlight`) is in progress; transient blockers are re-checked each
+second while hidden (15 tries). With `swPending` the button reloads directly.
+Tests fake a controlled page (`ServiceWorkerContainer.prototype.controller`
+getter) and dispatch `controllerchange` themselves — both engines.
 
 ### Toast → entry (v4.108.0)
 `recordEntry()` ends in `toastLogged()`, which adds an «Ändern» action to the
@@ -1174,6 +1201,27 @@ code or tools — twice in one day the artefact already held the answer while
 the plausible-sounding fix (DNS flag, UI automation) did not.
 
 ## 12. Known open items / deferred
+
+- **Chore edit sheet vs. deletion elsewhere (found 05.10.2026, v4.115.1
+  audit).** `submitChoreForm()` re-looks the chore up by id (no orphan), but if
+  another device deleted it while the sheet was open, `c` is undefined and the
+  submit throws — the dialog closes and the edit is dropped silently. Product
+  question first: re-create the tile, or say «gelöscht auf einem anderen Gerät»?
+- **Residual visible movement (not reloads), listed in the v4.115.1 audit:**
+  a pull with news from another device rebuilds the tile grid's DOM (order
+  frozen, cached art shown at once — but a full swap under the finger); the
+  update bar appears in the flow and pushes the board down one line; a
+  boot-window SW reload replays the splash once. A keyed/diffing tile render
+  would remove the first.
+- **`sw.js` personal manifest still points at icons `?v=47`** while the static
+  manifest and index.html use `?v=48` (pre-existing; same PNGs, only caching).
+- **Sandbox note (05.10.2026):** the preinstalled browsers are Chromium 1194
+  only — WebKit is not installed and must not be installed by sessions; run
+  with `@playwright/test@1.56.1 --no-save` to match. Four `@sw` art tests
+  (503 not cached, two throttling tests, polarity via SW) fail there on
+  UNCHANGED code too (the SW's cross-origin art fetches are not routed in that
+  Playwright/Chromium pair); CI (Playwright 1.61, both engines) is the
+  reference for them and for WebKit.
 
 - **Store apps, notifications, voice logging — DESIGN DRAFT 03.10.2026,
   awaiting maintainer decisions:** `docs/NATIVE_APPS.md`. Read it before

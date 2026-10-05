@@ -5782,3 +5782,265 @@ test.describe('Kachelbilder ohne Service Worker: Wiederholungen ueber EINE Schla
     await expect(page.locator('.chore[data-cid="c-1"] .cname')).toHaveText('Müll rausbringen');
   });
 });
+
+// ---------- Live-Bug Wochenziel (Oktober 2026): Bearbeitung bei offenem Sheet ----------
+// Der Maintainer trug fuer ein Familienmitglied ein Wochenziel ein — zweimal
+// blieb es nicht, beim dritten Mal schon. Ursache: das Pro-Person-Sheet hielt
+// das Mitglieds-OBJEKT vom Oeffnen fest. Der 20-s-Abgleich ersetzt
+// state.members durch frische Serverzeilen (auch OHNE Neuigkeiten) — das
+// Sheet schrieb danach in ein verwaistes Objekt, und beim Schliessen
+// synchronisierte syncChangedMembers() die SERVER-Fassung (altes Ziel) und
+// meldete «Gespeichert». Trefferquote ~ Verweildauer im Sheet / 20 s.
+// Gleiches Muster in «Mein Name» und «Eintrag bearbeiten» (dort: alter Stand
+// sichtbar bis zum naechsten Abgleich).
+test.describe('Bearbeitungen ueberleben den Abgleich bei offenem Sheet (Live-Bug Wochenziel)', () => {
+  // Konsistenter Server: POST uebernimmt die Zeilen, GET liefert den Stand.
+  async function memberServer(context, srv) {
+    const posts = [], gets = { n: 0 };
+    await mockBackend(context, { memberRows: () => srv });
+    await context.route(`${SB}/rest/v1/members**`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') {
+        const rows = [].concat(JSON.parse(req.postData() || '[]'));
+        posts.push(rows);
+        for (const r of rows) {
+          const cur = srv.find(x => x.id === r.id);
+          if (cur) Object.assign(cur, r); else srv.push({ ...r });
+        }
+        return route.fulfill({ status: 201, body: '' });
+      }
+      gets.n++;
+      return route.fallback();
+    });
+    return { posts, gets };
+  }
+  // Einen Abgleich auslösen und abwarten, bis er die Mitglieder geholt hat.
+  async function pullNow(page, gets) {
+    const before = gets.n;
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect.poll(() => gets.n).toBeGreaterThan(before);
+    await page.waitForTimeout(300);
+  }
+
+  test('Wochenziel + Schalter: ein Abgleich WÄHREND das Pro-Person-Sheet offen ist, verliert nichts — der Upsert trägt das neue Ziel', async ({ context, page }) => {
+    const srv = [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: false, assisted: false, goal: null },
+                 { id: 'm-noel', name: 'Noel', color: '#888888', family_id: FAM, url_slug: 'slugnoel1', admin: true, assisted: false, goal: null }];
+    const { posts, gets } = await memberServer(context, srv);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.iam .chip', { hasText: 'Mira' })).toBeVisible();
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await openPerson(page, 'm-mira');
+    await page.locator('#psGoal').fill('6');
+    await page.locator('#psAssist').click();
+    await pullNow(page, gets);                           // Server: goal null, assisted false
+    await expect(page.locator('#psGoal')).toHaveValue('6');
+    await page.locator('#psDone').click();
+    await expect.poll(() => posts.flat().filter(r => r.id === 'm-mira').length).toBeGreaterThan(0);
+    // EIN Upsert, und er traegt die Eingaben — nie die alte Serverfassung
+    const mira = posts.flat().filter(r => r.id === 'm-mira');
+    expect(mira.map(r => r.goal)).toEqual([6]);
+    expect(mira[0].assisted).toBe(true);
+    await expect(page.locator('.prow[data-pid="m-mira"] .assistbadge', { hasText: '🎯6' })).toBeVisible();
+    // und weitere Abgleiche (Server hat es jetzt) lassen es stehen
+    await pullNow(page, gets);
+    await pullNow(page, gets);
+    await expect(page.locator('.prow[data-pid="m-mira"] .assistbadge', { hasText: '🎯6' })).toBeVisible();
+    await openPerson(page, 'm-mira');
+    await expect(page.locator('#psGoal')).toHaveValue('6');
+  });
+
+  test('Wochenziel: Abgleich zwischen Öffnen und ERSTER Eingabe — die Eingabe landet trotzdem in der echten Person', async ({ context, page }) => {
+    // Vor der ersten Eingabe ist noch nichts markiert, der Overlay greift
+    // nicht — das Sheet muss die Person bei der Geste neu aufloesen.
+    const srv = [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: true, assisted: false, goal: null }];
+    const { posts, gets } = await memberServer(context, srv);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.iam .chip', { hasText: 'Mira' })).toBeVisible();
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await openPerson(page, 'm-mira');
+    await pullNow(page, gets);                           // frische Objekte, noch keine Marke
+    await page.locator('#psGoal').fill('5');
+    await pullNow(page, gets);
+    await page.locator('#psDone').click();
+    await expect.poll(() => posts.flat().filter(r => r.id === 'm-mira').map(r => r.goal)).toEqual([5]);
+    await expect(page.locator('.prow[data-pid="m-mira"] .assistbadge', { hasText: '🎯5' })).toBeVisible();
+  });
+
+  test('Neue Person: ein Abgleich, bevor sie benannt ist, verschluckt sie nicht — benannt wird sie gespeichert', async ({ context, page }) => {
+    const srv = [{ id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: true, assisted: false, goal: null }];
+    const { posts, gets } = await memberServer(context, srv);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.iam .chip', { hasText: 'Mira' })).toBeVisible();
+    await page.evaluate(() => document.getElementById('openMembers').click());
+    await page.locator('#addMember').click();
+    await expect(page.locator('#personSheet')).toBeVisible();
+    await pullNow(page, gets);                           // Server kennt die Namenlose nicht
+    // namenlos bleibt sie LOKAL — nichts geht an den Server
+    expect(posts.flat().length).toBe(0);
+    await page.locator('#psName').fill('Nova');
+    await page.locator('#psDone').click();
+    await expect.poll(() => posts.flat().some(r => r.name === 'Nova')).toBe(true);
+    await page.locator('#doneMembers').click();
+    await expect(page.locator('.iam .chip', { hasText: 'Nova' })).toBeVisible();
+    await pullNow(page, gets);
+    await expect(page.locator('.iam .chip', { hasText: 'Nova' })).toBeVisible();
+  });
+
+  test('Mein Name: Abgleich zwischen Öffnen und Speichern — der Chip zeigt den neuen Namen SOFORT', async ({ context, page }) => {
+    const srv = MEMBERS.map(m => ({ ...m }));
+    const { posts, gets } = await memberServer(context, srv);
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+    await expect(page.locator('.iam .chip', { hasText: 'Mira' })).toBeVisible();
+    await page.locator('#openSettings').click();
+    await page.locator('#setMyName').click();
+    await pullNow(page, gets);
+    await page.locator('#myName').fill('Mira-Lou');
+    await page.locator('#saveMyName').click();
+    await expect(page.locator('.iam .chip', { hasText: 'Mira-Lou' })).toBeVisible({ timeout: 2000 });
+    await expect.poll(() => posts.flat().some(r => r.id === 'm-mira' && r.name === 'Mira-Lou')).toBe(true);
+  });
+
+  test('Eintrag bearbeiten: Abgleich zwischen Öffnen und Speichern — die Zeile zeigt die Änderung SOFORT', async ({ context, page }) => {
+    await mockBackend(context);
+    const gets = { n: 0 };
+    await context.route(`${SB}/rest/v1/log**`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') return route.fulfill({ status: 201, body: '' });
+      if (!req.url().includes('log_')) gets.n++;
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('button.entry').first().click();
+    await expect(page.locator('#logSheet')).toBeVisible();
+    await pullNow(page, gets);
+    await page.locator('#lName').fill('Nachher');
+    await page.locator('#saveLog').click();
+    await expect(page.locator('.entry', { hasText: 'Nachher' }).first()).toBeVisible({ timeout: 2000 });
+  });
+});
+
+// ---------- Live-Befund «Fairli lädt von selbst neu» (Oktober 2026) ----------
+// Nach jedem Deploy: Rueckkehr in die App → reg.update() → neuer SW
+// (skipWaiting + clients.claim) → controllerchange → location.reload() —
+// ein, zwei Sekunden spaeter, mitten im Tippen. Jetzt: nie neu laden, waehrend
+// jemand hinschaut. Verborgen → sofort; sichtbar → Update-Leiste, Neuladen
+// beim naechsten Verbergen (nie mit offenem Dialog, nie mit laufender
+// Schreibung); in den ersten Sekunden des Starts ohne jede Beruehrung → sofort.
+test.describe('Kein Neuladen unter dem Finger: Service-Worker-Wechsel (Live-Befund)', () => {
+  // Seite gilt als SW-kontrolliert (wie jedes Geraet nach dem ersten Besuch);
+  // Sichtbarkeit ist steuerbar. Die Tests loesen controllerchange selbst aus.
+  // Gezaehlt werden Seiten-LADUNGEN (t.loads): ein Tiefpfad laeuft auf Pages
+  // ueber 404.html, darum ist der Ausgangswert nach goto nicht 1 — verglichen
+  // wird immer mit dem Stand direkt vor dem Wechsel.
+  async function fakeSw(context, { bootSwap = false } = {}) {
+    await context.addInitScript(boot => {
+      try {
+        Object.defineProperty(ServiceWorkerContainer.prototype, 'controller',
+          { configurable: true, get() { return { postMessage() {} }; } });
+      } catch {}
+      window.__hidden = false;
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => window.__hidden });
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => (window.__hidden ? 'hidden' : 'visible') });
+      try {
+        sessionStorage.setItem('t.loads', String(+(sessionStorage.getItem('t.loads') || 0) + 1));
+        // Wechsel WAEHREND des Starts: genau einmal, auf der ersten App-Seite
+        // (nicht auf der 404-Weiche; initScripts laufen nach Reloads erneut)
+        if (boot) addEventListener('DOMContentLoaded', () => {
+          if (!document.getElementById('splash') || sessionStorage.getItem('t.bootswap')) return;
+          sessionStorage.setItem('t.bootswap', String(sessionStorage.getItem('t.loads')));
+          setTimeout(() => navigator.serviceWorker.dispatchEvent(new Event('controllerchange')), 30);
+        });
+      } catch {}
+    }, bootSwap);
+  }
+  // Ein Neuladen mitten im evaluate zerstoert dessen Kontext — das ist hier
+  // ein moegliches ERGEBNIS, kein Testfehler; gezaehlt wird ueber t.loads.
+  const swap = page => page.evaluate(() => navigator.serviceWorker.dispatchEvent(new Event('controllerchange'))).catch(() => {});
+  const setHidden = (page, h) => page.evaluate(v => { window.__hidden = v; document.dispatchEvent(new Event('visibilitychange')); }, h).catch(() => {});
+  const loads = page => page.evaluate(() => +sessionStorage.getItem('t.loads')).catch(() => -1);
+  async function ready(page) {
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.locator('.chip', { hasText: 'Mira' }).click();          // jemand benutzt die App
+    return loads(page);
+  }
+
+  test('Sichtbar und schon benutzt: KEIN Neuladen, stattdessen die Update-Leiste — neu geladen wird beim Verbergen', async ({ context, page }) => {
+    await fakeSw(context);
+    await mockBackend(context);
+    const n0 = await ready(page);
+    await swap(page);
+    await page.waitForTimeout(1500);
+    expect(await loads(page)).toBe(n0);                                 // nicht unter dem Finger
+    await expect(page.locator('#updBar')).toBeVisible();
+    await setHidden(page, true);
+    await expect.poll(() => loads(page), { timeout: 8000 }).toBeGreaterThan(n0);   // im Hintergrund: still neu
+  });
+
+  test('Zurückgestellter Wechsel: «Neu laden» in der Leiste lädt sofort', async ({ context, page }) => {
+    await fakeSw(context);
+    await mockBackend(context);
+    const n0 = await ready(page);
+    await swap(page);
+    await expect(page.locator('#updBar')).toBeVisible();
+    expect(await loads(page)).toBe(n0);
+    await page.locator('#updReload').click();
+    await expect.poll(() => loads(page), { timeout: 8000 }).toBeGreaterThan(n0);
+  });
+
+  test('Verborgen: der Wechsel lädt sofort neu', async ({ context, page }) => {
+    await fakeSw(context);
+    await mockBackend(context);
+    const n0 = await ready(page);
+    await setHidden(page, true);
+    await swap(page);
+    await expect.poll(() => loads(page), { timeout: 8000 }).toBeGreaterThan(n0);
+  });
+
+  test('Wechsel in den ersten Sekunden des Starts, noch unberührt: Neuladen bleibt erlaubt', async ({ context, page }) => {
+    await fakeSw(context, { bootSwap: true });
+    await mockBackend(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    // Wechsel ist passiert (t.bootswap = Ladung, auf der er kam) UND danach
+    // wurde neu geladen
+    await expect.poll(async () => {
+      const [n, at] = await page.evaluate(() => [+sessionStorage.getItem('t.loads'), +sessionStorage.getItem('t.bootswap')]).catch(() => [0, 0]);
+      return at > 0 && n > at;
+    }, { timeout: 8000 }).toBe(true);
+  });
+
+  test('Offener Dialog mit Eingabe: auch verborgen kein Neuladen — erst wenn er zu ist', async ({ context, page }) => {
+    await fakeSw(context);
+    await mockBackend(context);
+    const n0 = await ready(page);
+    await page.locator('#openAdd').click();
+    await page.locator('#cName').fill('Fenster');
+    await swap(page);
+    await setHidden(page, true);
+    await page.waitForTimeout(1500);
+    expect(await loads(page)).toBe(n0);
+    await expect(page.locator('#cName')).toHaveValue('Fenster');
+    await setHidden(page, false);
+    await page.locator('#cancelChore').click();
+    await setHidden(page, true);
+    await expect.poll(() => loads(page), { timeout: 8000 }).toBeGreaterThan(n0);
+  });
+
+  test('Laufende Schreibung: verborgen wird erst neu geladen, wenn sie durch ist', async ({ context, page }) => {
+    await fakeSw(context);
+    await mockBackend(context);
+    let release; const held = new Promise(r => { release = r; });
+    await context.route(`${SB}/rest/v1/log**`, async route => {
+      if (route.request().method() === 'POST') { await held; return route.fulfill({ status: 201, body: '' }); }
+      return route.fallback();
+    });
+    const n0 = await ready(page);
+    await page.locator('.chore', { hasText: 'Müll rausbringen' }).click();   // POST haengt
+    await swap(page);
+    await setHidden(page, true);
+    await page.waitForTimeout(1500);
+    expect(await loads(page)).toBe(n0);
+    release();
+    await expect.poll(() => loads(page), { timeout: 8000 }).toBeGreaterThan(n0);
+  });
+});

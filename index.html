@@ -1052,7 +1052,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.115.0';
+  const APP_VERSION = '4.115.1';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1621,7 +1621,7 @@
 
   // ---------- Mein Name (v4.46.0, nur persoenlicher Link) ----------
   function openMyNameSheet() {
-    const self = slugSelf();                  // NICHT die Chip-Auswahl (Katze!) — v4.49.0
+    const self = slugSelf(), self0 = self;    // NICHT die Chip-Auswahl (Katze!) — v4.49.0
     if (!self) return;
     let sh = document.getElementById('myNameSheet');
     if (!sh) { sh = document.createElement('dialog'); sh.id = 'myNameSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
@@ -1639,6 +1639,10 @@
     </div>`;
     sh.querySelector('#closeMyName').onclick = () => sh.close();
     sh.querySelector('#saveMyName').onclick = async () => {
+      // v4.115.1: die Person beim Speichern NEU aufloesen — ein Abgleich
+      // seit dem Oeffnen ersetzt das Objekt; die Aenderung landete sonst in
+      // einer Waise und der Chip zeigte bis zum naechsten Abgleich den alten Namen.
+      const self = slugSelf() || self0;
       const name = sh.querySelector('#myName').value.trim();
       if (!name || name === self.name) { sh.close(); return; }
       self.name = name;
@@ -2427,6 +2431,10 @@
   // Wache mit identischer Semantik (v4.47.6, Audit-Nachzug: die «dokumentierte
   // Ausnahme» war keine Notwendigkeit, nur Bequemlichkeit):
   let pendingFamName = null;   // { resolvedAt } — lokaler Name massgeblich bis Server-Bestaetigung   // "table:id" -> { row, resolvedAt }
+  // Personen-Aenderungs-Marken (markChanged, v4.69.2) — HIER deklariert, weil
+  // reconcile() sie seit v4.115.1 liest (Overlay lokal markierter Zeilen).
+  const changedMembers = new Set();
+  let pushesInFlight = 0;      // v4.115.1: laufende push()-Schreibungen — ein SW-Neuladen wartet darauf
   // v4.61.0: Sichtbarkeit des Abgleichs — stilles Scheitern darf nie wieder
   // wie Abwesenheit von Daten aussehen.
   let lastSyncAt = 0;      // letzter GELUNGENER, UEBERNOMMENER Abgleich
@@ -2710,7 +2718,11 @@
   function push(fn) {           // optimistisches Schreiben
     if (!cfg) return;
     mutationSeq++;              // jede lokale Schreibung entwertet laufende pulls
-    fn().then(() => { syncOk = true; renderSyncDot(); })
+    pushesInFlight++;
+    let run;
+    try { run = Promise.resolve(fn()); } catch (e) { run = Promise.reject(e); }   // fn startet weiter SYNCHRON
+    run.finally(() => { pushesInFlight--; })
+        .then(() => { syncOk = true; renderSyncDot(); })
         .catch(err => {
           syncOk = false; renderSyncDot();
           // v4.69.4: Diagnose-Gedaechtnis — der letzte Push-Fehler bleibt
@@ -2796,14 +2808,37 @@
     // (moeglicherweise veraltete) Serverfassung derselben Zeile — vorher
     // schuetzte pendingCreates nur NEUE Zeilen, Umbenennungen fielen jedem
     // Pull mit Vor-Commit-Snapshot zum Opfer (Live-Bug Personen-Sheet).
+    // v4.115.1 (Live-Bug Wochenziel, 10/2026): Eine lokal MARKIERTE, noch
+    // nicht uebergebene Aenderung (markChanged — das Pro-Person-Sheet
+    // synchronisiert erst beim Schliessen) ist genauso massgeblich wie eine
+    // pendente Schreibung. Vorher ersetzte JEDER Abgleich bei offenem Sheet
+    // die Zeile durch die Serverfassung (auch ohne Neuigkeiten — frische
+    // Objekte), das Sheet schrieb in ein verwaistes Objekt, und beim
+    // Schliessen ging die ALTE Fassung an den Server — mit «Gespeichert».
+    // Overlay mit DEMSELBEN Objekt (Identitaet bleibt, das offene Sheet
+    // bleibt lebendig); auch namenlose Neue, die bewusst nur lokal leben,
+    // bis sie benannt sind, fallen nicht mehr heraus.
+    const dirty = localDirtyRows(table);
     let out = rows
       .filter(r => !pendingDeletes.has(table + ':' + r.id))
-      .map(r => { const p = pendingCreates.get(table + ':' + r.id); return p ? p.row : r; });
+      .map(r => {
+        const d = dirty && dirty.get(r.id); if (d) return d;
+        const p = pendingCreates.get(table + ':' + r.id); return p ? p.row : r;
+      });
     const have = new Set(out.map(r => r.id));
     for (const [k, v] of pendingCreates) {
-      if (k.startsWith(table + ':') && !have.has(v.row.id)) out.push(v.row);
+      if (k.startsWith(table + ':') && !have.has(v.row.id)) { out.push(v.row); have.add(v.row.id); }
     }
+    if (dirty) for (const [id, r] of dirty) if (!have.has(id)) { out.push(r); have.add(id); }
     return out;
+  }
+  // Lokal markierte Zeilen (id → LEBENDES Objekt aus dem aktuellen state).
+  // Bisher gibt es Marken nur fuer Personen (changedMembers).
+  function localDirtyRows(table) {
+    if (table !== 'members' || !changedMembers.size) return null;
+    const m = new Map();
+    for (const r of state.members) if (changedMembers.has(r.id)) m.set(r.id, r);
+    return m.size ? m : null;
   }
 
   // ---------- Punkte ----------
@@ -3702,7 +3737,7 @@
   // («Löschen (n)», gemeinsames Verschieben) ist mit der Render-Buendelung
   // GELOESCHT; jede Verlaufs-Zeile ist genau ein Eintrag.
   function openLogSheet(id) {
-    const first = state.log.find(x => x.id === id);
+    const first = state.log.find(x => x.id === id), firstOpen = first;
     if (!first) return;
     if (!canEditLog(first)) {
       toast(t('Nur eigene Einträge lassen sich bearbeiten')); return;
@@ -3832,6 +3867,13 @@
       logSheetDirty = true;
     });
     sh.querySelector('#saveLog').onclick = () => {
+      // v4.115.1: den Eintrag beim Speichern NEU aufloesen — jeder Abgleich
+      // seit dem Oeffnen ersetzt state.log durch frische Objekte. Vorher
+      // landete die Aenderung in einer Waise: upsertRemote schickte sie zwar
+      // (pendingCreates-Overlay), aber die Zeile zeigte bis zum naechsten
+      // Abgleich den alten Stand. Faellt die Zeile weg (anderswo geloescht),
+      // bleibt es beim alten Verhalten (Speichern legt sie wieder an).
+      const first = state.log.find(x => x.id === id) || firstOpen;
       const name = sh.querySelector('#lName').value.trim();
       const note = sh.querySelector('#lNote').value.trim() || null;
       if (!name) return;
@@ -4280,14 +4322,16 @@
 
   // ---------- Personen-Sheet ----------
   const memberSheet = document.getElementById('memberSheet');
-  const changedMembers = new Set();
+  // changedMembers: deklariert bei der Abgleich-Schicht (reconcile liest es).
   // v4.69.2: Aenderungs-Marken PERSISTIEREN — ein Reload (SW-Update!) mitten
   // im Bearbeiten darf keine Aenderung verlieren. Beim Start werden offene
   // Marken erneut dem Sync uebergeben (upsertRemote ist idempotent).
-  const markChanged = m => {
-    changedMembers.add(m.id);
-    try { localStorage.setItem(LS_PENDMEMB, JSON.stringify([...changedMembers])); } catch {}
+  const persistMarks = () => {
+    try { changedMembers.size
+      ? localStorage.setItem(LS_PENDMEMB, JSON.stringify([...changedMembers]))
+      : localStorage.removeItem(LS_PENDMEMB); } catch {}
   };
+  const markChanged = m => { changedMembers.add(m.id); persistMarks(); };
   // Boot-Nachzug: Marken der letzten Sitzung (Reload/SW-Update mitten im
   // Bearbeiten) erneut dem Sync uebergeben, sobald cfg/Krypto stehen.
   try {
@@ -4321,7 +4365,13 @@
   // Platz), Link und Löschen. Aenderungen laufen wie bisher ueber
   // changedMembers und werden erst mit «Speichern» der Liste synchronisiert.
   function openPersonSheet(mid) {
-    const m = memberById(mid); if (!m) return;
+    let m = memberById(mid); if (!m) return;
+    // v4.115.1: jede Geste loest die Person NEU auf. Der Overlay in reconcile
+    // haelt markierte Zeilen identisch — aber zwischen Oeffnen und ERSTER
+    // Aenderung ist noch nichts markiert, und ein Abgleich in diesem Fenster
+    // ersetzt das Objekt. Ohne Neuaufloesung schrieb die erste Eingabe dann
+    // in eine Waise (Live-Bug Wochenziel, 10/2026).
+    const live = () => (m = memberById(mid) || m);
     let sh = document.getElementById('personSheet');
     if (!sh) {
       sh = document.createElement('dialog'); sh.id = 'personSheet';
@@ -4372,33 +4422,35 @@
     sh.querySelector('#psClose').onclick = done;
     sh.querySelector('#psDone').onclick = done;
     sh.querySelector('#psName').addEventListener('input', e => {
-      m.name = e.target.value; markChanged(m); save();
+      live(); m.name = e.target.value; markChanged(m); save();
     });
     sh.querySelector('#psColor').addEventListener('input', e => {
-      m.color = e.target.value; markChanged(m); save();
+      live(); m.color = e.target.value; markChanged(m); save();
     });
     const setVal = (id, on) => {
       const el = sh.querySelector('#' + id + ' .setval');
       el.textContent = on ? t('An') : t('Aus'); el.style.opacity = on ? '' : '.45';
     };
     sh.querySelector('#psAdmin').onclick = () => {
+      live();
       if (!isAdmin()) { toast(t('Nur Admins können das ändern')); return; }
       if (m.admin && adminMembers().length <= 1) { toast(t('Mindestens eine Person muss Admin bleiben')); return; }
       m.admin = !m.admin; markChanged(m); save(); setVal('psAdmin', m.admin);
     };
     sh.querySelector('#psAssist').onclick = () => {
-      m.assisted = !m.assisted; markChanged(m); save(); setVal('psAssist', m.assisted);
+      live(); m.assisted = !m.assisted; markChanged(m); save(); setVal('psAssist', m.assisted);
     };
-    sh.querySelector('#psShare').onclick = () =>
+    sh.querySelector('#psShare').onclick = () => live() &&
       shareLink(userLink(m), t('Link für {name}', { name: m.name || '—' }),
                 t('{name}, mach mit bei {fam}:', { name: m.name || '', fam: state.famName || t('unseren Aufgaben') }));
     sh.querySelector('#psDel').onclick = () => {
       if (state.members.length <= 1) { toast(t('Mindestens eine Person wird benötigt.')); return; }
       if (!confirm('Person entfernen? Ihre Punkte im Verlauf bleiben erhalten.')) return;
+      live();
       const _delM = m;                                  // VOR dem Entfernen fassen (Altfehler: nach filter() war es immer null)
       state.members = state.members.filter(x => x.id !== m.id);
       if (me === m.id) { me = null; localStorage.removeItem(LS_ME); }
-      changedMembers.delete(m.id);
+      changedMembers.delete(m.id); persistMarks();
       save(); sh.close(); renderMemberRows();
       deleteRemote('members', m.id, () => {
         if (!state.members.some(x => x.id === _delM.id)) { state.members.push(_delM); save(); render(); }
@@ -4419,6 +4471,7 @@
       const g = sh.querySelector('#psGoal');
       g.addEventListener('input', e => {
         const n = parseInt(e.target.value, 10);
+        live();
         m.goal = Number.isFinite(n) && n > 0 ? Math.min(999, n) : null;
         markChanged(m); save(); render(); drawChart(m.goal || 0);
       });
@@ -4482,6 +4535,9 @@
   // Zustand, den es nicht gibt, taugt nicht als Ausloeser.
   let updOffered = null;      // bereits gemeldete Live-Version (nicht zweimal nerven)
   let lastUpdCheck = 0;
+  // v4.115.1: Zustand des Service-Worker-Wechsels (Handler ganz unten, «Start»)
+  let swPending = false;      // neuer SW hat uebernommen, die Seite laeuft noch auf der alten Fassung
+  let reloadAsked = false;    // jemand hat «Neu laden» getippt — dann darf es sofort sein
   async function checkForUpdate() {
     if (document.hidden || Date.now() - lastUpdCheck < 30000) return;
     lastUpdCheck = Date.now();
@@ -4516,6 +4572,10 @@
       // das reload bleibt als Netz fuer Geraete ohne SW.
       btn.disabled = true;
       btn.textContent = t('Lädt …');
+      reloadAsked = true;
+      // Hat der neue SW schon uebernommen (zurueckgestellter Wechsel), ist
+      // die neue Shell bereits im Cache — einfach neu laden.
+      if (swPending) { location.reload(); return; }
       try {
         const reg = navigator.serviceWorker
           && await navigator.serviceWorker.getRegistration(BASE);
@@ -4890,17 +4950,20 @@
     // lokal weiterleben zu lassen, bis jemand dieselbe Person wieder anfasst.
     upsertRemote('members', ms, () => {
       for (const m of ms) changedMembers.add(m.id);
-      try { localStorage.setItem(LS_PENDMEMB, JSON.stringify([...changedMembers])); } catch {}
+      persistMarks();
     });
     // Marken erst NACH der Uebergabe loeschen (v4.69.2): doppelte Aufrufe
-    // (Knopf + onclose-Netz) werden so zu No-ops statt Doppel-POSTs.
+    // (Knopf + onclose-Netz) werden so zu No-ops statt Doppel-POSTs. Ab hier
+    // schuetzt pendingCreates (lebende Referenz) die Zeile gegen Abgleiche.
     for (const m of ms) changedMembers.delete(m.id);
-    try { changedMembers.size
-      ? localStorage.setItem(LS_PENDMEMB, JSON.stringify([...changedMembers]))
-      : localStorage.removeItem(LS_PENDMEMB); } catch {}
+    persistMarks();
     if (ms.length) toast(t('Gespeichert'));   // «unklar, ob es speichert» (Maintainer) — jetzt sagt es das
   }
   function finishMembers() {
+    // Namenlose Neue verwirft die Liste beim Schliessen — ihre Marken gleich
+    // mit (v4.115.1; vorher blieben sie als «Offene Marken» fuer immer stehen)
+    for (const m of state.members) if (m.name.trim() === '') changedMembers.delete(m.id);
+    persistMarks();
     state.members = state.members.filter(m => m.name.trim() !== '');
     if (!state.members.length) state.members = [{ id: uid(), name: 'Ich', color: palette[0] }];
     save(); memberSheet.close(); render();
@@ -5009,12 +5072,47 @@
 
   // ---------- Start ----------
   if ('serviceWorker' in navigator) {
+    // ---------- SW-Wechsel: nie unter dem Finger neu laden (v4.115.1) ----------
+    // Vorher lud controllerchange IMMER sofort neu. Nach jedem Deploy hiess
+    // das: in die App zurueckkehren → reg.update() (unten) → neuer SW
+    // installiert (skipWaiting) und uebernimmt (clients.claim) → ein, zwei
+    // Sekunden spaeter ein harter Reload samt Splash — mitten im Tippen, mitten
+    // im Sheet (Live-Befund 10/2026, «Fairli laedt von selbst neu»). Jetzt:
+    //   · «Neu laden» getippt → sofort;
+    //   · Seite verborgen → sofort (niemand schaut hin);
+    //   · erste Sekunden des Starts und noch KEINE Beruehrung → sofort
+    //     (harmlos, bringt das Geraet ohne Umweg auf die neue Fassung);
+    //   · sonst: Update-Leiste zeigen, neu laden beim naechsten Verbergen.
+    // Nie mit offenem Dialog (getippte Eingaben!), offener Ersteinrichtung,
+    // offenem Undo-Fenster (ein Reload darin machte das Loeschen still
+    // rueckgaengig) oder laufender Schreibung (ein Reload bricht den Fetch ab,
+    // die Marken sind dann schon weg).
     let hadController = !!navigator.serviceWorker.controller;
-    let reloaded = false;
+    let reloading = false, hiddenTries = 0, hiddenTimer = null;
+    let userActed = false;
+    const BOOT_RELOAD_MS = 3000;
+    for (const ev of ['pointerdown', 'touchstart', 'keydown', 'wheel'])
+      addEventListener(ev, () => { userActed = true; }, { capture: true, passive: true });
+    const reloadSafe = () => !document.querySelector('dialog[open]') && !firstRunOpen
+      && !document.getElementById('firstRun') && !pendingUndo && pushesInFlight === 0;
+    const swReload = () => { if (!reloading) { reloading = true; location.reload(); } };
+    // Verborgen: jetzt, oder — falls nur etwas VORUEBERGEHENDES blockt (Undo-
+    // Fenster, Schreibung) — kurz nachfassen, solange die Seite verborgen bleibt.
+    const reloadWhileHidden = () => {
+      clearTimeout(hiddenTimer);
+      if (!swPending || !document.hidden) { hiddenTries = 0; return; }
+      if (reloadSafe()) return swReload();
+      if (!document.querySelector('dialog[open]') && ++hiddenTries <= 15)
+        hiddenTimer = setTimeout(reloadWhileHidden, 1000);
+    };
+    document.addEventListener('visibilitychange', reloadWhileHidden);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      // Neue Version hat übernommen → einmal neu laden (nicht bei Erstinstallation)
-      if (hadController && !reloaded) { reloaded = true; location.reload(); }
-      hadController = true;
+      if (!hadController) { hadController = true; return; }   // Erstinstallation: nichts zu laden
+      if (reloadAsked) return swReload();
+      swPending = true;
+      if (document.hidden) return reloadWhileHidden();
+      if (!userActed && performance.now() < BOOT_RELOAD_MS && reloadSafe()) return swReload();
+      showUpdateBar();
     });
     // ABSOLUT registrieren (§5-Regel gilt auch hier): auf f/-Tiefpfaden zeigt
     // baseURI nach replaceState in die Tiefe — das relative 'sw.js' lief seit

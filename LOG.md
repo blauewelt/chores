@@ -1,3 +1,115 @@
+## 2026-10-05 — v4.115.1 (SW haushalt-v222): the weekly goal survives a sync while the person sheet is open; a service-worker swap never reloads the page under the user
+
+Two field reports from the maintainer, one patch release.
+
+**1. «Wochenziel» (weekly goal) silently not saved.** A goal entered for a family
+member in the per-person sheet did not stick the first two times and worked on
+the third.
+- **Root cause (reproduced by a red test before the fix).** `openPersonSheet()`
+  captured the member OBJECT at open. The sheet only syncs on close
+  (`syncChangedMembers()`), and only `upsertRemote` registers a row in
+  `pendingCreates` — the thing `reconcile()` respects. `save()` is a
+  localStorage write and does not bump `mutationSeq`. So any pull adopted while
+  the sheet was open (the 20 s timer or a foreground return) replaced
+  `state.members` with fresh server objects — even when NOTHING had changed on
+  the server, because adoption always assigns new objects. From then on the
+  sheet wrote into an orphan; on close `syncChangedMembers()` found the server
+  copy by id and upserted the OLD goal — and toasted «Gespeichert». The odds
+  are simply «seconds spent in the sheet / 20 s», which fits «failed twice,
+  worked the third time». The red test showed exactly that: the upsert carried
+  `goal: null`. Same hole for name, colour, admin and «ohne eigenes Telefon» in
+  that sheet, and for a NEW person: still unnamed (local-only by design), a pull
+  dropped her from `state.members` and naming her afterwards synced nothing.
+- **Fix at the root.** `reconcile()` now overlays rows that carry a
+  `markChanged` mark (`changedMembers`) with the LOCAL row — the same object, so
+  an open sheet stays live — including local-only rows that are not on the
+  server yet (the unnamed new person). `changedMembers` moved up to the sync
+  layer's declarations because `reconcile` reads it. The marks keep their
+  semantics: unnamed new members still never reach the server until named, a
+  successful hand-over deletes the mark (from then on `pendingCreates` holds the
+  live row as before), a failed push restores the mark (and with it the
+  overlay). Second guard: between opening the sheet and the FIRST edit nothing
+  is marked yet, so the overlay cannot help — every gesture in the person sheet
+  now re-resolves the member by id (`live()`) before writing. Both guards were
+  checked by removing them: each one turns tests red (overlay: 3, re-resolve: 1).
+- Small cleanup on the way: closing the person LIST drops unnamed new people,
+  and now drops their marks with them (before, they sat in «Offene Marken»
+  forever); the person-delete path now persists the mark removal too.
+- **No debounced push for the goal — decided against.** With the overlay the
+  edit is safe across pulls, and the existing net already covers the
+  dangerous exits: the marks are persisted and re-synced synchronously at boot
+  (a reload or a killed app mid-sheet loses nothing, rule 11a-A), and every
+  exit path of the sheet syncs. A debounce would add a second write path with
+  its own toast question («Gespeichert» on every pause?), would have to skip
+  unnamed new members anyway, and buys only earlier visibility on OTHER devices
+  while the sheet is still open. Rule 11a-A («save means save», sync on close)
+  stays the one model.
+- **Same orphan pattern elsewhere (audit).** *Mein Name* (`openMyNameSheet`)
+  held `self` from open: the upsert went out (pendingCreates overlay) but the
+  chip showed the OLD name until the next pull — fixed, re-resolved at save.
+  *Eintrag bearbeiten* (`openLogSheet`) held `first` from open: same symptom
+  (row showed the old title/points until the next pull) — fixed, re-resolved at
+  save; if the row vanished meanwhile (deleted on another device) it falls back
+  to the old behaviour (saving re-creates it). *Chore edit sheet*: already
+  re-looks the chore up by id at save — no orphan; but if the chore was deleted
+  on another device while the sheet was open, `c` is undefined and the submit
+  throws (the form closes, the edit is dropped silently) — left as an open item,
+  the right behaviour is a product question. *Household rename* reads
+  `state.famName` live (scalar with its own guard) — fine. Claim flows look the
+  member up at click — fine.
+
+**2. «Fairli reloads by itself» (spurious reloads in use).**
+- **Root cause.** The bottom of index.html reloaded UNCONDITIONALLY on
+  `controllerchange`, `visibilitychange` calls `reg.update()`, and sw.js does
+  `skipWaiting()` in install and `clients.claim()` in activate. After every
+  deploy (three in the last days), simply returning to the app installed the
+  new worker in the background and hard-reloaded the page a second or two later
+  — mid-tap, mid-typing, mid-sheet, with the splash (and, under the brand
+  trial, the wink) replaying. The same happened a few seconds into a cold start.
+  This also undercut the version-probed «Neue Version von Fairli» bar
+  (v4.111.0), which exists precisely to let the user choose the moment.
+- **New behaviour on `controllerchange`** (a first install still does nothing):
+  «Neu laden» tapped → reload now; page hidden → reload now; within the first
+  3 s of the page and before ANY touch, key or wheel → reload now (harmless,
+  gets the device onto the new version straight away; it does replay the
+  splash once); otherwise → show the update bar and reload at the next moment
+  the page goes hidden. Never while a dialog is open (typed input), while the
+  first-run setup is open, inside the 5 s delete-undo window (a reload there
+  would silently UNDO the deletion — «resurrection beats loss» only for
+  crashes), or while a `push()` write is in flight (a reload aborts the fetch
+  after the marks were already handed over). Transient blockers (undo window,
+  write) are re-checked once a second while the page stays hidden (max 15
+  tries); an open dialog waits for the next hide. The bar's button reloads
+  directly once the new worker has already taken over (the new shell is
+  cached), otherwise it keeps the v4.111.0 path (update the registration, then
+  reload). `push()` now counts writes in flight (`pushesInFlight`); `fn` still
+  starts synchronously.
+- **Other reload / jump candidates audited.** `location.reload()` on
+  `popstate` (only when history navigation switches family/person route —
+  user-initiated), after the encryption migration (user-initiated, announced),
+  the one-shot re-probe in `pull()` (legacy cleartext `fam-` households only,
+  once per session), the claim redirects (`location.href`, user-initiated) and
+  the update-bar button — none of these can fire on their own in a normal
+  household. Not reloads but visible movement that remains: (a) a pull that
+  brings news from another device rebuilds the tile grid's HTML (order is
+  frozen, cached art is marked ok immediately, so tiles do not move — but it is
+  a full DOM swap under the finger); (b) the update bar itself appears in the
+  flow and pushes the board down by one line; (c) a boot-window reload replays
+  the splash. Listed, not changed here.
+- Tests (red against v4.115.0 where they test the fix): «Bearbeitungen
+  ueberleben den Abgleich bei offenem Sheet» — goal + toggle with a pull while
+  the sheet is open (red: upsert carried `goal: null`), pull between open and
+  first input, unnamed new person survives a pull and is saved once named (red:
+  no POST at all), Mein Name and Eintrag bearbeiten show the change immediately
+  (red: old value visible). «Kein Neuladen unter dem Finger» — visible and
+  touched: no reload, bar shown, reload on hide (red); bar button after a
+  deferred swap reloads; hidden: reloads at once (guard, green on old code);
+  boot window untouched: reloads (guard, green on old code); open dialog blocks
+  even when hidden, released after it closes (red); write in flight blocks until
+  it lands (red). The SW tests fake a controlled page (`controller` getter) and
+  dispatch `controllerchange` themselves, so they run in both engines.
+- No icon changed → no `?v=` bump. APP_VERSION 4.115.1, SW cache haushalt-v222.
+
 ## 2026-10-03 — v4.115.0 (SW haushalt-v221, BETA only): two-colour eyes in the face, chore tiles in three colours
 
 - Maintainer, after v4.114: not sure about the gradient across the face. «How
