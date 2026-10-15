@@ -1907,6 +1907,27 @@ test.describe('Fairli', () => {
     });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
+    // v4.117.0 (Test-Fix): die Abstaende werden IM Service Worker gemessen, nicht
+    // an der Route. Die Route sieht einen Fetch erst nach SW → Netzwerk-Stack →
+    // Playwright-IPC; auf einem ausgelasteten Runner kam ein Start dort 60–120 ms
+    // verspaetet an, der FOLGENDE puenktlich — so «schrumpfte» ein Abstand von
+    // 300 ms auf 184 (CI-Rot an 3456b22, auch auf v4.116.0 reproduziert). Gemessen
+    // wird jetzt dort, wo artRun() fetch() aufruft: im selben Takt, in dem artPump()
+    // artLastStart setzt. Die App bleibt unveraendert — der Test legt nur einen
+    // Zaehler um das globale fetch des laufenden Workers.
+    const sw = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
+    await sw.evaluate(() => {
+      self.__artStarts = [];
+      if (!self.__artFetchWrapped) {
+        const f = self.fetch;
+        self.fetch = function (u, o) {
+          const url = typeof u === 'string' ? u : u.url;
+          if (/pollinations\.ai/.test(url)) self.__artStarts.push({ t: Date.now(), u: url });
+          return f.apply(this, arguments);
+        };
+        self.__artFetchWrapped = true;
+      }
+    });
     // Ab jetzt SW-kontrolliert: acht frische, ungecachte Kacheln auf einmal
     ctl.setList(probeChores(['Probe A', 'Probe B', 'Probe C', 'Probe D', 'Probe E', 'Probe F', 'Probe G', 'Probe H']));
     starts.length = 0; maxIn = 0;
@@ -1916,8 +1937,17 @@ test.describe('Fairli', () => {
     const probe = starts.filter(s => decodeURIComponent(s.u).includes('Probe '));
     expect(probe.length).toBe(8);                                        // jede URL genau einmal (kein Doppel nach Re-Render)
     expect(new Set(probe.map(s => s.u)).size).toBe(8);
-    const ts = starts.map(s => s.t).sort((a, b) => a - b);
-    for (let i = 1; i < ts.length; i++) expect(ts[i] - ts[i - 1]).toBeGreaterThanOrEqual(ART_PACE_T.gap - 60);
+    // Abstand GAP zwischen zwei Starts — gemessen im SW (s. oben). Derselbe Worker
+    // muss es sein (wurde er neu gestartet, fehlt der Zaehler → klar rot statt still gruen).
+    const swStarts = await sw.evaluate(() => self.__artStarts);
+    expect(swStarts.filter(s => decodeURIComponent(s.u).includes('Probe ')).length).toBe(8);
+    expect(swStarts.length).toBe(starts.length);          // jeder Netz-Start ging durch die SW-Schlange
+    const ts = swStarts.map(s => s.t).sort((a, b) => a - b);
+    // Toleranz 2 ms: beide Stempel sind ganzzahlige Date.now()-Millisekunden
+    // (je < 1 ms Rundung); artPump() plant den naechsten Start mit setTimeout
+    // ab artLastStart + GAP, und Timer feuern nie frueher — mehr Spiel braucht
+    // es nicht. Halbe oder fehlende Drosselung (150 / 0 ms) faellt weit darunter.
+    for (let i = 1; i < ts.length; i++) expect(ts[i] - ts[i - 1], `Start ${i}`).toBeGreaterThanOrEqual(ART_PACE_T.gap - 2);
     // Cache-Treffer stehen NICHT hinter laufenden Erzeugungen an
     const cachedUrl = await page.locator('.chore[data-cid="c-t0"] img.art').getAttribute('src');
     await page.evaluate(() => { for (let i = 0; i < 4; i++) { const im = new Image(); im.src = 'https://gen.pollinations.ai/image/Langsam%20' + i + '?seed=' + i; } });

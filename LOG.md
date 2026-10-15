@@ -1,3 +1,31 @@
+## 2026-10-15 — tests only (no release, app unchanged; v4.117.0 / SW haushalt-v224 stay live): the art-pacing test measures inside the service worker
+
+- CI went red on the v4.117.0 commit with one test, «@sw Drosselung: hoechstens
+  PAR Erzeugungen gleichzeitig, Starts im Abstand GAP …»: a gap of 184 ms
+  against a floor of 240 ms (configured GAP 300 ms − 60 ms). Same signature on
+  UNCHANGED v4.116.0 (3 of 6 runs red under `--repeat-each`).
+- **Root cause: the test timed the wrong place.** It stamped each start with
+  `Date.now()` in the Playwright ROUTE handler, i.e. after SW `fetch()` →
+  browser network stack → Playwright IPC. On a loaded runner one start arrives
+  60–120 ms late and the next one on time, so a 300 ms gap «shrinks». Nine runs
+  side by side: route gaps 176–426 ms, SW gaps 299–373 ms. `sw.js` paces
+  correctly — `artPump()` sets `artLastStart` and `artRun()` calls `fetch()`
+  in the same tick, the next start waits `setTimeout(artLastStart + GAP − now)`.
+- **Fix (test only):** the test wraps the running worker's global `fetch` via
+  Playwright `serviceWorker.evaluate()` and records `Date.now()` where
+  `artRun()` starts each generation; it asserts ≥ GAP − 2 ms between
+  consecutive starts (2 ms = integer-millisecond rounding of the two stamps;
+  timers never fire early), that all 8 probe tiles were started by the SW and
+  that the SW saw exactly as many starts as the route. Concurrency (≤ 2), one
+  generation per URL and the cache-hit check are unchanged.
+- Negative checks (temporary edit of `artPump` in sw.js, reverted): spacing
+  halved → red («Start 1», 151 ms); spacing removed → red (84 ms, only the
+  2-in-flight cap left). 30 consecutive runs on chromium-sw under 3 workers:
+  30/30 green.
+- No version bump: only `tests/fairli.spec.js` and this LOG changed (same as
+  earlier `tests:` commits on main); check-discipline is state-based and
+  passes.
+
 ## 2026-10-15 — v4.117.0 (SW haushalt-v224): the new design for EVERY household — and the face becomes the installed app icon
 
 Maintainer: «Please also replace the logo that gets installed when installing
