@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-<html lang="de" data-b3tiles="fill">
+<html lang="de" class="brand3" data-b3tiles="fill">
+<!-- v4.117.0: das neue Bild («Variante 3», Gesichts-Logo) gilt fuer ALLE
+     Haushalte und alle Seiten ohne Familie — statisch auf <html>, darum ab dem
+     ersten Paint da, ohne Cache. EINZEILIGER RUECKWEG zum alten Bild: in der
+     Zeile darueber «class="brand3" » streichen (LOG v4.117.0). -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
@@ -28,21 +32,9 @@
     // v4.116.0: ?face=wink|smirk|blink|blink2|frown|none erzwingt den Start-Ausdruck
     // (nur brand3; vor dem Routen gelesen, das die Query wegschreibt)
     var fq = /[?&]face=(\w+)/.exec(location.search); if (fq) window.__faceQ = fq[1];
-    // v4.113.0 Marken-Test «Variante 3» (families.beta): den Schalter kennt
-    // erst der erste Abgleich — der Boot liest darum die zuletzt GESEHENE
-    // Antwort pro Familie und setzt html.brand3 VOR dem ersten Paint (§7).
-    // Ohne Familie (Einstieg) bleibt es beim alten Bild.
-    try {
-      var bm = decodeURIComponent(s).match(/f\/([a-z0-9-]{4,64})/i), bf = bm && bm[1].toLowerCase();
-      if (!bf) {
-        var ks = ['haushalt.route.family', 'haushalt.route.user', 'haushalt.route'];
-        for (var i = 0; i < ks.length && !bf; i++) {
-          var rr = JSON.parse(localStorage.getItem(ks[i]));
-          if (rr && rr.family) bf = rr.family;
-        }
-      }
-      if (bf && localStorage.getItem('haushalt.brand3:' + bf) === '1') document.documentElement.classList.add('brand3');
-    } catch (e) {}
+    // v4.113.0–v4.116.0 las hier der Boot den Beta-Cache haushalt.brand3:<fam>
+    // und setzte html.brand3 nur fuer Beta-Haushalte. Seit v4.117.0 steht die
+    // Klasse statisch im <html>-Tag (fuer alle) — kein Cache, nichts zu lesen.
   })();
 </script>
 <style>
@@ -51,25 +43,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Fairli">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#141A17">
-<link rel="apple-touch-icon" href="/chores/icon-192.png?v=48">
-<link rel="icon" href="/chores/icon-192.png?v=48" sizes="192x192" type="image/png">
-<script>
-  // v4.113.0: EIN Schalter fuer den Marken-Test — Klasse, Cache pro Familie,
-  // Favicon/Touch-Icon und Statusleistenfarbe. Das Homescreen-Symbol
-  // (manifest.json + icon-*.png) bleibt bewusst global und unveraendert.
-  window.__brand = function (on, fam) {
-    on = !!on;
-    var de = document.documentElement;
-    de.classList.toggle('brand3', on);
-    if (fam) { try { if (on) localStorage.setItem('haushalt.brand3:' + fam, '1'); else localStorage.removeItem('haushalt.brand3:' + fam); } catch (e) {} }
-    var set = function (sel, attr, v) { var el = document.querySelector(sel); if (el && el.getAttribute(attr) !== v) el.setAttribute(attr, v); };
-    set('link[rel="icon"]', 'href', on ? '/chores/icon-b3-192.png?v=3' : '/chores/icon-192.png?v=48');
-    set('link[rel="apple-touch-icon"]', 'href', on ? '/chores/icon-b3-192.png?v=3' : '/chores/icon-192.png?v=48');
-    set('meta[name="theme-color"]', 'content', on ? '#12151F' : '#141A17');
-  };
-  if (document.documentElement.classList.contains('brand3')) window.__brand(true);
-</script>
+<!-- v4.117.0: icon-*.png zeigen das Gesicht (dieselben Bytes wie die
+     Beta-Icons icon-b3-*.png), Statusleiste im Marken-Navy. Icon getauscht =
+     ?v= hier, in 404.html, manifest.json UND im persoenlichen Manifest (sw.js)
+     erhoehen + SW-Bump (§9). -->
+<meta name="theme-color" content="#12151F">
+<link rel="apple-touch-icon" href="/chores/icon-192.png?v=49">
+<link rel="icon" href="/chores/icon-192.png?v=49" sizes="192x192" type="image/png">
 <style>
   /* GDPR (v4.85.0): Schrift selbst gehostet — kein IP-Transfer mehr an Google
      Fonts. Variable Font, deckt 500/700/800 aus einer Datei. */
@@ -624,10 +604,12 @@
   #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
 
   /* ====================================================================
-     MARKEN-TEST «VARIANTE 3» (v4.113.0) — gilt NUR unter html.brand3
-     (families.beta, siehe __brand im Kopf). Ohne Klasse greift keine
-     einzige Regel dieses Blocks: alle anderen Haushalte sehen v4.112.0
-     pixelgleich. Alles hier leitet sich aus dem Logo ab: weisse, dicke,
+     MARKEN-TEST «VARIANTE 3» (v4.113.0) — gilt NUR unter html.brand3.
+     Seit v4.117.0 steht die Klasse STATISCH im <html>-Tag: dieser Block ist
+     das Bild fuer ALLE. Ohne Klasse (Rueckweg, eine Zeile) greift keine
+     einzige Regel dieses Blocks und das alte Bild (die Regeln oberhalb)
+     kommt zurueck; Aufraeumen (alten Block + Praefix entfernen) steht in
+     DEVELOPER_ONBOARDING §12. Alles hier leitet sich aus dem Logo ab: weisse, dicke,
      rund abgeschlossene Striche und Ringe auf fast schwarzem Navy.
      Monochrom — Auswahl = INVERSION (weiss gefuellt, dunkle Schrift),
      nicht Farbe. Rot nur fuer Zerstoerendes/Fehler. Personenfarben bleiben
@@ -667,6 +649,10 @@
   html.brand3 .chip .dot, html.brand3 .filterpill .dot, html.brand3 .score .dot{
     background:transparent !important; border:4px solid; border-color:var(--pc, currentColor);
     color:var(--ink); font-size:0}
+  /* v4.117.0: die Personen im Einladen-Sheet hatten gar keine .dot-Regel (eckiger
+     Buchstaben-Block in Personenfarbe, auch im alten Bild) — jetzt derselbe Ring */
+  html.brand3 .shhead .dot{width:22px; height:22px; flex:0 0 22px; border-radius:50%; box-sizing:border-box;
+    background:transparent !important; border:4px solid var(--pc, currentColor); font-size:0}
   html.brand3 #searchBar{background:var(--well); border:2px solid var(--line)}
   /* Tabs, Zeitraum, Datums-Chips: Pillen, gewaehlt = weiss */
   html.brand3 .tab, html.brand3 .period button, html.brand3 .dpick .dchips button{
@@ -870,14 +856,32 @@
      (FACE im Skript) — deckt das <img> exakt, das selbst unberuehrt bleibt. */
   html.brand3 .b3face{position:absolute; display:block; pointer-events:none; z-index:2}
   html.brand3 .b3face svg{display:block}
+  /* v4.117.0: Seiten ohne Familie (Einstieg, Ersteinrichtung) — bisher nie im
+     neuen Bild entworfen (der Test liess sie beim alten). Ihre Stile sind
+     inline (Render-Funktionen), darum hier mit !important; ohne brand3 bleibt
+     das alte Bild unangetastet. Gold/Blau gibt es hier keins mehr: Titel
+     flach weiss, Felder wie in den Sheets, Personen als Ringe, Fokus blau.
+     Der bernsteinfarbene «Veraltetes Fairli-Icon»-Hinweis bleibt (Warnung,
+     §8: nie abschwaechen). */
+  html.brand3 #entryScreen h1, html.brand3 #firstRun h1{background:none !important; color:var(--ink) !important;
+    -webkit-text-fill-color:currentColor; font-weight:700 !important; letter-spacing:-.035em}
+  html.brand3 #entryScreen > img{border-radius:24% !important}
+  html.brand3 #entryScreen input, html.brand3 #firstRun input[type=text], html.brand3 #firstRun textarea{
+    background:var(--well) !important; border:2px solid var(--line) !important; border-radius:14px !important}
+  html.brand3 #entryScreen button[style*="var(--card)"]{background:transparent !important; border:2px solid var(--line) !important}
+  html.brand3 #firstRun input[type=checkbox]{accent-color:var(--ink)}
+  html.brand3 textarea:focus-visible, html.brand3 select:focus-visible, html.brand3 #firstRun input:focus-visible,
+  html.brand3 #entryScreen input:focus-visible{outline:2px solid var(--b3-blue); outline-offset:2px}
+  html.brand3 #firstRun:has([data-who]){display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:14px}
+  html.brand3 #firstRun [data-who]{background:transparent !important; color:var(--ink) !important; border:4px solid var(--pc) !important; padding:9px 18px !important}
   @media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important} }
 </style>
 </head>
 <body>
-<div id="splash" aria-hidden="true"><img src="/chores/icon-192.png?v=48" alt="" width="104" height="104"></div>
+<div id="splash" aria-hidden="true"><img src="/chores/icon-192.png?v=49" alt="" width="104" height="104"></div>
 <header id="apphead">
   <div class="hrow">
-    <img id="headLogo" src="/chores/icon-192.png?v=48" alt="" width="38" height="38" aria-hidden="true">
+    <img id="headLogo" src="/chores/icon-192.png?v=49" alt="" width="38" height="38" aria-hidden="true">
     <h1 id="famTitle">&nbsp;</h1>
   </div>
   <div class="headbtns">
@@ -1054,7 +1058,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.116.0';
+  const APP_VERSION = '4.117.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2115,7 +2119,8 @@
   });
 
   if (!FAMILY) {
-    window.__brand(false);    // v4.113.0: Einstieg ohne Familie = altes Bild
+    // v4.117.0: auch der Einstieg (ohne Familie) traegt das neue Bild — die
+    // Klasse steht statisch im <html>-Tag (v4.113.0–v4.116.0: altes Bild).
     const last = loadRoute();
     const goto = (fam, slug) => {
       saveRoute({ family: fam, userSlug: slug || null });
@@ -2130,6 +2135,7 @@
       return null;
     }
     const d = document.createElement('div');
+    d.id = 'entryScreen';   // v4.117.0: Anker fuer die brand3-Regeln (Inline-Stile bleiben das alte Bild)
     d.style.cssText = 'position:fixed;inset:0;z-index:99;background:var(--bg);overflow:auto;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:32px;gap:16px';
     const btn = 'border:none;border-radius:999px;padding:15px 28px;font-size:16px;font-weight:700;cursor:pointer;width:100%;max-width:300px';
     document.body.appendChild(d);
@@ -2139,7 +2145,7 @@
     // dem i18n-Boot und blieb fuer alle Welt deutsch.
     function renderEntry() {
       d.innerHTML = `
-      <img src="/chores/icon-192.png?v=48" alt="" width="72" height="72" style="border-radius:18px">
+      <img src="/chores/icon-192.png?v=49" alt="" width="72" height="72" style="border-radius:18px">
       <h1 style="font-family:var(--display);font-weight:800;font-size:34px;margin:0 0 4px;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Fairli</h1>
       <p style="color:var(--muted);max-width:300px;margin:0 0 8px">${t('Aufgaben im Haushalt – fair verteilt.')}</p>
       ${last && last.family ? `<button id="resume" style="${btn};background:var(--accent);color:#0C1220">${t('Zu meinem Haushalt')}</button>` : ''}
@@ -2513,11 +2519,10 @@
       {
         RETENTION = (fam[0] && fam[0].retention_days) || null;   // v4.52.0
         BETA = !!(fam[0] && fam[0].beta);                         // v4.67.0
-        // v4.113.0: families.beta = Marken-Test Variante 3. Cache + Klasse in
-        // BEIDE Richtungen — wer den Schalter verliert, sieht beim naechsten
-        // Abgleich wieder das alte Bild. BETA steht im Fingerabdruck, damit
-        // der Wechsel neu zeichnet (andere Kachelbild-URLs).
-        window.__brand(BETA, FAMILY);
+        // v4.117.0: families.beta gate wieder NICHTS (v4.113.0–v4.116.0: der
+        // Marken-Test «Variante 3»; der gilt jetzt statisch fuer alle). Der
+        // alte Beta-Cache dieses Haushalts wird nur noch aufgeraeumt.
+        try { localStorage.removeItem('haushalt.brand3:' + FAMILY); } catch {}
         // v4.73.0 (Beta): Das Familien-GEHEIMNIS steht in der Adressleiste —
         // link = auth, also ein Zugang auf Dauer-Anzeige. Es leckt nicht nur
         // per Screenshot (Maintainer-Befund Android: der Teilen-Fluss haengt
@@ -2701,7 +2706,7 @@
       d.innerHTML = `<h2 style="font-family:var(--display);margin:0">${t('Wer bist du?')}</h2>
         <p style="color:var(--muted);max-width:300px;margin:0">${t('Du wirst Admin und nutzt ab jetzt deinen persönlichen Link.')}</p>
         <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:340px">
-          ${state.members.map((m, i) => `<button data-who="${i}" style="border:none;border-radius:999px;padding:12px 20px;font-size:16px;font-weight:700;background:${m.color};color:#0C1220;cursor:pointer">${esc(m.name)}</button>`).join('')}
+          ${state.members.map((m, i) => `<button data-who="${i}" style="border:none;border-radius:999px;padding:12px 20px;font-size:16px;font-weight:700;background:${m.color};--pc:${m.color};color:#0C1220;cursor:pointer">${esc(m.name)}</button>`).join('')}
         </div>`;
       d.querySelectorAll('[data-who]').forEach(b => b.onclick = () => claim(state.members[+b.dataset.who]));
     };
@@ -3056,9 +3061,11 @@
   // Code inert: BETA=false blendet die Bedienung aus, und ohne gesetztes Ziel
   // rendert die Punkte-Ansicht ohnehin unveraendert.
   // v4.77.0: families.beta gate aktuell NICHTS — Wochenziel (v4.74.0) und
-  // Adressleisten-Aufraeumen (v4.77.0) sind Standard fuer alle. Die Flagge
-  // bleibt gelesen (🧪 in den Sync-Details) und ist FREI fuer das naechste
-  // Experiment.
+  // Adressleisten-Aufraeumen (v4.77.0) sind Standard fuer alle.
+  // v4.113.0–v4.116.0 schaltete sie den Marken-Test «Variante 3»; seit
+  // v4.117.0 gilt das neue Bild fuer ALLE (statisches html.brand3), die
+  // Flagge gate wieder NICHTS. Sie bleibt gelesen (🧪 in den Sync-Details)
+  // und ist FREI fuer das naechste Experiment.
   let BETA = false;                 // families.beta
   const retentionCutoff = () => RETENTION ? Date.now() - RETENTION * 86400e3 : null;
   const expiredEntries = () => {
@@ -4640,7 +4647,7 @@
     // egal wie viele Releases folgen. Erst ein Bump von NEWS_VERSION
     // (ZUSAMMEN mit neuem updates.html-Inhalt!) zündet erneut. Marke wird
     // bei stillen Durchläufen aktuell gehalten.
-    const NEWS_VERSION = '4.74.0';   // = Version des Recap-RELEASES selbst! Die seenver-Marke
+    const NEWS_VERSION = '4.117.0';  // = Version des Recap-RELEASES selbst! (v4.117.0: neues Bild fuer alle) Die seenver-Marke
     // rueckt bei jedem Besuch still auf APP_VERSION vor — ein NEWS_VERSION
     // UNTER bereits gesehenen Versionen kann darum nie zuenden (Live-Fund
     // 18.07.: Familie sah keinen Banner, Marken standen auf 4.47.x).

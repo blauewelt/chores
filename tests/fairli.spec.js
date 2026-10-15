@@ -1776,8 +1776,8 @@ test.describe('Fairli', () => {
     });
     expect(man.display).toBe('standalone');
     expect(man.start_url).toBeTruthy();
-    // auch der statische Fallback startet dunkel, nicht weiss
-    expect(man.background_color.toUpperCase()).toBe('#12161F');
+    // auch der statische Fallback startet dunkel, nicht weiss (v4.117.0: Marken-Navy, vorher #12161F)
+    expect(man.background_color.toUpperCase()).toBe('#12151F');
     expect(man.icons.map(i => i.sizes)).toEqual(expect.arrayContaining(['192x192', '512x512']));
     // Familien-Link unverändert: die statische Datei
     await page.goto(`${BASE}/f/${FAM}`);
@@ -1825,8 +1825,9 @@ test.describe('Fairli', () => {
     // (Live-Befund 20.07.2026).
     expect(man.body.short_name).toBe('Fairli');
     // Start-Bildschirm darf nicht weiss aufblitzen: Farben = App-Farben
-    expect(man.body.background_color.toUpperCase()).toBe('#12161F');
-    expect(man.body.theme_color.toUpperCase()).toBe('#141A17');
+    // v4.117.0: Marken-Navy fuer beide (vorher background #12161F, theme #141A17)
+    expect(man.body.background_color.toUpperCase()).toBe('#12151F');
+    expect(man.body.theme_color.toUpperCase()).toBe('#12151F');
     expect(man.body.scope).toContain('/chores/');
     expect(man.body.icons.every(i => /^https?:\/\//.test(i.src))).toBe(true);
   });
@@ -3628,7 +3629,14 @@ test.describe('Fairli', () => {
     expect(g.ww).toBeGreaterThan(120);                       // kein 96px-Thumb mehr
     expect(g.ratio).toBeGreaterThan(0.4);                    // ~halbe Breite
     expect(g.ratio).toBeLessThan(0.6);
-    expect(g.transform === 'none' || g.transform === 'matrix(1, 0, 0, 1, 0, 0)').toBeTruthy();  // kein Overscan-Zoom
+    // v4.117.0: das neue Bild (fuer alle) setzt die Strichzeichnung skaliert
+    // rechts unten in die Kachel (scale 1.35) — die Vorschau traegt GENAU die
+    // Transformation der Brett-Kachel (vorher: keine Transformation, altes Bild)
+    const boardT = await page.evaluate(() => { const d = document.createElement('div'); d.className = 'chore';
+      d.innerHTML = '<img class="art">'; document.body.appendChild(d);
+      const v = getComputedStyle(d.firstChild).transform; d.remove(); return v; });
+    expect(boardT).not.toBe('none');
+    expect(g.transform).toBe(boardT);
     // Live: Titel im Feld ändern → Overlay in der Kachel zieht nach
     await page.locator('#lName').fill('Müll rausbringen!');
     await expect(page.locator('#lArtName')).toHaveText('Müll rausbringen!');
@@ -3771,7 +3779,7 @@ test.describe('Fairli', () => {
     const bg = await band.evaluate(el => getComputedStyle(el).backgroundColor);
     expect(bg).toBe('rgb(62, 107, 214)');            // Mira = #3E6BD6 (Fixture)
     const hOff = await page.evaluate(() => document.querySelector('.entry.vrow').getBoundingClientRect().height);
-    expect(hOff).toBeLessThan(90);                   // kompakt: Inhaltshoehe
+    expect(hOff).toBeLessThan(100);                  // kompakt: Inhaltshoehe (v4.117.0: 2px-Rahmen des neuen Bildes, vorher < 90)
     // Einstellungen → Kachelbilder AN
     await page.locator('#openSettings').click();
     await expect(page.locator('#setLogart .setval')).toHaveText('Aus');
@@ -3851,16 +3859,21 @@ test.describe('Fairli', () => {
     expect(whatZ).toBeGreaterThanOrEqual(2);
     const shadow = await rows.nth(0).locator('.what').evaluate(el => getComputedStyle(el).textShadow);
     expect(shadow).not.toBe('none');
-    // (4) volle Zeilenhoehe wie bisher
-    expect(Math.abs(art.height - row0.height)).toBeLessThan(1.5);
+    // (4) volle Zeilenhoehe wie bisher — v4.117.0: innerhalb des 2px-Rahmens
+    //     des neuen Bildes (clientHeight; vorher die Aussenhoehe)
+    const inner0 = await rows.nth(0).evaluate(el => el.clientHeight);
+    expect(Math.abs(art.height - inner0)).toBeLessThan(1.5);
     // (5) BEIDSEITIGE Maske: transparent an beiden Enden (zwei Null-Alpha-Stopps)
     const mask = await rows.nth(0).locator('img.eart').evaluate(el =>
       getComputedStyle(el).webkitMaskImage || getComputedStyle(el).maskImage);
     expect(mask).toContain('gradient');
     expect((mask.match(/rgba\(0,\s*0,\s*0,\s*0\)/g) || []).length).toBeGreaterThanOrEqual(2);
-    // (6) Schleier bleibt (helle Creme-Raender), weiterhin mehrschichtig
+    // (6) Schleier bleibt — v4.117.0 (neues Bild fuer alle, Entwurf v4.113.0):
+    //     EIN Navy-Schleier nur links, wo der Text laeuft, das Motiv selbst bleibt
+    //     weiss (vorher: mehrschichtiger Creme-Schleier, >= 2 Verlaeufe)
     const ov = await rows.nth(0).locator('.eartb').evaluate(el => getComputedStyle(el, '::after').backgroundImage);
-    expect((ov.match(/gradient/g) || []).length).toBeGreaterThanOrEqual(2);
+    expect((ov.match(/gradient/g) || []).length).toBeGreaterThanOrEqual(1);
+    expect(ov).toContain('rgba(27, 29, 49, 0.75)');
     // (7) EINE Hoehe fuer alle; bildlose Zeile ohne Slot; Punkte auf gleicher x
     const row1 = await rows.nth(1).boundingBox();
     expect(Math.abs(row0.height - row1.height)).toBeLessThan(1);
@@ -5238,19 +5251,21 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
   const tileSrc = page => page.locator('.chore[data-cid="c-1"] img.art').getAttribute('src');
   const accent = page => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
 
-  test('Ohne Beta: altes Logo, alte Farben, alter Kachel-Prompt, kein Cache-Eintrag', async ({ context, page }) => {
+  // v4.117.0: das neue Bild gilt fuer ALLE — die Ohne-Beta-Zusage «altes Bild»
+  // ist abgelaufen und hier auf die neue Wahrheit umgeschrieben (nicht geloescht).
+  test('Ohne Beta (seit v4.117.0): dasselbe neue Bild — Gesicht, neue Farben, neuer Prompt, Favicon, kein Cache-Eintrag', async ({ context, page }) => {
     await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }] });
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
     await page.waitForTimeout(500);
-    await expect(page.locator('html')).not.toHaveClass(/brand3/);
-    expect(await accent(page)).toBe('#84B2FF');
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    expect(await accent(page)).toBe('#F5F5F1');
     await expect(page.locator('#headLogo')).toHaveAttribute('src', /icon-192\.png/);
-    expect(await page.locator('#headLogo').evaluate(el => getComputedStyle(el).content)).not.toContain('svg');
-    expect(decodeURIComponent(await tileSrc(page))).toContain('minimalist flat vector illustration');
-    expect(decodeURIComponent(await tileSrc(page))).not.toContain('outline drawing');
-    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /icon-192\.png/);
-    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#141A17');
+    expect(await page.locator('#headLogo').evaluate(el => getComputedStyle(el).content)).toContain('svg');
+    expect(decodeURIComponent(await tileSrc(page))).toContain('thick white outline drawing');
+    expect(decodeURIComponent(await tileSrc(page))).not.toContain('minimalist flat vector illustration');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=49');
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#12151F');
     expect(await page.evaluate(f => localStorage.getItem('haushalt.brand3:' + f), FAM)).toBeNull();
   });
 
@@ -5262,19 +5277,21 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     expect(await page.locator('#headLogo').evaluate(el => getComputedStyle(el).content)).toContain('svg');
     await expect.poll(async () => decodeURIComponent(await tileSrc(page))).toContain('thick white outline drawing: Müll rausbringen, nur Restmüll');
     expect(decodeURIComponent(await tileSrc(page))).not.toContain('minimalist flat vector');
-    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /icon-b3-192\.png/);
-    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', /icon-b3-192\.png/);
+    // v4.117.0: Favicon/Touch-Icon sind die Hauptdateien (tragen das Gesicht), kein Beta-Cache mehr
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=49');
+    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=49');
     await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#12151F');
-    expect(await page.evaluate(f => localStorage.getItem('haushalt.brand3:' + f), FAM)).toBe('1');
-    // Die neuen Icon-Dateien gibt es wirklich (sonst zeigt das Favicon ins Leere)
-    for (const f of ['icon-b3-192.png', 'icon-b3-512.png', 'icon-b3-512-maskable.png']) {
+    expect(await page.evaluate(f => localStorage.getItem('haushalt.brand3:' + f), FAM)).toBeNull();
+    // Die Icon-Dateien gibt es wirklich — auch die b3-Aliase (alte Beta-Verweise brechen nicht)
+    for (const f of ['icon-192.png', 'icon-512.png', 'icon-512-maskable.png', 'icon-b3-192.png', 'icon-b3-512.png', 'icon-b3-512-maskable.png']) {
       const r = await page.request.get(`${BASE}/${f}`);
       expect(r.status(), f).toBe(200);
       expect(r.headers()['content-type']).toContain('image/png');
     }
-    // manifest.json bleibt global unveraendert (Homescreen-Symbol aller Haushalte)
+    // manifest.json nennt die Hauptdateien (seit v4.117.0 das Gesicht), nie die Aliase
     const man = await (await page.request.get(`${BASE}/manifest.json`)).json();
     expect(JSON.stringify(man.icons)).not.toContain('icon-b3');
+    expect(man.icons[0].src).toBe('icon-192.png?v=49');
   });
 
   test('Zweiter Start: brand3 steht VOR dem Abgleich (erster Paint) — Splash und Kachel schon im neuen Bild', async ({ context, page }) => {
@@ -5301,26 +5318,27 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     expect(decodeURIComponent(await tileSrc(page))).toContain('outline drawing');
   });
 
-  test('Beta wieder aus: der naechste Abgleich stellt das alte Bild her und raeumt den Cache', async ({ context, page }) => {
+  test('Beta wieder aus (seit v4.117.0): nichts schaltet zurueck — Klasse, Prompt, Farben bleiben, kein Cache', async ({ context, page }) => {
     let beta = true;
     await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta }] });
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('html')).toHaveClass(/brand3/);
     beta = false;
     await page.reload();
-    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+    await page.waitForTimeout(500);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
     expect(await page.evaluate(f => localStorage.getItem('haushalt.brand3:' + f), FAM)).toBeNull();
-    await expect.poll(async () => decodeURIComponent(await tileSrc(page))).toContain('minimalist flat vector illustration');
-    expect(await accent(page)).toBe('#84B2FF');
-    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#141A17');
+    await expect.poll(async () => decodeURIComponent(await tileSrc(page))).toContain('thick white outline drawing');
+    expect(await accent(page)).toBe('#F5F5F1');
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#12151F');
   });
 
-  test('Einstieg ohne Familie bleibt beim alten Bild, auch mit Cache-Eintrag', async ({ context, page }) => {
+  test('Einstieg ohne Familie (seit v4.117.0): neues Bild, mit oder ohne Cache-Eintrag', async ({ context, page }) => {
     await blockExternal(context);
     await context.addInitScript(f => localStorage.setItem('haushalt.brand3:' + f, '1'), FAM);
     await page.goto(`${BASE}/`);
     await expect(page.locator('#newFam')).toBeVisible();
-    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
   });
 
   test('Render unter brand3: Aufgaben, Punkte, Verlauf (mit/ohne Kachelbilder), Sheets, Zeit-Picker, Toast', async ({ context, page }) => {
@@ -5410,9 +5428,9 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     expect(await css(page.locator('.tab[aria-selected="true"]'), 'backgroundImage')).toBe('none');
     // Personenringe bleiben Personenfarbe
     expect(await css(page.locator('.chip .dot').first(), 'backgroundImage')).toBe('none');
-    // Favicon/Touch-Icon mit neuem Cache-Buster (die weissen PNGs duerfen nicht haengen bleiben)
-    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-b3-192.png?v=3');
-    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-b3-192.png?v=3');
+    // Favicon/Touch-Icon mit neuem Cache-Buster (v4.117.0: die Hauptdateien tragen das Gesicht, ?v=49)
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=49');
+    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=49');
     // Zwinkern im Toast
     await page.locator('.chip[data-mid="m-chris"]').click();
     await page.locator('.chore[data-cid="c-1"]').click();
@@ -5424,19 +5442,19 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     expect(await css(page.locator('.score .bar i').first(), 'backgroundImage')).toBe('none');   // v4.115.0: wieder weiss
   });
 
-  test('v4.114.0 Ohne Beta: altes Logo, alter Titelverlauf, flacher Akzent-FAB, keine Verlaufs-Tokens', async ({ context, page }) => {
+  test('v4.114.0 Ohne Beta (seit v4.117.0): Gesicht mit Augen-Verlaeufen, flacher Titel, weisser FAB, Verlaufs-Tokens vorhanden', async ({ context, page }) => {
     await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }] });
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
     await page.waitForTimeout(500);
-    await expect(page.locator('html')).not.toHaveClass(/brand3/);
-    await expect(page.locator('#headLogo')).toHaveAttribute('src', '/chores/icon-192.png?v=48');
-    expect(await css(page.locator('#headLogo'), 'content')).not.toContain('linearGradient');
-    expect(await css(page.locator('header h1'), 'backgroundImage')).toBe('linear-gradient(100deg, rgb(234, 241, 235), rgb(132, 178, 255))');
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    await expect(page.locator('#headLogo')).toHaveAttribute('src', '/chores/icon-192.png?v=49');
+    expect(await css(page.locator('#headLogo'), 'content')).toContain('linearGradient');
+    expect(await css(page.locator('header h1'), 'backgroundImage')).toBe('none');
     expect(await css(page.locator('#openAdd'), 'backgroundImage')).toBe('none');
-    expect(await css(page.locator('#openAdd'), 'backgroundColor')).toBe('rgb(132, 178, 255)');
-    expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--b3-grad').trim())).toBe('');
-    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=48');
+    expect(await css(page.locator('#openAdd'), 'backgroundColor')).toBe(GRAD.white);
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--b3-grad').trim())).toContain('linear-gradient');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=49');
   });
 
   // v4.114.1: das Splash-Logo zwinkert beim echten Start einmal (#splash::after,
@@ -5478,12 +5496,12 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     expect(P.end).toBeNull();
   });
 
-  test('v4.114.1 Ohne Beta: kein Augenlid, keine Animation am Splash', async ({ context, page }) => {
+  test('v4.114.1 Ohne Beta (seit v4.117.0 neues Bild): kein CSS-Augenlid mehr am Splash (seit v4.116.0 Inline-Gesicht)', async ({ context, page }) => {
     await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }] });
     await context.addInitScript(winkProbe);
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('#splash')).toHaveCount(0);
-    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
     const P = await page.evaluate(() => window.__wink);
     expect(P.name).toBe('none');
     expect(P.after).toBe('none');
@@ -5561,7 +5579,10 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     let gate = null;
     await routePolarityArt(context, { hold: () => gate });
     let release; gate = new Promise(r => { release = r; });
-    await page.goto(`${BASE}/f/${FAM}`);
+    // v4.117.0: brand3 steht ab dem ersten Render — WebKit haelt das load-Event
+    // fuer die (zurueckgehaltenen) CORS-Bilder fest; der Test wartet darum nur
+    // auf DOMContentLoaded (keine Aussage geaendert)
+    await page.goto(`${BASE}/f/${FAM}`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('html')).toHaveClass(/brand3/);
     const img = cid => page.locator(`.chore[data-cid="${cid}"] img.art`);
     await expect(img('c-dk')).toHaveCount(1);
@@ -5576,15 +5597,16 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     expect(await css(img('c-fi'), 'filter')).toMatch(/^invert\(1\)/);
   });
 
-  test('v4.115.0 Ohne Beta: keine Kachel-Toene, Kacheln wie bisher', async ({ context, page }) => {
+  test('v4.115.0 Ohne Beta (seit v4.117.0): dieselben Kachel-Toene wie mit Beta, Kunst per multiply', async ({ context, page }) => {
     await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }] });
     await tchRoute(context);
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('.chore[data-cid]')).toHaveCount(TCH.length);
     await page.waitForTimeout(400);
-    await expect(page.locator('html')).not.toHaveClass(/brand3/);
-    await expect(page.locator('.chore[data-tone]')).toHaveCount(0);
-    expect(await css(page.locator('.chore[data-cid="c-1"] img.art'), 'mixBlendMode')).toBe('normal');
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    await expect(page.locator('.chore[data-tone]')).toHaveCount(TCH.length);
+    for (const c of TCH) expect(await page.locator(`.chore[data-cid="${c.id}"]`).getAttribute('data-tone'), c.id).toBe(toneOf(c.id));
+    expect(await css(page.locator('.chore[data-cid="c-1"] img.art'), 'mixBlendMode')).toBe('multiply');
   });
 });
 
@@ -5611,6 +5633,10 @@ test.describe('Einmalig-Kachel + Gesicht (v4.116.0)', () => {
     await routePolarityArt(context);
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('html')).toHaveClass(/brand3/);
+    // v4.117.0: brand3 steht schon im ersten Render (vor dem Abgleich) — erst
+    // den Abgleich abwarten (c-1 kommt vom Server), sonst tauscht dessen
+    // Neuzeichnen das Raster mitten in den Messungen aus
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
     const tile = page.locator('#oneOffTile');
     await expect(tile).toBeVisible();
     expect(await css(tile, 'backgroundColor')).toBe(MINT);
@@ -5644,17 +5670,17 @@ test.describe('Einmalig-Kachel + Gesicht (v4.116.0)', () => {
     expect(await css(tile.locator('.cname'), 'color')).not.toBe(INK);
   });
 
-  test('v4.116.0 Einmalig ohne Beta: unveraendert (dunkel, gestrichelt, gedaempfte Schrift)', async ({ context, page }) => {
+  test('v4.116.0 Einmalig ohne Beta (seit v4.117.0): Mint, gestrichelt dunkel, dunkle Tinte — wie mit Beta', async ({ context, page }) => {
     await mockBackend(context, OFF);
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('#oneOffTile')).toBeVisible();
     await page.waitForTimeout(400);
-    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
     const tile = page.locator('#oneOffTile');
-    expect(await css(tile, 'backgroundColor')).toBe('rgb(26, 34, 48)');
+    expect(await css(tile, 'backgroundColor')).toBe(MINT);
     expect(await css(tile, 'borderTopStyle')).toBe('dashed');
-    expect(await css(tile, 'borderTopColor')).toBe('rgb(42, 52, 71)');
-    expect(await css(tile.locator('.cname'), 'color')).toBe('rgb(145, 161, 184)');
+    expect(await css(tile, 'borderTopColor')).toMatch(/^rgba\(18, 21, 31, 0\.\d+\)$|^rgb\(18, 21, 31\)$/);
+    expect(await css(tile.locator('.cname'), 'color')).toBe(INK);
     expect(await tile.getAttribute('data-tone')).toBeNull();
   });
 
@@ -5856,20 +5882,20 @@ test.describe('Einmalig-Kachel + Gesicht (v4.116.0)', () => {
     expect(await page.evaluate(() => window.__face.idle())).toBe(false);
   });
 
-  test('v4.116.0 Ohne Beta: kein Gesicht, kein Ausdruck, kein Toast-Gesicht', async ({ context, page }) => {
+  test('v4.116.0 Ohne Beta (seit v4.117.0): Gesicht, Start-Ausdruck und Toast-Gesicht wie mit Beta', async ({ context, page }) => {
     await mockBackend(context, OFF);
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
     await context.addInitScript(bootProbe);
     await page.goto(`${BASE}/?face=wink`);
     await expect(page.locator('#splash')).toHaveCount(0);
-    await expect(page.locator('html')).not.toHaveClass(/brand3/);
-    expect((await page.evaluate(() => window.__boot)).boxes).toBe(0);
-    expect(await page.evaluate(() => window.__face && window.__face('wink'))).toBeFalsy();
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    expect((await page.evaluate(() => window.__boot)).boxes).toBeGreaterThan(0);
+    expect(await page.evaluate(() => window.__face.log.filter(x => x.w === 'splash').map(x => x.n))).toEqual(['wink']);
     await page.locator('.chip[data-mid="m-chris"]').click();
     await page.locator('.chore[data-cid="c-1"]').click();
     await expect(page.locator('#toast')).toContainText('+2 für Timon');
-    await expect(page.locator('#toast .tface')).toHaveCount(0);
+    await expect(page.locator('#toast .tface')).toHaveCount(1);
   });
 });
 
@@ -5897,7 +5923,7 @@ test.describe('Kachelbild-Polaritaet unter brand3 (v4.113.1)', () => {
     await routePolarityArt(context, { hold: () => gate });
     await page.addInitScript(() => { try { localStorage.setItem('haushalt.logart', '1'); } catch {} });
     let release; gate = new Promise(r => { release = r; });
-    await page.goto(`${BASE}/f/${FAM}`);
+    await page.goto(`${BASE}/f/${FAM}`, { waitUntil: 'domcontentloaded' });   // v4.117.0: s. «Kunst auf hellen Kacheln»
     await expect(page.locator('html')).toHaveClass(/brand3/);
     // Solange das Urteil fehlt, bleibt das Bild unsichtbar (kein weisser Blitz)
     const dk = tileImg(page, 'c-dk');
@@ -5957,7 +5983,7 @@ test.describe('Kachelbild-Polaritaet unter brand3 (v4.113.1)', () => {
     expect(await page.evaluate(() => window.__dkAtInsert)).toContain('artinv');
   });
 
-  test('Ohne Beta: kein crossorigin, keine Polaritaets-Klasse, KEINE Canvas-Arbeit, kein Speicher-Eintrag', async ({ context, page }) => {
+  test('Ohne Beta (seit v4.117.0): crossorigin, Polaritaets-Urteil und Speicher-Eintrag wie mit Beta', async ({ context, page }) => {
     await context.addInitScript(() => {
       window.__px = 0;
       const g = CanvasRenderingContext2D.prototype.getImageData;
@@ -5967,22 +5993,21 @@ test.describe('Kachelbild-Polaritaet unter brand3 (v4.113.1)', () => {
     await polChores(context);
     await routePolarityArt(context);
     await page.addInitScript(() => { try { localStorage.setItem('haushalt.logart', '1'); } catch {} });
-    await page.goto(`${BASE}/f/${FAM}`);
+    await page.goto(`${BASE}/f/${FAM}`, { waitUntil: 'domcontentloaded' });
     const dk = tileImg(page, 'c-dk');
     await expect(dk).toHaveClass(/\bok\b/);
-    await expect(page.locator('html')).not.toHaveClass(/brand3/);
-    await expect(page.locator('img.artinv')).toHaveCount(0);
-    expect(await dk.getAttribute('crossorigin')).toBeNull();
-    expect(await filt(dk)).toBe('none');
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    await expect(dk).toHaveClass(/\bartinv\b/);                     // dunkel-auf-weiss erkannt
+    expect(await dk.getAttribute('crossorigin')).toBe('anonymous');
+    expect(await filt(dk)).not.toContain('invert');                  // helle Kachel: .artinv ohne invert
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     await expect(page.locator('.entry.vrow', { hasText: 'Fenster putzen' }).locator('img.eart')).toHaveClass(/\bok\b/);
     await page.getByRole('tab', { name: 'Aufgaben' }).click();
     await page.locator('[data-edit="c-dk"]').click();
     await expect(page.locator('#cArtPrev')).toHaveClass(/\bok\b/);
-    expect(await page.locator('#cArtPrev').getAttribute('crossorigin')).toBeNull();
-    await expect(page.locator('img.artinv')).toHaveCount(0);
-    expect(await page.evaluate(() => window.__px)).toBe(0);
-    expect(await page.evaluate(() => localStorage.getItem('haushalt.artinv'))).toBeNull();
+    expect(await page.locator('#cArtPrev').getAttribute('crossorigin')).toBe('anonymous');
+    expect(await page.evaluate(() => window.__px)).toBeGreaterThan(0);
+    expect(await page.evaluate(() => localStorage.getItem('haushalt.artinv'))).not.toBeNull();
   });
 
   test('Nicht lesbare Pixel (Bild ohne CORS) → keine Inversion, kein Fehler, Bild bleibt sichtbar, kein Urteil gespeichert', async ({ context, page }) => {
@@ -6304,5 +6329,240 @@ test.describe('Kein Neuladen unter dem Finger: Service-Worker-Wechsel (Live-Befu
     expect(await loads(page)).toBe(n0);
     release();
     await expect.poll(() => loads(page), { timeout: 8000 }).toBeGreaterThan(n0);
+  });
+});
+
+// ---------- v4.117.0: das neue Bild fuer ALLE Haushalte + Gesichts-App-Icon ----------
+// Maintainer: «Bitte auch das Logo ersetzen, das beim Installieren aus Chrome
+// kommt — es ist noch das alte. Wenn es einfacher ist, stellen wir alles auf
+// das neue Design um.» Entscheidung: alle umstellen. html.brand3 steht
+// statisch im <html>-Tag (ab dem ersten Paint, ohne Cache), families.beta
+// gate wieder nichts, icon-*.png tragen das Gesicht (?v=49), Manifest-Farben
+// = Marken-Navy. Kurze Fixture-IDs (Anonymisierungs-Wache).
+test.describe('Neues Bild fuer alle (v4.117.0)', () => {
+  const css = (loc, prop, pseudo) => loc.evaluate((el, a) => getComputedStyle(el, a[1] || null)[a[0]], [prop, pseudo]);
+  const TONES = ['rgb(245, 245, 241)', 'rgb(199, 219, 255)', 'rgb(220, 201, 242)'];
+  const MINT = 'rgb(181, 227, 204)';
+  const ICON = '/chores/icon-192.png?v=49';
+  const NAVY = '#12151F';
+  // Was der Browser beim Parsen VOR dem ersten Abgleich sieht (DOMContentLoaded)
+  const firstPaint = () => {
+    document.addEventListener('DOMContentLoaded', () => {
+      const q = s => document.querySelector(s);
+      const sp = q('#splash img'), hl = q('#headLogo');
+      window.__fp = {
+        cls: document.documentElement.classList.contains('brand3'),
+        splash: sp ? getComputedStyle(sp).content : '', head: hl ? getComputedStyle(hl).content : '',
+        theme: q('meta[name="theme-color"]').content,
+        icon: q('link[rel="icon"]').getAttribute('href'), touch: q('link[rel="apple-touch-icon"]').getAttribute('href'),
+      };
+    });
+  };
+  const famRows = beta => () => [{ family_id: FAM, name: 'Testhaushalt', beta }];
+
+  test('v4.117.0 Quelltext: html.brand3 steht STATISCH im ausgelieferten <html>-Tag (index.html), kein Beta-Cache mehr', async ({ page }) => {
+    const src = await (await page.request.get(`${BASE}/index.html`)).text();
+    expect(src).toMatch(/<html lang="de" class="brand3" data-b3tiles="fill">/);
+    expect(src).not.toContain('window.__brand');
+    expect(src).not.toMatch(/getItem\('haushalt\.brand3:/);
+    expect(src).not.toMatch(/(href|src)=["'][^"']*icon-b3-/);   // alles zeigt auf die Hauptdateien
+  });
+
+  for (const [label, beta] of [['ohne Beta (null)', null], ['mit Beta', true], ['Beta false', false]]) {
+    test(`v4.117.0 ${label}: neues Bild ab dem ersten Paint — Gesicht in Kopf + Splash, neuer Prompt, Kachel in einem der drei Toene`, async ({ context, page }) => {
+      await mockBackend(context, { famRows: famRows(beta) });
+      // ein alter Beta-Cache-Eintrag wird nur noch aufgeraeumt, nie gelesen
+      await context.addInitScript(f => { if (!sessionStorage.getItem('v117c')) { localStorage.setItem('haushalt.brand3:' + f, '1'); sessionStorage.setItem('v117c', '1'); } }, FAM);
+      await context.addInitScript(firstPaint);
+      await page.goto(`${BASE}/f/${FAM}`);
+      const fp = await page.waitForFunction(() => window.__fp).then(h => h.jsonValue());
+      expect(fp.cls).toBe(true);
+      expect(fp.splash).toContain('svg');
+      expect(fp.head).toContain('svg');
+      expect(fp.theme).toBe(NAVY);
+      expect(fp.icon).toBe(ICON);
+      expect(fp.touch).toBe(ICON);
+      const tile = page.locator('.chore[data-cid="c-1"]');
+      await expect(tile).toBeVisible();
+      await page.waitForTimeout(500);                    // nach dem Abgleich: nichts schaltet zurueck
+      await expect(page.locator('html')).toHaveClass(/brand3/);
+      await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', NAVY);
+      await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', ICON);
+      expect(await css(page.locator('#headLogo'), 'content')).toContain('svg');
+      expect(decodeURIComponent(await tile.locator('img.art').getAttribute('src'))).toContain('thick white outline drawing: Müll rausbringen');
+      expect(['w', 'b', 'v']).toContain(await tile.getAttribute('data-tone'));
+      expect(TONES).toContain(await css(tile, 'backgroundColor'));
+      expect(await css(page.locator('#oneOffTile'), 'backgroundColor')).toBe(MINT);
+      expect(await page.evaluate(f => localStorage.getItem('haushalt.brand3:' + f), FAM)).toBeNull();
+      // zweiter Start mit verzoegertem Abgleich: das Bild kommt ohne jeden Cache
+      await context.route(`${SB}/rest/v1/families**`, async r => { await new Promise(res => setTimeout(res, 2000)); await r.fallback(); });
+      await page.reload();
+      const fp2 = await page.waitForFunction(() => window.__fp).then(h => h.jsonValue());
+      expect(fp2.cls).toBe(true);
+      expect(fp2.splash).toContain('svg');
+    });
+  }
+
+  test('v4.117.0 Gesichts-Ausdruecke auch OHNE Beta: ?face=wink auf dem Splash, Toast-Gesicht, Kopf-Blinzeln', async ({ context, page }) => {
+    await mockBackend(context, { famRows: famRows(null) });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await page.goto(`${BASE}/?face=wink`);            // Wurzel + gespeicherte Route
+    await expect(page.locator('#splash')).toHaveCount(0);
+    const L = await page.evaluate(() => window.__face.log.filter(x => x.w === 'splash'));
+    expect(L.map(x => x.n)).toEqual(['wink']);
+    expect(L[0].t1).not.toBeNull();
+    await page.locator('.chip[data-mid="m-chris"]').click();
+    await page.locator('.chore[data-cid="c-1"]').click();
+    await expect(page.locator('#toast')).toContainText('+2 für Timon');
+    await expect(page.locator('#toast .tface svg')).toHaveCount(1);
+    expect(await page.evaluate(() => window.__face.idle())).toBe(true);
+  });
+
+  test('v4.117.0 Einstieg ohne Familie: neues Bild im ersten Paint, Gesicht als Logo, Titel flach, kein altes Blau/Gold', async ({ context, page }) => {
+    await blockExternal(context);
+    await context.addInitScript(firstPaint);
+    await page.goto(`${BASE}/`);
+    await expect(page.locator('#newFam')).toBeVisible();
+    const fp = await page.evaluate(() => window.__fp);
+    expect(fp.cls).toBe(true);
+    expect(fp.splash).toContain('svg');
+    expect(fp.theme).toBe(NAVY);
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    await expect(page.locator('#entryScreen > img')).toHaveAttribute('src', ICON);
+    const h1 = page.locator('#entryScreen h1');
+    expect(await css(h1, 'backgroundImage')).toBe('none');
+    expect(await css(h1, 'color')).toBe('rgb(245, 245, 241)');
+    expect(await css(page.locator('#newFam'), 'backgroundColor')).toBe('rgb(245, 245, 241)');
+    expect(await css(page.locator('body'), 'backgroundColor')).toBe('rgb(18, 21, 31)');
+  });
+
+  test('v4.117.0 Ersteinrichtung: neues Bild, Felder wie die Sheets, «Wer bist du?» mit Personen-Ringen', async ({ context, page }) => {
+    const store = { members: [], chores: [], families: [], log: [] };
+    await context.route(`${SB}/rest/v1/**`, r => {
+      const req = r.request();
+      const table = ['members', 'chores', 'families', 'log', 'retired_families'].find(x => req.url().includes('/' + x)) || 'log';
+      if (table === 'retired_families') return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+      if (req.method() === 'GET') return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(store[table] || []) });
+      return r.fulfill({ status: 201, body: '' });
+    });
+    await blockExternal(context);
+    await page.goto(`${BASE}/f/nf-v117a`);
+    await expect(page.locator('#frName')).toBeVisible();
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    expect(await css(page.locator('#firstRun h1'), 'backgroundImage')).toBe('none');
+    expect(await css(page.locator('#frName'), 'backgroundColor')).toBe('rgb(21, 24, 38)');   // --well
+    expect(await css(page.locator('#frMembers'), 'borderTopWidth')).toBe('2px');
+    await page.locator('#frName').fill('Test WG');
+    await page.locator('#frMembers').fill('Anna\nBen');
+    await page.locator('#frSeed').uncheck();
+    await page.locator('#frGo').click();
+    const who = page.locator('[data-who]').first();
+    await expect(who).toBeVisible();
+    expect(await css(who, 'backgroundColor')).toBe('rgba(0, 0, 0, 0)');
+    expect(await css(who, 'borderTopWidth')).toBe('4px');
+    expect(await css(who, 'color')).toBe('rgb(245, 245, 241)');
+  });
+
+  test('v4.117.0 Einladen-Sheet: Personen als Ring in ihrer Farbe (vorher eckiger Buchstaben-Block ohne eigene Regel)', async ({ context, page }) => {
+    await mockBackend(context, { famRows: famRows(null) });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await page.locator('#openShareTop').click();
+    const dot = page.locator('#shareSheet .shhead .dot').first();
+    await expect(dot).toBeVisible();
+    expect(await css(dot, 'backgroundColor')).toBe('rgba(0, 0, 0, 0)');
+    expect(await css(dot, 'borderTopWidth')).toBe('4px');
+    expect(await css(dot, 'borderTopLeftRadius')).toBe('50%');
+  });
+
+  test('v4.117.0 manifest.json: Gesichts-Icons mit ?v=49, Marken-Navy; Identitaet (id/start_url/scope/name/short_name) unveraendert; jedes Icon 200 PNG = Gesicht', async ({ page }) => {
+    const man = await (await page.request.get(`${BASE}/manifest.json`)).json();
+    expect(man.id).toBe('/chores/');
+    expect(man.start_url).toBe('/chores/index.html');
+    expect(man.scope).toBe('/chores/');
+    expect(man.name).toBe('Fairli');
+    expect(man.short_name).toBe('Fairli');
+    expect(man.background_color).toBe(NAVY);
+    expect(man.theme_color).toBe(NAVY);
+    expect(man.icons.map(i => i.src)).toEqual(['icon-192.png?v=49', 'icon-512.png?v=49', 'icon-512-maskable.png?v=49']);
+    expect(man.icons.map(i => i.purpose)).toEqual(['any', 'any', 'maskable']);
+    const face = { 'icon-192.png': 'icon-b3-192.png', 'icon-512.png': 'icon-b3-512.png', 'icon-512-maskable.png': 'icon-b3-512-maskable.png' };
+    for (const i of man.icons) {
+      const r = await page.request.get(`${BASE}/${i.src}`);
+      expect(r.status(), i.src).toBe(200);
+      expect(r.headers()['content-type'], i.src).toContain('image/png');
+      const b = await r.body();
+      expect(b.subarray(1, 4).toString(), i.src).toBe('PNG');
+      // dieselben Bytes wie das Gesicht (icon-b3-*, seit v4.115.0) — nicht mehr das alte Haus
+      const f = i.src.split('?')[0];
+      const alias = await (await page.request.get(`${BASE}/${face[f]}`)).body();
+      expect(b.equals(alias), f).toBe(true);
+      expect(b.readUInt32BE(16), f).toBe(+i.sizes.split('x')[0]);   // IHDR-Breite = sizes
+    }
+  });
+
+  test('v4.117.0 404.html: dieselben Icon-Links (?v=49) und Marken-Navy statt Weiss', async ({ page }) => {
+    const src = await (await page.request.get(`${BASE}/404.html`)).text();
+    expect(src).toContain(`<link rel="apple-touch-icon" href="${ICON}">`);
+    expect(src).toContain(`<link rel="icon" href="${ICON}">`);
+    expect(src).toContain('<meta name="theme-color" content="#12151F">');
+    expect(src).not.toContain('v=48');
+    expect(src).toContain('background:#12151F');
+  });
+
+  test('v4.117.0 Chrome liest das Manifest: Page.getAppManifest liefert die Gesichts-Icons und das Navy (CDP)', async ({ context, page, browserName }) => {
+    test.skip(browserName !== 'chromium', 'CDP gibt es nur in Chromium (iOS ist ohnehin manifest-frei)');
+    await mockBackend(context, { famRows: famRows(null) });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('link[rel=manifest]')).toHaveAttribute('href', '/chores/manifest.json');
+    const cdp = await context.newCDPSession(page);
+    const r = await cdp.send('Page.getAppManifest');
+    expect(r.errors).toEqual([]);
+    const m = JSON.parse(r.data);
+    expect(m.icons.map(i => i.src)).toEqual(['icon-192.png?v=49', 'icon-512.png?v=49', 'icon-512-maskable.png?v=49']);
+    expect(m.theme_color).toBe(NAVY);
+    expect(m.background_color).toBe(NAVY);
+    expect(m.id).toBe('/chores/');
+    expect(r.url).toContain('/chores/manifest.json');
+  });
+
+  test('@sw v4.117.0 persoenliches Manifest (Service Worker): dieselben Gesichts-Icons, ?v=49 und Navy wie manifest.json', async ({ context, page }) => {
+    await mockBackend(context, { memberRows: () => [
+      { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: false },
+    ] });
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
+    await page.reload();
+    const man = await page.evaluate(async () => {
+      const r = await fetch(document.querySelector('link[rel=manifest]').href);
+      return JSON.parse(await r.text());
+    });
+    const stat = await (await page.request.get(`${BASE}/manifest.json`)).json();
+    expect(man.icons.map(i => new URL(i.src).pathname + new URL(i.src).search))
+      .toEqual(stat.icons.map(i => '/chores/' + i.src));
+    expect(man.icons.map(i => i.purpose)).toEqual(stat.icons.map(i => i.purpose));
+    expect(man.background_color).toBe(stat.background_color);
+    expect(man.theme_color).toBe(stat.theme_color);
+    expect(man.short_name).toBe('Fairli');
+    for (const i of man.icons) expect((await page.request.get(i.src)).status(), i.src).toBe(200);
+  });
+
+  test('v4.117.0 Release-Notes: neuer Abschnitt (DE + EN) oben in updates.html, NEWS_VERSION 4.117.0, Banner fuer Wiederkehrer', async ({ context, page }) => {
+    await mockBackend(context);
+    await page.goto(`${BASE}/updates.html`);
+    await expect(page.locator('#lang-de section').first()).toContainText('Fairli hat ein neues Gesicht');
+    await expect(page.locator('#lang-de section').first()).toContainText('neu gezeichnet');
+    await page.locator('button#en').click();
+    await expect(page.locator('#lang-en section').first()).toContainText('Fairli has a new face');
+    await expect(page.locator('#lang-en section').first()).toContainText('redrawn');
+    await expect(page.locator('h1 img')).toHaveAttribute('src', ICON);
+    const src = await (await page.request.get(`${BASE}/index.html`)).text();
+    expect(src).toMatch(/NEWS_VERSION = '4\.117\.0'/);
+    // Wer v4.116.0 gesehen hat, bekommt den Hinweis genau einmal
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.evaluate(() => localStorage.setItem('haushalt.seenver', '4.116.0'));
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('#newsBar')).toBeVisible();
   });
 });

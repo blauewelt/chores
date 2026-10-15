@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v223';   // v4.116.0 Marken-Test: Einmalig-Kachel in Mint, bewegte Gesichts-Ausdruecke (Zwinkern, Schmunzeln, Blinzeln, Schmollmund)
+const CACHE = 'haushalt-v224';   // v4.117.0 neues Bild fuer ALLE Haushalte + Gesichts-App-Icon (icon-*.png ?v=49)
 // v4.113.1: Kachelkunst hat einen EIGENEN, versionsfesten Cache. Bis v4.113.0
 // lag sie im versionierten CACHE — und den loescht `activate` bei JEDEM Deploy.
 // Folge: nach jedem Deploy forderte jedes Geraet jedes Kachelbild neu an,
@@ -35,10 +35,10 @@ const SHELL = [
   './i18n/zh.json',
   './icon-192.png',
   './icon-512.png',
-  './icon-512-maskable.png',
-  './icon-b3-192.png',        // v4.113.0 Marken-Test: Favicon/Touch-Icon nur fuer Beta-Haushalte
-  './icon-b3-512.png',
-  './icon-b3-512-maskable.png'
+  './icon-512-maskable.png'
+  // v4.117.0: icon-b3-*.png nicht mehr vorab geladen — icon-*.png tragen
+  // jetzt dasselbe Gesicht (gleiche Bytes). Die b3-Dateien bleiben im Repo
+  // als Alias fuer Geraete, die sie noch referenzieren (Aufraeumen: §12).
 ];
 
 self.addEventListener('install', e => {
@@ -110,10 +110,12 @@ self.addEventListener('fetch', e => {
         // Seite zeichnet. Weiss ergab einen grellen Blitz vor der dunklen App
         // (Maintainer-Befund 20.07.2026) — die Farben folgen jetzt der App:
         // background = var(--bg), theme = <meta name="theme-color">.
-        background_color: '#12161F', theme_color: '#141A17',
-        icons: [icon('icon-192.png?v=47', '192x192', 'any'),
-                icon('icon-512.png?v=47', '512x512', 'any'),
-                icon('icon-512-maskable.png?v=47', '512x512', 'maskable')]
+        // v4.117.0: dieselben Werte wie manifest.json (Marken-Navy, Gesichts-
+        // Icons, ?v=49) — vorher hing hier noch ?v=47 (§12, behoben).
+        background_color: '#12151F', theme_color: '#12151F',
+        icons: [icon('icon-192.png?v=49', '192x192', 'any'),
+                icon('icon-512.png?v=49', '512x512', 'any'),
+                icon('icon-512-maskable.png?v=49', '512x512', 'maskable')]
       });
       e.respondWith(new Response(body, { headers: { 'Content-Type': 'application/manifest+json' } }));
       return;

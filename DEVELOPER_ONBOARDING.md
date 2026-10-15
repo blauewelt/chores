@@ -6,7 +6,7 @@ A static single-file app on GitHub Pages, Supabase as the sync backend,
 end-to-end encryption for new and migrated households.
 This document is the shortcut for a new session (human or AI):
 architecture, all design decisions WITH rationale, and the painfully
-learned platform quirks. As of: v4.115.1 (05.10.2026).
+learned platform quirks. As of: v4.117.0 (15.10.2026).
 
 ---
 
@@ -288,9 +288,30 @@ The project's biggest minefield. Core findings (actually experienced):
 5. **All head links absolute** (`/chores/…`) — relative hrefs resolve
    wrongly on deep paths.
 6. Android caches WebAPK icons aggressively: icon change = bump the cache
-   buster `?v=NN` AND users must remove+re-add the homescreen icon.
+   buster `?v=NN` (index.html, 404.html, manifest.json AND the personal
+   manifest in sw.js). **How an installed icon actually updates (researched
+   15.10.2026 for v4.117.0, sources in LOG v4.117.0):**
+   - *Android / WebAPK:* Chrome checks the manifest when the installed app is
+     opened; a changed icon needs a new WebAPK, requested «after all windows of
+     the PWA have been closed, the device is plugged in, and connected to WiFi»
+     (web.dev manifest-updates). Since Chrome 144 a big icon change (≥ 10 %
+     pixels, or a new icon URL) is NOT applied silently: the user confirms it
+     («Review app update», from the app's ⋮ menu) or ignores it. Support
+     answer: open Fairli, close it, charger + Wi-Fi, accept the update when
+     offered; last resort: reinstall from the household link, then remove the
+     old icon. `about://webapks` shows the update state.
+   - *Desktop Chrome:* icons were never updated (web.dev 2024); Chrome 144
+     added the same «Review app update» review in the app window's ⋮ menu.
+     Older Chrome: uninstall + reinstall.
+   - *iOS:* the apple-touch-icon is read only at «Zum Home-Bildschirm»; an
+     existing web clip keeps its icon forever. Add again FROM the personal
+     link in Safari, THEN delete the old icon (the web clip has its own
+     storage — deleting first loses the stored route).
 7. `404.html` carries the same PWA head — otherwise iOS catches empty
    metadata on install.
+
+**Icon colours:** `theme_color`/`background_color` = brand navy `#12151F`
+(since v4.117.0), same in the personal manifest.
 
 **As-is matrix:** iPhone family ✓ fullscreen · iPhone person ✓ fullscreen ·
 Android family ✓ WebAPK · Android person ✓ correct, but browser tab.
@@ -453,28 +474,40 @@ NOT take the goal away — that coupling would have silently removed a
 shipped feature from any household that left the beta. (v4.74.0–v4.76.0
 it gated the address-bar stripping; un-gated in v4.77.0.)
 
-**Since v4.113.0 `families.beta` gates the brand trial «Variante 3»** and
-nothing else. How a household gets it: no UI — set `families.beta = true`
+**Since v4.117.0 the brand3 look («Variante 3») is THE look for every
+household and every page** — `index.html` ships
+`<html lang="de" class="brand3" data-b3tiles="fill">`, so the class exists
+before first paint without any cache, including the entry screen, first-run
+setup, retired-link notice and install instructions. `families.beta` gates
+NOTHING again (still read, 🧪 in Sync-Details) and is free for the next
+experiment. `window.__brand()` and the per-family cache
+`haushalt.brand3:<fam>` are gone (the pull removes a leftover key).
+**Revert switch for one release:** delete `class="brand3" ` from the `<html>`
+tag (line 2) → the old look returns everywhere (its CSS is still there,
+unused); the icons stay the face (restore the v4.116.0 PNGs + bump `?v=` to
+revert those too). Cleanup is in §12. No-family screens have their brand3
+rules at the end of the block (`#entryScreen`, `#firstRun`, with `!important`
+because their styles are inline). The bullets below describe the trial
+(v4.113.0–v4.116.0); read «only under brand3» as «always» now.
+
+**v4.113.0–v4.116.0 `families.beta` gated the brand trial «Variante 3»** and
+nothing else. How a household got it: no UI — `families.beta = true`
 on its row in the Supabase SQL editor (column from
 `20260726010000_beta_goal.sql`; the client only READS it, `families?select=*`).
-Mechanism, keep it this way when the trial grows:
+Mechanism, keep it this way:
 - ONE class `html.brand3`, ONE CSS block at the end of the main stylesheet
   (all rules prefixed `html.brand3`), ONE helper `brandOn()` (reads the
   class). Do not add `if (BETA)` elsewhere; ask `brandOn()`.
-- First paint: the head script reads `haushalt.brand3:<fam>` and sets the
-  class before anything renders; `window.__brand(on, fam)` (defined right
-  after the icon links) sets/clears class + cache + favicon/apple-touch-icon
-  + theme-color and is called from pull() after BETA is read, in BOTH
-  directions. `brandOn()` is in pull's UI fingerprint — otherwise a device
-  that booted with the cached class and learns «beta off» skips the redraw.
-- No family (entry screen) → `__brand(false)`; first-run families have no
-  cache and beta NULL → old look.
+- First paint: (until v4.116.0) the head script read `haushalt.brand3:<fam>`
+  and `window.__brand(on, fam)` toggled class + cache + icons + theme-color
+  from pull(). Since v4.117.0 the class is static markup and the favicon /
+  apple-touch-icon / theme-color are static too (`icon-192.png?v=49`,
+  `#12151F`). `brandOn()` stays in pull's UI fingerprint (harmless constant).
 - Logo = data-URI SVG in `--b3-logo`, swapped onto `#headLogo` and the
   splash `<img>` via CSS `content:` (same nodes → the FLIP still works).
-  manifest.json and `icon-*.png` are untouched on purpose (home-screen icon
-  is global); `icon-b3-*.png` exist only for the favicon/touch-icon swap
-  (since v4.115.0 the two-colour eyes, links `?v=3` — bump it whenever the
-  PNGs change, together with the SW cache).
+  Since v4.117.0 `icon-*.png` ARE the face (same bytes as `icon-b3-*.png`,
+  which stay only as unreferenced aliases), manifest.json lists them with
+  `?v=49`. Changing the face = re-render all PNGs from the SVG (§9).
 - Colours: tokens are redefined on `html.brand3`; the old hard-coded
   colours (#161D19 wells, #252F29 tracks, rgba blues/golds, the gradient
   title) are overridden in the same block. New UI must use the variables,
@@ -603,8 +636,11 @@ language only after loadDict() (race with a 1.5 s cap, German offline);
 until then the boot splash stands. NEVER build in a redraw path
 (maintainer directive 21.07.). Diagnostics: collapsed as <details> in
 the browser, ALWAYS open under IS_STANDALONE (icon-problem context). The
-warning box «Veraltetes Fairli-Icon» is never to be softened. When
-translating new front-door texts: keys ×19.
+warning box «Veraltetes Fairli-Icon» is never to be softened (it stays
+amber under the new look too). When translating new front-door texts: keys
+×19. Since v4.117.0 the container is `#entryScreen` (CSS anchor for the
+brand3 overrides of its inline styles; first-run: `#firstRun`, «Wer bist du?»
+shows people as rings via `--pc`).
 
 ### First-run setup (v4.57.0)
 After the form it asks «Wer bist du?» (chips of the entered names).
@@ -622,10 +658,13 @@ The service worker answers this address with a personalized manifest
 (its own id/start_url per person). **`short_name` MUST stay «Fairli»** —
 Android labels the icon with it; the person's name belongs only in
 `name` (v4.56.1, live finding). **Colours MUST follow the app colours**
-(`background_color` = var(--bg) #12161F, `theme_color` = #141A17) —
+(since v4.117.0 both = brand navy `#12151F`, the brand3 `--bg`; before:
+`background_color` #12161F, `theme_color` #141A17) —
 otherwise a white system splash screen flashes up before the dark app
 (v4.56.2, live finding); without the SW the static host serves the
-normal file — that is installable too. iOS stays manifest-free
+normal file — that is installable too. The personal manifest in `sw.js` must
+carry the SAME icons, `?v=` and colours as manifest.json (a `@sw` test
+compares them since v4.117.0 — it had drifted to `?v=47`). iOS stays manifest-free
 (parse-time trap, v4.20.0). `loadRoute()` prefers the LAST used route,
 so that a start at the generic start_url does not land under the wrong
 identity. SW-dependent tests: project `chromium-sw`, mark titles with
@@ -895,18 +934,22 @@ CSS turns it the other way round — white-on-black art gets `invert(1)` first
 and `mix-blend-mode:multiply`, `.artinv` art gets no invert. History rows stay
 dark with white screen-blended art.
 
-**Brand-trial icons (v4.114.0, eyes since v4.115.0, links `?v=3`):** `icon-b3-192/512/512-maskable.png` are
+**Brand-trial icons (v4.114.0, eyes since v4.115.0; unreferenced aliases since v4.117.0):** `icon-b3-192/512/512-maskable.png` are
 rendered in Chromium from the SAME SVG as `--b3-logo` (full-bleed `#1B1D31`,
 no rounded corners — the OS masks; maskable = the face group scaled 0.658
 about the centre, inside the 80 % safe circle). Tile art stays white line art
 under the gradient — the colour lives in the face and the accents only.
 
-**App icon (since v4.36.3):** four rounded color tiles on a dark
-background — like the chore board. icon-192/512/512-maskable (maskable:
-subject inside the safe zone). Changing the icon: replace all three
-PNGs + cache buster `?v=NN` in index.html, 404.html AND manifest.json +
-SW bump. iOS/Android only pick up new icons after removing and re-adding
-the home screen icon (launcher cache).
+**App icon (since v4.117.0): the face** — icon-192/512/512-maskable are the
+same bytes as `icon-b3-*` (rendered in Chromium from the `--b3-logo` SVG;
+maskable = face scaled 0.658 about the centre, furthest pixel at 31 % of the
+size from the centre vs. the 40 % safe circle — check it under circle AND
+squircle masks). v4.36.3–v4.116.0 it was four rounded colour tiles under a
+roof. Changing the icon: replace all three PNGs + cache buster `?v=NN` in
+index.html, 404.html, manifest.json AND the personal manifest in sw.js + SW
+bump (current `?v=49`). Installed icons: Android (Chrome ≥ 144) asks the
+user to confirm a big icon change, desktop Chrome ≥ 144 offers «Review app
+update», iOS needs add-again-then-delete — details §6.6.
 
 **Known disclosure with encrypted families:** tile names go to
 Pollinations as image prompts (documented; a privacy toggle is an open
@@ -1231,6 +1274,29 @@ the plausible-sounding fix (DNS flag, UI automation) did not.
 
 ## 12. Known open items / deferred
 
+- **FIRST-VISIT ART PACING — still missing (top art item, v4.117.0).** A page
+  without a controlling service worker (fresh install, private mode, cleared
+  data) starts every tile `<img>` at render: ~30 tiles = ~30 simultaneous
+  Pollinations generations on the shared `pk_` key (a burst of 10 already
+  draws a 429). Only the RETRIES are serialized (one page queue). The intent
+  `wip-art-firstvisit` (03.10.) never shipped. Fix idea: render art `src` lazily
+  through the same page queue when `!navigator.serviceWorker.controller` —
+  changes rendering, so it needs its own tests and a visual check. Made more
+  pressing by v4.117.0: every non-beta household's art regenerates once.
+- **brand3 cleanup (after v4.117.0 has proven itself for one release):** the
+  old-look rules (everything the `html.brand3` block overrides), the
+  `html.brand3` prefix indirection (fold the block into the base rules),
+  `brandOn()` checks (always true), `ART_STYLE` (old prompt), the old-look
+  branches of `artTag()`/`artBind()`, `data-b3tiles="stroke"` if unused,
+  `icon-b3-*.png` (unreferenced aliases), the `#entryScreen`/`#firstRun`
+  `!important` overrides (move the values into the inline styles), and the
+  tests that still exercise the class being absent. Until then the one-line
+  revert (§8) must keep working.
+- **Installed-icon check on real devices (v4.117.0):** confirm on a Pixel
+  (Chrome ≥ 144) that the WebAPK offers the icon update, on desktop Chrome
+  that «Review app update» appears, and that the iOS add-again-then-delete
+  path keeps the household.
+
 - **Chore edit sheet vs. deletion elsewhere (found 05.10.2026, v4.115.1
   audit).** `submitChoreForm()` re-looks the chore up by id (no orphan), but if
   another device deleted it while the sheet was open, `c` is undefined and the
@@ -1242,15 +1308,17 @@ the plausible-sounding fix (DNS flag, UI automation) did not.
   update bar appears in the flow and pushes the board down one line; a
   boot-window SW reload replays the splash once. A keyed/diffing tile render
   would remove the first.
-- **`sw.js` personal manifest still points at icons `?v=47`** while the static
-  manifest and index.html use `?v=48` (pre-existing; same PNGs, only caching).
-- **Sandbox note (05.10.2026):** the preinstalled browsers are Chromium 1194
-  only — WebKit is not installed and must not be installed by sessions; run
-  with `@playwright/test@1.56.1 --no-save` to match. Four `@sw` art tests
-  (503 not cached, two throttling tests, polarity via SW) fail there on
-  UNCHANGED code too (the SW's cross-origin art fetches are not routed in that
-  Playwright/Chromium pair); CI (Playwright 1.61, both engines) is the
-  reference for them and for WebKit.
+- ~~`sw.js` personal manifest still points at icons `?v=47`~~ fixed in
+  v4.117.0 (same `?v=49`, icons and colours as manifest.json, test-guarded).
+- **Sandbox note (updated 15.10.2026):** `/opt/pw-browsers` now holds
+  `chromium-1228`, `chromium_headless_shell-1228` and `webkit-2311` — the
+  builds Playwright 1.61.1 (package-lock) expects — next to the old
+  `chromium-1194`. Plain `npm ci` + the repo's Playwright runs ALL THREE
+  projects locally (do not `playwright install`, do not pin 1.56.1 any more).
+  On v4.116.0 the full suite was 447 passed / 2 skipped / 1 flaky (WebKit face
+  test) here, including the four `@sw` art tests that used to fail in the old
+  1.56.1/1194 pairing. Default workers = 1 on a 2-core box: pass
+  `--workers=3` (full run ≈ 9–10 min).
 
 - **Store apps, notifications, voice logging — DESIGN DRAFT 03.10.2026,
   awaiting maintainer decisions:** `docs/NATIVE_APPS.md`. Read it before

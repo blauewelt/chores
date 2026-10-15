@@ -1,3 +1,236 @@
+## 2026-10-15 — v4.117.0 (SW haushalt-v224): the new design for EVERY household — and the face becomes the installed app icon
+
+Maintainer: «Please also replace the logo that gets installed when installing
+from Chrome — it is still the old one. If it makes things simpler, we can
+switch everything over to the new design.» Decision: switch everyone over.
+Until now the brand trial «Variante 3» (v4.113.0–v4.116.0) ran only for
+households with `families.beta`; the installed home-screen icon stayed the old
+house-and-tiles picture for everyone.
+
+### What changes for a household that never had the beta
+
+Everything the trial built, at once: the navy design (selection = inversion,
+person colours as rings), the face logo in header, splash and empty states,
+chore tiles in three colours (white / light blue / light violet, fixed per
+chore id) with dark line art, «Einmalig» in mint with a dashed outline, the
+animated face (start expression, wink/smirk in the logging toast, rare idle
+blink, the frown only for whoever is last this week), the line-art tile prompt
+with the polarity check — and the face as the app icon (favicon, iOS touch
+icon, the Android/desktop install icon).
+
+### How (one static class)
+
+- `index.html` now ships `<html lang="de" class="brand3" data-b3tiles="fill">`.
+  The class is in the markup, so it is there before first paint on every page
+  load — family or not, cached or not, first visit or not. The head script no
+  longer reads the per-family cache `haushalt.brand3:<fam>`; `window.__brand()`
+  is gone (nothing can switch the class off any more). The pull removes a
+  leftover `haushalt.brand3:<fam>` key once (beta devices).
+- `families.beta` gates NOTHING again (as between v4.77.0 and v4.112.0). It is
+  still read (`BETA`, 🧪 in Sync-Details); comment updated.
+- Every brand3 rule, `brandOn()`, the tile tones, the art prompt and the face
+  engine are unchanged — they now simply always apply. Art caching, pacing and
+  the polarity logic are untouched.
+- **One-line revert (for one release):** in `index.html`, line 2, delete
+  `class="brand3" ` from the `<html>` tag. That alone brings back the old look
+  everywhere (old colours, old tiles, old art prompt, no face animation); the
+  old-look CSS is still in the stylesheet, unused. It does NOT revert the icons
+  (`icon-*.png` are the face now) — for that, also restore the three PNGs from
+  v4.116.0 and bump `?v=` again. The cleanup (delete the old-look CSS and the
+  `html.brand3` prefix indirection) is an open item in DEVELOPER_ONBOARDING §12.
+
+### Screens that were never designed in brand3 (checked under the new look)
+
+The trial deliberately kept the no-family screens on the old look; all of them
+were rendered in both device projects and looked at:
+- **Entry screen** (`#entryScreen`, new id as a CSS anchor): face logo
+  (`icon-192.png?v=49`), title flat white instead of the white→blue gradient,
+  join field and «Beitreten» like the sheet fields/ghost buttons. The amber
+  «⚠︎ Veraltetes Fairli-Icon» box stays amber on purpose — it is a warning, and
+  §8 says never to soften it.
+- **First-run setup** (`#firstRun`): title flat, inputs/textarea as sheet wells
+  with 2 px borders, checkbox in ink, blue focus ring (the textarea had
+  Chrome's default ring); «Wer bist du?» was laid out top-left and used solid
+  person-colour pills — now centred, and the people are RINGS in their colour
+  (`--pc` added to the inline style, so the old look is unchanged).
+- **Invite sheet:** the person markers (`.shhead .dot`) never had a CSS rule —
+  in the old look AND in the trial they were square letter blocks filled with
+  the person colour. Now a ring in the person colour, like everywhere else.
+- Onboarding «Zugriff sichern», the install instructions (iOS and Android),
+  the retired-link notice and «Link ungültig» already used classes covered by
+  the brand3 block or plain tokens — fine as they are.
+- **404.html** only redirects, but it painted WHITE (`background:#fff`,
+  `theme-color #FFFFFF`) for a moment before the dark app — now brand navy.
+  Its icon links moved to `?v=49`.
+- **updates.html** restyled (cheap: its own token block) — brand navy, white
+  ink, inversion for the language toggle, face logo instead of «Fairli.» with
+  a blue dot, links in the light-blue tile tint. **privacy.html**: same tokens,
+  face logo above the title, headings white instead of blue. Text unchanged.
+
+### The installed app icon (the original request)
+
+- `icon-192.png`, `icon-512.png`, `icon-512-maskable.png` now carry the face —
+  byte-identical to `icon-b3-*.png`. Re-rendered from the `--b3-logo` SVG in
+  Chromium as a check: 192 and 512 came out pixel-identical to the b3 files;
+  the maskable one keeps the v4.113.0 geometry (face group scaled 0.658 about
+  the centre; furthest face pixel at 31 % of the size from the centre, the
+  safe circle is 40 %) — looked at under circle and squircle masks.
+- Cache-buster `?v=48 → ?v=49` in index.html, 404.html, manifest.json AND the
+  personal manifest that `sw.js` builds for personal links (it still had
+  `?v=47`, the §12 item — fixed). `theme_color` / `background_color` in both
+  manifests and the theme-color metas = brand navy `#12151F` (`--bg` of the
+  brand3 block; was `#141A17` / `#12161F`).
+- `id` (`/chores/`), `start_url`, `scope`, `name`, `short_name` unchanged —
+  installed apps stay the same app, nothing is duplicated.
+- `icon-b3-*.png`: kept in the repo as aliases (same bytes) so nothing that
+  still points at them breaks (beta devices' cached pages, iOS web clips made
+  from a beta household); nothing in the app references them any more and
+  they are no longer precached. Removal = §12 cleanup.
+- The Play Store/TWA project (`twa/`) is untouched; its icon is baked into the
+  store build (see «Play Store» below).
+
+### Already installed apps — how the new icon arrives (researched 15.10.2026)
+
+- **Android, Chrome (WebAPK).** Chrome compares the installed app with the
+  manifest when the app is opened; an icon change needs a NEW WebAPK, which
+  Chrome requests «after all windows of the PWA have been closed, the device is
+  plugged in, and connected to WiFi» (web.dev, «How Chrome handles updates to
+  the web app manifest», last updated 19.09.2024). Since Chrome 144 (blog
+  21.01.2026) name and icon changes are no longer forced: icons that differ by
+  less than 10 % pixel-by-pixel are applied silently, larger changes (ours) need
+  the user's confirmation — «Changing the icon URL guarantees that the user will
+  see an update dialog to change the icon» — offered from the app's ⋮ menu
+  («Review app update»), and the user may also ignore it. Practical steps for
+  a family: open Fairli once, close it, leave the phone on the charger on Wi-Fi;
+  if Chrome offers an app update (dialog or ⋮ → «Review app update»), accept.
+  If the old icon is still there after a few days: ⋮ in Chrome → install
+  Fairli again from the household link, then remove the old icon. (Uninstalling
+  may also remove the site's stored data, depending on the Chrome version —
+  keep the personal link at hand first; not verified on a device.) Debug view: `about://webapks` shows the last update check.
+- **Desktop Chrome.** web.dev (2024): «Chrome on desktop doesn't yet support
+  changes to icons.» The Chrome 144 post shows a desktop dialog that reviews
+  icon and name updates from the ⋮ menu («Review app update»). So: Chrome ≥ 144
+  → the app window's ⋮ menu → «Review app update» → accept; older Chrome →
+  uninstall and reinstall from the household link. (Not verified on a real
+  desktop install — listed as an open check.)
+- **iOS / iPadOS (Safari web clip).** Safari takes the `apple-touch-icon` when
+  «Zum Home-Bildschirm» is done; an existing icon never changes (Apple's web
+  clip docs describe the icon only for adding; our own Tier-2 «stale icon»
+  findings). Steps: open your PERSONAL link (Einladen sheet) in Safari →
+  Teilen → «Zum Home-Bildschirm» → then delete the OLD icon. Order matters: on
+  iOS the home-screen app has its own storage, deleting it first loses the
+  stored route (the entry screen + QR are the rescue, but avoid needing them).
+- The release note in updates.html says this in two sentences.
+
+### Tile art regeneration wave (all households)
+
+- Non-beta households still have art from the OLD prompt; the art URL contains
+  the prompt, so after this deploy every tile of every non-beta household
+  requests a new image, all through the one shared `pk_` key.
+- **Paced where a service worker controls the page (every existing device):**
+  the first page after the deploy is still the OLD shell (cache-first, old
+  prompt, cached art — no generation); the new worker takes over, and every art
+  request of the new page goes through the v4.113.1 SW queue: ≤ 2 in flight,
+  ≥ 1.2 s apart, global cool-down on 429/5xx with Retry-After, 3 attempts per
+  URL, then art-less until the next app open. A 30-tile board fills in about
+  1.5 min. Pacing is per DEVICE: many devices opening at the same time still add
+  up on the shared key (whether Pollinations limits per key or per IP is not
+  known).
+- **NOT paced: first visits without a service worker (fresh install, private
+  mode, cleared data).** The first-visit pacing work (intent `wip-art-firstvisit`,
+  claimed 03.10.) did NOT ship. On such a page every `<img>` starts at render
+  (Chrome's lazy-load margin makes nearly the whole board «near»), so one
+  device with ~30 tiles fires ~30 generations at once. Measured 02.10.: a burst
+  of 10 already draws a 429 with Retry-After 2 s; v4.110.0 saw 15–40 % failures
+  in bursts. Expected: roughly the first 4–10 succeed, the rest get 429/503,
+  then the page's single retry queue (≤ 2 rounds per URL, growing global
+  backoff) recovers most of them over the next ~1–2 minutes; a few tiles may
+  stay art-less until the next open (by then the SW is in control and paces).
+  Not fixed in this release (not tiny: deferring `src` changes rendering and
+  many tests) — still the top open art item (§12).
+- **No old-image bridge.** Showing the old-prompt image until the new one is
+  ready was considered and left out: the old art is coloured illustration on
+  dark, the new tiles multiply-blend inverted line art on pastel — the old
+  picture would look broken on the new tile, and it needs a second URL per
+  tile. Tiles show the skeleton shimmer until their new art arrives.
+
+### Release note (users)
+
+updates.html gets a new top section in DE + EN («✨ Fairli hat ein neues
+Gesicht» / «Fairli has a new face»): new look, new logo that winks, tile
+pictures are being redrawn and may take a few minutes, how the app icon
+switches (Android by itself, iPhone: add again from Safari, then delete the
+old one). The old recap stays below under «Davor · v4.38 – v4.74»; header
+reads «v4.38 – v4.117». `NEWS_VERSION` 4.74.0 → 4.117.0 in the same commit,
+so the «Fairli hat Neues — ansehen» banner fires once for returning devices.
+No new UI strings in the app → no i18n keys.
+
+### Tests
+
+- New describe «Neues Bild fuer alle (v4.117.0)», all seen RED against
+  v4.116.0 first (24 red, 1 skipped by design on WebKit): static class in the
+  served index.html and no cache read / `__brand`; for `beta` null, true and
+  false: brand class, face in splash + header, navy theme-color and the main
+  icon links at DOMContentLoaded, after the sync still on, new art prompt,
+  tile in one of the three tones, «Einmalig» mint, stale cache key cleaned,
+  second boot with a 2 s delayed sync still on; face expressions without beta
+  (`?face=wink`, toast face, idle blink); entry screen (class at first paint,
+  face logo, flat title, no blue/gold); first-run setup (wells, «Wer bist du?»
+  rings); invite-sheet person rings; manifest.json (icons `?v=49`, navy, id/start_url/scope/name/short_name
+  unchanged, each icon 200 + PNG + IHDR size + same bytes as the face); 404.html
+  links/colour; CDP `Page.getAppManifest` (chromium); `@sw` personal manifest =
+  static manifest icons/colours; release notes DE/EN + `NEWS_VERSION` + banner.
+- Changed assertions (the trial's «flag off = old look» premise expired —
+  rewritten to state the new truth, not deleted; no test removed):
+  - «Installierbarkeit (v4.56.0): auch ohne Service Worker…» — background_color #12161F → #12151F
+  - «@sw Installierbarkeit … persönliche Manifest (v4.56.0)» — background_color #12161F → #12151F, theme_color #141A17 → #12151F
+  - «Ohne Beta: altes Logo, alte Farben, alter Kachel-Prompt…» (v4.113.0) → renamed «Ohne Beta (seit v4.117.0): dasselbe neue Bild…»: class not → has brand3; --accent #84B2FF → #F5F5F1; header logo content no-svg → svg; prompt 'minimalist flat vector' → 'thick white outline drawing'; favicon /icon-192/ → exactly /chores/icon-192.png?v=49; theme-color #141A17 → #12151F
+  - «Mit Beta: Klasse, Logo im Kopf…» (v4.113.0): favicon + touch icon /icon-b3-192/ → /chores/icon-192.png?v=49; cache haushalt.brand3:<fam> '1' → null; served-file loop extended to the three main icons (b3 aliases still checked)
+  - same test: «manifest.json bleibt global unveraendert» guard kept (no icon-b3 in it) plus icons[0].src = icon-192.png?v=49
+  - «Beta wieder aus: der naechste Abgleich stellt das alte Bild her…» (v4.113.0) → «Beta wieder aus (seit v4.117.0): nichts schaltet zurueck»: class not → has brand3; prompt 'minimalist flat vector' → 'thick white outline drawing'; --accent #84B2FF → #F5F5F1; theme-color #141A17 → #12151F (cache stays null)
+  - «Einstieg ohne Familie bleibt beim alten Bild, auch mit Cache-Eintrag» (v4.113.0) → «Einstieg ohne Familie (seit v4.117.0): neues Bild»: class not → has brand3
+  - «v4.114.0 Mit Beta: Logo mit Verlauf…»: favicon + touch icon /chores/icon-b3-192.png?v=3 → /chores/icon-192.png?v=49
+  - «v4.114.0 Ohne Beta: altes Logo, alter Titelverlauf…» → «v4.114.0 Ohne Beta (seit v4.117.0): Gesicht…»: class not → has brand3; #headLogo src ?v=48 → ?v=49; logo content without → with linearGradient; title background-image old gradient → none; FAB background rgb(132,178,255) → rgb(245,245,241); --b3-grad '' → contains linear-gradient; favicon ?v=48 → ?v=49
+  - «v4.114.1 Ohne Beta: kein Augenlid…»: class not → has brand3 (the remaining no-::after-lid assertions unchanged — true since v4.116.0)
+  - «v4.115.0 Ohne Beta: keine Kachel-Toene…» → «(seit v4.117.0): dieselben Kachel-Toene»: class not → has brand3; data-tone count 0 → every tile, = toneOf(id); art blend normal → multiply
+  - «v4.116.0 Einmalig ohne Beta: unveraendert…» → «(seit v4.117.0): Mint…»: class not → has brand3; background rgb(26,34,48) → mint rgb(181,227,204); border colour rgb(42,52,71) → dark rgba(18,21,31,.5); title colour rgb(145,161,184) → ink rgb(18,21,31) (dashed + no data-tone unchanged)
+  - «v4.116.0 Ohne Beta: kein Gesicht, kein Ausdruck, kein Toast-Gesicht» → «(seit v4.117.0): Gesicht, Start-Ausdruck und Toast-Gesicht wie mit Beta»: class not → has brand3; splash overlay boxes 0 → > 0; __face('wink') falsy → splash log ['wink']; toast .tface count 0 → 1
+  - Polarity «Ohne Beta: kein crossorigin, keine Polaritaets-Klasse, KEINE Canvas-Arbeit, kein Speicher-Eintrag» (v4.113.1) → «Ohne Beta (seit v4.117.0): crossorigin, Polaritaets-Urteil und Speicher-Eintrag wie mit Beta»: class not → has brand3; dark-on-white tile .artinv count 0 → has .artinv; crossorigin null → 'anonymous' (tile + edit preview); filter 'none' → no invert; getImageData calls 0 → > 0; haushalt.artinv null → set; goto waits for domcontentloaded
+  - «v4.115.0 Kunst auf hellen Kacheln…»: goto waitUntil 'domcontentloaded' (WebKit holds 'load' for the gated CORS art now that brand3 is on from the first render; no assertion changed)
+  - Polarity «Dunkel-auf-Weiss wird invertiert…»: goto waitUntil 'domcontentloaded' (same reason; no assertion changed)
+  - «Eintrag-bearbeiten zeigt DIESELBE Kachel-Vorschau…» (v4.100.0): preview img transform none/identity → equals the board tile art transform (scale 1.35 of the new look)
+  - «Kachelbilder im Verlauf: Standard AUS…» (v4.92.0): compact row height < 90 → < 100 (2 px border of the new look)
+  - «Verlauf-Anschnitt v4.106.0…»: image height = row OUTER height → = row clientHeight (inside the 2 px border)«Verlauf-Anschnitt v4.106.0…» (6): scrim gradients >= 2 (cream, multi-layer) → >= 1 and it is the navy left scrim rgba(27,29,49,.75) of the new look
+- Test-only sync waits (no assertion changed): «v4.116.0 Einmalig unter
+  brand3» now waits for the synced tile before measuring — with the class in
+  the FIRST render the one-off tile exists before the pull, and the pull's grid
+  rebuild could swap it mid-measurement (seen once as flaky in the full run);
+  «v4.115.0 Kunst auf hellen Kacheln» and the polarity tests navigate with
+  `waitUntil: 'domcontentloaded'` (WebKit holds `load` for the gated CORS art).
+- Negative control: with the revert line applied (class removed) 16 of the
+  new chromium tests go red; the manifest/404/release-note ones do not depend
+  on the class by design.
+- Known flake, NOT new: «@sw Drosselung: hoechstens PAR …» measures the gap
+  between the one-off tile's art start and the first probe tile at the route;
+  under load the IPC jitter makes it 230–260 ms against a 240 ms floor. With
+  `--repeat-each=6` it failed 3/6 on UNCHANGED v4.116.0 and 1/6 on v4.117.0 —
+  the SW pacing itself is unchanged.
+- APP_VERSION 4.117.0, SW cache haushalt-v224 (art cache haushalt-art-1 kept,
+  so the old-prompt art stays cached for the revert case).
+
+### Play Store (not done, report only)
+
+`twa/` is untouched. `twa/twa-manifest.json` still says `themeColor`
+`#141A17`, `backgroundColor`/`navigationColor` `#12161F` and points
+`iconUrl`/`maskableIconUrl` at `icon-512*.png?v=48` — GitHub Pages ignores the
+query, so those URLs now return the FACE. A store release would need:
+`bubblewrap update` (it re-downloads the icons from those URLs and regenerates
+the launcher/adaptive icons — check the adaptive foreground against the
+maskable safe zone), colours set to `#12151F`, `appVersionCode` +1, a new
+`store_icon.png` and store listing graphics/screenshots in the new look, and a
+build signed with the v2 upload key. Installed store copies keep the old icon
+until that update is installed from the store.
+
 ## 2026-10-05 — v4.116.0 (SW haushalt-v223, BETA only): the «Einmalig» tile joins the coloured tiles, and the face gets real, animated expressions
 
 Everything below is under `html.brand3` only (families.beta). Flag-off board,

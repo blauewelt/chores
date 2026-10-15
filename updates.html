@@ -4,13 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fairli — Was ist neu</title>
-<meta name="description" content="Fairli — Neuerungen v4.38 bis v4.74">
+<meta name="description" content="Fairli — Neuerungen v4.38 bis v4.117">
 <meta property="og:title" content="Fairli — Was ist neu">
-<meta property="og:description" content="Der grosse Feinschliff: neues Onboarding, klareres Einladen, geschmeidige Bedienung, verlässliches Speichern — und ein frischer Familien-Link.">
+<meta property="og:description" content="Fairli hat ein neues Gesicht: neuer Look, neues Logo, neu gezeichnete Kachel-Bilder.">
 <style>
+  /* v4.117.0: die Farben des neuen Bildes (html.brand3 in index.html) */
   :root{
-    --bg:#12161F; --card:#1A2230; --ink:#EAF1EB; --muted:#91A1B8;
-    --line:#2A3447; --accent:#84B2FF;
+    --bg:#12151F; --card:#1B1D31; --ink:#F5F5F1; --muted:#A3A6BC;
+    --line:#31354F; --accent:#F5F5F1; --link:#C7DBFF;
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
@@ -20,15 +21,15 @@
   .wrap{max-width:680px; margin:0 auto}
   header{padding:40px 0 8px; position:sticky; top:0; background:linear-gradient(var(--bg) 78%,transparent);
     display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
-  h1{font-size:30px; letter-spacing:-.02em; margin:0}
-  h1 .dot{color:var(--accent)}
+  h1{font-size:30px; letter-spacing:-.03em; margin:0; display:flex; align-items:center; gap:12px}
+  h1 img{width:40px; height:40px; border-radius:24%}
   .sub{color:var(--muted); font-size:14px; margin:2px 0 0}
-  .lang{display:flex; gap:2px; background:var(--card); border:1px solid var(--line);
+  .lang{display:flex; gap:2px; background:var(--card); border:2px solid var(--line);
     border-radius:999px; padding:3px}
   .lang button{border:none; background:none; color:var(--muted); font:inherit; font-size:14px;
     font-weight:700; padding:6px 14px; border-radius:999px; cursor:pointer}
-  .lang button.on{background:var(--accent); color:#0C1220}
-  section{background:var(--card); border:1px solid var(--line); border-radius:16px;
+  .lang button.on{background:var(--accent); color:var(--bg)}
+  section{background:var(--card); border:2px solid var(--line); border-radius:22px;
     padding:4px 22px 8px; margin:18px 0}
   h2{font-size:20px; margin:20px 0 4px}
   ul{padding-left:20px; margin:10px 0}
@@ -36,7 +37,9 @@
   .intro{color:var(--ink); font-size:16px}
   .hood{background:none; border:1px dashed var(--line)}
   .foot{color:var(--muted); font-size:14px; text-align:center; margin:30px 0 0; font-style:italic}
-  a{color:var(--accent)}
+  a{color:var(--link)}
+  section.fresh{border-color:var(--ink)}
+  .era{color:var(--muted); font-size:14px; margin:34px 0 -4px; text-align:center}
   [hidden]{display:none !important}
 </style>
 </head>
@@ -44,8 +47,8 @@
 <div class="wrap">
   <header>
     <div>
-      <h1>Fairli<span class="dot">.</span></h1>
-      <p class="sub" data-de="Was ist neu · v4.38 – v4.74" data-en="What's New · v4.38 – v4.74">Was ist neu · v4.38 – v4.74</p>
+      <h1><img src="/chores/icon-192.png?v=49" alt="">Fairli</h1>
+      <p class="sub" data-de="Was ist neu · v4.38 – v4.117" data-en="What's New · v4.38 – v4.117">Was ist neu · v4.38 – v4.117</p>
     </div>
     <div class="lang" role="group" aria-label="Sprache / Language">
       <button id="de" class="on" onclick="setLang('de')">Deutsch</button>
@@ -55,6 +58,16 @@
 
   <!-- ============ DEUTSCH ============ -->
   <div id="lang-de">
+    <section class="fresh">
+      <h2>✨ Fairli hat ein neues Gesicht (v4.117)</h2>
+      <ul>
+        <li><b>Neuer Look für alle:</b> ruhiges Dunkelblau, die Kacheln in Weiss, Hellblau und Hellviolett — «Einmalig» in Mint.</li>
+        <li><b>Neues Logo:</b> ein Gesicht. Es zwinkert ab und zu, wenn ihr etwas eintragt.</li>
+        <li><b>Die Kachel-Bilder werden neu gezeichnet</b>, im neuen Strich-Stil. Das passiert beim ersten Öffnen nach und nach und kann <b>ein paar Minuten</b> dauern — bis dahin bleiben einzelne Kacheln einfach ohne Bild.</li>
+        <li><b>Das App-Symbol</b> auf dem Home-Bildschirm wechselt auf Android von selbst, manchmal mit einer kurzen Rückfrage von Chrome. Auf dem iPhone bleibt das alte Symbol, bis ihr Fairli neu hinzufügt: euren persönlichen Link (unter «Einladen») in Safari öffnen, «Zum Home-Bildschirm» — und <b>erst danach</b> das alte Symbol löschen.</li>
+      </ul>
+    </section>
+    <p class="era">Davor · v4.38 – v4.74</p>
     <p class="intro">Zwei Tage Feinschliff am Stück: Fairli begrüsst Neue jetzt richtig, erklärt seine Links, fühlt sich flüssiger an — und speichert felsenfest.</p>
 
     <section>
@@ -173,6 +186,16 @@
 
   <!-- ============ ENGLISH ============ -->
   <div id="lang-en" hidden>
+    <section class="fresh">
+      <h2>✨ Fairli has a new face (v4.117)</h2>
+      <ul>
+        <li><b>A new look for everyone:</b> calm dark blue, tiles in white, light blue and light violet — "One-off" in mint.</li>
+        <li><b>A new logo:</b> a face. Now and then it winks when you log something.</li>
+        <li><b>The tile pictures are being redrawn</b> in the new line style. That happens bit by bit the first time you open the app and can take <b>a few minutes</b> — until then some tiles simply have no picture.</li>
+        <li><b>The app icon</b> on your home screen switches by itself on Android, sometimes after a quick question from Chrome. On iPhone the old icon stays until you add Fairli again: open your personal link (under "Invite") in Safari, "Add to Home Screen" — and <b>only then</b> delete the old icon.</li>
+      </ul>
+    </section>
+    <p class="era">Before that · v4.38 – v4.74</p>
     <p class="intro">Two straight days of polish: Fairli now welcomes newcomers properly, explains its links, feels smoother — and saves rock-solidly.</p>
 
     <section>
