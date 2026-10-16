@@ -1,3 +1,126 @@
+## 2026-10-16 — v4.118.0 (SW haushalt-v225): «Aussehen» — the classic look is back as a per-device choice, and the settings get a collapsed «Erweitert» section
+
+Maintainer: «Can you add an option to activate the old original look (in
+settings?) — maybe settings needs a collapsed advanced section. This one
+belongs in the basic settings.»
+
+### Aussehen: Neu / Klassisch (per device)
+
+- **Per device, not per household** (planning decision): the look is a
+  personal preference like «Kachelbilder im Verlauf». `localStorage
+  ['haushalt.look'] = 'classic'`, absent = new (the default for every device,
+  as since v4.117.0). Nothing is synced, `families` is untouched.
+- **Setting:** basic row «🎨 Aussehen» (value «Neu»/«Klassisch») opens a list
+  sheet like «Kachel-Sortierung» (✓ on the current option) with the help line
+  «Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das
+  neue.» Choosing applies immediately, without a reload, and survives restarts.
+- **Classic = the v4.116.0 non-beta look, completely** — the old CSS (still in
+  place since v4.117.0), title gradient, blue accent, old tiles, old tile-art
+  prompt (`… minimalist flat vector illustration … dark moody background …`),
+  no face, no wink, no tones, no polarity/crossorigin. Screenshots of board,
+  history, points and splash in classic vs a v4.116.0 non-beta build, same
+  fixture and art: **0 differing pixels on Pixel and on iPhone**.
+- **Old logo restored from git:** the v4.116.0 `icon-192.png` blob (the
+  house with four tiles, overwritten in v4.117.0) is back as
+  `icon-classic-192.png` (byte-identical to the v4.116.0 file, `?v=1`,
+  precached). Nothing in the app needs a 512 px version, so none was added.
+- **First paint:** `class="brand3"` stays static (default). The FIRST head
+  script removes it when the key says classic — before routing, before first
+  paint, entry screen included. `window.__look(classic)`, right after the icon
+  links, swaps favicon + apple-touch-icon (`icon-classic-192.png`) and
+  theme-color (`#141A17` / `#12151F`) at parse time, and does the same at
+  runtime. The splash and header `<img>` now carry the classic icon as `src`
+  and brand3 shows the face via CSS `content:` (as since v4.113.0) — so the
+  splash shows the right logo from its first frame in both looks, no script
+  needed. The entry-screen logo follows `brandOn()`.
+- **Installed icon caveat:** `manifest.json` is global and stays the face for
+  everyone (icons `?v=49`, navy). A device in «Klassisch» shows the old logo
+  in the app, as favicon and — if «Zum Home-Bildschirm» is done on iOS from
+  that device — as the iOS web-clip icon (iOS takes the apple-touch-icon);
+  Android/desktop installs always get the face. updates.html, privacy.html and
+  404.html do not switch (404 only redirects).
+- **Tile art when switching:** the art URL contains the prompt, so the looks
+  use different URLs. `setLook()` re-renders once; images already in
+  `haushalt-art-1` (old-prompt art from before v4.117.0 is still there on most
+  devices) come back instantly, missing ones go through the v4.113.1 SW queue
+  (≤ 2 in flight, 1.2 s apart, visible tiles first, one generation per URL).
+  Switching back and forth therefore never generates the same URL twice.
+  `FACE.stop()` clears a running expression. Polarity inversion only runs in
+  the new look, as before v4.117.0. Without a service worker (first visit) the
+  old caveat stands (§12 first-visit pacing).
+
+### Settings: basic + «Erweitert»
+
+- **Basic:** Mein Name (personal link), Haushaltsname (admin), Sprache,
+  Aussehen, Kachel-Sortierung, Kachelbilder im Verlauf, **Suche**, Papierkorb,
+  Was ist neu. **Erweitert** (collapsed by default, state per device in
+  `haushalt.setadv`): Verlauf aufbewahren (admin), Max. Punkte,
+  Verschlüsselung (admin, unencrypted only), Adressleiste aufräumen (not iOS),
+  Sync-Details, «Letzter Abgleich», version line.
+- Deviations from the proposal, with reasons: **Suche stays basic** — the
+  auto-activation toast (v4.51.0) tells people «Abschaltbar in den
+  Einstellungen»; and **«Letzter Abgleich» jumps above the «Erweitert» header
+  while it warns** (v4.61.0: a frozen sync must never look like missing data —
+  a collapsed section must not hide that alarm).
+- Header row = a full-width `.setrow` button (`aria-expanded`, chevron turns
+  90°), separated by a hairline; looks right in both looks (screenshots).
+  Admin-only rows keep their rules.
+- i18n: «Aussehen», «Neu», «Klassisch», «Erweitert» and the help line in all
+  19 dictionaries (German = key), translated, not placeholders.
+
+### Release note
+
+updates.html (DE + EN), in the v4.117 section: «Lieber das alte Aussehen?
+Unter Einstellungen → Aussehen → «Klassisch» kommt es zurück — nur auf diesem
+Gerät (v4.118).» Header «v4.38 – v4.118». `NEWS_VERSION` 4.117.0 → 4.118.0 in
+the same commit (mandatory rule: extending updates.html bumps it), so the
+banner shows once more on returning devices.
+
+### Tests
+
+- New describe «Aussehen pro Geraet + Erweitert (v4.118.0)», 8 tests × 2
+  engines, all 16 red against ef99c07 first: default device (new look, «Neu»,
+  Erweitert collapsed, basic rows visible); «Klassisch» (class gone at once,
+  no reload, classic header logo + favicon + touch icon + theme, old title
+  gradient and accent, old prompt, no tones, no crossorigin, `__face` refuses,
+  no toast face; after reload the class is absent at DOMContentLoaded and the
+  splash `<img>` shows the classic icon; back to «Neu» without reload); entry
+  screen in classic; `icon-classic-192.png` 200/PNG/192 px and not the face;
+  manifest.json unchanged with classic chosen; Erweitert collapse/expand,
+  persistence, every moved row reachable; render of the settings sheet + list
+  sheet in both looks; i18n keys in all 19 files + EN without German leak.
+- Changed tests (helper `openAdvanced(page)` inserted after opening the
+  settings; no assertion changed): «Aufbewahrung (v4.52.0): Standard
+  unbegrenzt, Admin-only…», «Aufbewahrung: bestätigte 30 Tage löscht NUR alte
+  Log-Einträge…», «Admin ist eine Eigenschaft von Personen (v4.55.0)…», «Max.
+  Punkte: Standard 5…» (v4.35.0), «Einstellungen: Sprache,
+  Verschlüsselungs-Status, Version, Select-all (v4.31.0)», «Migration: fam- →
+  verschlüsselt, GLEICHE URL…» (v4.31.0), «Zustimmen und widerrufen: der
+  Schalter raeumt auf…» (v4.75.0/v4.77.0), «Rueckfrage abgelehnt = nichts
+  passiert (v4.75.0)», «Der Adressleisten-Schalter nimmt NICHT das Wochenziel
+  weg…», «Sync-Details: das Geraet zeigt Version, Marken…» (v4.69.4),
+  «Einstellungen zeigen «Letzter Abgleich»…» (v4.61.0).
+- Changed assertions: «Ohne Beta (seit v4.117.0)…» (v4.113.0) and «v4.114.0
+  Ohne Beta (seit v4.117.0)…» — `#headLogo` src `icon-192.png?v=49` →
+  `icon-classic-192.png?v=1` (the `<img>` now carries the classic logo; the
+  face still comes from CSS `content:`, asserted unchanged); «v4.117.0
+  Release-Notes…» — `NEWS_VERSION` exactly 4.117.0 → at least 4.117.0.
+  Test race fixed: «Papierkorb: Wiederherstellen…» (v4.63.0) read the restore
+  POST synchronously after the click — now `expect.poll` (flaky once in the
+  full run, 8/8 green after). «v4.114.0 Mit Beta: Logo mit Verlauf…» read
+  the splash logo after the splash could already be gone (CI flake on
+  ef99c07) — it is now read at DOMContentLoaded by an init-script probe.
+  «@sw Drosselung: 429 pausiert die GANZE Schlange…» (v4.113.1) flaked once
+  the same way the gap test did on 3456b22: it stamped the 429 and the starts
+  in the Playwright route, but the cool-down begins when the SERVICE WORKER
+  receives the 429, which can be later — starts issued in between looked like
+  «during the cool-down». Both @sw pacing tests now share `swFetchProbe()`
+  (wraps the running worker's fetch, stamps starts and responses inside the
+  SW) and assert «no start within 1000 ms after the SW saw the 429». Negative
+  check: removing the global cool-down in sw.js turns it red (5 starts);
+  15+15 repeats of both tests green.
+- APP_VERSION 4.118.0, SW cache haushalt-v225 (art cache haushalt-art-1 kept).
+
 ## 2026-10-15 — tests only (no release, app unchanged; v4.117.0 / SW haushalt-v224 stay live): the art-pacing test measures inside the service worker
 
 - CI went red on the v4.117.0 commit with one test, «@sw Drosselung: hoechstens

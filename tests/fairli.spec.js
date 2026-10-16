@@ -158,6 +158,16 @@ async function mockBackend(context, { logRows = () => LOG, memberRows = null, fa
   });
 }
 
+// v4.118.0: die Einstellungen haben einen eingeklappten Teil «Erweitert»
+// (Verlauf aufbewahren, Max. Punkte, Verschluesselung, Adressleiste,
+// Sync-Details, Abgleich-Zeile, Version). Wer dort etwas bedient, klappt auf.
+async function openAdvanced(page) {
+  const tg = page.locator('#setAdvToggle');
+  await expect(tg).toBeVisible();
+  if (await tg.getAttribute('aria-expanded') !== 'true') await tg.click();
+  await expect(page.locator('#setAdv')).toBeVisible();
+}
+
 // Onboarding-Persona auch fuer Tests mit EIGENEN Routen (ohne mockBackend):
 // sonst blockiert das «Zugriff sichern»-Modal (v4.45.0) jeden Klick.
 async function suppressOnboarding(context) {
@@ -1504,6 +1514,7 @@ test.describe('Fairli', () => {
     await page.waitForTimeout(700);
     expect(dels).toHaveLength(0);
     await page.locator('#openSettings').click();
+    await openAdvanced(page);   // v4.118.0: Zeile liegt unter «Erweitert» (eingeklappt)
     await expect(page.locator('#setRetention .setval')).toHaveText('Unbegrenzt');
     // 2) Abbruch im Bestätigungsdialog → nichts gespeichert, nichts gelöscht
     page.once('dialog', d => d.dismiss());
@@ -1538,6 +1549,7 @@ test.describe('Fairli', () => {
     }
     await page.goto(`${BASE}/f/${FAM}`);
     await page.locator('#openSettings').click();
+    await openAdvanced(page);   // v4.118.0: Zeile liegt unter «Erweitert» (eingeklappt)
     let dialogText = '';
     page.once('dialog', d => { dialogText = d.message(); d.accept(); });
     await page.locator('#setRetention').click();
@@ -1680,6 +1692,7 @@ test.describe('Fairli', () => {
     await expect(page.locator('#openMembers')).toBeVisible();
     await expect(page.locator('html')).not.toHaveClass(/userlink/);
     await page.locator('#openSettings').click();
+    await openAdvanced(page);   // v4.118.0: Zeile liegt unter «Erweitert» (eingeklappt)
     await expect(page.locator('#setName')).toBeVisible();        // Haushaltsname
     await expect(page.locator('#setRetention')).toBeVisible();   // Aufbewahrung
     await expect(page.locator('#setMyName')).toBeVisible();      // hat trotzdem eine Identität
@@ -1894,6 +1907,29 @@ test.describe('Fairli', () => {
       ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(list) }) : r.fallback());
     return { setList: l => { list = l; } };
   }
+  // Zeitmessung IM Service Worker (Test-Fix 15./16.10.2026): die Route sieht
+  // einen Fetch erst nach SW → Netzwerk → Playwright-IPC, und eine Antwort
+  // erreicht den SW erst NACH dem Stempel in der Route — beides verschiebt
+  // sich auf ausgelasteten Runnern um 60–120 ms. Der Probe legt einen Zaehler
+  // um das globale fetch des laufenden Workers: Start = wo artRun() fetch()
+  // ruft, Antwort = wann der SW sie hat (vor artRun()s Fortsetzung). App unveraendert.
+  async function swFetchProbe(context) {
+    const sw = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
+    await sw.evaluate(() => {
+      self.__artStarts = []; self.__artResp = [];
+      if (!self.__artFetchWrapped) {
+        const f = self.fetch;
+        self.fetch = function (u, o) {
+          const url = typeof u === 'string' ? u : u.url;
+          if (!/pollinations\.ai/.test(url)) return f.apply(this, arguments);
+          self.__artStarts.push({ t: Date.now(), u: url });
+          return f.apply(this, arguments).then(r => { self.__artResp.push({ t: Date.now(), u: url, status: r.status }); return r; });
+        };
+        self.__artFetchWrapped = true;
+      }
+    });
+    return sw;
+  }
 
   test('@sw Drosselung: hoechstens PAR Erzeugungen gleichzeitig, Starts im Abstand GAP, jede URL nur einmal, Cache-Treffer warten nicht (v4.113.1)', async ({ context, page }) => {
     const ctl = await swArtSetup(context, page, ART_PACE_T);
@@ -1915,19 +1951,7 @@ test.describe('Fairli', () => {
     // wird jetzt dort, wo artRun() fetch() aufruft: im selben Takt, in dem artPump()
     // artLastStart setzt. Die App bleibt unveraendert — der Test legt nur einen
     // Zaehler um das globale fetch des laufenden Workers.
-    const sw = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
-    await sw.evaluate(() => {
-      self.__artStarts = [];
-      if (!self.__artFetchWrapped) {
-        const f = self.fetch;
-        self.fetch = function (u, o) {
-          const url = typeof u === 'string' ? u : u.url;
-          if (/pollinations\.ai/.test(url)) self.__artStarts.push({ t: Date.now(), u: url });
-          return f.apply(this, arguments);
-        };
-        self.__artFetchWrapped = true;
-      }
-    });
+    const sw = await swFetchProbe(context);
     // Ab jetzt SW-kontrolliert: acht frische, ungecachte Kacheln auf einmal
     ctl.setList(probeChores(['Probe A', 'Probe B', 'Probe C', 'Probe D', 'Probe E', 'Probe F', 'Probe G', 'Probe H']));
     starts.length = 0; maxIn = 0;
@@ -1982,6 +2006,7 @@ test.describe('Fairli', () => {
     });
     await page.goto(`${BASE}/f/${FAM}`);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
+    const sw = await swFetchProbe(context);
     ctl.setList(probeChores(['Probe A', 'Probe B', 'Probe C', 'Probe D', 'Kaputt']));
     starts.length = 0;
     await page.reload();
@@ -1990,9 +2015,16 @@ test.describe('Fairli', () => {
       await expect(page.locator(`.chore[data-cid="${cid}"] img.art`)).toHaveClass(/\bok\b/, { timeout: 15000 });
     }
     expect(t429).toBeGreaterThan(0);
-    // Waehrend der Abkuehlung (Retry-After 1 s) startet NICHTS — auch keine andere Kachel
-    const during = starts.filter(s => s.t > t429 + 20 && s.t < t429 + 1000 - 50);
-    expect(during.map(s => s.u.slice(34, 70))).toEqual([]);
+    // Waehrend der Abkuehlung (Retry-After 1 s) startet NICHTS — auch keine andere
+    // Kachel. Gemessen im SW: ab dem Moment, in dem ER die 429 hat (artRun setzt
+    // artCoolUntil im selben Mikrotask-Durchlauf), bis 1000 ms danach (Retry-After
+    // 1 s ist das Minimum der Abkuehlung). 2 ms = Date.now()-Rundung beider Stempel.
+    const swr = await sw.evaluate(() => ({ s: self.__artStarts, r: self.__artResp }));
+    const r429 = swr.r.find(x => x.status === 429);
+    expect(r429, 'der SW hat die 429 gesehen').toBeTruthy();
+    const during = swr.s.filter(x => x.t > r429.t + 2 && x.t < r429.t + 1000 - 2);
+    expect(during.map(x => decodeURIComponent(x.u).slice(34, 70))).toEqual([]);
+    expect(swr.s.length).toBe(starts.length);            // jeder Netz-Start ging durch die SW-Schlange
     expect(per.a).toBe(2);                                               // genau ein Wiederholversuch
     // Die dauerhaft kaputte Kachel: hoechstens `tries` Versuche, dann still bildlos
     await expect(page.locator('.chore[data-cid="c-t4"] img.art')).toHaveCount(0, { timeout: 15000 });
@@ -2285,6 +2317,7 @@ test.describe('Fairli', () => {
     await expect(page.locator('#cPts')).toHaveAttribute('max', '5');   // Standard
     await page.locator('#cancelChore').click();
     await page.locator('#openSettings').click();
+    await openAdvanced(page);   // v4.118.0: Zeile liegt unter «Erweitert» (eingeklappt)
     await expect(page.locator('#setMaxPts .setval')).toHaveText('5');
     await page.locator('#setMaxPts').click();
     await page.locator('#maxPtsSheet [data-maxpts="3"]').click();
@@ -2812,6 +2845,7 @@ test.describe('Fairli', () => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);
     await page.locator('#openSettings').click();
+    await openAdvanced(page);   // v4.118.0: Zeile liegt unter «Erweitert» (eingeklappt)
     const sh = page.locator('#settingsSheet');
     await expect(sh.getByRole('heading', { name: 'Einstellungen' })).toBeVisible();
     await expect(sh.locator('#setLang .setval')).toHaveText('Deutsch');
@@ -2881,6 +2915,7 @@ test.describe('Fairli', () => {
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('.chore', { hasText: 'Müll rausbringen' })).toBeVisible();
     await page.locator('#openSettings').click();
+    await openAdvanced(page);   // v4.118.0: Zeile liegt unter «Erweitert» (eingeklappt)
     await page.locator('#setEnc').click();
     const mig = page.locator('#migrateSheet');
     await mig.locator('#migGo').click();
@@ -3239,7 +3274,9 @@ test.describe('Fairli', () => {
     await page.locator('#setTrash').click();
     await page.locator('#trashSheet [data-restore]').click();
     await page.evaluate(() => document.getElementById('trashSheet').close());
-    expect(restored).not.toBeNull();
+    // v4.118.0 (Test-Fix): der Upsert ist asynchron — auf die Route warten statt
+    // sofort zu lesen (einmal FLAKY im vollen Lauf; keine Aussage geaendert)
+    await expect.poll(() => restored).not.toBeNull();
     expect(restored.deleted_at).toBeNull();
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     await expect(page.locator('#list')).toContainText('Müll rausbringen');
@@ -3529,6 +3566,7 @@ test.describe('Fairli', () => {
       await expect(page.locator('.chip', { hasText: 'Mira' })).toBeVisible();
       expect(page.url()).toContain(FAM);                     // vorher: Link steht da
       await page.locator('#openSettings').click();
+      await openAdvanced(page);   // v4.118.0: Zeile liegt unter «Erweitert» (eingeklappt)
       await expect(page.locator('#setStripUrl')).toContainText('Aus');
       await page.locator('#setStripUrl').click();
       await expect.poll(() => page.url()).not.toContain(FAM);   // aufgeraeumt
@@ -3552,6 +3590,7 @@ test.describe('Fairli', () => {
       await page.goto(`${BASE}/f/${FAM}`);
       await expect(page.locator('.chip', { hasText: 'Mira' })).toBeVisible();
       await page.locator('#openSettings').click();
+      await openAdvanced(page);   // v4.118.0: Zeile liegt unter «Erweitert» (eingeklappt)
       await page.locator('#setStripUrl').click();
       await page.waitForTimeout(400);
       expect(page.url()).toContain(FAM);                     // unveraendert
@@ -4286,6 +4325,7 @@ test.describe('Fairli', () => {
       await page.goto(`${BASE}/f/${FAM}`);
       await page.waitForTimeout(700);
       await page.locator('#openSettings').click();
+      await openAdvanced(page);   // v4.118.0: Zeile liegt unter «Erweitert» (eingeklappt)
       await expect(page.locator('#setStripUrl')).toContainText('Adressleiste');
       await expect(page.locator('#setStripUrl')).not.toContainText('Wochenziel');
       await page.locator('#setStripUrl').click();
@@ -4828,6 +4868,7 @@ test.describe('Fairli', () => {
     await page.goto(`${BASE}/f/${FAM}`);
     await page.waitForTimeout(600);
     await page.locator('#openSettings').click();
+    await openAdvanced(page);   // v4.118.0: Zeile liegt unter «Erweitert» (eingeklappt)
     await page.locator('#setSyncDiag').click();
     const sheet = page.locator('#syncDiagSheet');
     await expect(sheet).toBeVisible();
@@ -4990,6 +5031,7 @@ test.describe('Fairli', () => {
     await page.goto(`${BASE}/f/${FAM}`);
     await page.waitForTimeout(600);
     await page.locator('#openSettings').click();
+    await openAdvanced(page);   // v4.118.0: Zeile liegt unter «Erweitert» (eingeklappt)
     await expect(page.locator('#syncInfo')).toContainText('Letzter Abgleich');
     await expect(page.locator('#syncInfo')).toContainText('gerade eben');
   });
@@ -5290,7 +5332,9 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     await page.waitForTimeout(500);
     await expect(page.locator('html')).toHaveClass(/brand3/);
     expect(await accent(page)).toBe('#F5F5F1');
-    await expect(page.locator('#headLogo')).toHaveAttribute('src', /icon-192\.png/);
+    // v4.118.0: das <img> traegt das KLASSISCHE Logo als src (fuer «Aussehen:
+    // Klassisch»); im neuen Bild zeigt CSS content: das Gesicht
+    await expect(page.locator('#headLogo')).toHaveAttribute('src', /icon-classic-192\.png/);
     expect(await page.locator('#headLogo').evaluate(el => getComputedStyle(el).content)).toContain('svg');
     expect(decodeURIComponent(await tileSrc(page))).toContain('thick white outline drawing');
     expect(decodeURIComponent(await tileSrc(page))).not.toContain('minimalist flat vector illustration');
@@ -5431,6 +5475,11 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
 
   test('v4.114.0 Mit Beta: Logo mit Verlauf (Kopf, Splash, Leerzustand, Zwinkern) und Verlauf auf Titel, FAB, Primaerknopf, Punktebalken', async ({ context, page }) => {
     await mockBackend(context, B3);
+    // v4.118.0 (Test-Fix): der Splash lebt nur ~1 s — sein Logo wird beim
+    // Parsen gelesen (DOMContentLoaded), nicht spaeter (CI-Flake ef99c07: das
+    // Element war schon weg, «waiting for locator('#splash img')» lief aus)
+    await context.addInitScript(() => document.addEventListener('DOMContentLoaded', () => {
+      const sp = document.querySelector('#splash img'); window.__splashLogo = sp ? getComputedStyle(sp).content : null; }));
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('html')).toHaveClass(/brand3/);
     // Logo-Daten-URI traegt eine Verlaufsdefinition mit den drei Stopps
@@ -5438,7 +5487,7 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     expect(logo).toContain('linearGradient');
     for (const hex of ['#84B2FF', '#F5F5F1', '#B98AE0']) expect(logo).toContain(hex);
     expect(logo).toContain("stroke='url(#gb)'");   // v4.115.0: je Auge ein eigener Verlauf
-    expect(decodeURIComponent(await css(page.locator('#splash img'), 'content'))).toContain('linearGradient');
+    expect(decodeURIComponent(await page.evaluate(() => window.__splashLogo) || '')).toContain('linearGradient');
     const empty = await page.evaluate(() => { const d = document.createElement('div'); d.className = 'empty'; document.body.appendChild(d);
       const v = getComputedStyle(d, '::before').backgroundImage; d.remove(); return decodeURIComponent(v); });
     expect(empty).toContain('linearGradient');
@@ -5478,7 +5527,7 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
     await page.waitForTimeout(500);
     await expect(page.locator('html')).toHaveClass(/brand3/);
-    await expect(page.locator('#headLogo')).toHaveAttribute('src', '/chores/icon-192.png?v=49');
+    await expect(page.locator('#headLogo')).toHaveAttribute('src', '/chores/icon-classic-192.png?v=1');   // v4.118.0: src = klassisches Logo, content = Gesicht
     expect(await css(page.locator('#headLogo'), 'content')).toContain('linearGradient');
     expect(await css(page.locator('header h1'), 'backgroundImage')).toBe('none');
     expect(await css(page.locator('#openAdd'), 'backgroundImage')).toBe('none');
@@ -6588,11 +6637,225 @@ test.describe('Neues Bild fuer alle (v4.117.0)', () => {
     await expect(page.locator('#lang-en section').first()).toContainText('redrawn');
     await expect(page.locator('h1 img')).toHaveAttribute('src', ICON);
     const src = await (await page.request.get(`${BASE}/index.html`)).text();
-    expect(src).toMatch(/NEWS_VERSION = '4\.117\.0'/);
+    // v4.118.0: NEWS_VERSION rueckt mit jedem updates.html-Zusatz weiter — mindestens 4.117.0
+    const nv = (/NEWS_VERSION = '([\d.]+)'/.exec(src) || [])[1].split('.').map(Number);
+    expect(nv[0] * 1e6 + nv[1] * 1e3 + nv[2]).toBeGreaterThanOrEqual(4117000);
     // Wer v4.116.0 gesehen hat, bekommt den Hinweis genau einmal
     await page.goto(`${BASE}/f/${FAM}`);
     await page.evaluate(() => localStorage.setItem('haushalt.seenver', '4.116.0'));
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('#newsBar')).toBeVisible();
+  });
+});
+
+// ---------- v4.118.0: «Aussehen» pro Geraet (Neu / Klassisch) + «Erweitert» in den Einstellungen ----------
+// Maintainer: «Can you add an option to activate the old original look (in
+// settings?) — maybe settings needs a collapsed advanced section. This one
+// belongs in the basic settings.» Klassisch = das Bild bis v4.116.0 ohne Beta,
+// komplett (altes Haus-Logo icon-classic-192.png, alter Titelverlauf, alter
+// Kachel-Prompt, kein Gesicht). Pro Geraet (haushalt.look), nichts synchronisiert;
+// manifest.json bleibt fuer alle das Gesicht.
+test.describe('Aussehen pro Geraet + Erweitert (v4.118.0)', () => {
+  const css = (loc, prop, pseudo) => loc.evaluate((el, a) => getComputedStyle(el, a[1] || null)[a[0]], [prop, pseudo]);
+  const CLASSIC = '/chores/icon-classic-192.png?v=1';
+  const tileSrc = page => page.locator('.chore[data-cid="c-1"] img.art').getAttribute('src').then(decodeURIComponent);
+  const firstPaint = () => {
+    document.addEventListener('DOMContentLoaded', () => {
+      const q = s => document.querySelector(s);
+      const sp = q('#splash img');
+      window.__fp = {
+        cls: document.documentElement.classList.contains('brand3'),
+        splash: sp ? getComputedStyle(sp).content : '', splashSrc: sp ? sp.getAttribute('src') : '',
+        theme: q('meta[name="theme-color"]').content, icon: q('link[rel="icon"]').getAttribute('href'),
+        touch: q('link[rel="apple-touch-icon"]').getAttribute('href'),
+      };
+    });
+  };
+  const chooseLook = async (page, v) => {
+    await page.locator('#openSettings').click();
+    await page.locator('#setLook').click();
+    await expect(page.locator('#lookSheet')).toBeVisible();
+    await page.locator(`#lookSheet [data-look="${v}"]`).click();
+    await expect(page.locator('#lookSheet')).toBeHidden();
+  };
+
+  test('v4.118.0 Standard-Geraet: neues Bild, «Aussehen» zeigt «Neu», Erweitert eingeklappt', async ({ context, page }) => {
+    await mockBackend(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setLook .setlabel')).toHaveText('Aussehen');
+    await expect(page.locator('#setLook .setval')).toHaveText('Neu');
+    await expect(page.locator('#setAdvToggle')).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('#setAdv')).toBeHidden();
+    for (const id of ['#setLang', '#setLook', '#setSort', '#setLogart', '#setSearch', '#setTrash', '#setName']) await expect(page.locator(id), id).toBeVisible();
+    expect(await page.evaluate(() => localStorage.getItem('haushalt.look'))).toBeNull();
+  });
+
+  test('v4.118.0 «Klassisch»: sofort altes Bild ohne Neuladen, vor dem ersten Paint nach Neustart, und zurueck auf «Neu»', async ({ context, page }) => {
+    await mockBackend(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    expect(await tileSrc(page)).toContain('thick white outline drawing');
+    await page.evaluate(() => { window.__noReload = 1; });
+    await chooseLook(page, 'classic');
+    // sofort, ohne Neuladen
+    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+    expect(await page.evaluate(() => window.__noReload)).toBe(1);
+    expect(await page.evaluate(() => localStorage.getItem('haushalt.look'))).toBe('classic');
+    await expect(page.locator('#headLogo')).toHaveAttribute('src', CLASSIC);
+    expect(await css(page.locator('#headLogo'), 'content')).not.toContain('svg');
+    expect(await css(page.locator('header h1'), 'backgroundImage')).toBe('linear-gradient(100deg, rgb(234, 241, 235), rgb(132, 178, 255))');
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim())).toBe('#84B2FF');
+    await expect.poll(() => tileSrc(page)).toContain('minimalist flat vector illustration');
+    expect(await tileSrc(page)).not.toContain('outline drawing');
+    await expect(page.locator('.chore[data-tone]')).toHaveCount(0);
+    expect(await page.locator('.chore[data-cid="c-1"] img.art').getAttribute('crossorigin')).toBeNull();
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', CLASSIC);
+    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', CLASSIC);
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#141A17');
+    expect(await page.evaluate(() => window.__face('wink'))).toBeNull();           // kein Gesicht
+    expect(await page.evaluate(() => window.__face.idle())).toBe(false);
+    await page.locator('.chip[data-mid="m-chris"]').click();
+    await page.locator('.chore[data-cid="c-1"]').click();
+    await expect(page.locator('#toast')).toContainText('+2 für Timon');
+    await expect(page.locator('#toast .tface')).toHaveCount(0);
+    // Neustart: die Klasse fehlt schon beim Parsen, Splash zeigt das alte Logo
+    await context.addInitScript(firstPaint);
+    await page.reload();
+    const fp = await page.waitForFunction(() => window.__fp).then(h => h.jsonValue());
+    expect(fp.cls).toBe(false);
+    expect(fp.splash).not.toContain('svg');
+    expect(fp.splashSrc).toBe(CLASSIC);
+    expect(fp.icon).toBe(CLASSIC);
+    expect(fp.touch).toBe(CLASSIC);
+    expect(fp.theme).toBe('#141A17');
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setLook .setval')).toHaveText('Klassisch');
+    await page.locator('#closeSettings').click();
+    // zurueck auf «Neu» — wieder ohne Neuladen
+    await page.evaluate(() => { window.__noReload = 2; });
+    await chooseLook(page, 'new');
+    await expect(page.locator('html')).toHaveClass(/brand3/);
+    expect(await page.evaluate(() => window.__noReload)).toBe(2);
+    expect(await css(page.locator('#headLogo'), 'content')).toContain('svg');
+    await expect.poll(() => tileSrc(page)).toContain('thick white outline drawing');
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#12151F');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=49');
+    expect(await page.evaluate(() => localStorage.getItem('haushalt.look'))).toBeNull();
+  });
+
+  test('v4.118.0 Klassisch auch auf dem Einstieg: altes Logo und alter Titelverlauf', async ({ context, page }) => {
+    await blockExternal(context);
+    await context.addInitScript(() => localStorage.setItem('haushalt.look', 'classic'));
+    await page.goto(`${BASE}/`);
+    await expect(page.locator('#newFam')).toBeVisible();
+    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+    await expect(page.locator('#entryScreen > img')).toHaveAttribute('src', CLASSIC);
+    expect(await css(page.locator('#entryScreen h1'), 'backgroundImage')).toContain('linear-gradient');
+  });
+
+  test('v4.118.0 icon-classic-192.png: 200, PNG, 192 px — die Bytes des alten Haus-Logos (nicht das Gesicht)', async ({ page }) => {
+    const r = await page.request.get(CLASSIC);
+    expect(r.status()).toBe(200);
+    expect(r.headers()['content-type']).toContain('image/png');
+    const b = await r.body();
+    expect(b.subarray(1, 4).toString()).toBe('PNG');
+    expect(b.readUInt32BE(16)).toBe(192);
+    const face = await (await page.request.get(`${BASE}/icon-192.png`)).body();
+    expect(b.equals(face)).toBe(false);
+  });
+
+  test('v4.118.0 manifest.json bleibt unberuehrt: Gesicht + Navy, auch wenn das Geraet «Klassisch» waehlt', async ({ context, page, browserName }) => {
+    await mockBackend(context);
+    await context.addInitScript(() => localStorage.setItem('haushalt.look', 'classic'));
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await expect(page.locator('html')).not.toHaveClass(/brand3/);
+    if (browserName !== 'webkit') await expect(page.locator('link[rel=manifest]')).toHaveAttribute('href', '/chores/manifest.json');
+    const man = await (await page.request.get(`${BASE}/manifest.json`)).json();
+    expect(man.icons.map(i => i.src)).toEqual(['icon-192.png?v=49', 'icon-512.png?v=49', 'icon-512-maskable.png?v=49']);
+    expect(man.theme_color).toBe('#12151F');
+    expect(man.background_color).toBe('#12151F');
+    expect(JSON.stringify(man)).not.toContain('classic');
+  });
+
+  test('v4.118.0 Erweitert: eingeklappt, klappt auf und zu, Zustand ueberlebt den Neustart, jede verschobene Zeile erreichbar', async ({ context, page, browserName }) => {
+    await mockBackend(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await page.locator('#openSettings').click();
+    const tg = page.locator('#setAdvToggle');
+    await expect(tg).toContainText('Erweitert');
+    await expect(page.locator('#setAdv')).toBeHidden();
+    const moved = ['#setRetention', '#setMaxPts', '#setSyncDiag', '#syncInfo', '#setVersion'];
+    if (browserName !== 'webkit') moved.push('#setStripUrl');      // iOS: kein Adressleisten-Schalter (v4.77.0)
+    for (const id of moved) await expect(page.locator(id), id).toBeHidden();
+    await tg.click();
+    await expect(tg).toHaveAttribute('aria-expanded', 'true');
+    for (const id of moved) await expect(page.locator(id), id).toBeVisible();
+    await expect(page.locator('#setVersion')).toHaveText(`Fairli ${APP_VERSION}`);
+    expect(await css(tg.locator('.chev'), 'transform')).not.toBe('none');   // Chevron gedreht
+    await page.locator('#closeSettings').click();
+    await page.reload();
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setAdv')).toBeVisible();                  // gemerkt
+    await page.locator('#setMaxPts').click();                              // bedienbar
+    await expect(page.locator('#maxPtsSheet, dialog[open]').first()).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.locator('#openSettings').click();
+    await page.locator('#setAdvToggle').click();
+    await expect(page.locator('#setAdv')).toBeHidden();
+    expect(await page.evaluate(() => localStorage.getItem('haushalt.setadv'))).toBe('0');
+  });
+
+  test('v4.118.0 Render: Einstellungen in beiden Bildern (eingeklappt + aufgeklappt), Aussehen-Liste mit ✓', async ({ context, page }) => {
+    await mockBackend(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    for (const look of ['new', 'classic']) {
+      if (look === 'classic') await chooseLook(page, 'classic');
+      await page.locator('#openSettings').click();
+      const sh = page.locator('#settingsSheet');
+      await expect(sh.getByRole('heading', { name: 'Einstellungen' })).toBeVisible();
+      await expect(page.locator('#setLook .setval')).toHaveText(look === 'new' ? 'Neu' : 'Klassisch');
+      const tg = page.locator('#setAdvToggle');
+      if (await tg.getAttribute('aria-expanded') !== 'true') await tg.click();
+      await expect(page.locator('#setSyncDiag')).toBeVisible();
+      // die Kopfzeile steht im selben Raster wie die Zeilen (gleiche Hoehe, volle Breite)
+      const [a, b] = await Promise.all([tg.boundingBox(), page.locator('#setLang').boundingBox()]);
+      expect(Math.abs(a.height - b.height)).toBeLessThan(2);
+      expect(Math.abs(a.width - b.width)).toBeLessThan(2);
+      await page.locator('#setLook').click();
+      await expect(page.locator(`#lookSheet [data-look="${look}"]`)).toContainText('✓');
+      await expect(page.locator(`#lookSheet [data-look="${look === 'new' ? 'classic' : 'new'}"]`)).not.toContainText('✓');
+      await expect(page.locator('#lookSheet')).toContainText('nur für dieses Gerät');
+      await page.locator('#closeLook').click();
+    }
+  });
+
+  test('v4.118.0 i18n: Aussehen, Neu, Klassisch, Erweitert + Hinweis in allen 19 Woerterbuechern, echt uebersetzt; EN-Einstellungen ohne deutsches Leck', async ({ context, page }) => {
+    const keys = ['Aussehen', 'Neu', 'Klassisch', 'Erweitert', 'Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.'];
+    const { readdirSync } = await import('fs');
+    const files = readdirSync(__i18nDir).filter(f => f.endsWith('.json'));
+    expect(files).toHaveLength(19);
+    for (const f of files) {
+      const d = JSON.parse(readFileSync(join(__i18nDir, f), 'utf8'));
+      for (const k of keys) {
+        expect(d[k], `${f}: ${k}`).toBeTruthy();
+        if (k !== 'Klassisch') expect(d[k], `${f}: ${k}`).not.toBe(k);
+      }
+    }
+    await mockBackend(context);
+    await context.addInitScript(() => localStorage.setItem('haushalt.lang', 'en'));
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await page.locator('#openSettings').click();
+    await expect(page.locator('#setLook .setlabel')).toHaveText('Appearance');
+    await expect(page.locator('#setLook .setval')).toHaveText('New');
+    await expect(page.locator('#setAdvToggle')).toContainText('Advanced');
   });
 });

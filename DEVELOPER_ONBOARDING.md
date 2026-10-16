@@ -6,7 +6,7 @@ A static single-file app on GitHub Pages, Supabase as the sync backend,
 end-to-end encryption for new and migrated households.
 This document is the shortcut for a new session (human or AI):
 architecture, all design decisions WITH rationale, and the painfully
-learned platform quirks. As of: v4.117.0 (15.10.2026).
+learned platform quirks. As of: v4.118.0 (16.10.2026).
 
 ---
 
@@ -482,13 +482,35 @@ setup, retired-link notice and install instructions. `families.beta` gates
 NOTHING again (still read, 🧪 in Sync-Details) and is free for the next
 experiment. `window.__brand()` and the per-family cache
 `haushalt.brand3:<fam>` are gone (the pull removes a leftover key).
-**Revert switch for one release:** delete `class="brand3" ` from the `<html>`
-tag (line 2) → the old look returns everywhere (its CSS is still there,
-unused); the icons stay the face (restore the v4.116.0 PNGs + bump `?v=` to
-revert those too). Cleanup is in §12. No-family screens have their brand3
+**«Aussehen» (v4.118.0): the old look is a live, per-device choice again.**
+Einstellungen → Aussehen → «Neu» (default) / «Klassisch». Stored in
+`localStorage['haushalt.look'] = 'classic'` (absent = new), never synced —
+a personal preference like «Kachelbilder im Verlauf». Mechanics, in order:
+(1) the static `class="brand3"` stays the default; (2) the FIRST head
+script removes it when the key says classic — before first paint, before
+routing, also on the entry screen; (3) `window.__look(classic)`, defined
+right after the icon links, toggles the class and swaps favicon /
+apple-touch-icon (`icon-classic-192.png?v=1`, the v4.116.0 house-and-tiles
+bytes) and theme-color (`#141A17` classic, `#12151F` new); it runs at parse
+time for classic and from `setLook()` at runtime (no reload: `FACE.stop()`,
+`render()` for the art URLs, `__updateWide()` for the title cut). The splash
+and `#headLogo` `<img>` carry the CLASSIC icon as `src`; brand3 replaces it
+with the face via CSS `content:` — so both looks show the right logo from the
+first frame with no script. The entry-screen image picks by `brandOn()`.
+**Everything else keys off `brandOn()` exactly as before v4.117.0:** art
+prompt (`ART_STYLE` vs `ART_PRE_B3/ART_STYLE_B3`), polarity/crossorigin only
+in the new look, tile tones, face expressions (start, toast, idle blink), so
+classic is pixel-identical to the v4.116.0 non-beta look (screenshots
+compared at 0 differing pixels, Pixel + iPhone). manifest.json and the
+installed home-screen icon stay the face for everyone (the manifest is
+global; the sheet's help line says so). updates.html/privacy.html and 404.html
+are not switched (no app UI; 404 only redirects).
+**Developer revert (whole app):** deleting `class="brand3" ` from the `<html>`
+tag still makes «Klassisch» the default for every device (the head helper then
+also sets the classic favicon). No-family screens have their brand3
 rules at the end of the block (`#entryScreen`, `#firstRun`, with `!important`
 because their styles are inline). The bullets below describe the trial
-(v4.113.0–v4.116.0); read «only under brand3» as «always» now.
+(v4.113.0–v4.116.0); read «only under brand3» as «in the new look».
 
 **v4.113.0–v4.116.0 `families.beta` gated the brand trial «Variante 3»** and
 nothing else. How a household got it: no UI — `families.beta = true`
@@ -676,6 +698,25 @@ never through `USER_SLUG` (that is only the IDENTITY). The bare family
 link still counts as a nameless admin (grandfathered), but is no longer
 offered. Invariants: at least one admin; non-admins may not operate the
 switch, but may share links. New households: first person = admin.
+
+### Settings layout (v4.118.0)
+`openSettingsSheet()`: **basic rows** — Mein Name (personal link), Haushaltsname
+(admin), Sprache, **Aussehen**, Kachel-Sortierung, Kachelbilder im Verlauf,
+Suche, Papierkorb, Was ist neu. Then a full-width header row **«Erweitert»**
+(`#setAdvToggle`, `aria-expanded`, chevron turns 90°) over `#setAdv`:
+Verlauf aufbewahren (admin), Max. Punkte, Verschlüsselung (admin, unencrypted
+households), Adressleiste aufräumen (not iOS), Sync-Details, the «Letzter
+Abgleich» line and the version line (`#setVersion`). Collapsed by default,
+state per device in `haushalt.setadv` ('1'/'0'). Visibility rules of
+admin-only rows are unchanged. Two deliberate deviations from the plan:
+**Suche stays basic** — the auto-activation toast (v4.51.0) says «Abschaltbar
+in den Einstellungen», so the switch must be where people look first; and
+**the «Letzter Abgleich» line moves ABOVE the header whenever it warns**
+(stale ≥ 3 min, discarded pulls, unreadable rows) — v4.61.0 says a frozen sync
+must never look like missing data, and a collapsed section must not hide that
+alarm. Tests that operate an advanced row call `openAdvanced(page)` first.
+New rows: put rarely used / diagnostic / admin-maintenance rows under
+«Erweitert», everyday choices in the basic block.
 
 ### Tile sorting (v4.33.0, reworked v4.111.0)
 Three modes in `haushalt.sort` (per device): **`alpha` is the DEFAULT since
@@ -1283,15 +1324,17 @@ the plausible-sounding fix (DNS flag, UI automation) did not.
   through the same page queue when `!navigator.serviceWorker.controller` —
   changes rendering, so it needs its own tests and a visual check. Made more
   pressing by v4.117.0: every non-beta household's art regenerates once.
-- **brand3 cleanup (after v4.117.0 has proven itself for one release):** the
-  old-look rules (everything the `html.brand3` block overrides), the
-  `html.brand3` prefix indirection (fold the block into the base rules),
-  `brandOn()` checks (always true), `ART_STYLE` (old prompt), the old-look
-  branches of `artTag()`/`artBind()`, `data-b3tiles="stroke"` if unused,
-  `icon-b3-*.png` (unreferenced aliases), the `#entryScreen`/`#firstRun`
-  `!important` overrides (move the values into the inline styles), and the
-  tests that still exercise the class being absent. Until then the one-line
-  revert (§8) must keep working.
+- **Two looks are a FEATURE since v4.118.0 — the old-look CSS is live code,
+  not dead code.** The v4.117.0 cleanup plan (delete the old rules, fold the
+  `html.brand3` block into the base) is CANCELLED: «Aussehen: Klassisch»
+  renders exactly those base rules, `ART_STYLE` and the old branches of
+  `artTag()`/`artBind()`. What remains to tidy: `icon-b3-*.png` (unreferenced
+  aliases of the face), `data-b3tiles="stroke"` (never shipped), and the
+  `#entryScreen`/`#firstRun` `!important` overrides (could become inline
+  `brandOn()` choices). Every UI change now needs BOTH looks checked (tests:
+  set `haushalt.look` = 'classic'; screenshots in both). Open question for
+  the maintainer: whether updates.html/privacy.html should follow the
+  device's look (they read localStorage anyway).
 - **Installed-icon check on real devices (v4.117.0):** confirm on a Pixel
   (Chrome ≥ 144) that the WebAPK offers the icon update, on desktop Chrome
   that «Review app update» appears, and that the iOS add-again-then-delete

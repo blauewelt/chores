@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v224';   // v4.117.0 neues Bild fuer ALLE Haushalte + Gesichts-App-Icon (icon-*.png ?v=49)
+const CACHE = 'haushalt-v225';   // v4.118.0 Aussehen pro Geraet (Neu/Klassisch) + Einstellungen mit «Erweitert»
 // v4.113.1: Kachelkunst hat einen EIGENEN, versionsfesten Cache. Bis v4.113.0
 // lag sie im versionierten CACHE — und den loescht `activate` bei JEDEM Deploy.
 // Folge: nach jedem Deploy forderte jedes Geraet jedes Kachelbild neu an,
@@ -35,7 +35,8 @@ const SHELL = [
   './i18n/zh.json',
   './icon-192.png',
   './icon-512.png',
-  './icon-512-maskable.png'
+  './icon-512-maskable.png',
+  './icon-classic-192.png'   // v4.118.0: altes Haus-Logo fuer «Aussehen: Klassisch» (Kopf, Splash, Favicon)
   // v4.117.0: icon-b3-*.png nicht mehr vorab geladen — icon-*.png tragen
   // jetzt dasselbe Gesicht (gleiche Bytes). Die b3-Dateien bleiben im Repo
   // als Alias fuer Geraete, die sie noch referenzieren (Aufraeumen: §12).

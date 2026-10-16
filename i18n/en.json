@@ -226,5 +226,10 @@
   "Minute": "Minute",
   "Datenschutz": "Privacy",
   "Kachelbilder im Verlauf": "Tile art in history",
-  "Abdunkelung": "Dimming"
+  "Abdunkelung": "Dimming",
+  "Aussehen": "Appearance",
+  "Neu": "New",
+  "Klassisch": "Classic",
+  "Erweitert": "Advanced",
+  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Applies to this device only. The home screen icon stays the new one."
 }

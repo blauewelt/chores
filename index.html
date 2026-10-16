@@ -32,6 +32,10 @@
     // v4.116.0: ?face=wink|smirk|blink|blink2|frown|none erzwingt den Start-Ausdruck
     // (nur brand3; vor dem Routen gelesen, das die Query wegschreibt)
     var fq = /[?&]face=(\w+)/.exec(location.search); if (fq) window.__faceQ = fq[1];
+    // v4.118.0: «Aussehen» pro Geraet (haushalt.look). Standard = neues Bild
+    // (statisches html.brand3); «Klassisch» nimmt die Klasse HIER weg — vor dem
+    // ersten Paint, ohne Abgleich, ohne Familie (gilt auch fuer den Einstieg).
+    try { if (localStorage.getItem('haushalt.look') === 'classic') document.documentElement.classList.remove('brand3'); } catch (e) {}
     // v4.113.0–v4.116.0 las hier der Boot den Beta-Cache haushalt.brand3:<fam>
     // und setzte html.brand3 nur fuer Beta-Haushalte. Seit v4.117.0 steht die
     // Klasse statisch im <html>-Tag (fuer alle) — kein Cache, nichts zu lesen.
@@ -50,6 +54,22 @@
 <meta name="theme-color" content="#12151F">
 <link rel="apple-touch-icon" href="/chores/icon-192.png?v=49">
 <link rel="icon" href="/chores/icon-192.png?v=49" sizes="192x192" type="image/png">
+<script>
+  // v4.118.0: EIN Schalter fuer das Aussehen dieses Geraets — Klasse,
+  // Favicon/Touch-Icon und Statusleistenfarbe. «Klassisch» = das Bild bis
+  // v4.116.0 (altes Vier-Kachel-Haus icon-classic-192.png, #141A17). Das
+  // installierte Homescreen-Symbol (manifest.json) bleibt fuer alle das Gesicht.
+  window.__look = function (classic) {
+    var de = document.documentElement;
+    de.classList.toggle('brand3', !classic);
+    var set = function (sel, attr, v) { var el = document.querySelector(sel); if (el && el.getAttribute(attr) !== v) el.setAttribute(attr, v); };
+    var ic = classic ? '/chores/icon-classic-192.png?v=1' : '/chores/icon-192.png?v=49';
+    set('link[rel="icon"]', 'href', ic);
+    set('link[rel="apple-touch-icon"]', 'href', ic);
+    set('meta[name="theme-color"]', 'content', classic ? '#141A17' : '#12151F');
+  };
+  if (!document.documentElement.classList.contains('brand3')) window.__look(true);
+</script>
 <style>
   /* GDPR (v4.85.0): Schrift selbst gehostet — kein IP-Transfer mehr an Google
      Fonts. Variable Font, deckt 500/700/800 aus einer Datei. */
@@ -242,6 +262,12 @@
   .setrow .setval{color:var(--muted);font-size:14px;max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
   .setrow .chev{color:var(--muted);font-size:19px;flex:none;margin-left:-2px}
   .setrow:disabled{opacity:.55}
+  /* v4.118.0: «Erweitert» — volle Zeile, Chevron dreht beim Aufklappen;
+     abgesetzt durch eine Linie, Inhalt eingerueckt wie die Grund-Zeilen */
+  .setrow.setadv{margin-top:8px; border-top:1px solid var(--line); border-radius:0 0 12px 12px !important; color:var(--muted); font-weight:600}
+  .setrow.setadv .chev{transition:transform .15s ease}
+  .setrow.setadv[aria-expanded="true"] .chev{transform:rotate(90deg)}
+  #setAdv[hidden]{display:none}
   /* Boot-Splash (v4.39.0): Icon startet vollflaechig und morpht in die
      Kopf-Ecke. pointer-events:none — rein visuell, blockiert NIE Bedienung. */
   #splash{position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center;
@@ -878,10 +904,12 @@
 </style>
 </head>
 <body>
-<div id="splash" aria-hidden="true"><img src="/chores/icon-192.png?v=49" alt="" width="104" height="104"></div>
+<!-- v4.118.0: src = das KLASSISCHE Logo (altes Haus); unter html.brand3 zeigt
+     CSS content: das Gesicht — beide Bilder stimmen ab dem ersten Frame. -->
+<div id="splash" aria-hidden="true"><img src="/chores/icon-classic-192.png?v=1" alt="" width="104" height="104"></div>
 <header id="apphead">
   <div class="hrow">
-    <img id="headLogo" src="/chores/icon-192.png?v=49" alt="" width="38" height="38" aria-hidden="true">
+    <img id="headLogo" src="/chores/icon-classic-192.png?v=1" alt="" width="38" height="38" aria-hidden="true">
     <h1 id="famTitle">&nbsp;</h1>
   </div>
   <div class="headbtns">
@@ -1058,7 +1086,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.117.0';
+  const APP_VERSION = '4.118.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1358,6 +1386,41 @@
     sh.querySelectorAll('[data-sort]').forEach(b => b.onclick = () => { setSort(b.dataset.sort); sh.close(); });
     sh.showModal();
   }
+  // ---------- Aussehen (v4.118.0, pro Geraet) ----------
+  // haushalt.look = 'classic' | fehlt (= neu). Wie «Kachelbilder im Verlauf»
+  // eine persoenliche Vorliebe: nichts wird synchronisiert, jedes Geraet waehlt.
+  const LS_LOOK = 'haushalt.look';
+  function setLook(classic) {
+    try { if (classic) localStorage.setItem(LS_LOOK, 'classic'); else localStorage.removeItem(LS_LOOK); } catch {}
+    if (classic === !brandOn()) return;
+    try { FACE.stop(); } catch {}              // kein Gesicht mitten im Ausdruck stehen lassen
+    window.__look(classic);
+    // Kachelbild-URLs haengen am Aussehen (choreArt liest brandOn()); render()
+    // baut die Kacheln neu, der SW zieht sichtbare Kacheln vor, bekannte Bilder
+    // kommen aus haushalt-art-1 — keine zweite Erzeugung derselben URL.
+    render();
+    window.__updateWide();                     // Titel-Schnitt (800 vs 700) misst anders
+  }
+  function openLookSheet() {
+    let sh = document.getElementById('lookSheet');
+    if (!sh) { sh = document.createElement('dialog'); sh.id = 'lookSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
+    const cur = brandOn() ? 'new' : 'classic';
+    const OPTS = [['new', t('Neu')], ['classic', t('Klassisch')]];
+    sh.innerHTML = `<div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheetbar">
+        <div class="slot"></div>
+        <h2>${t('Aussehen')}</h2>
+        <div class="slot end"><button type="button" class="x" id="closeLook" aria-label="${t('Schließen')}">×</button></div>
+      </div>
+      ${OPTS.map(([v, label]) =>
+        `<button class="menuitem" data-look="${v}" style="border-radius:12px${v === cur ? ';color:var(--accent)' : ''}">${label}${v === cur ? ' ✓' : ''}</button>`).join('')}
+      <p class="subnote" style="margin:10px 4px 2px">${t('Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.')}</p>
+    </div>`;
+    sh.querySelector('#closeLook').onclick = () => sh.close();
+    sh.querySelectorAll('[data-look]').forEach(b => b.onclick = () => { sh.close(); setLook(b.dataset.look === 'classic'); });
+    sh.showModal();
+  }
   function openLangSheet() {
     let sh = document.getElementById('langSheet');
     if (!sh) { sh = document.createElement('dialog'); sh.id = 'langSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
@@ -1438,6 +1501,23 @@
     let sh = document.getElementById('settingsSheet');
     if (!sh) { sh = document.createElement('dialog'); sh.id = 'settingsSheet'; document.body.appendChild(sh); enableBackdropClose(sh); }
     const encState = IS_ENC ? t('Aktiv ✓') : t('Aus');
+    // v4.118.0: Grund-Einstellungen oben, selten Gebrauchtes unter «Erweitert»
+    // (eingeklappt, Zustand pro Geraet). Die Abgleich-Zeile steht im
+    // Erweitert-Teil — WARNT sie (v4.61.0: eingefrorener Sync), steht sie
+    // immer sichtbar oberhalb, damit das Einklappen keinen Alarm versteckt.
+    const advOpen = (() => { try { return localStorage.getItem('haushalt.setadv') === '1'; } catch { return false; } })();
+    const { line: syncLine, warn: syncWarn } = (() => {
+        // v4.61.0: Abgleich sichtbar machen — ein eingefrorener Sync darf nie
+        // wieder wie fehlende Daten aussehen (Vorfall 19.–21.07.).
+        const mins = lastSyncAt ? Math.round((Date.now() - lastSyncAt) / 60000) : null;
+        const when = mins === null ? t('noch nicht in dieser Sitzung')
+          : mins < 1 ? t('gerade eben') : t('vor {n} Min.', { n: mins });
+        const unread = state.log.filter(e => e.chore_name === '···' || e.member_name === '···').length;
+        const warn = (mins !== null && mins >= 3) || pullDiscards > 0 || unread > 0;
+        return { warn, line: `<p id="syncInfo" style="color:${warn ? 'var(--warn, #E0A030)' : 'var(--muted)'};font-size:12.5px;margin:14px 4px 0;text-align:center">${t('Letzter Abgleich: {when}', { when })}${
+          pullDiscards > 0 ? `<br>${t('Empfangen, noch nicht übernommen: {n} Abgleiche', { n: pullDiscards })}` : ''}${
+          unread > 0 ? `<br>${t('{n} Einträge nicht lesbar (Verschlüsselung)', { n: unread })}` : ''}</p>` };
+    })();
     sh.innerHTML = `<div class="sheet">
       <div class="grabber"></div>
       <div class="sheetbar">
@@ -1451,40 +1531,36 @@
         <span class="seticon">🏠</span><span class="setlabel">${t('Haushaltsname')}</span><span class="setval">${esc(state.famName || '')}</span><span class="chev">›</span></button>`}
       <button class="menuitem setrow" id="setLang" style="border-radius:12px">
         <span class="seticon">🌐</span><span class="setlabel">${t('Sprache')}</span><span class="setval">${LANGS[LANG]}</span><span class="chev">›</span></button>
+      <button class="menuitem setrow" id="setLook" style="border-radius:12px">
+        <span class="seticon">🎨</span><span class="setlabel">${t('Aussehen')}</span><span class="setval">${t(brandOn() ? 'Neu' : 'Klassisch')}</span><span class="chev">›</span></button>
       <button class="menuitem setrow" id="setSort" style="border-radius:12px">
         <span class="seticon">↕️</span><span class="setlabel">${t('Kachel-Sortierung')}</span><span class="setval">${t(SORT === 'alpha' ? 'Alphabetisch' : SORT === 'usage' ? 'Nach Nutzung' : 'Nach Erstellung')}</span><span class="chev">›</span></button>
-      ${!isAdmin() ? '' : `<button class="menuitem setrow" id="setRetention" style="border-radius:12px">
-        <span class="seticon">🗓️</span><span class="setlabel">${t('Verlauf aufbewahren')}</span><span class="setval">${RETENTION ? t('{n} Tage', { n: RETENTION }) : t('Unbegrenzt')}</span><span class="chev">›</span></button>`}
-      <button class="menuitem setrow" id="setSyncDiag" style="border-radius:12px">
-        <span class="seticon">🩺</span><span class="setlabel">${t('Sync-Details')}</span><span class="chev">›</span></button>
-      <button class="menuitem setrow" id="setTrash" style="border-radius:12px">
-        <span class="seticon">🗑️</span><span class="setlabel">${t('Papierkorb')}</span><span class="setval">${trashVisible().length || ''}</span><span class="chev">›</span></button>
-      <button class="menuitem setrow" id="setSearch" style="border-radius:12px">
-        <span class="seticon">🔎</span><span class="setlabel">${t('Suche')}</span><span class="setval">${t(SEARCH_ON ? 'An' : 'Aus')}</span></button>
       <button class="menuitem setrow" id="setLogart" style="border-radius:12px">
         <span class="seticon">🖼️</span><span class="setlabel">${t('Kachelbilder im Verlauf')}</span><span class="setval">${t(LOGART_ON ? 'An' : 'Aus')}</span></button>
-      <button class="menuitem setrow" id="setMaxPts" style="border-radius:12px">
-        <span class="seticon">🎯</span><span class="setlabel">${t('Max. Punkte')}</span><span class="setval">${MAXPTS}</span><span class="chev">›</span></button>
-      ${IS_ENC || !isAdmin() ? '' : `<button class="menuitem setrow" id="setEnc" style="border-radius:12px">
-        <span class="seticon">🔒</span><span class="setlabel">${t('Verschlüsselung')}</span><span class="setval">${encState}</span><span class="chev">›</span></button>`}
+      <button class="menuitem setrow" id="setSearch" style="border-radius:12px">
+        <span class="seticon">🔎</span><span class="setlabel">${t('Suche')}</span><span class="setval">${t(SEARCH_ON ? 'An' : 'Aus')}</span></button>
+      <button class="menuitem setrow" id="setTrash" style="border-radius:12px">
+        <span class="seticon">🗑️</span><span class="setlabel">${t('Papierkorb')}</span><span class="setval">${trashVisible().length || ''}</span><span class="chev">›</span></button>
       <a class="menuitem setrow" href="/chores/updates.html" target="_blank" rel="noopener" style="border-radius:12px;text-decoration:none">
         <span class="seticon">✨</span><span class="setlabel">${t('Was ist neu')}</span><span class="setval">↗</span></a>
-      ${(() => {
-        // v4.61.0: Abgleich sichtbar machen — ein eingefrorener Sync darf nie
-        // wieder wie fehlende Daten aussehen (Vorfall 19.–21.07.).
-        const mins = lastSyncAt ? Math.round((Date.now() - lastSyncAt) / 60000) : null;
-        const when = mins === null ? t('noch nicht in dieser Sitzung')
-          : mins < 1 ? t('gerade eben') : t('vor {n} Min.', { n: mins });
-        const unread = state.log.filter(e => e.chore_name === '···' || e.member_name === '···').length;
-        const warn = (mins !== null && mins >= 3) || pullDiscards > 0 || unread > 0;
-        return `<p id="syncInfo" style="color:${warn ? 'var(--warn, #E0A030)' : 'var(--muted)'};font-size:12.5px;margin:14px 4px 0;text-align:center">${t('Letzter Abgleich: {when}', { when })}${
-          pullDiscards > 0 ? `<br>${t('Empfangen, noch nicht übernommen: {n} Abgleiche', { n: pullDiscards })}` : ''}${
-          unread > 0 ? `<br>${t('{n} Einträge nicht lesbar (Verschlüsselung)', { n: unread })}` : ''}</p>`;
-      })()}
-      ${IS_IOS ? '' : `<button class="menuitem setrow" id="setStripUrl" style="border-radius:12px">
+      ${syncWarn ? syncLine : ''}
+      <button type="button" class="menuitem setrow setadv" id="setAdvToggle" aria-expanded="${advOpen}" aria-controls="setAdv" style="border-radius:12px">
+        <span class="seticon">⚙︎</span><span class="setlabel">${t('Erweitert')}</span><span class="chev">›</span></button>
+      <div id="setAdv"${advOpen ? '' : ' hidden'}>
+        ${!isAdmin() ? '' : `<button class="menuitem setrow" id="setRetention" style="border-radius:12px">
+        <span class="seticon">🗓️</span><span class="setlabel">${t('Verlauf aufbewahren')}</span><span class="setval">${RETENTION ? t('{n} Tage', { n: RETENTION }) : t('Unbegrenzt')}</span><span class="chev">›</span></button>`}
+        <button class="menuitem setrow" id="setMaxPts" style="border-radius:12px">
+        <span class="seticon">🎯</span><span class="setlabel">${t('Max. Punkte')}</span><span class="setval">${MAXPTS}</span><span class="chev">›</span></button>
+        ${IS_ENC || !isAdmin() ? '' : `<button class="menuitem setrow" id="setEnc" style="border-radius:12px">
+        <span class="seticon">🔒</span><span class="setlabel">${t('Verschlüsselung')}</span><span class="setval">${encState}</span><span class="chev">›</span></button>`}
+        ${IS_IOS ? '' : `<button class="menuitem setrow" id="setStripUrl" style="border-radius:12px">
         <span class="seticon">🔗</span><span class="setlabel">${t('Adressleiste aufräumen')}</span><span class="setval">${
           wantStripped(FAMILY) ? t('An') : t('Aus')}</span><span class="chev">›</span></button>`}
-      <p style="color:var(--muted);font-size:12.5px;margin:4px 4px 2px;text-align:center">Fairli ${APP_VERSION}</p>
+        <button class="menuitem setrow" id="setSyncDiag" style="border-radius:12px">
+        <span class="seticon">🩺</span><span class="setlabel">${t('Sync-Details')}</span><span class="chev">›</span></button>
+        ${syncWarn ? '' : syncLine}
+          <p id="setVersion" style="color:var(--muted);font-size:12.5px;margin:4px 4px 2px;text-align:center">Fairli ${APP_VERSION}</p>
+      </div>
     </div>`;
     sh.querySelector('#closeSettings').onclick = () => sh.close();
     sh.querySelector('#setTrash').onclick = () => { sh.close(); openTrashSheet(); };
@@ -1516,6 +1592,13 @@
     if (smn) smn.onclick = () => { sh.close(); openMyNameSheet(); };
     sh.querySelector('#setLang').onclick = () => { sh.close(); openLangSheet(); };
     sh.querySelector('#setSort').onclick = () => { sh.close(); openSortSheet(); };
+    sh.querySelector('#setLook').onclick = () => { sh.close(); openLookSheet(); };
+    sh.querySelector('#setAdvToggle').onclick = e => {
+      const b = e.currentTarget, open = b.getAttribute('aria-expanded') !== 'true';
+      b.setAttribute('aria-expanded', String(open));
+      sh.querySelector('#setAdv').hidden = !open;
+      try { localStorage.setItem('haushalt.setadv', open ? '1' : '0'); } catch {}
+    };
     const sr = sh.querySelector('#setRetention');
     if (sr) sr.onclick = () => { sh.close(); openRetentionSheet(); };
     sh.querySelector('#setSearch').onclick = e => {
@@ -2145,7 +2228,7 @@
     // dem i18n-Boot und blieb fuer alle Welt deutsch.
     function renderEntry() {
       d.innerHTML = `
-      <img src="/chores/icon-192.png?v=49" alt="" width="72" height="72" style="border-radius:18px">
+      <img src="${brandOn() ? '/chores/icon-192.png?v=49' : '/chores/icon-classic-192.png?v=1'}" alt="" width="72" height="72" style="border-radius:18px">
       <h1 style="font-family:var(--display);font-weight:800;font-size:34px;margin:0 0 4px;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Fairli</h1>
       <p style="color:var(--muted);max-width:300px;margin:0 0 8px">${t('Aufgaben im Haushalt – fair verteilt.')}</p>
       ${last && last.family ? `<button id="resume" style="${btn};background:var(--accent);color:#0C1220">${t('Zu meinem Haushalt')}</button>` : ''}
@@ -4647,7 +4730,7 @@
     // egal wie viele Releases folgen. Erst ein Bump von NEWS_VERSION
     // (ZUSAMMEN mit neuem updates.html-Inhalt!) zündet erneut. Marke wird
     // bei stillen Durchläufen aktuell gehalten.
-    const NEWS_VERSION = '4.117.0';  // = Version des Recap-RELEASES selbst! (v4.117.0: neues Bild fuer alle) Die seenver-Marke
+    const NEWS_VERSION = '4.118.0';  // = Version des Recap-RELEASES selbst! (v4.118.0: Aussehen «Klassisch» wieder waehlbar) Die seenver-Marke
     // rueckt bei jedem Besuch still auf APP_VERSION vor — ein NEWS_VERSION
     // UNTER bereits gesehenen Versionen kann darum nie zuenden (Live-Fund
     // 18.07.: Familie sah keinen Banner, Marken standen auf 4.47.x).
