@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v225';   // v4.118.0 Aussehen pro Geraet (Neu/Klassisch) + Einstellungen mit «Erweitert»
+const CACHE = 'haushalt-v226';   // v4.118.1 Ich-bin-Auswahl, Aufbewahrung und Sprache kleben (Pull/Boot setzen nichts zurueck)
 // v4.113.1: Kachelkunst hat einen EIGENEN, versionsfesten Cache. Bis v4.113.0
 // lag sie im versionierten CACHE — und den loescht `activate` bei JEDEM Deploy.
 // Folge: nach jedem Deploy forderte jedes Geraet jedes Kachelbild neu an,

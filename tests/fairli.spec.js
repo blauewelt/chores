@@ -6859,3 +6859,253 @@ test.describe('Aussehen pro Geraet + Erweitert (v4.118.0)', () => {
     await expect(page.locator('#setAdvToggle')).toContainText('Advanced');
   });
 });
+
+// ---------- v4.118.1: Einstellungen und Auswahl kleben — ein Abgleich setzt nichts zurück ----------
+// Live-Bug (Maintainer, Admin am PERSOENLICHEN Link): «wenn ich die Person
+// wechsle, bleibt die Auswahl nicht, sie springt manchmal zurück». pull() hielt
+// allowedIds() === null («Admin: alle») fuer «nicht erlaubt» und setzte `me`
+// bei JEDEM uebernommenen Abgleich (alle 20 s, bei jeder Rueckkehr) auf die
+// eigene Person zurueck — seit v4.55.0 (bb10334), als allowedIds() fuer Admins
+// an persoenlichen Links null lieferte. Dieselbe Klasse im Audit: die
+// Aufbewahrung (ein Abgleich, der VOR dem Speichern beim Server war, setzte die
+// Wahl zurueck) und die Sprache (das Start-Woerterbuch, das NACH einer neuen
+// Wahl eintraf, uebersetzte die App in die alte Sprache).
+test.describe('Auswahl und Einstellungen kleben (v4.118.1)', () => {
+  // Abgleich ausloesen und abwarten: GET-Zaehler steigt, dann Zeit fuer die Uebernahme
+  async function pullAndSettle(page, gets) {
+    const n = gets();
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect.poll(gets).toBeGreaterThan(n);
+    await page.waitForTimeout(500);
+  }
+  const chip = (page, name) => page.locator('.iam .chip', { hasText: name });
+
+  test('Admin am persönlichen Link: gewählte Person überlebt den Abgleich, der Tipp bucht für sie; gelöschte Auswahl fällt auf selbst zurück', async ({ context, page }) => {
+    let timonGone = false;
+    const rows = () => [
+      { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', admin: true },
+      { id: 'm-timon', name: 'Timon', color: '#2E7D32', family_id: FAM, url_slug: 'slugt1' },
+      { id: 'm-noel', name: 'Noel', color: '#B26500', family_id: FAM, url_slug: null },
+    ].filter(m => !(timonGone && m.id === 'm-timon'));
+    await mockBackend(context, { memberRows: rows });
+    let memberGets = 0;
+    const logPosts = [];
+    await context.route(`${SB}/rest/v1/members*`, route => {
+      if (route.request().method() === 'GET') memberGets++;
+      return route.fallback();
+    });
+    await context.route(`${SB}/rest/v1/log*`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') { logPosts.push(...[].concat(req.postDataJSON())); return route.fulfill({ status: 201, body: '' }); }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+    // Admin sieht ALLE als Chips, selbst ist ausgewaehlt
+    await expect(chip(page, 'Timon')).toBeVisible();
+    await expect(chip(page, 'Noel')).toBeVisible();
+    await expect(chip(page, 'Mira')).toHaveAttribute('aria-pressed', 'true');
+    await chip(page, 'Timon').click();
+    await expect(chip(page, 'Timon')).toHaveAttribute('aria-pressed', 'true');
+    // Zwei Abgleiche (Rueckkehr in die App) — die Auswahl springt NICHT zurueck
+    await pullAndSettle(page, () => memberGets);
+    await pullAndSettle(page, () => memberGets);
+    await expect(chip(page, 'Timon')).toHaveAttribute('aria-pressed', 'true');
+    await expect(chip(page, 'Mira')).toHaveAttribute('aria-pressed', 'false');
+    // ...und der Tipp bucht fuer Timon
+    await page.locator('.chore[data-cid="c-1"]').click();
+    await expect.poll(() => logPosts.length).toBeGreaterThan(0);
+    expect(logPosts[0].member_id).toBe('m-timon');
+    // Timon wird auf einem anderen Geraet entfernt: zurueck auf selbst, nie ins Leere
+    timonGone = true;
+    await pullAndSettle(page, () => memberGets);
+    await expect(chip(page, 'Timon')).toHaveCount(0);
+    await expect(chip(page, 'Mira')).toHaveAttribute('aria-pressed', 'true');
+    await page.waitForTimeout(300);   // pressLock (250 ms)
+    await page.locator('.chore[data-cid="c-1"]').click();
+    await expect.poll(() => logPosts.length).toBeGreaterThan(1);
+    expect(logPosts[logPosts.length - 1].member_id).toBe('m-mira');
+  });
+
+  test('Nicht-Admin am persönlichen Link: Betreute bleibt über den Abgleich gewählt; nicht mehr erlaubt → zurück auf selbst', async ({ context, page }) => {
+    let assisted = true;
+    const rows = () => [
+      { id: 'm-mira', name: 'Mira', color: '#3E6BD6', family_id: FAM, url_slug: 'slugmira1', assisted: false },
+      { id: 'm-timon', name: 'Timon', color: '#2E7D32', family_id: FAM, url_slug: 'slugt1', assisted: false, admin: true },
+      { id: 'm-noel', name: 'Noel', color: '#B26500', family_id: FAM, url_slug: null, assisted },
+    ];
+    await mockBackend(context, { memberRows: rows });
+    let memberGets = 0;
+    const logPosts = [];
+    await context.route(`${SB}/rest/v1/members*`, route => {
+      if (route.request().method() === 'GET') memberGets++;
+      return route.fallback();
+    });
+    await context.route(`${SB}/rest/v1/log*`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') { logPosts.push(...[].concat(req.postDataJSON())); return route.fulfill({ status: 201, body: '' }); }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}/u/slugmira1`);
+    await expect(chip(page, 'Noel')).toBeVisible();
+    await expect(chip(page, 'Timon')).toHaveCount(0);
+    await chip(page, 'Noel').click();
+    await pullAndSettle(page, () => memberGets);
+    await expect(chip(page, 'Noel')).toHaveAttribute('aria-pressed', 'true');
+    // Admin nimmt «betreut» weg → Noel ist nicht mehr erlaubt
+    assisted = false;
+    await pullAndSettle(page, () => memberGets);
+    await expect(chip(page, 'Noel')).toHaveCount(0);
+    await expect(chip(page, 'Mira')).toHaveAttribute('aria-pressed', 'true');
+    await page.locator('.chore[data-cid="c-1"]').click();
+    await expect.poll(() => logPosts.length).toBeGreaterThan(0);
+    expect(logPosts[0].member_id).toBe('m-mira');
+  });
+
+  test('Familien-Link (Admin): Auswahl überlebt Abgleich und Neuladen', async ({ context, page }) => {
+    await mockBackend(context);
+    let memberGets = 0;
+    await context.route(`${SB}/rest/v1/members*`, route => {
+      if (route.request().method() === 'GET') memberGets++;
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await chip(page, 'Mira').click();
+    await expect(chip(page, 'Mira')).toHaveAttribute('aria-pressed', 'true');
+    await pullAndSettle(page, () => memberGets);
+    await expect(chip(page, 'Mira')).toHaveAttribute('aria-pressed', 'true');
+    await page.reload();
+    await expect(chip(page, 'Mira')).toHaveAttribute('aria-pressed', 'true');
+    await expect(chip(page, 'Timon')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  // Server-Stand der families-Zeile, konsistent: PATCH aendert ihn; ein
+  // zurueckgehaltenes GET antwortet mit dem Stand zum Zeitpunkt der ANFRAGE
+  // (wie ein Server, der vor dem Commit des PATCH geantwortet hat).
+  async function famServer(context, { ret = null, patchHold = null, patchFail = false } = {}) {
+    const srv = { ret, gets: 0, patches: [], hold: null };
+    await context.route(`${SB}/rest/v1/families*`, async route => {
+      const req = route.request();
+      if (req.method() === 'PATCH') {
+        const b = req.postDataJSON();
+        srv.patches.push(b);
+        if (patchHold) await patchHold;
+        if (patchFail) return route.fulfill({ status: 500, body: 'boom' });
+        if ('retention_days' in b) srv.ret = b.retention_days;
+        return route.fulfill({ status: 204, body: '' });
+      }
+      if (req.method() !== 'GET') return route.fallback();
+      // wie mockBackend: Anfragen fuer FREMDE family_id (famc-Probe) bleiben leer
+      const famEq = (new URL(req.url()).searchParams.get('family_id') || '').replace('eq.', '');
+      if (famEq && famEq !== FAM) return route.fallback();
+      srv.gets++;
+      const body = JSON.stringify([{ family_id: FAM, name: 'Testhaushalt', retention_days: srv.ret }]);
+      if (srv.hold) await srv.hold;
+      return route.fulfill({ status: 200, contentType: 'application/json', body });
+    });
+    return srv;
+  }
+
+  test('Aufbewahrung klebt: ein Abgleich, der VOR dem Speichern beim Server war, setzt die Wahl nicht zurück', async ({ context, page }) => {
+    const days = n => new Date(Date.now() - n * 86400e3).toISOString();
+    await mockBackend(context, { logRows: () => [
+      { id: 'l-2', chore_id: 'c-1', chore_name: 'Müll rausbringen', member_id: 'm-mira', member_name: 'Mira', points: 1, done_at: days(2), family_id: FAM },
+    ] });
+    const srv = await famServer(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await expect.poll(() => srv.gets).toBeGreaterThan(0);
+    await page.waitForTimeout(400);
+    // Abgleich startet, die families-Antwort (noch «unbegrenzt») bleibt haengen
+    let release; srv.hold = new Promise(r => { release = r; });
+    const n = srv.gets;
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect.poll(() => srv.gets).toBeGreaterThan(n);
+    // ...waehrenddessen waehlt der Admin 90 Tage, der Server bestaetigt
+    await page.locator('#openSettings').click();
+    await openAdvanced(page);
+    page.once('dialog', d => d.accept());
+    await page.locator('#setRetention').click();
+    await page.locator('[data-ret="90"]').click();
+    await expect.poll(() => srv.ret).toBe(90);
+    // Jetzt kommt die alte Antwort an
+    srv.hold = null; release();
+    await page.waitForTimeout(600);
+    await page.locator('#openSettings').click();
+    await openAdvanced(page);
+    await expect(page.locator('#setRetention .setval')).toHaveText('90 Tage');
+    await page.locator('#closeSettings').click();
+    // Der naechste (frische) Abgleich sieht den Server-Stand — weiter 90
+    const m = srv.gets;
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect.poll(() => srv.gets).toBeGreaterThan(m);
+    await page.waitForTimeout(500);
+    await page.locator('#openSettings').click();
+    await openAdvanced(page);
+    await expect(page.locator('#setRetention .setval')).toHaveText('90 Tage');
+  });
+
+  test('Aufbewahrung: solange der Server die neue Frist nicht bestätigt hat, löscht auch ein Abgleich NICHTS — scheitert das Speichern, bleibt alles', async ({ context, page }) => {
+    const days = n => new Date(Date.now() - n * 86400e3).toISOString();
+    await mockBackend(context, { logRows: () => [
+      { id: 'l-120', chore_id: 'c-1', chore_name: 'Müll rausbringen', member_id: 'm-mira', member_name: 'Mira', points: 1, done_at: days(120), family_id: FAM },
+      { id: 'l-2', chore_id: 'c-1', chore_name: 'Müll rausbringen', member_id: 'm-mira', member_name: 'Mira', points: 1, done_at: days(2), family_id: FAM },
+    ] });
+    let releasePatch; const patchHold = new Promise(r => { releasePatch = r; });
+    const srv = await famServer(context, { patchHold, patchFail: true });
+    const dels = [];
+    await context.route(`${SB}/rest/v1/log*`, route => {
+      if (route.request().method() === 'DELETE') { dels.push(route.request().url()); return route.fulfill({ status: 204, body: '' }); }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await page.locator('#openSettings').click();
+    await openAdvanced(page);
+    page.once('dialog', d => d.accept());
+    await page.locator('#setRetention').click();
+    await page.locator('[data-ret="90"]').click();
+    await expect.poll(() => srv.patches.length).toBe(1);
+    // Abgleich WAEHREND das Speichern noch haengt
+    const n = srv.gets;
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect.poll(() => srv.gets).toBeGreaterThan(n);
+    await page.waitForTimeout(600);
+    expect(dels).toHaveLength(0);
+    // Server lehnt ab → alte Frist (unbegrenzt), nichts geloescht
+    releasePatch();
+    await page.waitForTimeout(600);
+    expect(dels).toHaveLength(0);
+    await page.locator('#openSettings').click();
+    await openAdvanced(page);
+    await expect(page.locator('#setRetention .setval')).toHaveText('Unbegrenzt');
+    await page.locator('#closeSettings').click();
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await expect(page.locator('.entry')).toHaveCount(2);
+  });
+
+  test('Sprache klebt: das Start-Wörterbuch, das NACH einer neuen Wahl eintrifft, übersetzt die App nicht zurück', async ({ context, page }) => {
+    await mockBackend(context);
+    await context.addInitScript(() => { try { localStorage.setItem('haushalt.lang', 'fr'); } catch {} });
+    const fr = readFileSync(join(__i18nDir, 'fr.json'), 'utf8');
+    let releaseFr; const frHeld = new Promise(r => { releaseFr = r; });
+    let frAsked = 0;
+    await context.route('**/i18n/fr.json**', async r => {
+      frAsked++; await frHeld;
+      return r.fulfill({ status: 200, contentType: 'application/json', body: fr });
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await expect.poll(() => frAsked).toBeGreaterThan(0);
+    // Waehrend das franzoesische Woerterbuch noch laedt: Englisch waehlen
+    await page.locator('#openSettings').click();
+    await page.locator('#setLang').click();
+    await page.locator('#langSheet [data-lang="en"]').click();
+    await expect(page.locator('.tab[data-view="log"]')).toHaveText('History');
+    // Jetzt trifft das alte Start-Woerterbuch ein
+    releaseFr();
+    await page.waitForTimeout(600);
+    await expect(page.locator('.tab[data-view="log"]')).toHaveText('History');
+    await expect(page.locator('.tab[data-view="chores"]')).toHaveText('Tasks');
+    expect(await page.evaluate(() => localStorage.getItem('haushalt.lang'))).toBe('en');
+  });
+});

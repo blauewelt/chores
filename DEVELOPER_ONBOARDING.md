@@ -6,7 +6,7 @@ A static single-file app on GitHub Pages, Supabase as the sync backend,
 end-to-end encryption for new and migrated households.
 This document is the shortcut for a new session (human or AI):
 architecture, all design decisions WITH rationale, and the painfully
-learned platform quirks. As of: v4.118.0 (16.10.2026).
+learned platform quirks. As of: v4.118.1 (22.10.2026).
 
 ---
 
@@ -791,6 +791,11 @@ runs ONLY on the admin link and ONLY via `deleteRemote`, exclusively on
 `log`. The setting is admin-only; activation requires a confirmation
 that names the number of affected rows. When extending this: NEVER
 widen it to chores/members/families — the test checks exactly that.
+**Pull guard (v4.118.1):** `pendingRetention` = the `pendingFamName` pattern —
+the local choice wins until a pull that STARTED after the server confirmed;
+while unconfirmed, `purgeExpired()` deletes nothing by retention (a failed
+PATCH must never have deleted by the never-saved deadline). Any new scalar on
+the `families` row that the client writes needs the same guard.
 
 ### Search (v4.50.0, auto-activation v4.51.0)
 Above more than `SEARCH_AUTO_AT` (7) tiles, `maybeAutoSearch()` turns
@@ -810,6 +815,11 @@ helpers: `slugSelf()` = identity of the LINK (settings, Mein Name —
 NEVER use the chip selection!), `allowedIds()` = self + assisted
 (chips, chip click, canEditLog, pull retraction). Anyone raising a new
 permissions question asks allowedIds() — not `me === x`.
+**`allowedIds() === null` means «everyone» (admin), never «nobody»**
+(v4.118.1): pull() read `!allow` as «not allowed» and snapped an admin's
+chip selection on a personal link back to self on every pull (since v4.55.0).
+Test `allow && !allow.has(id)`; the pull falls back to self only when the
+selection is not allowed or the person no longer exists.
 
 ### Mein Name (v4.46.0)
 Settings → 👤 «Mein Name», ONLY on the personal link (admins use the
@@ -902,7 +912,9 @@ checkmark shows the choice, not the effect. Never write the key on the
 user's behalf; updates.html shares the same semantics.
 German = source language = key (gettext pattern): `t('Speichern')`,
 fallback German. Dictionaries `i18n/<code>.json`; only the active
-language is loaded (localStorage copy for offline). Static content via
+language is loaded (localStorage copy for offline); `loadDict(lang)` adopts
+a dictionary ONLY if `lang` is still `LANG` (v4.118.1 — the slow boot fetch
+used to overwrite a language picked meanwhile). Static content via
 `data-i18n`/translatePage(), dynamic content via t(). **Key parity is
 law** — every new key × 19 files; the integrity test enforces identical
 keys, identical placeholders, never empty. Treat German source strings
@@ -1340,6 +1352,14 @@ the plausible-sounding fix (DNS flag, UI automation) did not.
   that «Review app update» appears, and that the iOS add-again-then-delete
   path keeps the household.
 
+- **Session view state resets on every page reload (v4.118.1 audit, product
+  question).** Active tab, Punkte period, Verlauf filter, search query and — on
+  a personal link, by design (§5) — the «Ich bin» selection live in memory only;
+  any reload (incl. the post-deploy reload on the next app-hide, v4.115.1, or
+  the OS killing the PWA) returns them to the defaults. No sync/render path
+  resets them any more (audit table in LOG v4.118.1). Persisting them (e.g.
+  sessionStorage) is the maintainer's call — v4.64.0 deliberately does not
+  persist the filter.
 - **Chore edit sheet vs. deletion elsewhere (found 05.10.2026, v4.115.1
   audit).** `submitChoreForm()` re-looks the chore up by id (no orphan), but if
   another device deleted it while the sheet was open, `c` is undefined and the
@@ -1362,6 +1382,12 @@ the plausible-sounding fix (DNS flag, UI automation) did not.
   test) here, including the four `@sw` art tests that used to fail in the old
   1.56.1/1194 pairing. Default workers = 1 on a 2-core box: pass
   `--workers=3` (full run ≈ 9–10 min).
+  **Not every sandbox has that set (22.10.2026, v4.118.1):** a box with only
+  `chromium-1194` (+ the `/opt/pw-browsers/chromium` symlink) and NO WebKit ran
+  the repo's Playwright 1.61.1 through an untracked local config with
+  `launchOptions.executablePath: '/opt/pw-browsers/chromium'`, its own port
+  (> 8100) and only the `chromium` + `chromium-sw` projects; WebKit was covered
+  by CI only. Check `ls /opt/pw-browsers` first.
 
 - **Store apps, notifications, voice logging — DESIGN DRAFT 03.10.2026,
   awaiting maintainer decisions:** `docs/NATIVE_APPS.md`. Read it before

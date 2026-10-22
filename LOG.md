@@ -1,3 +1,102 @@
+## 2026-10-22 — v4.118.1 (SW haushalt-v226): the «Ich bin» selection sticks for admins on a personal link — plus two more settings a sync or boot could undo
+
+Maintainer: «When changing the user in the task view … when I change the user,
+the changed selection doesn't stick, it jumps back sometimes.» He is an ADMIN
+using his PERSONAL link. He added that it «reminds me of a series of bugs where
+a setting wouldn't stick» — so this release also audits every per-device /
+in-memory UI setting against the pull, render and boot paths.
+
+### The bug: `me` snapped back on every adopted pull (admins on personal links)
+
+- In `pull()`, after reconcile, the personal-link branch kept the chip
+  selection only if `allowedIds()` contained it:
+  `if (!me || !allow || !allow.has(me)) me = lm.id;`. But `allowedIds()`
+  returns **null for admins, meaning «everyone allowed»** — `!allow` read it as
+  «not allowed». So for an admin on a personal link EVERY adopted pull (every
+  20 s while visible, and on every return to the app) reset `me` to the admin's
+  own id. `me` is part of the pull's UI fingerprint (v4.59.0), so the reset
+  forced a re-render and the chips visibly jumped back. «Sometimes» = whether a
+  pull landed between switching the chip and tapping a tile; non-admins get a
+  real Set from `allowedIds()` and were never affected; the family link (no
+  `USER_SLUG`) never runs this branch.
+- **Since v4.55.0 (bb10334, 19.07.2026).** v4.49.0 (4891410) wrote the line
+  when `allowedIds()` returned null only for `!USER_SLUG` — inside the
+  `if (USER_SLUG)` branch it was always a Set and `!allow` was dead code (the
+  comment says the intent: the selection survives the pull, back to self only
+  if no longer allowed). v4.55.0 changed `allowedIds()` to `if (isAdmin())
+  return null` when personal links started carrying admin rights, and the dead
+  `!allow` came alive. Found by `git blame`; the red test reproduces it exactly.
+- **Fix:** `if (!me || (allow && !allow.has(me)) || !state.members.some(m =>
+  m.id === me)) me = lm.id;` — null means everyone; the new third clause keeps
+  a fallback to self when the selected person no longer exists (deleted on
+  another device), which the old `!allow` had covered by accident for admins.
+
+### Audit: every per-device / in-memory UI setting vs pull, render and boot
+
+| Setting | Stored | Can a sync/render/boot path reset it? | Verdict |
+|---|---|---|---|
+| «Ich bin» (`me`) | family link: `haushalt.me:<fam>:admin`; personal link: memory only, derived from the slug (§5) | pull reset it for admins on personal links | **fixed** (above) |
+| Verlauf aufbewahren (`RETENTION`, `families.retention_days`) | per household, server | every pull assigned the server value unconditionally — a pull whose `families` answer left the server BEFORE the PATCH committed reverted the fresh choice (settings row back to the old value until the next pull) | **fixed**: `pendingRetention` guard, same semantics as `pendingFamName` (v4.47.6) |
+| Sprache (`LANG`/`DICT`) | `haushalt.lang` | the boot dictionary fetch (`loadDict(LANG).then(…)`, `cache:'no-cache'`) assigned `DICT` whenever it resolved — choose another language while it is still loading (first visit, slow network) and the app re-translated itself into the boot language while the setting said the new one | **fixed**: `loadDict()` adopts a dictionary only if its language is still `LANG` |
+| Kachel-Sortierung | `haushalt.sort` | only `setSort()` writes; pull/visibility only invalidate the ORDER cache, never the mode | safe |
+| Punkte period (Woche/Gesamt) | memory (`period`) | only the pill click writes | safe (resets on reload — see open items) |
+| Verlauf filter (`LOGFILTER`/`LOGWEEK`) | memory | cleared by the pill ×, by «Ändern» in the logging toast (v4.108.0, deliberate) and in render when the filtered person no longer exists (deliberate) | safe |
+| Active tab (`view`) | memory | only tab click, points card, «Ändern» toast | safe (resets on reload) |
+| Search (`SEARCH_ON`/`QUERY`) | `haushalt.search` / memory | query cleared on a real tab switch (v4.99.0, deliberate) and when search is switched off; auto-activation only while the key is ABSENT (v4.51.0) | safe |
+| Aussehen | `haushalt.look` | only the head script (reads) and `setLook()` | safe |
+| Adressleiste aufräumen (link-safe) | `haushalt.linksafe:<fam>` | only the settings switch writes; boot `replaceState` goes through `canonUrl()`, which respects it | safe |
+| Papierkorb | no setting (30 days fixed) | — | n/a |
+| Max. Punkte | `haushalt.maxpts` | only `setMaxPts()` | safe |
+| Kachelbilder im Verlauf, «Erweitert» open | `haushalt.logart`, `haushalt.setadv` | only their switches | safe |
+| Install banner / news banner dismissals | `haushalt.installbar.done:<fam>:a\|u` (per context, §8), `haushalt.seenver` | only ×/appinstalled; news is content-anchored (v4.43.1) | safe |
+| Household name, weekly goal | server | guarded since v4.47.6 / v4.115.1 | safe (unchanged) |
+
+**Retention, the deletion side.** With the new guard a pull that lands while the
+PATCH is still in flight keeps the NEW value locally — and `pull()` schedules
+`purgeExpired()`. Without a second check that purge would already delete by a
+deadline the server has not accepted (and if the PATCH then fails, the rows are
+gone although the setting reverted — measured: the 120-day entry was DELETEd).
+`purgeExpired()` therefore skips the retention part while `pendingRetention` is
+unresolved (the trash part is unaffected). This keeps the v4.52.0 promise «on
+failure, delete NOTHING».
+
+### Tests
+
+- New describe «Auswahl und Einstellungen kleben (v4.118.1)», 6 tests:
+  (1) admin on a personal link, 3 members: picks another chip, two pulls land,
+  the chip stays and a tile tap books for that member; then the member is
+  removed on the server → back to self and the next tap books for self;
+  (2) non-admin: an assisted member's selection survives a pull; when the
+  server drops «betreut», the selection falls back to self and the tap books
+  for self; (3) family link: selection survives a pull and a reload;
+  (4) retention: a pull whose `families` answer is held while the admin picks
+  90 days (server confirms), released afterwards — the row still says «90
+  Tage», and again after a fresh pull; (5) retention: PATCH held and then
+  FAILING, a pull in between — no DELETE at any point, setting back to
+  «Unbegrenzt», both entries still there; (6) language: boot in French with
+  `fr.json` held, pick English, release the French dictionary — tabs stay
+  «History»/«Tasks».
+- **Red against v4.118.0 first (chromium):** (1) red at the first check after
+  the pull (Timon `aria-pressed` false — the reported bug), (4) red («Unbegrenzt»
+  instead of «90 Tage»), (6) red («Historique»). (2), (3), (5) were green on the
+  old code by design — they pin existing behaviour and the new guard.
+- **Negative checks:** removing the «member no longer exists» clause turns (1)
+  red; removing the «unconfirmed retention deletes nothing» check turns (5) red
+  (one DELETE of `l-120`).
+- APP_VERSION 4.118.1, SW cache haushalt-v226. Icons unchanged → no `?v=` bump;
+  no new UI strings → no i18n keys; updates.html / NEWS_VERSION unchanged (bug
+  fix, no news).
+
+### Open (not changed — product questions, not clear-cut bugs)
+
+- **Session view state resets on every page reload:** the active tab, the Punkte
+  period, the Verlauf filter, the search query and — on a personal link, by
+  design (§5: personal links never write identity to storage) — the «Ich bin»
+  selection. That includes the automatic reload on the next app-hide after a
+  deploy (v4.115.1) and the OS killing the PWA. No sync or render path resets
+  them; persisting them (e.g. in sessionStorage) would be a product decision —
+  v4.64.0 deliberately does not persist the filter.
+
 ## 2026-10-16 — v4.118.0 (SW haushalt-v225): «Aussehen» — the classic look is back as a per-device choice, and the settings get a collapsed «Erweitert» section
 
 Maintainer: «Can you add an option to activate the old original look (in

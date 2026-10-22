@@ -1086,7 +1086,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.118.0';
+  const APP_VERSION = '4.118.1';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1303,10 +1303,17 @@
   async function loadDict(lang) {
     if (lang === 'de') { DICT = {}; return; }
     const ck = 'haushalt.dict:' + lang;
-    try { const c = localStorage.getItem(ck); if (c) DICT = JSON.parse(c); } catch {}
+    try { const c = localStorage.getItem(ck); if (c && lang === LANG) DICT = JSON.parse(c); } catch {}
     try {
       const r = await fetch('/chores/i18n/' + lang + '.json', { cache: 'no-cache' });
-      if (r.ok) { DICT = await r.json(); try { localStorage.setItem(ck, JSON.stringify(DICT)); } catch {} }
+      if (r.ok) {
+        const d = await r.json();
+        try { localStorage.setItem(ck, JSON.stringify(d)); } catch {}
+        // v4.118.1: nur uebernehmen, wenn diese Sprache noch die GEWAEHLTE ist —
+        // das Start-Woerterbuch, das nach einer neuen Wahl eintraf, uebersetzte
+        // die App sonst zurueck in die alte Sprache (LANG neu, DICT alt).
+        if (lang === LANG) DICT = d;
+      }
     } catch {}   // offline: localStorage-Kopie oder Deutsch-Fallback
   }
   // Statisches HTML uebersetzen: [data-i18n] merkt sich das deutsche Original
@@ -1694,9 +1701,12 @@
       RETENTION = days;
       sh.close();
       toast(t('Gespeichert'));
+      const pend = pendingRetention = { resolvedAt: null };   // v4.118.1: Pull-Wache scharf
       try {
         await sb('families', 'PATCH', { retention_days: days });
+        pend.resolvedAt = Date.now();
       } catch {
+        if (pendingRetention === pend) pendingRetention = null;
         RETENTION = prev;                       // zurueck auf den ALTEN Wert, nie auf null raten
         toast(t('Konnte nicht speichern — bitte erneut versuchen'));
         render();
@@ -2522,6 +2532,11 @@
   // Wache mit identischer Semantik (v4.47.6, Audit-Nachzug: die «dokumentierte
   // Ausnahme» war keine Notwendigkeit, nur Bequemlichkeit):
   let pendingFamName = null;   // { resolvedAt } — lokaler Name massgeblich bis Server-Bestaetigung   // "table:id" -> { row, resolvedAt }
+  // v4.118.1: dieselbe Wache fuer families.retention_days (Audit «Einstellung
+  // klebt nicht»): ein Pull, dessen families-Antwort VOR dem PATCH beim Server
+  // war, setzte die frisch gewaehlte Frist zurueck. Solange der Server nicht
+  // bestaetigt hat, loescht purgeExpired() auch nichts nach der NEUEN Frist.
+  let pendingRetention = null; // { resolvedAt }
   // Personen-Aenderungs-Marken (markChanged, v4.69.2) — HIER deklariert, weil
   // reconcile() sie seit v4.115.1 liest (Overlay lokal markierter Zeilen).
   const changedMembers = new Set();
@@ -2600,7 +2615,13 @@
       // clientseitig alphabetisch sortieren, fuer alle Familien einheitlich.
       members.sort((a, b) => String(a.name).localeCompare(String(b.name), LOCALE, { sensitivity: 'base' }));
       {
-        RETENTION = (fam[0] && fam[0].retention_days) || null;   // v4.52.0
+        // v4.52.0; v4.118.1: pendente Wahl bleibt, bis ein Pull sie NACH der
+        // Server-Bestaetigung sieht (Semantik wie pendingFamName)
+        const srvRet = (fam[0] && fam[0].retention_days) || null;
+        if (!pendingRetention) RETENTION = srvRet;
+        else if (pendingRetention.resolvedAt && pendingRetention.resolvedAt < pullStartedAt) {
+          pendingRetention = null; RETENTION = srvRet;
+        }
         BETA = !!(fam[0] && fam[0].beta);                         // v4.67.0
         // v4.117.0: families.beta gate wieder NICHTS (v4.113.0–v4.116.0: der
         // Marken-Test «Variante 3»; der gilt jetzt statisch fuer alle). Der
@@ -2694,8 +2715,15 @@
         if (lm) {
           // v4.49.0: Auswahl eines BETREUTEN Mitglieds ueberlebt den Pull —
           // zurueck auf selbst nur, wenn die Auswahl nicht (mehr) erlaubt ist
+          // ODER die Person nicht mehr existiert.
+          // v4.118.1 (Live-Bug «Auswahl springt zurueck», Admin am persoenlichen
+          // Link): allowedIds() === null heisst «Admin: ALLE erlaubt» — `!allow`
+          // las es als «nicht erlaubt» und setzte `me` bei JEDEM uebernommenen
+          // Pull (alle 20 s, jede Rueckkehr) auf die eigene Person. `me` steht im
+          // UI-Fingerabdruck, also sprang der Chip sichtbar zurueck. Seit v4.55.0
+          // (allowedIds liefert seither fuer Admins null, vorher nur ohne Slug).
           const allow = allowedIds();
-          if (!me || !allow || !allow.has(me)) me = lm.id;
+          if (!me || (allow && !allow.has(me)) || !state.members.some(m => m.id === me)) me = lm.id;
         }
         else if (state.members.length) { showBadLink(); return; }
       }
@@ -3177,7 +3205,10 @@
   let purgeRunning = false;
   async function purgeExpired() {
     if (purgeRunning || !isAdmin()) return;
-    const due = (RETENTION ? expiredEntries() : []).concat(trashExpired());
+    // v4.118.1: eine noch unbestaetigte Frist loescht nichts (scheitert das
+    // Speichern, waere sonst schon nach dem nie gespeicherten Wert geloescht)
+    const retOk = RETENTION && !(pendingRetention && !pendingRetention.resolvedAt);
+    const due = (retOk ? expiredEntries() : []).concat(trashExpired());
     if (!due.length) return;
     purgeRunning = true;
     try {
