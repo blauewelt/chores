@@ -96,3 +96,16 @@ Der Build lief in der Claude-Sandbox durch; **fairli-play.aab**
 - Signatur-Kette verifiziert: Zertifikat-SHA-256 des APK =
   f5a0d327… = Fingerprint in assetlinks.json. Version 1.0.0 (Code 1),
   Label «Fairli», targetSdk 35, compileSdk 36.
+
+## Nachtrag 25.10.2026 — neues App-Icon (v4.119.0)
+
+`store_icon.png` ist jetzt das weisse Gesicht auf dem Designer-Verlauf
+(blau → pink), `twa-manifest.json` zeigt auf `?v=50` und traegt die App-Farbe
+`#12151F` durchgehend (vorher `?v=48` und die Farben von vor v4.117). Die
+generierten Ressourcen unter `app/src/main/res/mipmap-*` und `drawable-*`
+sind NICHT von Hand angefasst — vor dem naechsten Build einmal
+`bubblewrap update` laufen lassen, das zieht Launcher-, Maskable- und
+Splash-Bilder aus den neuen URLs neu. Danach wie oben (versionName,
+targetSdk) nachziehen. Ausserdem fuer die Einreichung noch offen: eine
+Feature-Grafik 1024×500 (Pflicht bei Play) — aus `icon-face.svg` zu bauen,
+sobald der Maintainer die Komposition freigibt.

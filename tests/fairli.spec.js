@@ -5338,7 +5338,7 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     expect(await page.locator('#headLogo').evaluate(el => getComputedStyle(el).content)).toContain('svg');
     expect(decodeURIComponent(await tileSrc(page))).toContain('thick white outline drawing');
     expect(decodeURIComponent(await tileSrc(page))).not.toContain('minimalist flat vector illustration');
-    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=49');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=50');
     await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#12151F');
     expect(await page.evaluate(f => localStorage.getItem('haushalt.brand3:' + f), FAM)).toBeNull();
   });
@@ -5352,8 +5352,8 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     await expect.poll(async () => decodeURIComponent(await tileSrc(page))).toContain('thick white outline drawing: Müll rausbringen, nur Restmüll');
     expect(decodeURIComponent(await tileSrc(page))).not.toContain('minimalist flat vector');
     // v4.117.0: Favicon/Touch-Icon sind die Hauptdateien (tragen das Gesicht), kein Beta-Cache mehr
-    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=49');
-    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=49');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=50');
+    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=50');
     await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#12151F');
     expect(await page.evaluate(f => localStorage.getItem('haushalt.brand3:' + f), FAM)).toBeNull();
     // Die Icon-Dateien gibt es wirklich — auch die b3-Aliase (alte Beta-Verweise brechen nicht)
@@ -5365,7 +5365,7 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     // manifest.json nennt die Hauptdateien (seit v4.117.0 das Gesicht), nie die Aliase
     const man = await (await page.request.get(`${BASE}/manifest.json`)).json();
     expect(JSON.stringify(man.icons)).not.toContain('icon-b3');
-    expect(man.icons[0].src).toBe('icon-192.png?v=49');
+    expect(man.icons[0].src).toBe('icon-192.png?v=50');
   });
 
   test('Zweiter Start: brand3 steht VOR dem Abgleich (erster Paint) — Splash und Kachel schon im neuen Bild', async ({ context, page }) => {
@@ -5508,8 +5508,8 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     // Personenringe bleiben Personenfarbe
     expect(await css(page.locator('.chip .dot').first(), 'backgroundImage')).toBe('none');
     // Favicon/Touch-Icon mit neuem Cache-Buster (v4.117.0: die Hauptdateien tragen das Gesicht, ?v=49)
-    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=49');
-    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=49');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=50');
+    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=50');
     // Zwinkern im Toast
     await page.locator('.chip[data-mid="m-chris"]').click();
     await page.locator('.chore[data-cid="c-1"]').click();
@@ -5533,7 +5533,7 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     expect(await css(page.locator('#openAdd'), 'backgroundImage')).toBe('none');
     expect(await css(page.locator('#openAdd'), 'backgroundColor')).toBe(GRAD.white);
     expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--b3-grad').trim())).toContain('linear-gradient');
-    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=49');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=50');
   });
 
   // v4.114.1: das Splash-Logo zwinkert beim echten Start einmal (#splash::after,
@@ -6422,7 +6422,7 @@ test.describe('Neues Bild fuer alle (v4.117.0)', () => {
   const css = (loc, prop, pseudo) => loc.evaluate((el, a) => getComputedStyle(el, a[1] || null)[a[0]], [prop, pseudo]);
   const TONES = ['rgb(245, 245, 241)', 'rgb(199, 219, 255)', 'rgb(220, 201, 242)'];
   const MINT = 'rgb(181, 227, 204)';
-  const ICON = '/chores/icon-192.png?v=49';
+  const ICON = '/chores/icon-192.png?v=50';
   const NAVY = '#12151F';
   // Was der Browser beim Parsen VOR dem ersten Abgleich sieht (DOMContentLoaded)
   const firstPaint = () => {
@@ -6564,7 +6564,7 @@ test.describe('Neues Bild fuer alle (v4.117.0)', () => {
     expect(man.short_name).toBe('Fairli');
     expect(man.background_color).toBe(NAVY);
     expect(man.theme_color).toBe(NAVY);
-    expect(man.icons.map(i => i.src)).toEqual(['icon-192.png?v=49', 'icon-512.png?v=49', 'icon-512-maskable.png?v=49']);
+    expect(man.icons.map(i => i.src)).toEqual(['icon-192.png?v=50', 'icon-512.png?v=50', 'icon-512-maskable.png?v=50']);
     expect(man.icons.map(i => i.purpose)).toEqual(['any', 'any', 'maskable']);
     const face = { 'icon-192.png': 'icon-b3-192.png', 'icon-512.png': 'icon-b3-512.png', 'icon-512-maskable.png': 'icon-b3-512-maskable.png' };
     for (const i of man.icons) {
@@ -6581,7 +6581,33 @@ test.describe('Neues Bild fuer alle (v4.117.0)', () => {
     }
   });
 
-  test('v4.117.0 404.html: dieselben Icon-Links (?v=49) und Marken-Navy statt Weiss', async ({ page }) => {
+  test('v4.119.0 App-Icon: weisses Gesicht auf dem Verlauf — unten links blau, unten rechts pink, oben dunkel; Augenring weiss; Master-SVG wird ausgeliefert', async ({ page }) => {
+    // Pixel statt Bytes: ein Byte-Vergleich sagt nur «anders», nicht «richtig».
+    // Drei Proben an Stellen, die der Verlauf eindeutig faerbt, plus eine im
+    // linken Augenring (muss weiss sein — die farbigen Augen gibt es NUR noch
+    // im App-Gesicht, nicht im Icon).
+    await page.goto(`${BASE}/`);
+    const px = await page.evaluate(async (url) => {
+      const img = new Image(); img.src = url; await img.decode();
+      const c = document.createElement('canvas'); c.width = c.height = 512;
+      const g = c.getContext('2d'); g.drawImage(img, 0, 0, 512, 512);
+      const at = (x, y) => Array.from(g.getImageData(x, y, 1, 1).data).slice(0, 3);
+      // Augenring: Kreis cx 26 cy 33.1 r 12.5 (viewBox 100) → linker Rand bei x=13.5
+      return { bl: at(20, 492), br: at(492, 492), top: at(256, 12), eye: at(Math.round(13.5 * 5.12), Math.round(33.1 * 5.12)) };
+    }, `${BASE}/icon-512.png`);
+    const [r1, , b1] = px.bl;      expect(b1).toBeGreaterThan(200); expect(b1).toBeGreaterThan(r1 + 80);              // blau
+    const [r2, g2, b2] = px.br;    expect(r2).toBeGreaterThan(200); expect(b2).toBeGreaterThan(200); expect(g2).toBeLessThan(90);   // pink
+    expect(Math.max(...px.top)).toBeLessThan(110);                                                                      // oben dunkel
+    expect(Math.min(...px.eye)).toBeGreaterThan(235);                                                                   // Ring weiss
+    const svg = await page.request.get(`${BASE}/icon-face.svg`);
+    expect(svg.status()).toBe(200);
+    const txt = await svg.text();
+    expect(txt).toContain('viewBox="0 0 100 100"');
+    expect(txt).toContain('stroke="#FFFFFF"');
+    expect(txt).toContain('M16.7 68.3C38 80.2 63 80.2 84.6 68.3');   // dieselbe Mund-Geometrie wie --b3-logo
+  });
+
+  test('v4.117.0 404.html: dieselben Icon-Links (?v=50) und Marken-Navy statt Weiss', async ({ page }) => {
     const src = await (await page.request.get(`${BASE}/404.html`)).text();
     expect(src).toContain(`<link rel="apple-touch-icon" href="${ICON}">`);
     expect(src).toContain(`<link rel="icon" href="${ICON}">`);
@@ -6599,7 +6625,7 @@ test.describe('Neues Bild fuer alle (v4.117.0)', () => {
     const r = await cdp.send('Page.getAppManifest');
     expect(r.errors).toEqual([]);
     const m = JSON.parse(r.data);
-    expect(m.icons.map(i => i.src)).toEqual(['icon-192.png?v=49', 'icon-512.png?v=49', 'icon-512-maskable.png?v=49']);
+    expect(m.icons.map(i => i.src)).toEqual(['icon-192.png?v=50', 'icon-512.png?v=50', 'icon-512-maskable.png?v=50']);
     expect(m.theme_color).toBe(NAVY);
     expect(m.background_color).toBe(NAVY);
     expect(m.id).toBe('/chores/');
@@ -6743,7 +6769,7 @@ test.describe('Aussehen pro Geraet + Erweitert (v4.118.0)', () => {
     expect(await css(page.locator('#headLogo'), 'content')).toContain('svg');
     await expect.poll(() => tileSrc(page)).toContain('thick white outline drawing');
     await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#12151F');
-    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=49');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-192.png?v=50');
     expect(await page.evaluate(() => localStorage.getItem('haushalt.look'))).toBeNull();
   });
 
@@ -6776,7 +6802,7 @@ test.describe('Aussehen pro Geraet + Erweitert (v4.118.0)', () => {
     await expect(page.locator('html')).not.toHaveClass(/brand3/);
     if (browserName !== 'webkit') await expect(page.locator('link[rel=manifest]')).toHaveAttribute('href', '/chores/manifest.json');
     const man = await (await page.request.get(`${BASE}/manifest.json`)).json();
-    expect(man.icons.map(i => i.src)).toEqual(['icon-192.png?v=49', 'icon-512.png?v=49', 'icon-512-maskable.png?v=49']);
+    expect(man.icons.map(i => i.src)).toEqual(['icon-192.png?v=50', 'icon-512.png?v=50', 'icon-512-maskable.png?v=50']);
     expect(man.theme_color).toBe('#12151F');
     expect(man.background_color).toBe('#12151F');
     expect(JSON.stringify(man)).not.toContain('classic');

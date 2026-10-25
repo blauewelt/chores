@@ -528,8 +528,14 @@ Mechanism, keep it this way:
 - Logo = data-URI SVG in `--b3-logo`, swapped onto `#headLogo` and the
   splash `<img>` via CSS `content:` (same nodes → the FLIP still works).
   Since v4.117.0 `icon-*.png` ARE the face (same bytes as `icon-b3-*.png`,
-  which stay only as unreferenced aliases), manifest.json lists them with
-  `?v=49`. Changing the face = re-render all PNGs from the SVG (§9).
+  which stay only as unreferenced aliases). **Since v4.119.0 the icon is the
+  face in WHITE on the designer's Verlauf-1 gradient** (master `icon-face.svg`,
+  rendered by `scripts/render-icons.mjs` + `scripts/optimize-icons.py`),
+  manifest.json lists it with `?v=50`. The in-app face (`--b3-logo`) keeps the
+  coloured eyes on navy — one character, two renderings. Changing the icon =
+  edit the script's SVG, re-render, bump `?v=` in ALL FIVE places (index.html,
+  404.html, manifest.json, sw.js, updates.html) + SW cache. A pixel test reads the served
+  icon back (blue BL, pink BR, dark top, white eye ring).
 - Colours: tokens are redefined on `html.brand3`; the old hard-coded
   colours (#161D19 wells, #252F29 tracks, rgba blues/golds, the gradient
   title) are overridden in the same block. New UI must use the variables,
@@ -993,7 +999,12 @@ no rounded corners — the OS masks; maskable = the face group scaled 0.658
 about the centre, inside the 80 % safe circle). Tile art stays white line art
 under the gradient — the colour lives in the face and the accents only.
 
-**App icon (since v4.117.0): the face** — icon-192/512/512-maskable are the
+**App icon (since v4.119.0): the face in white on the Verlauf-1 gradient** —
+rendered by `scripts/render-icons.mjs` (Playwright/Chromium) from the SVG in
+that script, then `scripts/optimize-icons.py` (lossless; also refreshes the
+`icon-b3-*` aliases and `twa/store_icon.png`). The gradient approximates the
+designer's PNG (his SVG had no background layer). v4.117.0–v4.118.1 it was the
+coloured face on navy: icon-192/512/512-maskable were the
 same bytes as `icon-b3-*` (rendered in Chromium from the `--b3-logo` SVG;
 maskable = face scaled 0.658 about the centre, furthest pixel at 31 % of the
 size from the centre vs. the 40 % safe circle — check it under circle AND

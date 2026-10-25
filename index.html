@@ -48,12 +48,14 @@
 <meta name="apple-mobile-web-app-title" content="Fairli">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <!-- v4.117.0: icon-*.png zeigen das Gesicht (dieselben Bytes wie die
-     Beta-Icons icon-b3-*.png), Statusleiste im Marken-Navy. Icon getauscht =
-     ?v= hier, in 404.html, manifest.json UND im persoenlichen Manifest (sw.js)
+     Beta-Icons icon-b3-*.png), Statusleiste im Marken-Navy. v4.119.0: das
+     Gesicht in Weiss auf dem Designer-Verlauf (scripts/render-icons.mjs,
+     Master icon-face.svg). Icon getauscht = ?v= hier (4×), in 404.html,
+     manifest.json, updates.html UND im persoenlichen Manifest (sw.js)
      erhoehen + SW-Bump (§9). -->
 <meta name="theme-color" content="#12151F">
-<link rel="apple-touch-icon" href="/chores/icon-192.png?v=49">
-<link rel="icon" href="/chores/icon-192.png?v=49" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="/chores/icon-192.png?v=50">
+<link rel="icon" href="/chores/icon-192.png?v=50" sizes="192x192" type="image/png">
 <script>
   // v4.118.0: EIN Schalter fuer das Aussehen dieses Geraets — Klasse,
   // Favicon/Touch-Icon und Statusleistenfarbe. «Klassisch» = das Bild bis
@@ -63,7 +65,7 @@
     var de = document.documentElement;
     de.classList.toggle('brand3', !classic);
     var set = function (sel, attr, v) { var el = document.querySelector(sel); if (el && el.getAttribute(attr) !== v) el.setAttribute(attr, v); };
-    var ic = classic ? '/chores/icon-classic-192.png?v=1' : '/chores/icon-192.png?v=49';
+    var ic = classic ? '/chores/icon-classic-192.png?v=1' : '/chores/icon-192.png?v=50';
     set('link[rel="icon"]', 'href', ic);
     set('link[rel="apple-touch-icon"]', 'href', ic);
     set('meta[name="theme-color"]', 'content', classic ? '#141A17' : '#12151F');
@@ -1086,7 +1088,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.118.1';
+  const APP_VERSION = '4.119.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2238,7 +2240,7 @@
     // dem i18n-Boot und blieb fuer alle Welt deutsch.
     function renderEntry() {
       d.innerHTML = `
-      <img src="${brandOn() ? '/chores/icon-192.png?v=49' : '/chores/icon-classic-192.png?v=1'}" alt="" width="72" height="72" style="border-radius:18px">
+      <img src="${brandOn() ? '/chores/icon-192.png?v=50' : '/chores/icon-classic-192.png?v=1'}" alt="" width="72" height="72" style="border-radius:18px">
       <h1 style="font-family:var(--display);font-weight:800;font-size:34px;margin:0 0 4px;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Fairli</h1>
       <p style="color:var(--muted);max-width:300px;margin:0 0 8px">${t('Aufgaben im Haushalt – fair verteilt.')}</p>
       ${last && last.family ? `<button id="resume" style="${btn};background:var(--accent);color:#0C1220">${t('Zu meinem Haushalt')}</button>` : ''}

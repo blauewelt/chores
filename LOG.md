@@ -1,3 +1,53 @@
+## 2026-10-25 — v4.119.0 (SW haushalt-v227): the app icon is the face in white on the designer's gradient
+
+- Background: the logo designer delivered a % mark (two rings and a slash,
+  recognisably built from the face's eyes and smile) in seven variants —
+  BW, Black, and two gradients «Verlauf-1» (blue → pink) and «Verlauf-2». The
+  household does not want to move away from the smiley. What it did want is
+  the gradient. So: **the face stays, the tile takes Verlauf-1.**
+- **Face in WHITE, not in its app colours.** Both were rendered side by side.
+  With the blue/violet eyes on the gradient the right eye dissolves into the
+  pink at the bottom-right and the two fight for attention; the white face
+  reads at every size down to 16 px — the designer's own instinct for the %
+  glyph, for the same reason. The in-app face (`--b3-logo`, splash, header,
+  the animated expressions) is UNCHANGED: coloured eyes on navy. One
+  character, two renderings; the home screen tile and the thing that winks
+  at you on start are not the same surface.
+- **Reproducible now: `scripts/render-icons.mjs` + `scripts/optimize-icons.py`.**
+  v4.114–v4.117 said «rendered in Chromium from the SVG» with the SVG living
+  only in a CSS custom property. The icon now has its own master
+  (`icon-face.svg`, served) and a script that writes all six PNGs and the
+  Play store icon from it. The gradient is APPROXIMATED from the designer's
+  PNG — his Verlauf-1 SVG held only the white glyph, no background (and his
+  «Verlauf-2 SVG» is a 750 KB PNG in an SVG wrapper). If exactness matters,
+  the one thing to ask him for is the gradient as a vector layer.
+- Maskable unchanged in principle: face scaled 0.658 about the centre,
+  furthest pixel ~31 % from the centre, inside Android's 40 % safe circle —
+  checked under circle and squircle masks. Tiles stay full-bleed; the OS
+  rounds.
+- Cache-buster `?v=49 → ?v=50` in all FIVE places (index.html ×4 incl. the
+  look switch and the Aussehen preview, 404.html, manifest.json, the
+  personal manifest in sw.js — and `updates.html`, whose header `<img>` the
+  docs had never listed; the release-notes test caught it). `icon-b3-*` aliases carry the same bytes as
+  before (a test compares them). `icon-classic-192.png` untouched.
+- **TWA inputs brought up to date** — they were stale regardless of the logo:
+  `twa/store_icon.png` was still the four-tile house, `twa-manifest.json`
+  pointed at `?v=48` and the pre-v4.117 colours (#141A17/#12161F). Now the
+  new 512 and #12151F throughout. The generated `twa/app/.../mipmap-*` are
+  NOT hand-edited: `bubblewrap update` regenerates them before the next
+  build (noted in PLAY_STORE.md).
+- Cost, stated: the gradient compresses badly — the three precached icons
+  grow from ~41 KB to ~250 KB in the service-worker shell. Once per
+  install/update, not per visit; accepted.
+- Tests: the eighteen `?v=49` expectations moved to `?v=50`; new pixel-level
+  test reads the served 512 px icon back through a canvas and asserts blue
+  bottom-left, pink bottom-right, dark top, WHITE eye ring — a byte compare
+  only ever says «different», this says «right». Also asserts the master SVG
+  is served with the same mouth geometry as `--b3-logo`.
+- Not done, deliberately: the in-app face on the gradient, and a Play
+  feature graphic (1024×500). Both are design calls to make with the
+  maintainer, not side effects of an icon swap.
+
 ## 2026-10-22 — v4.118.1 (SW haushalt-v226): the «Ich bin» selection sticks for admins on a personal link — plus two more settings a sync or boot could undo
 
 Maintainer: «When changing the user in the task view … when I change the user,

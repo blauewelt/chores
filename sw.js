@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v226';   // v4.118.1 Ich-bin-Auswahl, Aufbewahrung und Sprache kleben (Pull/Boot setzen nichts zurueck)
+const CACHE = 'haushalt-v227';   // v4.119.0 App-Icon: weisses Gesicht auf dem Designer-Verlauf (blau → pink), ?v=50
 // v4.113.1: Kachelkunst hat einen EIGENEN, versionsfesten Cache. Bis v4.113.0
 // lag sie im versionierten CACHE — und den loescht `activate` bei JEDEM Deploy.
 // Folge: nach jedem Deploy forderte jedes Geraet jedes Kachelbild neu an,
@@ -112,11 +112,13 @@ self.addEventListener('fetch', e => {
         // (Maintainer-Befund 20.07.2026) — die Farben folgen jetzt der App:
         // background = var(--bg), theme = <meta name="theme-color">.
         // v4.117.0: dieselben Werte wie manifest.json (Marken-Navy, Gesichts-
-        // Icons, ?v=49) — vorher hing hier noch ?v=47 (§12, behoben).
+        // Icons) — vorher hing hier noch ?v=47 (§12, behoben). v4.119.0: ?v=50
+        // (Gesicht weiss auf dem Designer-Verlauf). Icon getauscht = ?v= an
+        // ALLEN fuenf Orten (index.html, 404.html, manifest.json, updates.html, hier).
         background_color: '#12151F', theme_color: '#12151F',
-        icons: [icon('icon-192.png?v=49', '192x192', 'any'),
-                icon('icon-512.png?v=49', '512x512', 'any'),
-                icon('icon-512-maskable.png?v=49', '512x512', 'maskable')]
+        icons: [icon('icon-192.png?v=50', '192x192', 'any'),
+                icon('icon-512.png?v=50', '512x512', 'any'),
+                icon('icon-512-maskable.png?v=50', '512x512', 'maskable')]
       });
       e.respondWith(new Response(body, { headers: { 'Content-Type': 'application/manifest+json' } }));
       return;

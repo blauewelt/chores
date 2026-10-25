@@ -1,0 +1,65 @@
+// Rendert die App-Icons aus EINER SVG-Quelle (v4.119.0) — reproduzierbar statt
+// ad hoc «in Chromium gerendert» (so entstanden v4.114–v4.117).
+//   node scripts/render-icons.mjs && python3 scripts/optimize-icons.py
+//                                            → icon-192/512/512-maskable.png,
+//                                               icon-b3-* (Aliase, gleiche Bytes),
+//                                               twa/store_icon.png
+// Motiv: das Gesicht (Geometrie = --b3-logo in index.html) in WEISS auf dem
+// Verlauf «Verlauf-1» des Logo-Designers (blau unten links → pink unten
+// rechts, nach oben in Aubergine abdunkelnd). Der Verlauf ist aus dessen
+// PNG abgenommen (seine SVG enthielt nur die weisse Glyphe, keinen
+// Hintergrund) — Abweichungen zum Original sind also moeglich und bekannt.
+// Maskable: Gesicht um 0.658 zur Mitte skaliert → der entfernteste Pixel
+// liegt bei ~31 % der Kantenlaenge, Android verlangt < 40 % (Safe-Circle).
+// Kacheln sind VOLLFLAECHIG, ohne Rundung: das OS maskiert selbst.
+import { chromium } from 'playwright';
+import { writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+const BG = `<defs>
+  <linearGradient id="h" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#0A7BFF"/><stop offset=".45" stop-color="#7A2BFF"/>
+    <stop offset=".72" stop-color="#F300EC"/><stop offset="1" stop-color="#FF00FF"/>
+  </linearGradient>
+  <linearGradient id="v" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#160B4F" stop-opacity="1"/>
+    <stop offset=".35" stop-color="#160B4F" stop-opacity=".78"/>
+    <stop offset=".72" stop-color="#160B4F" stop-opacity=".15"/>
+    <stop offset="1" stop-color="#160B4F" stop-opacity="0"/>
+  </linearGradient>
+</defs>
+<rect width="100" height="100" fill="url(#h)"/>
+<rect width="100" height="100" fill="url(#v)"/>`;
+// Dieselbe Geometrie wie --b3-logo (Ringe r 12.5 / Strich 9.6, Mund 14.6) —
+// nur einfarbig weiss: auf dem Verlauf konkurrierten die farbigen Augen mit
+// dem Hintergrund, das violette ging im Pink unten rechts unter.
+const FACE = `<g fill="none" stroke-linecap="round" stroke="#FFFFFF">
+  <circle cx="26" cy="33.1" r="12.5" stroke-width="9.6"/>
+  <circle cx="70.7" cy="31.2" r="12.5" stroke-width="9.6"/>
+  <path d="M16.7 68.3C38 80.2 63 80.2 84.6 68.3" stroke-width="14.6"/>
+</g>`;
+export const svg = (scale = 1) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${BG}
+<g transform="translate(50 50) scale(${scale}) translate(-50 -50)">${FACE}</g></svg>`;
+
+const launch = { executablePath: process.env.PW_CHROMIUM || undefined };
+const browser = await chromium.launch(launch);
+const page = await browser.newPage({ deviceScaleFactor: 1 });
+async function render(file, size, scale = 1) {
+  await page.setViewportSize({ width: size, height: size });
+  await page.setContent(`<body style="margin:0">${svg(scale).replace('<svg ', `<svg width="${size}" height="${size}" `)}</body>`);
+  await page.screenshot({ path: join(ROOT, file), clip: { x: 0, y: 0, width: size, height: size } });
+  console.log('✓', file);
+}
+await render('icon-192.png', 192);
+await render('icon-512.png', 512);
+await render('icon-512-maskable.png', 512, 0.658);
+// Aliase (seit v4.117.0 unreferenziert, gleiche Bytes — ein Test prueft das)
+for (const [a, b] of [['icon-192.png', 'icon-b3-192.png'], ['icon-512.png', 'icon-b3-512.png'], ['icon-512-maskable.png', 'icon-b3-512-maskable.png']])
+  writeFileSync(join(ROOT, b), await (await import('node:fs/promises')).readFile(join(ROOT, a)));
+// Play: 512er Hi-Res-Icon, vollflaechig (Google rundet selbst)
+writeFileSync(join(ROOT, 'twa/store_icon.png'), await (await import('node:fs/promises')).readFile(join(ROOT, 'icon-512.png')));
+writeFileSync(join(ROOT, 'icon-face.svg'), svg());
+await browser.close();
