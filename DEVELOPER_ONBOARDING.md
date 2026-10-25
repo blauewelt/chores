@@ -531,8 +531,10 @@ Mechanism, keep it this way:
   which stay only as unreferenced aliases). **Since v4.119.0 the icon is the
   face in WHITE on the designer's Verlauf-1 gradient** (master `icon-face.svg`,
   rendered by `scripts/render-icons.mjs` + `scripts/optimize-icons.py`),
-  manifest.json lists it with `?v=50`. The in-app face (`--b3-logo`) keeps the
-  coloured eyes on navy — one character, two renderings. Changing the icon =
+  manifest.json lists it with `?v=50`. **Since v4.120.0 the in-app face is the
+  same picture**: `--b3-logo` and `FACE.make()` draw the gradient + white face
+  too, and a test compares the stop-colour sequence of CSS token, live overlay
+  and `icon-face.svg` — change the gradient in all three. Changing the icon =
   edit the script's SVG, re-render, bump `?v=` in ALL FIVE places (index.html,
   404.html, manifest.json, sw.js, updates.html) + SW cache. A pixel test reads the served
   icon back (blue BL, pink BR, dark top, white eye ring).
@@ -542,11 +544,16 @@ Mechanism, keep it this way:
   or add its override there. Selection = inversion (white fill,
   `--onink` text), never a hue; person colours only as rings (`--pc` on
   `.dot`/`.swatch`).
-- **Eyes + tiles (v4.115.0) — supersedes most of the gradient bullet below.**
-  Logo: left eye white→blue (`gb`), right eye white→violet (`gv`), white at the
-  top / colour at the bottom of each ring, mouth flat white; the animated face
-  (`FACE.make`, v4.116.0) builds the same two gradients — change both together
-  (a test compares them). Tiles: `choreTone(id)` (FNV-1a of the stable id mod 3, never position)
+- **Face (v4.120.0) — white on the Verlauf-1 gradient, same as the app icon.**
+  Logo and the animated face (`FACE.make`) both draw two rects (h: #0A7BFF →
+  #7A2BFF → #F300EC → #FF00FF; v: #160B4F veil fading to 0) and white strokes;
+  the overlay prefixes its gradient ids per instance. The v4.115.0 eye
+  gradients (`gb`/`gv`) no longer exist in the face — the tokens below still
+  serve tiles and rings. A test compares the stop sequence of `--b3-logo`, the
+  live `.b3face` and the served `icon-face.svg`.
+- (history, v4.115.0–v4.119.0) Logo: left eye white→blue (`gb`), right eye
+  white→violet (`gv`), mouth flat white; `FACE.make` built the same two
+  gradients. Tiles: `choreTone(id)` (FNV-1a of the stable id mod 3, never position)
   → `data-tone="w|b|v"`, emitted only under brand3 on board tiles and on both
   preview tiles (`paintPreviewTile` takes `id`). ONE switch:
   `<html data-b3tiles="fill|stroke">` — `fill` (live) = pastel fill

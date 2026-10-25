@@ -5482,11 +5482,14 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
       const sp = document.querySelector('#splash img'); window.__splashLogo = sp ? getComputedStyle(sp).content : null; }));
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('html')).toHaveClass(/brand3/);
-    // Logo-Daten-URI traegt eine Verlaufsdefinition mit den drei Stopps
+    // Logo-Daten-URI: v4.120.0 der Designer-Verlauf als Hintergrund (blau →
+    // pink, Aubergine-Schleier) und ein WEISSES Gesicht — dasselbe Motiv wie
+    // das App-Icon. (v4.115.0–v4.119.0: Navy-Kachel, Augen blau/violett.)
     const logo = decodeURIComponent(await css(page.locator('#headLogo'), 'content'));
     expect(logo).toContain('linearGradient');
-    for (const hex of ['#84B2FF', '#F5F5F1', '#B98AE0']) expect(logo).toContain(hex);
-    expect(logo).toContain("stroke='url(#gb)'");   // v4.115.0: je Auge ein eigener Verlauf
+    for (const hex of ['#0A7BFF', '#FF00FF', '#160B4F']) expect(logo).toContain(hex);
+    expect(logo).toContain("stroke='#FFFFFF'");
+    expect(logo).not.toContain('#84B2FF'); expect(logo).not.toContain('#1B1D31');
     expect(decodeURIComponent(await page.evaluate(() => window.__splashLogo) || '')).toContain('linearGradient');
     const empty = await page.evaluate(() => { const d = document.createElement('div'); d.className = 'empty'; document.body.appendChild(d);
       const v = getComputedStyle(d, '::before').backgroundImage; d.remove(); return decodeURIComponent(v); });
@@ -5600,23 +5603,25 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
   const tchRoute = context => context.route(`${SB}/rest/v1/chores*`, r => r.request().method() === 'GET'
     ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(TCH) }) : r.fallback());
 
-  test('v4.115.0 Logo: zwei Augen-Verlaeufe (blau, violett), weisser Mund; Lid und Zwinker-Kachel nutzen denselben Violett-Verlauf', async ({ context, page }) => {
+  test('v4.120.0 Logo = App-Icon: Verlauf-Hintergrund (h: blau → pink, v: Aubergine-Schleier), Gesicht weiss; das bewegte Gesicht traegt dieselben Stopps; icon-face.svg ebenso', async ({ context, page }) => {
     await mockBackend(context, B3);
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('html')).toHaveClass(/brand3/);
     const logo = decodeURIComponent(await css(page.locator('#headLogo'), 'content'));
     const grad = id => (logo.match(new RegExp(`<linearGradient id='${id}'[\\s\\S]*?</linearGradient>`)) || [''])[0];
-    expect(grad('gb')).toContain('#84B2FF'); expect(grad('gb')).toContain('#F5F5F1'); expect(grad('gb')).not.toContain('#B98AE0');
-    expect(grad('gv')).toContain('#B98AE0'); expect(grad('gv')).toContain('#F5F5F1'); expect(grad('gv')).not.toContain('#84B2FF');
-    expect(logo).toMatch(/<circle cx='26'[^>]*stroke='url\(#gb\)'/);
-    expect(logo).toMatch(/<circle cx='70.7'[^>]*stroke='url\(#gv\)'/);
-    expect(logo).toMatch(/<path d='M16.7 68.3[^>]*stroke='#F5F5F1'/);   // Mund flach weiss
-    // v4.116.0: --b3-lid/--b3-wink gibt es nicht mehr; das bewegte Gesicht
-    // (Inline-SVG) traegt dieselben zwei Verlaeufe wie das Logo
+    expect(grad('h')).toContain("x2='1'");  for (const hex of ['#0A7BFF', '#7A2BFF', '#F300EC', '#FF00FF']) expect(grad('h')).toContain(hex);
+    expect(grad('v')).toContain("y2='1'");  expect(grad('v')).toContain('#160B4F'); expect(grad('v')).toContain("stop-opacity='0'");
+    expect(logo).toMatch(/<rect[^>]*fill='url\(#h\)'/); expect(logo).toMatch(/<rect[^>]*fill='url\(#v\)'/);
+    expect(logo).toMatch(/<g[^>]*stroke='#FFFFFF'[^>]*>[\s\S]*<circle cx='26'/);          // Augen weiss, keine eigenen Verlaeufe mehr
+    expect(logo).toMatch(/<path d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3'/);              // Mund-Geometrie unveraendert
+    // Das bewegte Gesicht (Inline-SVG) traegt dieselben Stopps in derselben Reihenfolge …
+    const stops = h => [...h.matchAll(/stop-color=["'](#\w+)["']/g)].map(m => m[1]);
     const face = await page.evaluate(() => { window.__face('wink', 0); const h = document.querySelector('.b3face').innerHTML; window.__face(null); return h; });
-    const stops = h => [...h.matchAll(/y1=["']([\d.]+)["'][^>]*y2=["']([\d.]+)["'][^]*?stop-color=["'](#\w+)["'][^]*?stop-color=["'](#\w+)["']/g)].map(m => m.slice(1).join(' '));
-    expect(stops(face)).toHaveLength(2);
     expect(stops(face)).toEqual(stops(logo));
+    expect(face).toMatch(/<g[^>]*stroke="#FFFFFF"/);
+    // … und das ausgelieferte Icon-Master auch (EIN Motiv an drei Orten: CSS-Token, FACE.make, scripts/render-icons.mjs)
+    const svg = await (await page.request.get(`${BASE}/icon-face.svg`)).text();
+    expect(stops(svg)).toEqual(stops(logo));
   });
 
   test('v4.115.0 Kacheln: genau drei Toene, fest pro id (Neuladen, andere Sortierung), dunkle Tinte, Vorschau gleich', async ({ context, page }) => {
@@ -5950,7 +5955,7 @@ test.describe('Einmalig-Kachel + Gesicht (v4.116.0)', () => {
     const tf = page.locator('#toast .tface');
     await expect(tf).toHaveCount(1);
     const svg = await tf.evaluate(el => el.innerHTML);
-    for (const hex of ['#84B2FF', '#F5F5F1', '#B98AE0']) expect(svg).toContain(hex);
+    for (const hex of ['#0A7BFF', '#FF00FF', '#160B4F', '#FFFFFF']) expect(svg).toContain(hex);   // v4.120.0: Verlauf + weisses Gesicht
     await expect.poll(() => page.evaluate(() => window.__face.log.filter(x => x.w === 'toast').length)).toBe(1);
     expect(['wink', 'smirk']).toContain(await page.evaluate(() => window.__face.log.find(x => x.w === 'toast').n));
     // Kopf: Blinzeln nur, wenn sichtbar und kein Dialog offen

@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v227';   // v4.119.0 App-Icon: weisses Gesicht auf dem Designer-Verlauf (blau → pink), ?v=50
+const CACHE = 'haushalt-v228';   // v4.120.0 Gesicht IN der App (Splash, Kopf, Toast, Leerzustand) = App-Icon: weiss auf Verlauf
 // v4.113.1: Kachelkunst hat einen EIGENEN, versionsfesten Cache. Bis v4.113.0
 // lag sie im versionierten CACHE — und den loescht `activate` bei JEDEM Deploy.
 // Folge: nach jedem Deploy forderte jedes Geraet jedes Kachelbild neu an,

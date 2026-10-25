@@ -1,3 +1,36 @@
+## 2026-10-25 — v4.120.0 (SW haushalt-v228): the face inside the app takes the gradient too — one motif, three places, one test
+
+- Maintainer, after seeing v4.119.0: «let's try the new icon in the app, it looks
+  great.» So the split from v4.119.0 (gradient on the home screen, navy with
+  coloured eyes inside) is undone: splash, header logo, toast face and the
+  empty-state face are now the white face on the Verlauf-1 gradient.
+- Two edits, deliberately mirror images of each other:
+  `--b3-logo` (the CSS data-URI used by `#headLogo`, `#splash img` and
+  `.empty::before`) and `FACE.make()` (the inline SVG that animates the
+  expressions over the `<img>`). Both draw the same two rects (horizontal
+  blue → pink, vertical aubergine veil fading downwards) and a white face.
+  The overlay's gradient ids carry the per-instance prefix, as before, since
+  splash, header and toast can all hold a face at once.
+- **Why the motion still has no seam:** the overlay covers the `<img>`
+  exactly and paints its own background. With v4.119.0's split that would
+  have put coloured eyes over white ones for the duration of a wink; now the
+  static logo and the moving face are the same picture at rest, so the start
+  and end of every expression land exactly on the logo.
+- **The v4.115.0 eye gradients (`gb`/`gv`, blue and violet) are gone** from
+  logo and overlay. A white face on colour reads down to 16 px; two coloured
+  rings on colour do not — the same reason the designer drew his % glyph in
+  white. The `--b3-blue/--b3-violet/--b3-white` tokens stay: tiles, rings and
+  accents still use them.
+- Tests: the v4.115.0 «zwei Augen-Verlaeufe» test is rewritten for the new
+  truth and now also pins the sync across all three places — it extracts the
+  stop-colour sequence from `--b3-logo`, from a live `.b3face` overlay and
+  from the served `icon-face.svg` and demands they are identical. Change the
+  gradient in one place and the test names the other two. Head-logo and
+  toast-face tests moved from the old hexes to the new ones.
+- Not changed: `--card` and the other brand surfaces (#1B1D31 "the icon's
+  tile" became a plain surface colour long ago), the classic look, and the
+  icons themselves (v4.119.0 already rendered them from the same stops).
+
 ## 2026-10-25 — v4.119.0 (SW haushalt-v227): the app icon is the face in white on the designer's gradient
 
 - Background: the logo designer delivered a % mark (two rings and a slash,
