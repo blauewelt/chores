@@ -5672,7 +5672,11 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     expect(logo).toMatch(/<path d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3'/);              // Mund-Geometrie unveraendert
     // Das bewegte Gesicht (Inline-SVG) traegt dieselben Stopps in derselben Reihenfolge …
     const stops = h => [...h.matchAll(/stop-color=["'](#\w+)["']/g)].map(m => m[1]);
-    const face = await page.evaluate(() => { window.__face('wink', 0); const h = document.querySelector('.b3face').innerHTML; window.__face(null); return h; });
+    // «.b3face.dbg», nicht «.b3face»: beim ERSTEN Besuch spielt der Start-
+    // Ausdruck (Splash/Kopf) noch mit dem Navy-Gesicht, weil html.trial erst
+    // der Abgleich setzt — querySelector('.b3face') fand in CI dieses aeltere
+    // Overlay statt des eingefrorenen Test-Bildes (Lauf 40228259581).
+    const face = await page.evaluate(() => { window.__face('wink', 0); const h = document.querySelector('.b3face.dbg').innerHTML; window.__face(null); return h; });
     expect(stops(face)).toEqual(stops(logo));
     expect(face).toMatch(/<g[^>]*stroke="#FFFFFF"/);
     // … und das ausgelieferte Icon-Master auch (EIN Motiv an drei Orten: CSS-Token, FACE.make, scripts/render-icons.mjs)

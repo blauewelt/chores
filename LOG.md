@@ -53,6 +53,13 @@
 - To put a family on the trial: `families.beta = true` in Supabase (the 🧪
   marker in settings shows BETA). The home-screen icon changes by platform
   rule (Android asks to confirm, iOS needs add-again) — §6.6.
+- Test-only follow-up (same day): CI run 40228259581 was red once on the
+  stop-sequence test — on the first visit the start expression still plays
+  with the navy face (html.trial arrives with the pull), and
+  `querySelector('.b3face')` picked that older overlay instead of the frozen
+  debug frame. The test now reads `.b3face.dbg`. Known cosmetic: on the very
+  first visit of a beta family the splash face is navy until the pull; every
+  later start reads the cache and is gradient from the first paint.
 
 ## 2026-10-25 — v4.120.0 (SW haushalt-v228): the face inside the app takes the gradient too — one motif, three places, one test
 
