@@ -13,8 +13,8 @@
   "backgroundColor": "#12151F",
   "enableNotifications": false,
   "startUrl": "/chores/",
-  "iconUrl": "https://blauewelt.github.io/chores/icon-512.png?v=50",
-  "maskableIconUrl": "https://blauewelt.github.io/chores/icon-512-maskable.png?v=50",
+  "iconUrl": "https://blauewelt.github.io/chores/icon-512.png?v=51",
+  "maskableIconUrl": "https://blauewelt.github.io/chores/icon-512-maskable.png?v=51",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "alias": "fairli",

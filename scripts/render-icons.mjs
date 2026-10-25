@@ -1,9 +1,9 @@
-// Rendert die App-Icons aus EINER SVG-Quelle (v4.119.0) — reproduzierbar statt
-// ad hoc «in Chromium gerendert» (so entstanden v4.114–v4.117).
+// Rendert die VERLAUFS-Icons aus EINER SVG-Quelle (v4.119.0; seit v4.121.0
+// nur noch fuer den Beta-Test html.trial — die globalen icon-*.png sind wieder
+// das Navy-Gesicht, deren Quelle ist --b3-logo in index.html).
 //   node scripts/render-icons.mjs && python3 scripts/optimize-icons.py
-//                                            → icon-192/512/512-maskable.png,
-//                                               icon-b3-* (Aliase, gleiche Bytes),
-//                                               twa/store_icon.png
+//                                            → icon-trial-192/512/512-maskable.png
+//                                               (+ icon-face.svg, das Master)
 // Motiv: das Gesicht (Geometrie = --b3-logo in index.html) in WEISS auf dem
 // Verlauf «Verlauf-1» des Logo-Designers (blau unten links → pink unten
 // rechts, nach oben in Aubergine abdunkelnd). Der Verlauf ist aus dessen
@@ -53,13 +53,8 @@ async function render(file, size, scale = 1) {
   await page.screenshot({ path: join(ROOT, file), clip: { x: 0, y: 0, width: size, height: size } });
   console.log('✓', file);
 }
-await render('icon-192.png', 192);
-await render('icon-512.png', 512);
-await render('icon-512-maskable.png', 512, 0.658);
-// Aliase (seit v4.117.0 unreferenziert, gleiche Bytes — ein Test prueft das)
-for (const [a, b] of [['icon-192.png', 'icon-b3-192.png'], ['icon-512.png', 'icon-b3-512.png'], ['icon-512-maskable.png', 'icon-b3-512-maskable.png']])
-  writeFileSync(join(ROOT, b), await (await import('node:fs/promises')).readFile(join(ROOT, a)));
-// Play: 512er Hi-Res-Icon, vollflaechig (Google rundet selbst)
-writeFileSync(join(ROOT, 'twa/store_icon.png'), await (await import('node:fs/promises')).readFile(join(ROOT, 'icon-512.png')));
+await render('icon-trial-192.png', 192);
+await render('icon-trial-512.png', 512);
+await render('icon-trial-512-maskable.png', 512, 0.658);
 writeFileSync(join(ROOT, 'icon-face.svg'), svg());
 await browser.close();

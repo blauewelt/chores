@@ -39,6 +39,21 @@
     // v4.113.0–v4.116.0 las hier der Boot den Beta-Cache haushalt.brand3:<fam>
     // und setzte html.brand3 nur fuer Beta-Haushalte. Seit v4.117.0 steht die
     // Klasse statisch im <html>-Tag (fuer alle) — kein Cache, nichts zu lesen.
+    // v4.121.0: dasselbe Muster noch einmal fuer den VERLAUFS-Test (html.trial):
+    // Gesicht + App-Icon + Kachelfarben in den Farben des Designer-Verlaufs,
+    // nur fuer Beta-Haushalte (families.beta). Der Abgleich kennt das Flag erst
+    // spaeter — fuer den ersten Paint entscheidet der Cache dieses Geraets.
+    try {
+      var tm = decodeURIComponent(s).match(/f\/([a-z0-9-]{4,64})/i), tf = tm && tm[1].toLowerCase();
+      if (!tf) {
+        var tks = ['haushalt.route.family', 'haushalt.route.user', 'haushalt.route'];
+        for (var ti = 0; ti < tks.length && !tf; ti++) {
+          var tr = JSON.parse(localStorage.getItem(tks[ti]));
+          if (tr && tr.family) tf = tr.family;
+        }
+      }
+      if (tf && localStorage.getItem('haushalt.trial:' + tf) === '1') document.documentElement.classList.add('trial');
+    } catch (e) {}
   })();
 </script>
 <style>
@@ -50,12 +65,15 @@
 <!-- v4.117.0: icon-*.png zeigen das Gesicht (dieselben Bytes wie die
      Beta-Icons icon-b3-*.png), Statusleiste im Marken-Navy. v4.119.0: das
      Gesicht in Weiss auf dem Designer-Verlauf (scripts/render-icons.mjs,
-     Master icon-face.svg). Icon getauscht = ?v= hier (4×), in 404.html,
+     Master icon-face.svg). v4.121.0: das Gesicht auf dem Verlauf ist
+     wieder NUR fuer Beta-Haushalte (html.trial, icon-trial-*.png) — fuer
+     alle anderen bleibt das Navy-Gesicht (?v=51 = die alten Bytes zurueck).
+     Icon getauscht = ?v= hier (4×), in 404.html,
      manifest.json, updates.html UND im persoenlichen Manifest (sw.js)
      erhoehen + SW-Bump (§9). -->
 <meta name="theme-color" content="#12151F">
-<link rel="apple-touch-icon" href="/chores/icon-192.png?v=50">
-<link rel="icon" href="/chores/icon-192.png?v=50" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="/chores/icon-192.png?v=51">
+<link rel="icon" href="/chores/icon-192.png?v=51" sizes="192x192" type="image/png">
 <script>
   // v4.118.0: EIN Schalter fuer das Aussehen dieses Geraets — Klasse,
   // Favicon/Touch-Icon und Statusleistenfarbe. «Klassisch» = das Bild bis
@@ -65,12 +83,25 @@
     var de = document.documentElement;
     de.classList.toggle('brand3', !classic);
     var set = function (sel, attr, v) { var el = document.querySelector(sel); if (el && el.getAttribute(attr) !== v) el.setAttribute(attr, v); };
-    var ic = classic ? '/chores/icon-classic-192.png?v=1' : '/chores/icon-192.png?v=50';
+    // v4.121.0: im Verlaufs-Test (html.trial, Beta-Haushalte) traegt Favicon/
+    // Touch-Icon das Gesicht auf dem Verlauf (icon-trial-192) — nur im neuen
+    // Bild; «Klassisch» bleibt klassisch.
+    var trial = !classic && de.classList.contains('trial');
+    var ic = classic ? '/chores/icon-classic-192.png?v=1' : trial ? '/chores/icon-trial-192.png?v=1' : '/chores/icon-192.png?v=51';
     set('link[rel="icon"]', 'href', ic);
     set('link[rel="apple-touch-icon"]', 'href', ic);
     set('meta[name="theme-color"]', 'content', classic ? '#141A17' : '#12151F');
   };
+  // v4.121.0: Schalter fuer den Verlaufs-Test — Klasse, Cache pro Familie,
+  // Icons (ueber __look). Wird vom Abgleich mit families.beta aufgerufen.
+  window.__trial = function (on, fam) {
+    on = !!on;
+    document.documentElement.classList.toggle('trial', on);
+    if (fam) { try { if (on) localStorage.setItem('haushalt.trial:' + fam, '1'); else localStorage.removeItem('haushalt.trial:' + fam); } catch (e) {} }
+    window.__look(!document.documentElement.classList.contains('brand3'));
+  };
   if (!document.documentElement.classList.contains('brand3')) window.__look(true);
+  else if (document.documentElement.classList.contains('trial')) window.__look(false);
 </script>
 <style>
   /* GDPR (v4.85.0): Schrift selbst gehostet — kein IP-Transfer mehr an Google
@@ -647,9 +678,7 @@
     --bg:#12151F; --card:#1B1D31; --raise:#24273F; --well:#151826; --ink:#F5F5F1; --muted:#A3A6BC;
     --line:#31354F; --accent:#F5F5F1; --accent-press:#D3D4DE; --gold:#F5F5F1; --red:#FF8A80;
     --onink:#12151F; --radius:20px; --shadow:none; --artframe:rgba(245,245,241,.3);
-    /* v4.120.0: dasselbe Motiv wie das App-Icon (icon-face.svg) — weisses Gesicht auf dem
-       Designer-Verlauf. Verlaufsstopps = scripts/render-icons.mjs; ein Test vergleicht beide. */
-    --b3-logo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%230A7BFF'/%3E%3Cstop offset='.45' stop-color='%237A2BFF'/%3E%3Cstop offset='.72' stop-color='%23F300EC'/%3E%3Cstop offset='1' stop-color='%23FF00FF'/%3E%3C/linearGradient%3E%3ClinearGradient id='v' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23160B4F' stop-opacity='1'/%3E%3Cstop offset='.35' stop-color='%23160B4F' stop-opacity='.78'/%3E%3Cstop offset='.72' stop-color='%23160B4F' stop-opacity='.15'/%3E%3Cstop offset='1' stop-color='%23160B4F' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23h)'/%3E%3Crect width='100' height='100' fill='url(%23v)'/%3E%3Cg fill='none' stroke-linecap='round' stroke='%23FFFFFF'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6'/%3E%3Ccircle cx='70.7' cy='31.2' r='12.5' stroke-width='9.6'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6'/%3E%3C/g%3E%3C/svg%3E");
+    --b3-logo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='gb' gradientUnits='userSpaceOnUse' x1='0' y1='15.8' x2='0' y2='50.4'%3E%3Cstop offset='.15' stop-color='%23F5F5F1'/%3E%3Cstop offset='.85' stop-color='%2384B2FF'/%3E%3C/linearGradient%3E%3ClinearGradient id='gv' gradientUnits='userSpaceOnUse' x1='0' y1='13.9' x2='0' y2='48.5'%3E%3Cstop offset='.15' stop-color='%23F5F5F1'/%3E%3Cstop offset='.85' stop-color='%23B98AE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='%231B1D31'/%3E%3Cg fill='none' stroke-linecap='round'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6' stroke='url(%23gb)'/%3E%3Ccircle cx='70.7' cy='31.2' r='12.5' stroke-width='9.6' stroke='url(%23gv)'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6' stroke='%23F5F5F1'/%3E%3C/g%3E%3C/svg%3E");
     /* v4.114.0 Farbe: der alte Fairli-Verlauf (Titel #EAF1EB→--accent #84B2FF,
        Icon-Kacheln blau #428BF0/#8EC2FD … violett #9E59C8/#CBA0E5) als
        blau → weiss → violett. EINE Stelle: Stopps + fertiger --b3-grad.
@@ -662,6 +691,19 @@
     /* v4.116.0 «Einmalig»: Mint aus derselben Familie (OKLCH L .876 C .057 wie blau/violett, H 163) */
     --b3-tg:#B5E3CC;
     --b3-grad:linear-gradient(100deg, var(--b3-blue), var(--b3-white) 34%, var(--b3-white) 66%, var(--b3-violet));
+  }
+  /* v4.121.0 VERLAUFS-TEST (html.trial, nur Beta-Haushalte): das Gesicht in
+     Weiss auf dem Designer-Verlauf (dasselbe Motiv wie icon-face.svg und
+     scripts/render-icons.mjs — ein Test vergleicht die Stopps), und Kachel-
+     farben aus den Farbtoenen des Icons. Die Pastelle sitzen bei OKLCH
+     L .876 C .057 wie die bisherigen (gleiche Helligkeit = gleiche Tinte):
+     blau h258 (Icon #0A7BFF), violett h291 (#7A2BFF) — und statt Weiss ein
+     ROSA h330 aus dem Pink des Icons (#F300EC). «Einmalig» verliert sein Mint
+     (das Icon hat kein Gruen) und wird neutral hell. Fuer alle anderen
+     Haushalte aendert sich nichts: --b3-logo oben bleibt das Navy-Gesicht. */
+  html.brand3.trial{
+    --b3-logo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%230A7BFF'/%3E%3Cstop offset='.45' stop-color='%237A2BFF'/%3E%3Cstop offset='.72' stop-color='%23F300EC'/%3E%3Cstop offset='1' stop-color='%23FF00FF'/%3E%3C/linearGradient%3E%3ClinearGradient id='v' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23160B4F' stop-opacity='1'/%3E%3Cstop offset='.35' stop-color='%23160B4F' stop-opacity='.78'/%3E%3Cstop offset='.72' stop-color='%23160B4F' stop-opacity='.15'/%3E%3Cstop offset='1' stop-color='%23160B4F' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23h)'/%3E%3Crect width='100' height='100' fill='url(%23v)'/%3E%3Cg fill='none' stroke-linecap='round' stroke='%23FFFFFF'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6'/%3E%3Ccircle cx='70.7' cy='31.2' r='12.5' stroke-width='9.6'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6'/%3E%3C/g%3E%3C/svg%3E");
+    --b3-tw:#F0C7EB; --b3-tb:#BFD8FC; --b3-tv:#D5D0FA; --b3-tg:#F5F5F1;
   }
   /* Logo: dieselben <img>-Knoten (Splash-FLIP misst sie), nur der Inhalt
      wechselt — rein per CSS, darum schon im ersten Paint richtig. */
@@ -1090,7 +1132,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.120.0';
+  const APP_VERSION = '4.121.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -1230,6 +1272,11 @@
   function personalManifestUrl(name) {
     const q = new URLSearchParams({ f: FAMILY || '', u: USER_SLUG || '' });
     if (name) q.set('n', name);
+    // v4.121.0: Verlaufs-Icons im persoenlichen Manifest. Klasse direkt lesen,
+    // nicht trialOn(): dieser Aufruf laeuft schon beim Boot (Zeile darunter),
+    // bevor die const-Helfer weiter unten initialisiert sind (TDZ).
+    const de = document.documentElement;
+    if (de.classList.contains('brand3') && de.classList.contains('trial')) q.set('b', '1');
     return BASE + 'manifest.json?' + q.toString();
   }
   // IMMER die same-origin-Adresse verwenden (v4.56.0): kontrolliert der
@@ -2162,6 +2209,8 @@
   // liest die Klasse, die Boot (Cache) und Abgleich (families.beta) setzen —
   // so stimmen Kachel, Verlauf, Vorwaermen und Edit-Vorschau immer ueberein.
   const brandOn = () => document.documentElement.classList.contains('brand3');
+  // v4.121.0: Verlaufs-Test — Klasse setzt Boot (Cache) bzw. Abgleich (families.beta).
+  const trialOn = () => brandOn() && document.documentElement.classList.contains('trial');
   const ART_STYLE = ', minimalist flat vector illustration, single subject, centered, ' +
     'dark moody background, vibrant accent color, no text, no words';
   // Variante 3: weisse, runde Striche auf Schwarz — wie das Logo. Das Schwarz
@@ -2242,7 +2291,7 @@
     // dem i18n-Boot und blieb fuer alle Welt deutsch.
     function renderEntry() {
       d.innerHTML = `
-      <img src="${brandOn() ? '/chores/icon-192.png?v=50' : '/chores/icon-classic-192.png?v=1'}" alt="" width="72" height="72" style="border-radius:18px">
+      <img src="${trialOn() ? '/chores/icon-trial-192.png?v=1' : brandOn() ? '/chores/icon-192.png?v=51' : '/chores/icon-classic-192.png?v=1'}" alt="" width="72" height="72" style="border-radius:18px">
       <h1 style="font-family:var(--display);font-weight:800;font-size:34px;margin:0 0 4px;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Fairli</h1>
       <p style="color:var(--muted);max-width:300px;margin:0 0 8px">${t('Aufgaben im Haushalt – fair verteilt.')}</p>
       ${last && last.family ? `<button id="resume" style="${btn};background:var(--accent);color:#0C1220">${t('Zu meinem Haushalt')}</button>` : ''}
@@ -2631,6 +2680,11 @@
         // Marken-Test «Variante 3»; der gilt jetzt statisch fuer alle). Der
         // alte Beta-Cache dieses Haushalts wird nur noch aufgeraeumt.
         try { localStorage.removeItem('haushalt.brand3:' + FAMILY); } catch {}
+        // v4.121.0: families.beta gate den VERLAUFS-Test (html.trial) —
+        // Gesicht/Icon/Kacheln in den Farben des Designer-Verlaufs, bis der
+        // Haushalt ueber das Design entschieden hat. Setzer + Cache fuer den
+        // naechsten ersten Paint; der Manifest-Link traegt dann b=1.
+        if (window.__trial) { const was = trialOn(); window.__trial(BETA, FAMILY); if (was !== trialOn()) refreshPersonalManifest(); }
         // v4.73.0 (Beta): Das Familien-GEHEIMNIS steht in der Adressleiste —
         // link = auth, also ein Zugang auf Dauer-Anzeige. Es leckt nicht nur
         // per Screenshot (Maintainer-Befund Android: der Teilen-Fluss haengt
@@ -3782,21 +3836,25 @@
       m.setAttribute('d', `M${q(6)}C${q(8)} ${q(10)} ${q(12)}`);
       el.querySelector('g').setAttribute('transform', `translate(0 ${f(p[15])}) rotate(${f(p[14])} 50 52)`); };
     let seq = 0;
-    // v4.120.0: Hintergrund = derselbe Verlauf wie Logo und App-Icon (zwei
-    // Rechtecke: waagerecht blau → pink, darueber ein nach unten auslaufender
-    // Aubergine-Schleier), Gesicht einfarbig weiss. Die Augen-Verlaeufe aus
-    // v4.115.0 sind damit Geschichte — ein weisses Gesicht auf Farbe liest
-    // sich bis 16 px, zwei farbige Ringe auf Farbe nicht (Entscheid 25.10.).
-    // Die Verlaufs-IDs tragen das Instanz-Praefix u (mehrere Gesichter
-    // gleichzeitig im DOM: Splash, Kopf, Toast).
+    // v4.121.0: im Verlaufs-Test (trialOn) zeichnet das bewegte Gesicht denselben
+    // Verlauf wie Logo und Icon (zwei Rechtecke, weisse Striche); sonst wie
+    // seit v4.115.0 die Navy-Kachel mit den zwei Augen-Verlaeufen. Beide Zweige
+    // liefern drei <path> in derselben Reihenfolge — draw() ist unveraendert.
     const make = rx => { const u = 'fc' + (++seq), s = document.createElement('span');
+      if (trialOn()) {
+        s.className = 'b3face';
+        s.innerHTML = `<svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true"><defs>`
+          + `<linearGradient id="${u}h" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0A7BFF"/><stop offset=".45" stop-color="#7A2BFF"/><stop offset=".72" stop-color="#F300EC"/><stop offset="1" stop-color="#FF00FF"/></linearGradient>`
+          + `<linearGradient id="${u}v" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#160B4F" stop-opacity="1"/><stop offset=".35" stop-color="#160B4F" stop-opacity=".78"/><stop offset=".72" stop-color="#160B4F" stop-opacity=".15"/><stop offset="1" stop-color="#160B4F" stop-opacity="0"/></linearGradient></defs>`
+          + `<rect width="100" height="100" rx="${rx}" fill="url(#${u}h)"/><rect width="100" height="100" rx="${rx}" fill="url(#${u}v)"/>`
+          + `<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#FFFFFF"><path stroke-width="9.6"/><path stroke-width="9.6"/><path stroke-width="14.6"/></g></svg>`;
+        draw(s, N); return s;
+      }
+      const g = (id, y, c) => `<linearGradient id="${u + id}" gradientUnits="userSpaceOnUse" x1="0" y1="${y}" x2="0" y2="${f(y + 34.6)}"><stop offset=".15" stop-color="#F5F5F1"/><stop offset=".85" stop-color="${c}"/></linearGradient>`;
       s.className = 'b3face';
-      s.innerHTML = `<svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true"><defs>`
-        + `<linearGradient id="${u}h" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0A7BFF"/><stop offset=".45" stop-color="#7A2BFF"/><stop offset=".72" stop-color="#F300EC"/><stop offset="1" stop-color="#FF00FF"/></linearGradient>`
-        + `<linearGradient id="${u}v" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#160B4F" stop-opacity="1"/><stop offset=".35" stop-color="#160B4F" stop-opacity=".78"/><stop offset=".72" stop-color="#160B4F" stop-opacity=".15"/><stop offset="1" stop-color="#160B4F" stop-opacity="0"/></linearGradient></defs>`
-        + `<rect width="100" height="100" rx="${rx}" fill="url(#${u}h)"/><rect width="100" height="100" rx="${rx}" fill="url(#${u}v)"/>`
-        + `<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#FFFFFF">`
-        + `<path stroke-width="9.6"/><path stroke-width="9.6"/><path stroke-width="14.6"/></g></svg>`;
+      s.innerHTML = `<svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true"><defs>${g('b', 15.8, '#84B2FF')}${g('v', 13.9, '#B98AE0')}</defs>`
+        + `<rect width="100" height="100" rx="${rx}" fill="#1B1D31"/><g fill="none" stroke-linecap="round" stroke-linejoin="round">`
+        + `<path stroke-width="9.6" stroke="url(#${u}b)"/><path stroke-width="9.6" stroke="url(#${u}v)"/><path stroke-width="14.6" stroke="#F5F5F1"/></g></svg>`;
       draw(s, N); return s; };
     // Ueber ein <img> legen: in dessen Elternknoten, absolut, Versatz nachgemessen
     // (unabhaengig davon, welcher Vorfahr positioniert ist).

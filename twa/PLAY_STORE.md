@@ -109,3 +109,12 @@ Splash-Bilder aus den neuen URLs neu. Danach wie oben (versionName,
 targetSdk) nachziehen. Ausserdem fuer die Einreichung noch offen: eine
 Feature-Grafik 1024×500 (Pflicht bei Play) — aus `icon-face.svg` zu bauen,
 sobald der Maintainer die Komposition freigibt.
+
+## Nachtrag 25.10.2026 (spaeter) — Verlauf nur noch als Beta-Test (v4.121.0)
+
+Der Verlauf ist noch nicht entschieden: `store_icon.png` und
+`twa-manifest.json` (`?v=51`) zeigen wieder das Navy-Gesicht mit den
+farbigen Augen (Stand v4.118). Das Verlaufs-Icon liegt als
+`icon-trial-*.png` daneben und erreicht nur Beta-Haushalte ueber das
+persoenliche Manifest. Fuer den Store gilt bis zur Entscheidung das
+Navy-Gesicht; `bubblewrap update` vor dem naechsten Build wie oben.

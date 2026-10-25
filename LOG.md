@@ -1,3 +1,59 @@
+## 2026-10-25 — v4.121.0 (SW haushalt-v229): the gradient becomes a beta-only trial again — navy for everyone, icon colours on the tiles for the trial family
+
+- Maintainer: «create a trial version for our family again (leave the old
+  icon for all users until we conclude the design). In our family's version,
+  try to adapt the tile colors such that they fit the new icon.» So v4.119.0
+  (icon) and v4.120.0 (in-app face) are rolled back for the public and kept
+  alive behind `families.beta`, the same flag that gated the brand trial
+  v4.113.0–v4.116.0.
+- **For everyone:** `icon-192/512/512-maskable.png` (plus the `icon-b3-*`
+  aliases and `twa/store_icon.png`) are the v4.118 bytes again — the navy face
+  with the blue/violet eye gradients — under `?v=51` in all five places.
+  `--b3-logo` and `FACE.make()` draw that face again. No class, no cache.
+- **For beta families:** pull() calls `window.__trial(BETA, FAMILY)`, which
+  toggles `html.trial`, writes `haushalt.trial:<fam>` = `1` per device (the
+  v4.113 first-paint pattern: the head script reads the family from the URL
+  or the saved route and sets the class before the first paint — splash,
+  favicon and tiles are already right on the second start), and re-runs
+  `__look`, so favicon / apple-touch-icon become `icon-trial-192.png?v=1`.
+  Under `html.brand3.trial` the CSS block overrides `--b3-logo` with the
+  gradient + white face, and `FACE.make()` takes a `trialOn()` branch that
+  draws the same picture (three `<path>` as before, so `draw()` is untouched).
+  Beta off → the next pull removes class, cache and icon again.
+- **Tile colours for the trial:** the three tones are re-derived from the
+  icon in OKLCH (L .876, C .057, hues 258 / 291 / 330): `--b3-tb #BFD8FC`
+  (blue), `--b3-tv #D5D0FA` (violet) and — replacing the white tone —
+  `--b3-tw #F0C7EB` (pink, the icon's bottom-right). «Einmalig» loses the
+  mint (`--b3-tg` → `#F5F5F1`, paper white): three pastels from one gradient
+  plus a neutral read as one family; mint was a fourth hue. Ink/muted tokens
+  stay (contrast ≥ 5.6:1 on all three — the lightness is the same as before).
+  `choreTone(id)` is unchanged: the same chore keeps the same slot, only the
+  colour of slot «w» differs between the two looks.
+- **Home-screen icons:** the personal manifest (sw.js) serves
+  `icon-trial-*` when the page asks with `b=1`, which `personalManifestUrl()`
+  adds while `html.brand3.trial` is set (reads the classes directly — it runs
+  at boot, before the `const` helpers exist). `refreshPersonalManifest()` is
+  called when the trial state flips in pull. manifest.json (family link /
+  entry page) stays navy for everyone; the trial icon reaches the home screen
+  only via personal links. `icon-trial-*` are NOT in the SW precache — they
+  are fetched on demand like any other asset.
+- `scripts/render-icons.mjs` now writes only `icon-trial-*` + `icon-face.svg`
+  (the master stays the gradient face); `optimize-icons.py` optimises those
+  three. The navy PNGs are static files again, restored from git.
+- Tests: new block «Verlaufs-Test nur fuer Beta (v4.121.0)» — beta on (class
+  after pull, favicon, cache, tone tokens, head logo), second start from the
+  cache (first paint), saved route without family in the URL, beta null/false
+  (navy, old tones, no cache), beta switched off (cleanup incl. next first
+  paint), classic look beats the trial, personal manifest with/without `b=1`,
+  `@sw` manifest icons for both, and a source test that no static reference
+  names `icon-trial-*`. The v4.113/114/117 beta tests now expect the trial
+  favicon and tones for `beta: true`; the pure tile-tone tests run without
+  beta (the public truth). The global-icon test pins the navy corners of
+  `icon-512.png` and the IHDR widths of the three trial PNGs.
+- To put a family on the trial: `families.beta = true` in Supabase (the 🧪
+  marker in settings shows BETA). The home-screen icon changes by platform
+  rule (Android asks to confirm, iOS needs add-again) — §6.6.
+
 ## 2026-10-25 — v4.120.0 (SW haushalt-v228): the face inside the app takes the gradient too — one motif, three places, one test
 
 - Maintainer, after seeing v4.119.0: «let's try the new icon in the app, it looks

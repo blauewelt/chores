@@ -531,10 +531,21 @@ Mechanism, keep it this way:
   which stay only as unreferenced aliases). **Since v4.119.0 the icon is the
   face in WHITE on the designer's Verlauf-1 gradient** (master `icon-face.svg`,
   rendered by `scripts/render-icons.mjs` + `scripts/optimize-icons.py`),
-  manifest.json lists it with `?v=50`. **Since v4.120.0 the in-app face is the
+  manifest.json listed it with `?v=50`. **Since v4.120.0 the in-app face is the
   same picture**: `--b3-logo` and `FACE.make()` draw the gradient + white face
   too, and a test compares the stop-colour sequence of CSS token, live overlay
-  and `icon-face.svg` — change the gradient in all three. Changing the icon =
+  and `icon-face.svg` — change the gradient in all three. **Since v4.121.0 the
+  gradient is a BETA TRIAL again (`html.trial`, set from `families.beta` by
+  `window.__trial(on, fam)` in pull, cached per device as
+  `haushalt.trial:<fam>` for the first paint):** everyone else gets the navy
+  face with coloured eyes (`icon-*.png?v=51`, the v4.118 bytes), beta
+  families get `--b3-logo` overridden under `html.brand3.trial`, a
+  `trialOn()` branch in `FACE.make()`, favicon/touch-icon `icon-trial-192.png?v=1`
+  (via `__look`), the personal manifest with `b=1` → `icon-trial-*` (sw.js),
+  and the tile tones re-derived from the icon (`--b3-tw #F0C7EB` pink,
+  `--b3-tb #BFD8FC`, `--b3-tv #D5D0FA`, «Einmalig» `--b3-tg #F5F5F1` instead
+  of mint). Ask `trialOn()`, never `BETA`, and keep every trial rule under
+  `html.brand3.trial`. Changing the icon =
   edit the script's SVG, re-render, bump `?v=` in ALL FIVE places (index.html,
   404.html, manifest.json, sw.js, updates.html) + SW cache. A pixel test reads the served
   icon back (blue BL, pink BR, dark top, white eye ring).
@@ -1006,11 +1017,16 @@ no rounded corners — the OS masks; maskable = the face group scaled 0.658
 about the centre, inside the 80 % safe circle). Tile art stays white line art
 under the gradient — the colour lives in the face and the accents only.
 
-**App icon (since v4.119.0): the face in white on the Verlauf-1 gradient** —
-rendered by `scripts/render-icons.mjs` (Playwright/Chromium) from the SVG in
-that script, then `scripts/optimize-icons.py` (lossless; also refreshes the
-`icon-b3-*` aliases and `twa/store_icon.png`). The gradient approximates the
-designer's PNG (his SVG had no background layer). v4.117.0–v4.118.1 it was the
+**App icon (v4.121.0): the navy face with coloured eyes for everyone
+(`icon-*.png?v=51`, the v4.118 bytes restored from git); the white face on
+the Verlauf-1 gradient lives in `icon-trial-192/512/512-maskable.png?v=1`,
+served to beta families only** (favicon via `__look`, home screen via the
+personal manifest `b=1`; `manifest.json` stays navy). The trial PNGs are
+rendered by `scripts/render-icons.mjs` (Playwright/Chromium; `PW_CHROMIUM`
+env for the executable) from the SVG in that script (master `icon-face.svg`),
+then `scripts/optimize-icons.py` (lossless). The gradient approximates the
+designer's PNG (his SVG had no background layer). v4.119.0–v4.120.0 the
+gradient face was the public icon (`?v=50`). v4.117.0–v4.118.1 it was the
 coloured face on navy: icon-192/512/512-maskable were the
 same bytes as `icon-b3-*` (rendered in Chromium from the `--b3-logo` SVG;
 maskable = face scaled 0.658 about the centre, furthest pixel at 31 % of the
@@ -1018,7 +1034,7 @@ size from the centre vs. the 40 % safe circle — check it under circle AND
 squircle masks). v4.36.3–v4.116.0 it was four rounded colour tiles under a
 roof. Changing the icon: replace all three PNGs + cache buster `?v=NN` in
 index.html, 404.html, manifest.json AND the personal manifest in sw.js + SW
-bump (current `?v=49`). Installed icons: Android (Chrome ≥ 144) asks the
+bump (current `?v=51`; trial icons `?v=1`). Installed icons: Android (Chrome ≥ 144) asks the
 user to confirm a big icon change, desktop Chrome ≥ 144 offers «Review app
 update», iOS needs add-again-then-delete — details §6.6.
 
