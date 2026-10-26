@@ -1,3 +1,41 @@
+## 2026-10-26 — v4.122.0 (SW haushalt-v230): the trial gradient is now the designer's gradient, not an approximation of it
+
+- Maintainer, with his phone next to the designer's PNG: «the gradient of
+  the icon in the app doesn't quite match what the designer sent.» Measured:
+  the v4.119.0 approximation (two linear gradients, horizontal blue → pink
+  plus a vertical aubergine veil) was off by 23/255 on average — the top
+  was uniformly purple-dark where his is teal-navy on the left, the left edge
+  too dark, the right edge not magenta enough. His gradient is a freeform
+  (point-based) Illustrator gradient; it cannot be built from linear stops,
+  and his AI/EPS carry no PDF content, his SVG only the white glyph.
+- **Fix: the gradient is a raster.** `scripts/extract-gradient.py` takes his
+  1024 px PNG, masks the % glyph (plus a 14 px rim), fills the hole by
+  Laplace diffusion at 128², and writes `icon-grad.png` (32×32, 1.3 KB).
+  Bilinearly upscaled it sits 0.4/255 from his PNG outside the glyph (the
+  centre is interpolation, by construction smooth). The 512 icon rendered
+  from it differs from his by 1.2/255.
+- The raster is embedded as `<image href="data:image/png;base64,…"
+  preserveAspectRatio="none">` in all three places that draw the trial face:
+  `--b3-logo` under `html.brand3.trial`, the `trialOn()` branch of
+  `FACE.make()` (clipped by a `<clipPath>` with the overlay's rx, so the
+  rounded corners survive), and `scripts/render-icons.mjs`, which reads
+  `icon-grad.png` and writes `icon-face.svg` + `icon-trial-*.png` (re-rendered,
+  `?v=2` in index.html and the sw.js personal manifest; the global
+  `icon-*.png?v=51` are untouched — nothing changes for non-beta households).
+- Test: the former stop-sequence test becomes a byte test — the base64 in the
+  CSS token, in a live `.b3face.dbg` overlay and in the served `icon-face.svg`
+  must equal `base64(icon-grad.png)` as served (and IHDR 32×32). Change the
+  gradient = run `extract-gradient.py`, then `render-icons.mjs` +
+  `optimize-icons.py`, then paste the new base64 into the two places in
+  index.html (the test names any that drift). The trial-look tests now assert
+  the raster instead of the old hexes; the first-visit splash assertion was
+  loosened to «is an SVG» (it is navy on the very first visit, documented in
+  v4.121.0).
+- Nested data URIs (a base64 PNG inside a URL-encoded SVG inside a CSS
+  `url()`) render in Chromium and WebKit; SVG-as-image permits `data:`
+  subresources. Visual check: header logo mid-wink and toast face are smooth
+  at 2× with rounded corners intact.
+
 ## 2026-10-25 — v4.121.0 (SW haushalt-v229): the gradient becomes a beta-only trial again — navy for everyone, icon colours on the tiles for the trial family
 
 - Maintainer: «create a trial version for our family again (leave the old

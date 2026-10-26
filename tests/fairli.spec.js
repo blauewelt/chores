@@ -5354,8 +5354,8 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     // v4.117.0: kein Beta-Cache mehr fuer brand3. v4.121.0: Beta = Verlaufs-Test —
     // Favicon/Touch-Icon zeigen nach dem Abgleich das Trial-Icon, Cache pro Familie
     await expect(page.locator('html')).toHaveClass(/trial/);
-    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=1');
-    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=1');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=2');
+    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=2');
     await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#12151F');
     expect(await page.evaluate(f => localStorage.getItem('haushalt.brand3:' + f), FAM)).toBeNull();
     expect(await page.evaluate(f => localStorage.getItem('haushalt.trial:' + f), FAM)).toBe('1');
@@ -5491,14 +5491,17 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     // Motiv wie icon-trial-*. Ohne Beta (naechster Test): Navy, Augen blau/violett.
     await expect(page.locator('html')).toHaveClass(/trial/);
     const logo = decodeURIComponent(await css(page.locator('#headLogo'), 'content'));
-    expect(logo).toContain('linearGradient');
-    for (const hex of ['#0A7BFF', '#FF00FF', '#160B4F']) expect(logo).toContain(hex);
+    // v4.122.0: der Verlauf ist das Raster icon-grad.png als <image> (kein linearGradient mehr)
+    expect(logo).toContain('data:image/png;base64,');
+    expect(logo).not.toContain('linearGradient');
     expect(logo).toContain("stroke='#FFFFFF'");
     expect(logo).not.toContain('#84B2FF'); expect(logo).not.toContain('#1B1D31');
-    expect(decodeURIComponent(await page.evaluate(() => window.__splashLogo) || '')).toContain('linearGradient');
+    // Splash beim ERSTEN Besuch: noch das Navy-Gesicht (html.trial kommt mit dem
+    // Abgleich; ab dem zweiten Start aus dem Cache — eigener Test im v4.121.0-Block)
+    expect(decodeURIComponent(await page.evaluate(() => window.__splashLogo) || '')).toContain('<svg');
     const empty = await page.evaluate(() => { const d = document.createElement('div'); d.className = 'empty'; document.body.appendChild(d);
       const v = getComputedStyle(d, '::before').backgroundImage; d.remove(); return decodeURIComponent(v); });
-    expect(empty).toContain('linearGradient');
+    expect(empty).toContain('data:image/png;base64,');
     // Tokens an EINER Stelle
     const tok = await page.evaluate(() => { const s = getComputedStyle(document.documentElement);
       return ['--b3-blue', '--b3-white', '--b3-violet', '--b3-grad'].map(k => s.getPropertyValue(k).trim()); });
@@ -5516,13 +5519,13 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     // Personenringe bleiben Personenfarbe
     expect(await css(page.locator('.chip .dot').first(), 'backgroundImage')).toBe('none');
     // v4.121.0: im Verlaufs-Test tragen Favicon/Touch-Icon das Trial-Icon
-    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=1');
-    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=1');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=2');
+    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=2');
     // Zwinkern im Toast
     await page.locator('.chip[data-mid="m-chris"]').click();
     await page.locator('.chore[data-cid="c-1"]').click();
     await expect(page.locator('#toast')).toHaveClass(/logged/);
-    expect(await page.locator('#toast .tface').innerHTML()).toContain('linearGradient');   // v4.116.0: Inline-SVG statt ::before
+    expect(await page.locator('#toast .tface').innerHTML()).toContain('data:image/png;base64,');   // v4.116.0: Inline-SVG statt ::before; v4.122.0: Raster
     // Punkte: Balken mit Verlauf
     await page.getByRole('tab', { name: 'Punkte' }).click();
     await expect(page.locator('.score .bar i').first()).toBeVisible();
@@ -5658,30 +5661,31 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
   const tchRoute = context => context.route(`${SB}/rest/v1/chores*`, r => r.request().method() === 'GET'
     ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(TCH) }) : r.fallback());
 
-  test('v4.121.0 TRIAL (Beta): Logo = Trial-Icon — Verlauf-Hintergrund (h: blau → pink, v: Aubergine-Schleier), Gesicht weiss; das bewegte Gesicht traegt dieselben Stopps; icon-face.svg ebenso', async ({ context, page }) => {
+  test('v4.122.0 TRIAL (Beta): Logo = Trial-Icon — Hintergrund ist das Raster icon-grad.png (base64, <image>), Gesicht weiss; dasselbe base64 im bewegten Gesicht, in icon-face.svg und als ausgelieferte Datei', async ({ context, page }) => {
     await mockBackend(context, B3);
     await page.goto(`${BASE}/f/${FAM}`);
     await expect(page.locator('html')).toHaveClass(/brand3/);
     await expect(page.locator('html')).toHaveClass(/trial/);
     const logo = decodeURIComponent(await css(page.locator('#headLogo'), 'content'));
-    const grad = id => (logo.match(new RegExp(`<linearGradient id='${id}'[\\s\\S]*?</linearGradient>`)) || [''])[0];
-    expect(grad('h')).toContain("x2='1'");  for (const hex of ['#0A7BFF', '#7A2BFF', '#F300EC', '#FF00FF']) expect(grad('h')).toContain(hex);
-    expect(grad('v')).toContain("y2='1'");  expect(grad('v')).toContain('#160B4F'); expect(grad('v')).toContain("stop-opacity='0'");
-    expect(logo).toMatch(/<rect[^>]*fill='url\(#h\)'/); expect(logo).toMatch(/<rect[^>]*fill='url\(#v\)'/);
-    expect(logo).toMatch(/<g[^>]*stroke='#FFFFFF'[^>]*>[\s\S]*<circle cx='26'/);          // Augen weiss, keine eigenen Verlaeufe mehr
+    const b64 = h => (h.match(/data:image\/png;base64,([A-Za-z0-9+/=]+)/) || [])[1];
+    expect(b64(logo)).toBeTruthy();
+    expect(logo).toMatch(/<image [^>]*preserveAspectRatio='none'/);
+    expect(logo).not.toContain('linearGradient');                                              // v4.119–121: zwei lineare Verlaeufe — lagen 23/255 daneben
+    expect(logo).toMatch(/<g[^>]*stroke='#FFFFFF'[^>]*>[\s\S]*<circle cx='26'/);          // Augen weiss, keine eigenen Verlaeufe
     expect(logo).toMatch(/<path d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3'/);              // Mund-Geometrie unveraendert
-    // Das bewegte Gesicht (Inline-SVG) traegt dieselben Stopps in derselben Reihenfolge …
-    const stops = h => [...h.matchAll(/stop-color=["'](#\w+)["']/g)].map(m => m[1]);
-    // «.b3face.dbg», nicht «.b3face»: beim ERSTEN Besuch spielt der Start-
-    // Ausdruck (Splash/Kopf) noch mit dem Navy-Gesicht, weil html.trial erst
-    // der Abgleich setzt — querySelector('.b3face') fand in CI dieses aeltere
-    // Overlay statt des eingefrorenen Test-Bildes (Lauf 40228259581).
+    // Das bewegte Gesicht (Inline-SVG) traegt dasselbe Raster … («.b3face.dbg»,
+    // nicht «.b3face»: beim ERSTEN Besuch spielt der Start-Ausdruck noch mit dem
+    // Navy-Gesicht, weil html.trial erst der Abgleich setzt — CI 40228259581)
     const face = await page.evaluate(() => { window.__face('wink', 0); const h = document.querySelector('.b3face.dbg').innerHTML; window.__face(null); return h; });
-    expect(stops(face)).toEqual(stops(logo));
+    expect(b64(face)).toBe(b64(logo));
     expect(face).toMatch(/<g[^>]*stroke="#FFFFFF"/);
-    // … und das ausgelieferte Icon-Master auch (EIN Motiv an drei Orten: CSS-Token, FACE.make, scripts/render-icons.mjs)
+    // … das ausgelieferte Icon-Master auch (EIN Motiv an drei Orten: CSS-Token, FACE.make, scripts/render-icons.mjs) …
     const svg = await (await page.request.get(`${BASE}/icon-face.svg`)).text();
-    expect(stops(svg)).toEqual(stops(logo));
+    expect(b64(svg)).toBe(b64(logo));
+    // … und alle drei sind BYTEGLEICH mit icon-grad.png (die Quelle: scripts/extract-gradient.py)
+    const png = await (await page.request.get(`${BASE}/icon-grad.png`)).body();
+    expect(png.toString('base64')).toBe(b64(logo));
+    expect(png.readUInt32BE(16)).toBe(32); expect(png.readUInt32BE(20)).toBe(32);        // IHDR 32×32
   });
 
   test('v4.115.0 (ohne Beta, seit v4.121.0 wieder die Regel) Logo: zwei Augen-Verlaeufe (blau, violett), weisser Mund; Lid und Zwinker-Kachel nutzen denselben Violett-Verlauf', async ({ context, page }) => {
@@ -5872,8 +5876,9 @@ test.describe('Einmalig-Kachel + Gesicht (v4.116.0)', () => {
         return { n: S.map(a => new Set(a).size), end, N: window.__face.N, overlay: !!document.querySelector('.b3face'),
           dur: log && log.t1 - log.t0, inverted, frames: S[0].length };
       }, n);
-      // rAF-Takt: headless WebKit auf CI liefert nur ~25 Bilder/s (blink 300 ms = 7 Bilder)
-      expect(r.frames, n).toBeGreaterThan(4);
+      // rAF-Takt: headless WebKit auf CI liefert nur ~25 Bilder/s (blink 300 ms = 7 Bilder);
+      // in der Sandbox ohne GPU auch mal 13/s (= 4 Bilder, mit UND ohne Verlaufs-Raster gemessen, 26.10.2026)
+      expect(r.frames, n).toBeGreaterThanOrEqual(4);
       expect(r.end, n).toEqual(r.N);                       // endet neutral
       expect(r.overlay, n).toBe(false);                    // Ueberlagerung wieder weg → das <img> zeigt das Gesicht
       expect(r.dur, n).toBeLessThanOrEqual(950);
@@ -6038,7 +6043,7 @@ test.describe('Einmalig-Kachel + Gesicht (v4.116.0)', () => {
     await expect(tf).toHaveCount(1);
     const svg = await tf.evaluate(el => el.innerHTML);
     await expect(page.locator('html')).toHaveClass(/trial/);   // B3 = Beta = Verlaufs-Test (v4.121.0)
-    for (const hex of ['#0A7BFF', '#FF00FF', '#160B4F', '#FFFFFF']) expect(svg).toContain(hex);   // Verlauf + weisses Gesicht
+    expect(svg).toContain('data:image/png;base64,'); expect(svg).toContain('#FFFFFF');   // Verlauf (v4.122.0: Raster) + weisses Gesicht
     await expect.poll(() => page.evaluate(() => window.__face.log.filter(x => x.w === 'toast').length)).toBe(1);
     expect(['wink', 'smirk']).toContain(await page.evaluate(() => window.__face.log.find(x => x.w === 'toast').n));
     // Kopf: Blinzeln nur, wenn sichtbar und kein Dialog offen
@@ -6559,7 +6564,7 @@ test.describe('Neues Bild fuer alle (v4.117.0)', () => {
       // Verlaufs-Test (Trial-Icon, Kacheln in den Icon-Farben); alle anderen
       // behalten das Navy-Bild mit den drei alten Toenen und Mint
       const trial = beta === true;
-      await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', trial ? '/chores/icon-trial-192.png?v=1' : ICON);
+      await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', trial ? '/chores/icon-trial-192.png?v=2' : ICON);
       expect(await css(page.locator('#headLogo'), 'content')).toContain('svg');
       expect(decodeURIComponent(await tile.locator('img.art').getAttribute('src'))).toContain('thick white outline drawing: Müll rausbringen');
       expect(['w', 'b', 'v']).toContain(await tile.getAttribute('data-tone'));
@@ -7256,7 +7261,7 @@ test.describe('Auswahl und Einstellungen kleben (v4.118.1)', () => {
 test.describe('Verlaufs-Test nur fuer Beta (v4.121.0)', () => {
   const css = (loc, prop, pseudo) => loc.evaluate((el, a) => getComputedStyle(el, a[1] || null)[a[0]], [prop, pseudo]);
   const famRows = beta => () => [{ family_id: FAM, name: 'Testhaushalt', beta }];
-  const TRIAL = '/chores/icon-trial-192.png?v=1', NAVY_ICON = '/chores/icon-192.png?v=51';
+  const TRIAL = '/chores/icon-trial-192.png?v=2', NAVY_ICON = '/chores/icon-192.png?v=51';
   // Kacheltoene: alt (Weiss, Blau, Violett, Einmalig Mint) vs. Trial (Pink,
   // Blau, Violett aus dem Icon — OKLCH L .876 C .057 —, Einmalig Papierweiss)
   const OLD = { w: 'rgb(245, 245, 241)', b: 'rgb(199, 219, 255)', v: 'rgb(220, 201, 242)', g: 'rgb(181, 227, 204)' };
@@ -7302,7 +7307,7 @@ test.describe('Verlaufs-Test nur fuer Beta (v4.121.0)', () => {
     expect(Object.values(NEW).slice(0, 3)).toContain(await css(tile, 'backgroundColor'));
     // Kopf-Logo = Gesicht auf dem Verlauf (weiss), nicht Navy
     const logo = decodeURIComponent(await css(page.locator('#headLogo'), 'content'));
-    expect(logo).toContain('#0A7BFF'); expect(logo).toContain("stroke='#FFFFFF'"); expect(logo).not.toContain('#1B1D31');
+    expect(logo).toContain('data:image/png;base64,'); expect(logo).toContain("stroke='#FFFFFF'"); expect(logo).not.toContain('#1B1D31');
   });
 
   test('Zweiter Start mit Beta: html.trial steht VOR dem Abgleich (Cache) — Splash und Favicon schon im Verlauf', async ({ context, page }) => {
@@ -7315,7 +7320,7 @@ test.describe('Verlaufs-Test nur fuer Beta (v4.121.0)', () => {
     const fp = await page.waitForFunction(() => window.__fp).then(h => h.jsonValue());
     expect(fp.trial).toBe(true);
     expect(fp.icon).toBe(TRIAL);
-    expect(fp.splash).toContain('#0A7BFF');
+    expect(fp.splash).toContain('data:image/png;base64,');
     expect(fp.splash).toContain("stroke='#FFFFFF'");
     expect(await tones(page)).toEqual(NEW);
   });
@@ -7343,7 +7348,7 @@ test.describe('Verlaufs-Test nur fuer Beta (v4.121.0)', () => {
       expect(await page.evaluate(f => localStorage.getItem('haushalt.trial:' + f), FAM)).toBeNull();
       expect(await tones(page)).toEqual(OLD);
       const logo = decodeURIComponent(await css(page.locator('#headLogo'), 'content'));
-      expect(logo).toContain('#1B1D31'); expect(logo).not.toContain('#0A7BFF');
+      expect(logo).toContain('#1B1D31'); expect(logo).not.toContain('data:image/png;base64,');
       await expect(page.locator('#toast')).toHaveCount(1);
     });
   }
@@ -7419,7 +7424,7 @@ test.describe('Verlaufs-Test nur fuer Beta (v4.121.0)', () => {
       const b = await (await fetch(h.replace(/&?b=1/, ''))).json();
       return { trial: a.icons.map(i => i.src), navy: b.icons.map(i => i.src) };
     });
-    expect(both.trial.map(s => s.split('/').pop())).toEqual(['icon-trial-192.png?v=1', 'icon-trial-512.png?v=1', 'icon-trial-512-maskable.png?v=1']);
+    expect(both.trial.map(s => s.split('/').pop())).toEqual(['icon-trial-192.png?v=2', 'icon-trial-512.png?v=2', 'icon-trial-512-maskable.png?v=2']);
     expect(both.navy.map(s => s.split('/').pop())).toEqual(['icon-192.png?v=51', 'icon-512.png?v=51', 'icon-512-maskable.png?v=51']);
     // die Dateien sind da und erreichbar
     for (const f of both.trial) expect((await page.request.get(f)).status(), f).toBe(200);

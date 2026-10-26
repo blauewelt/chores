@@ -87,7 +87,7 @@
     // Touch-Icon das Gesicht auf dem Verlauf (icon-trial-192) — nur im neuen
     // Bild; «Klassisch» bleibt klassisch.
     var trial = !classic && de.classList.contains('trial');
-    var ic = classic ? '/chores/icon-classic-192.png?v=1' : trial ? '/chores/icon-trial-192.png?v=1' : '/chores/icon-192.png?v=51';
+    var ic = classic ? '/chores/icon-classic-192.png?v=1' : trial ? '/chores/icon-trial-192.png?v=2' : '/chores/icon-192.png?v=51';
     set('link[rel="icon"]', 'href', ic);
     set('link[rel="apple-touch-icon"]', 'href', ic);
     set('meta[name="theme-color"]', 'content', classic ? '#141A17' : '#12151F');
@@ -694,15 +694,22 @@
   }
   /* v4.121.0 VERLAUFS-TEST (html.trial, nur Beta-Haushalte): das Gesicht in
      Weiss auf dem Designer-Verlauf (dasselbe Motiv wie icon-face.svg und
-     scripts/render-icons.mjs — ein Test vergleicht die Stopps), und Kachel-
+     scripts/render-icons.mjs — ein Test vergleicht den Hintergrund), und Kachel-
      farben aus den Farbtoenen des Icons. Die Pastelle sitzen bei OKLCH
      L .876 C .057 wie die bisherigen (gleiche Helligkeit = gleiche Tinte):
      blau h258 (Icon #0A7BFF), violett h291 (#7A2BFF) — und statt Weiss ein
      ROSA h330 aus dem Pink des Icons (#F300EC). «Einmalig» verliert sein Mint
      (das Icon hat kein Gruen) und wird neutral hell. Fuer alle anderen
-     Haushalte aendert sich nichts: --b3-logo oben bleibt das Navy-Gesicht. */
+     Haushalte aendert sich nichts: --b3-logo oben bleibt das Navy-Gesicht.
+     v4.122.0: der Verlauf ist das 32×32-Raster icon-grad.png (base64 als
+     <image>, bilinear hochgezogen) — vom Designer-PNG abgenommen
+     (scripts/extract-gradient.py), weil sein freier Illustrator-Verlauf
+     nicht aus zwei linearen Verlaeufen zu bauen war (Mittelfehler 23/255,
+     jetzt 0.4/255). Dasselbe base64 steht in FACE.make() und in
+     icon-face.svg (render-icons.mjs liest icon-grad.png) — EIN Test
+     vergleicht alle drei mit der ausgelieferten Datei. */
   html.brand3.trial{
-    --b3-logo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%230A7BFF'/%3E%3Cstop offset='.45' stop-color='%237A2BFF'/%3E%3Cstop offset='.72' stop-color='%23F300EC'/%3E%3Cstop offset='1' stop-color='%23FF00FF'/%3E%3C/linearGradient%3E%3ClinearGradient id='v' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23160B4F' stop-opacity='1'/%3E%3Cstop offset='.35' stop-color='%23160B4F' stop-opacity='.78'/%3E%3Cstop offset='.72' stop-color='%23160B4F' stop-opacity='.15'/%3E%3Cstop offset='1' stop-color='%23160B4F' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23h)'/%3E%3Crect width='100' height='100' fill='url(%23v)'/%3E%3Cg fill='none' stroke-linecap='round' stroke='%23FFFFFF'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6'/%3E%3Ccircle cx='70.7' cy='31.2' r='12.5' stroke-width='9.6'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6'/%3E%3C/g%3E%3C/svg%3E");
+    --b3-logo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cimage href='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAE4UlEQVR42m2WbY4juRFEX2SSVVK3F76Oj+T7w96ZbhUj/IPVPePFEoRASFBEZuSn+Ne/IQSSrws2Dg6ml8aLY+lYOi/Ni2Hm0lj0ouwKSsh9ICQmEGAI3e9IBEyAAiuS6TBQh44K1f2m2LeKELQxCBBUGx5Gp4AQgYgiBRk5xAptRnSEGc3oCCOaoZOCJiIhyvZdxIbgTTqaJihAypTZLsuUI6fNMDOaZnoT0Mn2Q4luWQyQhDY22t+OmbkDUKGiBnm/06a3pckRzTCtEUYYSYdKRIhluMWJcdBKWQkZkwmIVNShjLitm2GYNu0Mc5gZDd8eVFKJHDYNJDFxbHyxdtzHzBTaEduhUzxMhyOa1jTDDOcIw0zv5Ek7O3mUGz14JWZduCnHwDg52eKEhko6jPCt+AyHmWauTZA2FSrWCjvIwdjxwhc18MI7U8fBCTf6VmaEGWY4o8PsO83x9dNI6guaO/9tslhX1kUt2cQJMCaPghIdJmq4rY5Oc4bTOsxp5mI607RTuyQJyQ6sWSvrhRfritddsVsiqZNGE81woCM8whk9zWkemyaZS9MpfysT8Jf662JdbJW88DZhTD2ImgxpwiGd0QOd8Iye8IRn9AjHVsm/xNk5+qX+uvDF2gQm3gStR6EWIxziQKf0iJ7RG7xFb9YzPMLTmo6ISH3XF07sG90Lv1jrFi0mY+gpGMWEGR3SIZ3SAz3hLfUe3s2bdYZWKim+7u5xrNdv4lxfKXQTVJ0VtWmpxZAmmnX78Ua9wz+iJ0ylwyQNI6mkE75keeHfY/BLItUDkCRpd4tRGtaUDtWJnugJB1vAHDvNYCS64ZZvgm3+um6JMBkZD929VARRitpq1Sgd0oGqmOFhHvDkzt1mF+36XZnfCBJsGO6DyMKSYVcoVSq1qqR0KhrmRO/o3XoLE4J9w91+/MaxCRIy1jgTlbmWJnJky1a60loDB1mDOqX36J+uZ7Sn3WL5/wz3wovsIN918Jpn7WZeekkv6YpWdK36HLwsLyF16aT+cP+REgkreKu0cLEWbnbD+I7wTTAriqEoqVUz+hmd5iO8ltYoL+mqmTEpQ2HRwsLQYTUtXNh43FPh7iTjY86KlnFBSaoB0zrNaX1Yn6tWFepU/SzUDPdIioQFS1TjukfNr3G/h/v4mENhuFbjS8CIpnez089VH0Ovqz+7/myNgeAUWbsI9ny/O4fvZSQ7KzfP+Dimkst1LZYoGNEIMzqs0/Vj9Y9R/xlMq/YgvzgTO4JCCr2H/a8eF3Gf8TFbUNZYoHskdFRRuYZ1rnoszaW5GEOVYBIdpEOiuqFSFPecAdgc4/Povaek9j4h8TUHU+U+FsfaixcztNWmEqKJBlqkbhp/4wq015bXLEKZvTpZGF3oJS2qzLl0rpwX5+QwY9GmLAUsBSGRBlH7DftLgHFtgsXe8C7xgh+qpyRzXrwN3lrPwfPi0ZzNsTiKYVpaoogjQRGxe45+xcCjCC5cLFKSi5JWdAyegz+b/zbvzY/mR/FsHsVRTDHQAOcrMW9xvtF3TjZEFEsYISLK+lz87Pt+7M/is/gQr+IlLrHEgon2ZiVKXzH4PoMuEvbet2mNtkPFq/hsXs2r+Cw+i6v43NC7lIW///h3Z9z0exveBhQSCBcRS1zi4kZc4G/0r2r6/f6F6n9AvUdClfPgcgAAAABJRU5ErkJggg==' width='100' height='100' preserveAspectRatio='none'/%3E%3Cg fill='none' stroke-linecap='round' stroke='%23FFFFFF'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6'/%3E%3Ccircle cx='70.7' cy='31.2' r='12.5' stroke-width='9.6'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6'/%3E%3C/g%3E%3C/svg%3E");
     --b3-tw:#F0C7EB; --b3-tb:#BFD8FC; --b3-tv:#D5D0FA; --b3-tg:#F5F5F1;
   }
   /* Logo: dieselben <img>-Knoten (Splash-FLIP misst sie), nur der Inhalt
@@ -1132,7 +1139,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.121.0';
+  const APP_VERSION = '4.122.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2291,7 +2298,7 @@
     // dem i18n-Boot und blieb fuer alle Welt deutsch.
     function renderEntry() {
       d.innerHTML = `
-      <img src="${trialOn() ? '/chores/icon-trial-192.png?v=1' : brandOn() ? '/chores/icon-192.png?v=51' : '/chores/icon-classic-192.png?v=1'}" alt="" width="72" height="72" style="border-radius:18px">
+      <img src="${trialOn() ? '/chores/icon-trial-192.png?v=2' : brandOn() ? '/chores/icon-192.png?v=51' : '/chores/icon-classic-192.png?v=1'}" alt="" width="72" height="72" style="border-radius:18px">
       <h1 style="font-family:var(--display);font-weight:800;font-size:34px;margin:0 0 4px;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Fairli</h1>
       <p style="color:var(--muted);max-width:300px;margin:0 0 8px">${t('Aufgaben im Haushalt – fair verteilt.')}</p>
       ${last && last.family ? `<button id="resume" style="${btn};background:var(--accent);color:#0C1220">${t('Zu meinem Haushalt')}</button>` : ''}
@@ -3837,16 +3844,15 @@
       el.querySelector('g').setAttribute('transform', `translate(0 ${f(p[15])}) rotate(${f(p[14])} 50 52)`); };
     let seq = 0;
     // v4.121.0: im Verlaufs-Test (trialOn) zeichnet das bewegte Gesicht denselben
-    // Verlauf wie Logo und Icon (zwei Rechtecke, weisse Striche); sonst wie
+    // Verlauf wie Logo und Icon (v4.122.0: das Raster icon-grad.png als <image>,
+    // dasselbe base64 wie in --b3-logo; weisse Striche); sonst wie
     // seit v4.115.0 die Navy-Kachel mit den zwei Augen-Verlaeufen. Beide Zweige
     // liefern drei <path> in derselben Reihenfolge — draw() ist unveraendert.
     const make = rx => { const u = 'fc' + (++seq), s = document.createElement('span');
       if (trialOn()) {
         s.className = 'b3face';
-        s.innerHTML = `<svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true"><defs>`
-          + `<linearGradient id="${u}h" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0A7BFF"/><stop offset=".45" stop-color="#7A2BFF"/><stop offset=".72" stop-color="#F300EC"/><stop offset="1" stop-color="#FF00FF"/></linearGradient>`
-          + `<linearGradient id="${u}v" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#160B4F" stop-opacity="1"/><stop offset=".35" stop-color="#160B4F" stop-opacity=".78"/><stop offset=".72" stop-color="#160B4F" stop-opacity=".15"/><stop offset="1" stop-color="#160B4F" stop-opacity="0"/></linearGradient></defs>`
-          + `<rect width="100" height="100" rx="${rx}" fill="url(#${u}h)"/><rect width="100" height="100" rx="${rx}" fill="url(#${u}v)"/>`
+        s.innerHTML = `<svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true"><defs><clipPath id="${u}c"><rect width="100" height="100" rx="${rx}"/></clipPath></defs>`
+          + `<image clip-path="url(#${u}c)" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAE4UlEQVR42m2WbY4juRFEX2SSVVK3F76Oj+T7w96ZbhUj/IPVPePFEoRASFBEZuSn+Ne/IQSSrws2Dg6ml8aLY+lYOi/Ni2Hm0lj0ouwKSsh9ICQmEGAI3e9IBEyAAiuS6TBQh44K1f2m2LeKELQxCBBUGx5Gp4AQgYgiBRk5xAptRnSEGc3oCCOaoZOCJiIhyvZdxIbgTTqaJihAypTZLsuUI6fNMDOaZnoT0Mn2Q4luWQyQhDY22t+OmbkDUKGiBnm/06a3pckRzTCtEUYYSYdKRIhluMWJcdBKWQkZkwmIVNShjLitm2GYNu0Mc5gZDd8eVFKJHDYNJDFxbHyxdtzHzBTaEduhUzxMhyOa1jTDDOcIw0zv5Ek7O3mUGz14JWZduCnHwDg52eKEhko6jPCt+AyHmWauTZA2FSrWCjvIwdjxwhc18MI7U8fBCTf6VmaEGWY4o8PsO83x9dNI6guaO/9tslhX1kUt2cQJMCaPghIdJmq4rY5Oc4bTOsxp5mI607RTuyQJyQ6sWSvrhRfritddsVsiqZNGE81woCM8whk9zWkemyaZS9MpfysT8Jf662JdbJW88DZhTD2ImgxpwiGd0QOd8Iye8IRn9AjHVsm/xNk5+qX+uvDF2gQm3gStR6EWIxziQKf0iJ7RG7xFb9YzPMLTmo6ISH3XF07sG90Lv1jrFi0mY+gpGMWEGR3SIZ3SAz3hLfUe3s2bdYZWKim+7u5xrNdv4lxfKXQTVJ0VtWmpxZAmmnX78Ua9wz+iJ0ylwyQNI6mkE75keeHfY/BLItUDkCRpd4tRGtaUDtWJnugJB1vAHDvNYCS64ZZvgm3+um6JMBkZD929VARRitpq1Sgd0oGqmOFhHvDkzt1mF+36XZnfCBJsGO6DyMKSYVcoVSq1qqR0KhrmRO/o3XoLE4J9w91+/MaxCRIy1jgTlbmWJnJky1a60loDB1mDOqX36J+uZ7Sn3WL5/wz3wovsIN918Jpn7WZeekkv6YpWdK36HLwsLyF16aT+cP+REgkreKu0cLEWbnbD+I7wTTAriqEoqVUz+hmd5iO8ltYoL+mqmTEpQ2HRwsLQYTUtXNh43FPh7iTjY86KlnFBSaoB0zrNaX1Yn6tWFepU/SzUDPdIioQFS1TjukfNr3G/h/v4mENhuFbjS8CIpnez089VH0Ovqz+7/myNgeAUWbsI9ny/O4fvZSQ7KzfP+Dimkst1LZYoGNEIMzqs0/Vj9Y9R/xlMq/YgvzgTO4JCCr2H/a8eF3Gf8TFbUNZYoHskdFRRuYZ1rnoszaW5GEOVYBIdpEOiuqFSFPecAdgc4/Povaek9j4h8TUHU+U+FsfaixcztNWmEqKJBlqkbhp/4wq015bXLEKZvTpZGF3oJS2qzLl0rpwX5+QwY9GmLAUsBSGRBlH7DftLgHFtgsXe8C7xgh+qpyRzXrwN3lrPwfPi0ZzNsTiKYVpaoogjQRGxe45+xcCjCC5cLFKSi5JWdAyegz+b/zbvzY/mR/FsHsVRTDHQAOcrMW9xvtF3TjZEFEsYISLK+lz87Pt+7M/is/gQr+IlLrHEgon2ZiVKXzH4PoMuEvbet2mNtkPFq/hsXs2r+Cw+i6v43NC7lIW///h3Z9z0exveBhQSCBcRS1zi4kZc4G/0r2r6/f6F6n9AvUdClfPgcgAAAABJRU5ErkJggg==" width="100" height="100" preserveAspectRatio="none"/>`
           + `<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#FFFFFF"><path stroke-width="9.6"/><path stroke-width="9.6"/><path stroke-width="14.6"/></g></svg>`;
         draw(s, N); return s;
       }

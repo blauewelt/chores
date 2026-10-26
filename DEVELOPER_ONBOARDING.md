@@ -545,7 +545,11 @@ Mechanism, keep it this way:
   and the tile tones re-derived from the icon (`--b3-tw #F0C7EB` pink,
   `--b3-tb #BFD8FC`, `--b3-tv #D5D0FA`, «Einmalig» `--b3-tg #F5F5F1` instead
   of mint). Ask `trialOn()`, never `BETA`, and keep every trial rule under
-  `html.brand3.trial`. Changing the icon =
+  `html.brand3.trial`. **The gradient itself (v4.122.0) is the raster
+  `icon-grad.png` (32×32, from the designer's PNG via
+  `scripts/extract-gradient.py`), embedded as a base64 `<image>` in
+  `--b3-logo`, `FACE.make()` and `icon-face.svg`/`icon-trial-*` — a test
+  demands byte equality of all three with the served file.** Changing the icon =
   edit the script's SVG, re-render, bump `?v=` in ALL FIVE places (index.html,
   404.html, manifest.json, sw.js, updates.html) + SW cache. A pixel test reads the served
   icon back (blue BL, pink BR, dark top, white eye ring).
@@ -1024,8 +1028,11 @@ served to beta families only** (favicon via `__look`, home screen via the
 personal manifest `b=1`; `manifest.json` stays navy). The trial PNGs are
 rendered by `scripts/render-icons.mjs` (Playwright/Chromium; `PW_CHROMIUM`
 env for the executable) from the SVG in that script (master `icon-face.svg`),
-then `scripts/optimize-icons.py` (lossless). The gradient approximates the
-designer's PNG (his SVG had no background layer). v4.119.0–v4.120.0 the
+then `scripts/optimize-icons.py` (lossless). The gradient is the raster
+`icon-grad.png`, extracted from the designer's PNG by
+`scripts/extract-gradient.py` (v4.122.0; v4.119–121 used a two-gradient
+approximation that was visibly off — his gradient is a freeform one, his SVG
+had no background layer). Trial icons carry their own buster (`?v=2`). v4.119.0–v4.120.0 the
 gradient face was the public icon (`?v=50`). v4.117.0–v4.118.1 it was the
 coloured face on navy: icon-192/512/512-maskable were the
 same bytes as `icon-b3-*` (rendered in Chromium from the `--b3-logo` SVG;

@@ -1,17 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>
-  <linearGradient id="h" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0" stop-color="#0A7BFF"/><stop offset=".45" stop-color="#7A2BFF"/>
-    <stop offset=".72" stop-color="#F300EC"/><stop offset="1" stop-color="#FF00FF"/>
-  </linearGradient>
-  <linearGradient id="v" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#160B4F" stop-opacity="1"/>
-    <stop offset=".35" stop-color="#160B4F" stop-opacity=".78"/>
-    <stop offset=".72" stop-color="#160B4F" stop-opacity=".15"/>
-    <stop offset="1" stop-color="#160B4F" stop-opacity="0"/>
-  </linearGradient>
-</defs>
-<rect width="100" height="100" fill="url(#h)"/>
-<rect width="100" height="100" fill="url(#v)"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAE4UlEQVR42m2WbY4juRFEX2SSVVK3F76Oj+T7w96ZbhUj/IPVPePFEoRASFBEZuSn+Ne/IQSSrws2Dg6ml8aLY+lYOi/Ni2Hm0lj0ouwKSsh9ICQmEGAI3e9IBEyAAiuS6TBQh44K1f2m2LeKELQxCBBUGx5Gp4AQgYgiBRk5xAptRnSEGc3oCCOaoZOCJiIhyvZdxIbgTTqaJihAypTZLsuUI6fNMDOaZnoT0Mn2Q4luWQyQhDY22t+OmbkDUKGiBnm/06a3pckRzTCtEUYYSYdKRIhluMWJcdBKWQkZkwmIVNShjLitm2GYNu0Mc5gZDd8eVFKJHDYNJDFxbHyxdtzHzBTaEduhUzxMhyOa1jTDDOcIw0zv5Ek7O3mUGz14JWZduCnHwDg52eKEhko6jPCt+AyHmWauTZA2FSrWCjvIwdjxwhc18MI7U8fBCTf6VmaEGWY4o8PsO83x9dNI6guaO/9tslhX1kUt2cQJMCaPghIdJmq4rY5Oc4bTOsxp5mI607RTuyQJyQ6sWSvrhRfritddsVsiqZNGE81woCM8whk9zWkemyaZS9MpfysT8Jf662JdbJW88DZhTD2ImgxpwiGd0QOd8Iye8IRn9AjHVsm/xNk5+qX+uvDF2gQm3gStR6EWIxziQKf0iJ7RG7xFb9YzPMLTmo6ISH3XF07sG90Lv1jrFi0mY+gpGMWEGR3SIZ3SAz3hLfUe3s2bdYZWKim+7u5xrNdv4lxfKXQTVJ0VtWmpxZAmmnX78Ua9wz+iJ0ylwyQNI6mkE75keeHfY/BLItUDkCRpd4tRGtaUDtWJnugJB1vAHDvNYCS64ZZvgm3+um6JMBkZD929VARRitpq1Sgd0oGqmOFhHvDkzt1mF+36XZnfCBJsGO6DyMKSYVcoVSq1qqR0KhrmRO/o3XoLE4J9w91+/MaxCRIy1jgTlbmWJnJky1a60loDB1mDOqX36J+uZ7Sn3WL5/wz3wovsIN918Jpn7WZeekkv6YpWdK36HLwsLyF16aT+cP+REgkreKu0cLEWbnbD+I7wTTAriqEoqVUz+hmd5iO8ltYoL+mqmTEpQ2HRwsLQYTUtXNh43FPh7iTjY86KlnFBSaoB0zrNaX1Yn6tWFepU/SzUDPdIioQFS1TjukfNr3G/h/v4mENhuFbjS8CIpnez089VH0Ovqz+7/myNgeAUWbsI9ny/O4fvZSQ7KzfP+Dimkst1LZYoGNEIMzqs0/Vj9Y9R/xlMq/YgvzgTO4JCCr2H/a8eF3Gf8TFbUNZYoHskdFRRuYZ1rnoszaW5GEOVYBIdpEOiuqFSFPecAdgc4/Povaek9j4h8TUHU+U+FsfaixcztNWmEqKJBlqkbhp/4wq015bXLEKZvTpZGF3oJS2qzLl0rpwX5+QwY9GmLAUsBSGRBlH7DftLgHFtgsXe8C7xgh+qpyRzXrwN3lrPwfPi0ZzNsTiKYVpaoogjQRGxe45+xcCjCC5cLFKSi5JWdAyegz+b/zbvzY/mR/FsHsVRTDHQAOcrMW9xvtF3TjZEFEsYISLK+lz87Pt+7M/is/gQr+IlLrHEgon2ZiVKXzH4PoMuEvbet2mNtkPFq/hsXs2r+Cw+i6v43NC7lIW///h3Z9z0exveBhQSCBcRS1zi4kZc4G/0r2r6/f6F6n9AvUdClfPgcgAAAABJRU5ErkJggg==" width="100" height="100" preserveAspectRatio="none"/>
 <g transform="translate(50 50) scale(1) translate(-50 -50)"><g fill="none" stroke-linecap="round" stroke="#FFFFFF">
   <circle cx="26" cy="33.1" r="12.5" stroke-width="9.6"/>
   <circle cx="70.7" cy="31.2" r="12.5" stroke-width="9.6"/>

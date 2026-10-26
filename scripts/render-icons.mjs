@@ -8,30 +8,23 @@
 // Verlauf «Verlauf-1» des Logo-Designers (blau unten links → pink unten
 // rechts, nach oben in Aubergine abdunkelnd). Der Verlauf ist aus dessen
 // PNG abgenommen (seine SVG enthielt nur die weisse Glyphe, keinen
-// Hintergrund) — Abweichungen zum Original sind also moeglich und bekannt.
+// Hintergrund): seit v4.122.0 als Raster icon-grad.png, nicht mehr als
+// Naeherung aus zwei linearen Verlaeufen (die lag sichtbar daneben).
 // Maskable: Gesicht um 0.658 zur Mitte skaliert → der entfernteste Pixel
 // liegt bei ~31 % der Kantenlaenge, Android verlangt < 40 % (Safe-Circle).
 // Kacheln sind VOLLFLAECHIG, ohne Rundung: das OS maskiert selbst.
 import { chromium } from 'playwright';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-const BG = `<defs>
-  <linearGradient id="h" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0" stop-color="#0A7BFF"/><stop offset=".45" stop-color="#7A2BFF"/>
-    <stop offset=".72" stop-color="#F300EC"/><stop offset="1" stop-color="#FF00FF"/>
-  </linearGradient>
-  <linearGradient id="v" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#160B4F" stop-opacity="1"/>
-    <stop offset=".35" stop-color="#160B4F" stop-opacity=".78"/>
-    <stop offset=".72" stop-color="#160B4F" stop-opacity=".15"/>
-    <stop offset="1" stop-color="#160B4F" stop-opacity="0"/>
-  </linearGradient>
-</defs>
-<rect width="100" height="100" fill="url(#h)"/>
-<rect width="100" height="100" fill="url(#v)"/>`;
+// v4.122.0: der Verlauf ist das Raster icon-grad.png (32×32, aus dem
+// Designer-PNG abgenommen: scripts/extract-gradient.py) als <image> — EXAKT
+// dasselbe base64 wie in --b3-logo und FACE.make() (index.html); ein Test
+// vergleicht die drei mit der ausgelieferten Datei.
+const GRAD = readFileSync(join(ROOT, 'icon-grad.png')).toString('base64');
+const BG = `<image href="data:image/png;base64,${GRAD}" width="100" height="100" preserveAspectRatio="none"/>`;
 // Dieselbe Geometrie wie --b3-logo (Ringe r 12.5 / Strich 9.6, Mund 14.6) —
 // nur einfarbig weiss: auf dem Verlauf konkurrierten die farbigen Augen mit
 // dem Hintergrund, das violette ging im Pink unten rechts unter.
