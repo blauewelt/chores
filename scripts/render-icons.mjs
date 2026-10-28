@@ -25,13 +25,16 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 // vergleicht die drei mit der ausgelieferten Datei.
 const GRAD = readFileSync(join(ROOT, 'icon-grad.png')).toString('base64');
 const BG = `<image href="data:image/png;base64,${GRAD}" width="100" height="100" preserveAspectRatio="none"/>`;
-// Dieselbe Geometrie wie --b3-logo (Ringe r 12.5 / Strich 9.6, Mund 14.6) —
-// nur einfarbig weiss: auf dem Verlauf konkurrierten die farbigen Augen mit
-// dem Hintergrund, das violette ging im Pink unten rechts unter.
+// Einfarbig weiss: auf dem Verlauf konkurrierten die farbigen Augen mit dem
+// Hintergrund, das violette ging im Pink unten rechts unter.
+// v4.123.0: die Geometrie des DESIGNERS (Smile.zip 28.10.2026, seine SVG-
+// Pfade in viewBox 1035, durch 10.25): Ringe r 10.65 / Strich 10.65 (aussen
+// 15.97, innen 5.32 = seine Kreise), Mund als Strich 16.2 an sein Band
+// gefittet. Dieselben Zahlen wie GT in FACE.make() und --b3-logo (html.trial).
 const FACE = `<g fill="none" stroke-linecap="round" stroke="#FFFFFF">
-  <circle cx="26" cy="33.1" r="12.5" stroke-width="9.6"/>
-  <circle cx="70.7" cy="31.2" r="12.5" stroke-width="9.6"/>
-  <path d="M16.7 68.3C38 80.2 63 80.2 84.6 68.3" stroke-width="14.6"/>
+  <circle cx="28.15" cy="36.38" r="10.65" stroke-width="10.65"/>
+  <circle cx="71.65" cy="34.51" r="10.65" stroke-width="10.65"/>
+  <path d="M17.9 71.3C43.2 80.5 59.5 80.5 84.9 71.3" stroke-width="16.2"/>
 </g>`;
 export const svg = (scale = 1) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${BG}

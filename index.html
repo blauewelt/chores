@@ -87,7 +87,7 @@
     // Touch-Icon das Gesicht auf dem Verlauf (icon-trial-192) — nur im neuen
     // Bild; «Klassisch» bleibt klassisch.
     var trial = !classic && de.classList.contains('trial');
-    var ic = classic ? '/chores/icon-classic-192.png?v=1' : trial ? '/chores/icon-trial-192.png?v=2' : '/chores/icon-192.png?v=51';
+    var ic = classic ? '/chores/icon-classic-192.png?v=1' : trial ? '/chores/icon-trial-192.png?v=3' : '/chores/icon-192.png?v=51';
     set('link[rel="icon"]', 'href', ic);
     set('link[rel="apple-touch-icon"]', 'href', ic);
     set('meta[name="theme-color"]', 'content', classic ? '#141A17' : '#12151F');
@@ -701,6 +701,13 @@
      ROSA h330 aus dem Pink des Icons (#F300EC). «Einmalig» verliert sein Mint
      (das Icon hat kein Gruen) und wird neutral hell. Fuer alle anderen
      Haushalte aendert sich nichts: --b3-logo oben bleibt das Navy-Gesicht.
+     (Die Pastelle galten v4.121–122; seit v4.123.0 satte Farben, s. unten.)
+     v4.123.0: das Gesicht selbst ist jetzt das des Designers (Smile.zip,
+     28.10.2026, SVG-Pfade in viewBox 1035 → /10.25): Augenringe r 10.65 mit
+     Strich 10.65 um (28.15,36.38)/(71.65,34.51) — aussen 15.97, innen 5.32,
+     exakt seine Kreise —, Mund als Strich 16.2 auf M17.9 71.3C43.2 80.5
+     59.5 80.5 84.9 71.3 (an sein gefuelltes Band gefittet, 0.75 px bei
+     1035). FACE.make() nutzt dieselbe Geometrie (GT), render-icons.mjs auch.
      v4.122.0: der Verlauf ist das 32×32-Raster icon-grad.png (base64 als
      <image>, bilinear hochgezogen) — vom Designer-PNG abgenommen
      (scripts/extract-gradient.py), weil sein freier Illustrator-Verlauf
@@ -709,9 +716,26 @@
      icon-face.svg (render-icons.mjs liest icon-grad.png) — EIN Test
      vergleicht alle drei mit der ausgelieferten Datei. */
   html.brand3.trial{
-    --b3-logo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cimage href='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAE4UlEQVR42m2WbY4juRFEX2SSVVK3F76Oj+T7w96ZbhUj/IPVPePFEoRASFBEZuSn+Ne/IQSSrws2Dg6ml8aLY+lYOi/Ni2Hm0lj0ouwKSsh9ICQmEGAI3e9IBEyAAiuS6TBQh44K1f2m2LeKELQxCBBUGx5Gp4AQgYgiBRk5xAptRnSEGc3oCCOaoZOCJiIhyvZdxIbgTTqaJihAypTZLsuUI6fNMDOaZnoT0Mn2Q4luWQyQhDY22t+OmbkDUKGiBnm/06a3pckRzTCtEUYYSYdKRIhluMWJcdBKWQkZkwmIVNShjLitm2GYNu0Mc5gZDd8eVFKJHDYNJDFxbHyxdtzHzBTaEduhUzxMhyOa1jTDDOcIw0zv5Ek7O3mUGz14JWZduCnHwDg52eKEhko6jPCt+AyHmWauTZA2FSrWCjvIwdjxwhc18MI7U8fBCTf6VmaEGWY4o8PsO83x9dNI6guaO/9tslhX1kUt2cQJMCaPghIdJmq4rY5Oc4bTOsxp5mI607RTuyQJyQ6sWSvrhRfritddsVsiqZNGE81woCM8whk9zWkemyaZS9MpfysT8Jf662JdbJW88DZhTD2ImgxpwiGd0QOd8Iye8IRn9AjHVsm/xNk5+qX+uvDF2gQm3gStR6EWIxziQKf0iJ7RG7xFb9YzPMLTmo6ISH3XF07sG90Lv1jrFi0mY+gpGMWEGR3SIZ3SAz3hLfUe3s2bdYZWKim+7u5xrNdv4lxfKXQTVJ0VtWmpxZAmmnX78Ua9wz+iJ0ylwyQNI6mkE75keeHfY/BLItUDkCRpd4tRGtaUDtWJnugJB1vAHDvNYCS64ZZvgm3+um6JMBkZD929VARRitpq1Sgd0oGqmOFhHvDkzt1mF+36XZnfCBJsGO6DyMKSYVcoVSq1qqR0KhrmRO/o3XoLE4J9w91+/MaxCRIy1jgTlbmWJnJky1a60loDB1mDOqX36J+uZ7Sn3WL5/wz3wovsIN918Jpn7WZeekkv6YpWdK36HLwsLyF16aT+cP+REgkreKu0cLEWbnbD+I7wTTAriqEoqVUz+hmd5iO8ltYoL+mqmTEpQ2HRwsLQYTUtXNh43FPh7iTjY86KlnFBSaoB0zrNaX1Yn6tWFepU/SzUDPdIioQFS1TjukfNr3G/h/v4mENhuFbjS8CIpnez089VH0Ovqz+7/myNgeAUWbsI9ny/O4fvZSQ7KzfP+Dimkst1LZYoGNEIMzqs0/Vj9Y9R/xlMq/YgvzgTO4JCCr2H/a8eF3Gf8TFbUNZYoHskdFRRuYZ1rnoszaW5GEOVYBIdpEOiuqFSFPecAdgc4/Povaek9j4h8TUHU+U+FsfaixcztNWmEqKJBlqkbhp/4wq015bXLEKZvTpZGF3oJS2qzLl0rpwX5+QwY9GmLAUsBSGRBlH7DftLgHFtgsXe8C7xgh+qpyRzXrwN3lrPwfPi0ZzNsTiKYVpaoogjQRGxe45+xcCjCC5cLFKSi5JWdAyegz+b/zbvzY/mR/FsHsVRTDHQAOcrMW9xvtF3TjZEFEsYISLK+lz87Pt+7M/is/gQr+IlLrHEgon2ZiVKXzH4PoMuEvbet2mNtkPFq/hsXs2r+Cw+i6v43NC7lIW///h3Z9z0exveBhQSCBcRS1zi4kZc4G/0r2r6/f6F6n9AvUdClfPgcgAAAABJRU5ErkJggg==' width='100' height='100' preserveAspectRatio='none'/%3E%3Cg fill='none' stroke-linecap='round' stroke='%23FFFFFF'%3E%3Ccircle cx='26' cy='33.1' r='12.5' stroke-width='9.6'/%3E%3Ccircle cx='70.7' cy='31.2' r='12.5' stroke-width='9.6'/%3E%3Cpath d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3' stroke-width='14.6'/%3E%3C/g%3E%3C/svg%3E");
-    --b3-tw:#F0C7EB; --b3-tb:#BFD8FC; --b3-tv:#D5D0FA; --b3-tg:#F5F5F1;
+    --b3-logo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cimage href='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAFEElEQVR42mWWbY7kvA2EnyIluXsmuU+O9N4fyO5M22Tlh9yzC0QwZKHR5kcVRZb4zz8AFvb7ATdl3BRZmpfWpePSKq1iXszSKLLJbjXx59vG7NelMgwhHBgwWLRBDmgcMsMakFaitMIKCEgICEI4zHsFsk2gtF6qkR4gMDYgElsYHHbY2cxmWtOaaJplDTPsNGGLn/+TxnbTlxq0zEjGO3yEBMKyZadJO/E001p/doZJSDuwbHA0aUyDQWldcqIxPIW3fRl5B060sxnNaGZ7NquZrW193L6RLXeYANNGYOMkRIPHZAqDQLdpk+18G5pm2tNe1mxmM5q0sx0N7jcyveExbSjKCHssJkaETECa7JrtLEbH7G1Uq3veZDjNuCuncCeSAdvddNOmXyjchjFZQkKBwgx79jW2rY7ZMVvLrO7Zmvas27pcOMPIAHY31dj0SYneZTsOHgJZgZKNxphmmtWxWkcxLx+t1ZrNsEejLro3nhjTTRd1cl1Ukk03BsbiEAQSMc10L5iw0IEe5rCP9mpW52Y7bfUl6w7fbqqoF2cSRYP7vniMySNEmLTuwNFBHOiBDvvZddiP1k5otrOR+13Nd/gX1xdx0PUGp28HeoQJ3QQuYlkH+SCe1ofr2fW0HuboXM10DAsKt2jAdFEvvidR9EUbDE0bxtBj3/shlnqhB/FwPJ0fzWf3h3maZ+twPJzLkTbdcL2Lsk/OBRfroneBbg5uB4KBRjC7l7Skh3l2fJgP6xN9Nh/W0+vh2DzL3VxNmau4TuJi7vALG95AMSIem4CECEZ7ohk6pIf1QXyaT/Mv5qfXYS/vDrGL8lVcdddPn1TTjep2Y+OhPLDUBIpU2KMZrSktxYGe6FPj36zPzYRJt7DpIi/Oi/6JvXDdh3cGzoeMQxS70dGKJqURWopD88n8sD6tD2vhgaGbs8mLazsoqvBFX9QOv2hgdB67VTfq3bsctDQiSpFj1NjMb7iWSQxnk03VbfFn7x989lUYNZdbMiGVVKgdneqSc6gyIjJiEAd6Og4MF8i4qKZ+MtiHxnWXkA3jnCtaNgqldFln6xpxdVweVdERKBQRxECDAsEwHVTTifsP9Fe9IbpbxWusMN0iCDOsZb2c3x6vjlfqzDxTV8SVcVXPyiBFixa5R6vpoINOsrj2Ddg9cLzWjKZalGVCMWA6jo7vkV8zvq74Gvq64iv9yAyY7XQE97AU1QSUUCERpkBGwPiec08YX24FIohhLcfR8bji19DvS7+Hf5fm1J6uoxlGCBpSdN4TNxrDMIbYDlImrQqXQCGR1nDM1lF6VnyUHsXqd/tEh+zaAzkS72YsWhB4D8g7lO+VMtE6U2fSJy2EwsrWLB2lozRLs8ihsGlsLTlxsusacBBgI5DYAoDxmikjS9YrOYNzT2srWlmxilXckstkK+95qWEwgRriL12ylzYH54ydtZoIneKUXqJMFNk8So/ycfGYHM0WdNGSUZGocd96hx/rxiJAo+atmmgkhE64TGyJeOkxeAwdg+fFkaxkFisYZpQKEhl6c3r7sO6jRmVgZCzdYRgXM/Vr8jz5Nfhv8pn8Cp7iERziS0wzRIo2/VfsfxDaEJHc4kxvhZdcySt5Jd/7Cb6S7/2jOINLnGKJgnrrVP/J4I+7QcZudXdZNQgFDq7gSl7BJv8VnLqr4BIlilsp+v213vtfDrQJv8UfoS0xFLtz03/Z2lP43v+y/uPj/9f/AK1kIxJJtyurAAAAAElFTkSuQmCC' width='100' height='100' preserveAspectRatio='none'/%3E%3Cg fill='none' stroke-linecap='round' stroke='%23FFFFFF'%3E%3Ccircle cx='28.15' cy='36.38' r='10.65' stroke-width='10.65'/%3E%3Ccircle cx='71.65' cy='34.51' r='10.65' stroke-width='10.65'/%3E%3Cpath d='M17.9 71.3C43.2 80.5 59.5 80.5 84.9 71.3' stroke-width='16.2'/%3E%3C/g%3E%3C/svg%3E");
+    /* v4.123.0 (Maintainer: «be more bold … white font on this background»):
+       die Kacheln tragen SATTE Farben, direkt aus icon-grad.png gelesen (die
+       lebhaftesten Pixel je Farbfamilie, die Weiss noch >= 4.5:1 tragen):
+       Blau #145BFF (5.3:1), Violett #9124FF (5.4:1), Magenta #CA0ADC (4.6:1)
+       statt Pastell + dunkler Tinte. Tinte weiss, Notiz weiss gedaempft.
+       «Einmalig» bleibt die Navy-Karte mit weisser gestrichelter Kontur. */
+    --b3-tw:#CA0ADC; --b3-tb:#145BFF; --b3-tv:#9124FF; --b3-tg:var(--card);
+    --b3-tink:#FFFFFF; --b3-tmuted:rgba(255,255,255,.78);
   }
+  /* Kunst auf satten Kacheln: WEISS per screen wie auf der Navy-Kachel (dunkle
+     Striche per multiply gingen in Blau/Violett unter); .artinv kam dunkel-auf-
+     weiss und wird dafuer invertiert. Einmalig: Kontur weiss statt dunkel. */
+  html.brand3.trial[data-b3tiles="fill"] .chore:is([data-tone],.oneoff) .art{mix-blend-mode:screen; filter:grayscale(1) contrast(1.8)}
+  html.brand3.trial[data-b3tiles="fill"] .chore:is([data-tone],.oneoff) .art.artinv{filter:invert(1) grayscale(1) contrast(1.8)}
+  html.brand3.trial[data-b3tiles="fill"] .chore:is([data-tone],.oneoff) .art.ok{opacity:.9}
+  html.brand3.trial[data-b3tiles="fill"] .chore:is([data-tone],.oneoff):has(img.art:not(.ok))::after{
+    background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.12) 50%,transparent 70%); background-size:200% 100%}
+  html.brand3.trial[data-b3tiles="fill"] .chore.oneoff{border-color:rgba(255,255,255,.55)}
+  html.brand3.trial[data-b3tiles="fill"] .chore:is([data-tone],.oneoff):active{filter:brightness(1.12)}
   /* Logo: dieselben <img>-Knoten (Splash-FLIP misst sie), nur der Inhalt
      wechselt — rein per CSS, darum schon im ersten Paint richtig. */
   html.brand3 #headLogo, html.brand3 #splash img{content:var(--b3-logo)}
@@ -1139,7 +1163,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.122.0';
+  const APP_VERSION = '4.123.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2298,7 +2322,7 @@
     // dem i18n-Boot und blieb fuer alle Welt deutsch.
     function renderEntry() {
       d.innerHTML = `
-      <img src="${trialOn() ? '/chores/icon-trial-192.png?v=2' : brandOn() ? '/chores/icon-192.png?v=51' : '/chores/icon-classic-192.png?v=1'}" alt="" width="72" height="72" style="border-radius:18px">
+      <img src="${trialOn() ? '/chores/icon-trial-192.png?v=3' : brandOn() ? '/chores/icon-192.png?v=51' : '/chores/icon-classic-192.png?v=1'}" alt="" width="72" height="72" style="border-radius:18px">
       <h1 style="font-family:var(--display);font-weight:800;font-size:34px;margin:0 0 4px;background:linear-gradient(100deg,#EAF1EB,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Fairli</h1>
       <p style="color:var(--muted);max-width:300px;margin:0 0 8px">${t('Aufgaben im Haushalt – fair verteilt.')}</p>
       ${last && last.family ? `<button id="resume" style="${btn};background:var(--accent);color:#0C1220">${t('Zu meinem Haushalt')}</button>` : ''}
@@ -3836,10 +3860,21 @@
       return a.map((v, j) => v + (b[j] - v) * k);
     };
     const f = v => Math.round(v * 100) / 100;
-    const eye = (x, y, t, b) => { const k = .5523, q = (u, v) => f(x + u * 12.5) + ' ' + f(y + v);
+    // v4.123.0: ZWEI Geometrien, die Posen oben bleiben EINE Sprache. GN = das
+    // Navy-Gesicht (Augen r 12.5, Strich 9.6, Mund 14.6 — die Zahlen, in denen
+    // N und alle Ausdruecke notiert sind). GT = das Gesicht des Designers
+    // (Smile.zip 28.10.2026: Ringe r 10.65/Strich 10.65, Mund 16.2 auf einem
+    // flacheren Bogen). Eine Pose wird auf GT abgebildet, indem Augenwerte mit
+    // r/12.5 skalieren und Mund-Abweichungen von N mit sx/sy auf den neuen
+    // Bogen gelegt werden — dieselben Ausdruecke, keine zweite Posen-Tabelle.
+    const GN = { l: [26, 33.1], r: [70.7, 31.2], r0: 12.5, sw: 9.6, msw: 14.6, mouth: N.slice(6, 14), sx: 1, sy: 1 };
+    const GT = { l: [28.15, 36.38], r: [71.65, 34.51], r0: 10.65, sw: 10.65, msw: 16.2, mouth: [17.9, 71.3, 43.2, 80.5, 59.5, 80.5, 84.9, 71.3] };
+    GT.sx = (GT.mouth[6] - GT.mouth[0]) / (GN.mouth[6] - GN.mouth[0]); GT.sy = (GT.mouth[3] - GT.mouth[1]) / (GN.mouth[3] - GN.mouth[1]);
+    const eye = (x, y, t, b, r0) => { const k = .5523, q = (u, v) => f(x + u * r0) + ' ' + f(y + v);
       return `M${q(-1, 0)}C${q(-1, -k * t)} ${q(-k, -t)} ${q(0, -t)}C${q(k, -t)} ${q(1, -k * t)} ${q(1, 0)}C${q(1, k * b)} ${q(k, b)} ${q(0, b)}C${q(-k, b)} ${q(-1, k * b)} ${q(-1, 0)}Z`; };
-    const draw = (el, p) => { const [l, r, m] = el.querySelectorAll('path'), q = i => f(p[i]) + ' ' + f(p[i + 1]);
-      l.setAttribute('d', eye(26, 33.1 + p[2], p[0], p[1])); r.setAttribute('d', eye(70.7, 31.2 + p[5], p[3], p[4]));
+    const draw = (el, p) => { const g = el.__g || GN, k = g.r0 / 12.5, [l, r, m] = el.querySelectorAll('path');
+      const mv = i => f(g.mouth[i - 6] + (p[i] - N[i]) * (i % 2 ? g.sy : g.sx)), q = i => mv(i) + ' ' + mv(i + 1);
+      l.setAttribute('d', eye(g.l[0], g.l[1] + p[2] * k, p[0] * k, p[1] * k, g.r0)); r.setAttribute('d', eye(g.r[0], g.r[1] + p[5] * k, p[3] * k, p[4] * k, g.r0));
       m.setAttribute('d', `M${q(6)}C${q(8)} ${q(10)} ${q(12)}`);
       el.querySelector('g').setAttribute('transform', `translate(0 ${f(p[15])}) rotate(${f(p[14])} 50 52)`); };
     let seq = 0;
@@ -3852,9 +3887,9 @@
       if (trialOn()) {
         s.className = 'b3face';
         s.innerHTML = `<svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true"><defs><clipPath id="${u}c"><rect width="100" height="100" rx="${rx}"/></clipPath></defs>`
-          + `<image clip-path="url(#${u}c)" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAE4UlEQVR42m2WbY4juRFEX2SSVVK3F76Oj+T7w96ZbhUj/IPVPePFEoRASFBEZuSn+Ne/IQSSrws2Dg6ml8aLY+lYOi/Ni2Hm0lj0ouwKSsh9ICQmEGAI3e9IBEyAAiuS6TBQh44K1f2m2LeKELQxCBBUGx5Gp4AQgYgiBRk5xAptRnSEGc3oCCOaoZOCJiIhyvZdxIbgTTqaJihAypTZLsuUI6fNMDOaZnoT0Mn2Q4luWQyQhDY22t+OmbkDUKGiBnm/06a3pckRzTCtEUYYSYdKRIhluMWJcdBKWQkZkwmIVNShjLitm2GYNu0Mc5gZDd8eVFKJHDYNJDFxbHyxdtzHzBTaEduhUzxMhyOa1jTDDOcIw0zv5Ek7O3mUGz14JWZduCnHwDg52eKEhko6jPCt+AyHmWauTZA2FSrWCjvIwdjxwhc18MI7U8fBCTf6VmaEGWY4o8PsO83x9dNI6guaO/9tslhX1kUt2cQJMCaPghIdJmq4rY5Oc4bTOsxp5mI607RTuyQJyQ6sWSvrhRfritddsVsiqZNGE81woCM8whk9zWkemyaZS9MpfysT8Jf662JdbJW88DZhTD2ImgxpwiGd0QOd8Iye8IRn9AjHVsm/xNk5+qX+uvDF2gQm3gStR6EWIxziQKf0iJ7RG7xFb9YzPMLTmo6ISH3XF07sG90Lv1jrFi0mY+gpGMWEGR3SIZ3SAz3hLfUe3s2bdYZWKim+7u5xrNdv4lxfKXQTVJ0VtWmpxZAmmnX78Ua9wz+iJ0ylwyQNI6mkE75keeHfY/BLItUDkCRpd4tRGtaUDtWJnugJB1vAHDvNYCS64ZZvgm3+um6JMBkZD929VARRitpq1Sgd0oGqmOFhHvDkzt1mF+36XZnfCBJsGO6DyMKSYVcoVSq1qqR0KhrmRO/o3XoLE4J9w91+/MaxCRIy1jgTlbmWJnJky1a60loDB1mDOqX36J+uZ7Sn3WL5/wz3wovsIN918Jpn7WZeekkv6YpWdK36HLwsLyF16aT+cP+REgkreKu0cLEWbnbD+I7wTTAriqEoqVUz+hmd5iO8ltYoL+mqmTEpQ2HRwsLQYTUtXNh43FPh7iTjY86KlnFBSaoB0zrNaX1Yn6tWFepU/SzUDPdIioQFS1TjukfNr3G/h/v4mENhuFbjS8CIpnez089VH0Ovqz+7/myNgeAUWbsI9ny/O4fvZSQ7KzfP+Dimkst1LZYoGNEIMzqs0/Vj9Y9R/xlMq/YgvzgTO4JCCr2H/a8eF3Gf8TFbUNZYoHskdFRRuYZ1rnoszaW5GEOVYBIdpEOiuqFSFPecAdgc4/Povaek9j4h8TUHU+U+FsfaixcztNWmEqKJBlqkbhp/4wq015bXLEKZvTpZGF3oJS2qzLl0rpwX5+QwY9GmLAUsBSGRBlH7DftLgHFtgsXe8C7xgh+qpyRzXrwN3lrPwfPi0ZzNsTiKYVpaoogjQRGxe45+xcCjCC5cLFKSi5JWdAyegz+b/zbvzY/mR/FsHsVRTDHQAOcrMW9xvtF3TjZEFEsYISLK+lz87Pt+7M/is/gQr+IlLrHEgon2ZiVKXzH4PoMuEvbet2mNtkPFq/hsXs2r+Cw+i6v43NC7lIW///h3Z9z0exveBhQSCBcRS1zi4kZc4G/0r2r6/f6F6n9AvUdClfPgcgAAAABJRU5ErkJggg==" width="100" height="100" preserveAspectRatio="none"/>`
-          + `<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#FFFFFF"><path stroke-width="9.6"/><path stroke-width="9.6"/><path stroke-width="14.6"/></g></svg>`;
-        draw(s, N); return s;
+          + `<image clip-path="url(#${u}c)" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAFEElEQVR42mWWbY7kvA2EnyIluXsmuU+O9N4fyO5M22Tlh9yzC0QwZKHR5kcVRZb4zz8AFvb7ATdl3BRZmpfWpePSKq1iXszSKLLJbjXx59vG7NelMgwhHBgwWLRBDmgcMsMakFaitMIKCEgICEI4zHsFsk2gtF6qkR4gMDYgElsYHHbY2cxmWtOaaJplDTPsNGGLn/+TxnbTlxq0zEjGO3yEBMKyZadJO/E001p/doZJSDuwbHA0aUyDQWldcqIxPIW3fRl5B060sxnNaGZ7NquZrW193L6RLXeYANNGYOMkRIPHZAqDQLdpk+18G5pm2tNe1mxmM5q0sx0N7jcyveExbSjKCHssJkaETECa7JrtLEbH7G1Uq3veZDjNuCuncCeSAdvddNOmXyjchjFZQkKBwgx79jW2rY7ZMVvLrO7Zmvas27pcOMPIAHY31dj0SYneZTsOHgJZgZKNxphmmtWxWkcxLx+t1ZrNsEejLro3nhjTTRd1cl1Ukk03BsbiEAQSMc10L5iw0IEe5rCP9mpW52Y7bfUl6w7fbqqoF2cSRYP7vniMySNEmLTuwNFBHOiBDvvZddiP1k5otrOR+13Nd/gX1xdx0PUGp28HeoQJ3QQuYlkH+SCe1ofr2fW0HuboXM10DAsKt2jAdFEvvidR9EUbDE0bxtBj3/shlnqhB/FwPJ0fzWf3h3maZ+twPJzLkTbdcL2Lsk/OBRfroneBbg5uB4KBRjC7l7Skh3l2fJgP6xN9Nh/W0+vh2DzL3VxNmau4TuJi7vALG95AMSIem4CECEZ7ohk6pIf1QXyaT/Mv5qfXYS/vDrGL8lVcdddPn1TTjep2Y+OhPLDUBIpU2KMZrSktxYGe6FPj36zPzYRJt7DpIi/Oi/6JvXDdh3cGzoeMQxS70dGKJqURWopD88n8sD6tD2vhgaGbs8mLazsoqvBFX9QOv2hgdB67VTfq3bsctDQiSpFj1NjMb7iWSQxnk03VbfFn7x989lUYNZdbMiGVVKgdneqSc6gyIjJiEAd6Og4MF8i4qKZ+MtiHxnWXkA3jnCtaNgqldFln6xpxdVweVdERKBQRxECDAsEwHVTTifsP9Fe9IbpbxWusMN0iCDOsZb2c3x6vjlfqzDxTV8SVcVXPyiBFixa5R6vpoINOsrj2Ddg9cLzWjKZalGVCMWA6jo7vkV8zvq74Gvq64iv9yAyY7XQE97AU1QSUUCERpkBGwPiec08YX24FIohhLcfR8bji19DvS7+Hf5fm1J6uoxlGCBpSdN4TNxrDMIbYDlImrQqXQCGR1nDM1lF6VnyUHsXqd/tEh+zaAzkS72YsWhB4D8g7lO+VMtE6U2fSJy2EwsrWLB2lozRLs8ihsGlsLTlxsusacBBgI5DYAoDxmikjS9YrOYNzT2srWlmxilXckstkK+95qWEwgRriL12ylzYH54ydtZoIneKUXqJMFNk8So/ycfGYHM0WdNGSUZGocd96hx/rxiJAo+atmmgkhE64TGyJeOkxeAwdg+fFkaxkFisYZpQKEhl6c3r7sO6jRmVgZCzdYRgXM/Vr8jz5Nfhv8pn8Cp7iERziS0wzRIo2/VfsfxDaEJHc4kxvhZdcySt5Jd/7Cb6S7/2jOINLnGKJgnrrVP/J4I+7QcZudXdZNQgFDq7gSl7BJv8VnLqr4BIlilsp+v213vtfDrQJv8UfoS0xFLtz03/Z2lP43v+y/uPj/9f/AK1kIxJJtyurAAAAAElFTkSuQmCC" width="100" height="100" preserveAspectRatio="none"/>`
+          + `<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#FFFFFF"><path stroke-width="${GT.sw}"/><path stroke-width="${GT.sw}"/><path stroke-width="${GT.msw}"/></g></svg>`;
+        s.__g = GT; draw(s, N); return s;
       }
       const g = (id, y, c) => `<linearGradient id="${u + id}" gradientUnits="userSpaceOnUse" x1="0" y1="${y}" x2="0" y2="${f(y + 34.6)}"><stop offset=".15" stop-color="#F5F5F1"/><stop offset=".85" stop-color="${c}"/></linearGradient>`;
       s.className = 'b3face';

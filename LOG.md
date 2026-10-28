@@ -1,3 +1,49 @@
+## 2026-10-28 — v4.123.0 (SW haushalt-v231): trial tiles in the icon's saturated colours with white type — and the designer's own smile
+
+- Maintainer, looking at v4.121's pastels next to the icon: «we need to be
+  more bold in the recoloring of the tiles. Maybe they need to be white
+  writing … on this background. And probably the whole UI needs to be like
+  that.» Three CSS mock-ups were rendered on the live app (A: whole UI on the
+  gradient with frosted tiles; B: each tile a slice of the gradient; C: the
+  full gradient on every tile). Decision: «tiles with different colors sampled
+  from the palette of the icon» — solid colours, navy frame stays.
+- **Tile palette (trial only):** the three tones are the most vivid pixels
+  of `icon-grad.png` per hue family that still carry white at ≥ 4.5:1 —
+  blue `#145BFF` (5.3:1), violet `#9124FF` (5.4:1), magenta `#CA0ADC`
+  (4.6:1; the icon's pure `#FF00F6` is 3.2:1 and fails the note text).
+  `--b3-tink` is white, `--b3-tmuted` white at .78; the `+N` pill is a white
+  outline. Art goes back to white line art via `screen` (the pastel rule's
+  dark `multiply` art vanished in blue/violet); `.artinv` gets the inversion
+  instead. «Einmalig» is the navy card with a white dashed outline
+  (`--b3-tg: var(--card)`). All of it under `html.brand3.trial`; the pastel
+  truth of v4.115–v4.117 stays the rule for everyone else.
+- **The designer delivered the smiley** (Smile.zip, 28.10.2026: AI/EPS/SVG/
+  PNG, his face on Verlauf-1 with rounded corners). His SVG carries the face
+  as paths and the gradient as an embedded 2157² raster — confirming it is a
+  freeform gradient. Measured in his viewBox (1035, icon 5…1030 → ÷10.25):
+  eye rings = concentric circles r 163.72/54.57 → ring radius 10.65, stroke
+  10.65 (outer 15.97, inner 5.32 — exactly his), centres (28.15, 36.38) and
+  (71.65, 34.51); the mouth is a filled band — rasterised and fitted as a
+  stroked cubic `M17.9 71.3C43.2 80.5 59.5 80.5 84.9 71.3`, width 16.2
+  (0.75 px mean error at 1035; his ends flare to 16.6, ours are round caps).
+  Our 512 render differs from his PNG by 1.6/255 in the core.
+- **FACE.make() learns two geometries without a second pose table:** `GN`
+  (navy: r 12.5, strokes 9.6/14.6, the numbers every pose is written in) and
+  `GT` (designer). `draw()` reads the element's geometry: eye values scale by
+  r/12.5, mouth control points are the new neutral bow plus the pose's delta
+  from `N` scaled by sx/sy (1.0 / .77). So a wink on the trial face lands on
+  the designer's bow; the navy face is byte-identical to before (test).
+- **Gradient raster from two sources:** `extract-gradient.py` now takes
+  several PNGs (the % icon and the smile — same gradient, 2.6/255 apart where
+  both show it) and fills only where all are masked: the hole shrinks from
+  35 % to 15 % of the area. `--embed index.html` replaces the base64 in both
+  places. `icon-trial-*` re-rendered (`?v=3`).
+- Tests: tone/ink/contrast assertions in the trial block (incl. a WCAG
+  check on the three values); geometry tests for GT (B3) and GN (new test,
+  also checks a wink's mouth on the trial bow); the pixel test samples the
+  new eye position; icon-face.svg mouth path; polarity test moved to the
+  non-beta fixture (multiply art is the pastel rule).
+
 ## 2026-10-26 — v4.122.0 (SW haushalt-v230): the trial gradient is now the designer's gradient, not an approximation of it
 
 - Maintainer, with his phone next to the designer's PNG: «the gradient of

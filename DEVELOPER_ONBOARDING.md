@@ -542,10 +542,16 @@ Mechanism, keep it this way:
   families get `--b3-logo` overridden under `html.brand3.trial`, a
   `trialOn()` branch in `FACE.make()`, favicon/touch-icon `icon-trial-192.png?v=1`
   (via `__look`), the personal manifest with `b=1` → `icon-trial-*` (sw.js),
-  and the tile tones re-derived from the icon (`--b3-tw #F0C7EB` pink,
-  `--b3-tb #BFD8FC`, `--b3-tv #D5D0FA`, «Einmalig» `--b3-tg #F5F5F1` instead
-  of mint). Ask `trialOn()`, never `BETA`, and keep every trial rule under
-  `html.brand3.trial`. **The gradient itself (v4.122.0) is the raster
+  and the tile tones from the icon — **since v4.123.0 saturated, with white
+  type:** `--b3-tb #145BFF`, `--b3-tv #9124FF`, `--b3-tw #CA0ADC` (all ≥ 4.5:1
+  under white), `--b3-tink #fff`, `--b3-tmuted` white .78, art white via
+  `screen`, «Einmalig» = navy card + white dashed outline (v4.121–122 were
+  pastels). **The trial face is the designer's geometry (`GT` in `FACE`,
+  same numbers in `--b3-logo` and `render-icons.mjs`): rings r 10.65 /
+  stroke 10.65, mouth stroke 16.2 on `M17.9 71.3C43.2 80.5 59.5 80.5 84.9
+  71.3`; poses stay written in the navy numbers and are mapped (eyes ×
+  r/12.5, mouth deltas × sx/sy).** Ask `trialOn()`, never `BETA`, and keep
+  every trial rule under `html.brand3.trial`. **The gradient itself (v4.122.0) is the raster
   `icon-grad.png` (32×32, from the designer's PNG via
   `scripts/extract-gradient.py`), embedded as a base64 `<image>` in
   `--b3-logo`, `FACE.make()` and `icon-face.svg`/`icon-trial-*` — a test
@@ -1031,8 +1037,10 @@ env for the executable) from the SVG in that script (master `icon-face.svg`),
 then `scripts/optimize-icons.py` (lossless). The gradient is the raster
 `icon-grad.png`, extracted from the designer's PNG by
 `scripts/extract-gradient.py` (v4.122.0; v4.119–121 used a two-gradient
-approximation that was visibly off — his gradient is a freeform one, his SVG
-had no background layer). Trial icons carry their own buster (`?v=2`). v4.119.0–v4.120.0 the
+approximation that was visibly off — his gradient is a freeform one). It
+takes several of his PNGs at once (`% icon` + `Smile`, v4.123.0) and
+`--embed index.html` rewrites the base64 in both places. Trial icons carry
+their own buster (`?v=3`). v4.119.0–v4.120.0 the
 gradient face was the public icon (`?v=50`). v4.117.0–v4.118.1 it was the
 coloured face on navy: icon-192/512/512-maskable were the
 same bytes as `icon-b3-*` (rendered in Chromium from the `--b3-logo` SVG;

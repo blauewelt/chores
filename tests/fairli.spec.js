@@ -5354,8 +5354,8 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     // v4.117.0: kein Beta-Cache mehr fuer brand3. v4.121.0: Beta = Verlaufs-Test —
     // Favicon/Touch-Icon zeigen nach dem Abgleich das Trial-Icon, Cache pro Familie
     await expect(page.locator('html')).toHaveClass(/trial/);
-    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=2');
-    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=2');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=3');
+    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=3');
     await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#12151F');
     expect(await page.evaluate(f => localStorage.getItem('haushalt.brand3:' + f), FAM)).toBeNull();
     expect(await page.evaluate(f => localStorage.getItem('haushalt.trial:' + f), FAM)).toBe('1');
@@ -5519,8 +5519,8 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     // Personenringe bleiben Personenfarbe
     expect(await css(page.locator('.chip .dot').first(), 'backgroundImage')).toBe('none');
     // v4.121.0: im Verlaufs-Test tragen Favicon/Touch-Icon das Trial-Icon
-    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=2');
-    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=2');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=3');
+    await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/chores/icon-trial-192.png?v=3');
     // Zwinkern im Toast
     await page.locator('.chip[data-mid="m-chris"]').click();
     await page.locator('.chore[data-cid="c-1"]').click();
@@ -5671,8 +5671,10 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
     expect(b64(logo)).toBeTruthy();
     expect(logo).toMatch(/<image [^>]*preserveAspectRatio='none'/);
     expect(logo).not.toContain('linearGradient');                                              // v4.119–121: zwei lineare Verlaeufe — lagen 23/255 daneben
-    expect(logo).toMatch(/<g[^>]*stroke='#FFFFFF'[^>]*>[\s\S]*<circle cx='26'/);          // Augen weiss, keine eigenen Verlaeufe
-    expect(logo).toMatch(/<path d='M16.7 68.3C38 80.2 63 80.2 84.6 68.3'/);              // Mund-Geometrie unveraendert
+    // v4.123.0: die Geometrie des Designers (Smile.zip): Ringe r 10.65 / Strich 10.65, Mund 16.2 auf dem flacheren Bogen
+    expect(logo).toMatch(/<g[^>]*stroke='#FFFFFF'[^>]*>[\s\S]*<circle cx='28.15' cy='36.38' r='10.65' stroke-width='10.65'/);
+    expect(logo).toMatch(/<circle cx='71.65' cy='34.51' r='10.65' stroke-width='10.65'/);
+    expect(logo).toMatch(/<path d='M17.9 71.3C43.2 80.5 59.5 80.5 84.9 71.3' stroke-width='16.2'/);
     // Das bewegte Gesicht (Inline-SVG) traegt dasselbe Raster … («.b3face.dbg»,
     // nicht «.b3face»: beim ERSTEN Besuch spielt der Start-Ausdruck noch mit dem
     // Navy-Gesicht, weil html.trial erst der Abgleich setzt — CI 40228259581)
@@ -5743,7 +5745,7 @@ test.describe('Marken-Test Variante 3 (v4.113.0)', () => {
   });
 
   test('v4.115.0 Kunst auf hellen Kacheln: dunkel per multiply — normal invertiert, .artinv NICHT; erst nach dem Urteil sichtbar', async ({ context, page }) => {
-    await mockBackend(context, B3);
+    await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }] });   // v4.123.0: multiply/invert = helle Pastell-Kachel (Regel); der Trial blendet weiss per screen
     await context.route(`${SB}/rest/v1/chores*`, r => r.request().method() === 'GET'
       ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(POL_CHORES) }) : r.fallback());
     let gate = null;
@@ -5893,11 +5895,39 @@ test.describe('Einmalig-Kachel + Gesicht (v4.116.0)', () => {
     const geo = await page.evaluate(() => { window.__face('wink', 0); const b = document.querySelector('.b3face');
       const ps = [...b.querySelectorAll('path')].map(p => p.getBBox()).map(r => [r.x, r.y, r.width, r.height].map(v => Math.round(v * 10) / 10));
       const m = b.querySelectorAll('path')[2].getAttribute('d'); window.__face(null); return { ps, m }; });
+    // v4.123.0 (B3 = Trial): die Designer-Geometrie GT — Ringe r 10.65 um (28.15,36.38)/(71.65,34.51), sein Mundbogen
+    expect(geo.ps[0]).toEqual([17.5, 25.7, 21.3, 21.3]);
+    expect(geo.ps[1]).toEqual([61, 23.9, 21.3, 21.3]);
+    expect(geo.m.replace(/\s+/g, ' ')).toBe('M17.9 71.3C43.2 80.5 59.5 80.5 84.9 71.3');
+    // Unbekannter Name: nichts passiert
+    expect(await page.evaluate(() => window.__face('gibtsnicht'))).toBeNull();
+  });
+
+  test('v4.123.0 Gesicht OHNE Trial: die Navy-Geometrie GN ist unveraendert (Augen r 12.5, alter Mundbogen) — und ein Ausdruck landet auf dem Trial-Gesicht auf dem Designer-Bogen', async ({ context, page }) => {
+    await mockBackend(context, OFF);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await expect(page.locator('#splash')).toHaveCount(0);
+    await expect(page.locator('html')).not.toHaveClass(/trial/);
+    const geo = await page.evaluate(() => { window.__face('wink', 0); const b = document.querySelector('.b3face.dbg');
+      const ps = [...b.querySelectorAll('path')].map(p => p.getBBox()).map(r => [r.x, r.y, r.width, r.height].map(v => Math.round(v * 10) / 10));
+      const m = b.querySelectorAll('path')[2].getAttribute('d'); const w = [...b.querySelectorAll('path')].map(p => p.getAttribute('stroke-width'));
+      window.__face(null); return { ps, m, w }; });
     expect(geo.ps[0]).toEqual([13.5, 20.6, 25, 25]);
     expect(geo.ps[1]).toEqual([58.2, 18.7, 25, 25]);
     expect(geo.m.replace(/\s+/g, ' ')).toBe('M16.7 68.3C38 80.2 63 80.2 84.6 68.3');
-    // Unbekannter Name: nichts passiert
-    expect(await page.evaluate(() => window.__face('gibtsnicht'))).toBeNull();
+    expect(geo.w).toEqual(['9.6', '9.6', '14.6']);
+    // Trial: Strichstaerken des Designers; der Zwinker-Mund (Pose WC, 170 ms) weicht vom
+    // Designer-Bogen ab, nicht vom Navy-Bogen — die Abweichung ist mit sy (.77) skaliert
+    await page.evaluate(() => { document.documentElement.classList.add('trial'); });
+    const tr = await page.evaluate(() => { window.__face('wink', 170); const b = document.querySelector('.b3face.dbg');
+      const m = b.querySelectorAll('path')[2].getAttribute('d'); const w = [...b.querySelectorAll('path')].map(p => p.getAttribute('stroke-width'));
+      window.__face(null); document.documentElement.classList.remove('trial'); return { m, w }; });
+    expect(tr.w).toEqual(['10.65', '10.65', '16.2']);
+    const v = tr.m.match(/-?[\d.]+/g).map(Number);
+    expect(v[0]).toBeCloseTo(17.9, 1);                       // Mundanfang: die Navy-Pose aendert x0 nicht
+    expect(v[1]).toBeCloseTo(71.3 + (68.8 - 68.3) * ((80.5 - 71.3) / (80.2 - 68.3)), 1);   // y0: Navy-Delta .5 mal sy
+    expect(v[6]).toBeCloseTo(84.9 + (85.8 - 84.6), 1);       // x3: Delta 1.2 mal sx (= 1.0)
   });
 
   // Start: ?face= erzwingt den Ausdruck auf dem Splash; der Morph wartet darauf,
@@ -6089,7 +6119,9 @@ test.describe('Kachelbild-Polaritaet unter brand3 (v4.113.1)', () => {
   const filt = loc => loc.evaluate(el => getComputedStyle(el).filter);
 
   test('Dunkel-auf-Weiss wird invertiert, Weiss-auf-Schwarz und gefuelltes Motiv nicht — Kachel, Verlauf, Eintrag- und Aufgaben-Vorschau', async ({ context, page }) => {
-    await mockBackend(context, { ...B3, logRows: () => LOGP });
+    // v4.123.0: ohne Beta — die Filter-Polaritaet hier ist die der hellen Pastell-Kachel (Regel);
+    // der Trial dreht sie um (weisse Kunst per screen, .artinv invertiert) — eigener Block
+    await mockBackend(context, { famRows: () => [{ family_id: FAM, name: 'Testhaushalt', beta: null }], logRows: () => LOGP });
     await polChores(context);
     let gate = null;
     await routePolarityArt(context, { hold: () => gate });
@@ -6515,7 +6547,7 @@ test.describe('Neues Bild fuer alle (v4.117.0)', () => {
   const css = (loc, prop, pseudo) => loc.evaluate((el, a) => getComputedStyle(el, a[1] || null)[a[0]], [prop, pseudo]);
   const TONES = ['rgb(245, 245, 241)', 'rgb(199, 219, 255)', 'rgb(220, 201, 242)'];
   const MINT = 'rgb(181, 227, 204)';
-  const TRIAL_TONES = ['rgb(240, 199, 235)', 'rgb(191, 216, 252)', 'rgb(213, 208, 250)'];   // v4.121.0: Pink, Blau, Violett aus dem Icon
+  const TRIAL_TONES = ['rgb(202, 10, 220)', 'rgb(20, 91, 255)', 'rgb(145, 36, 255)'];   // v4.123.0: Magenta, Blau, Violett SATT aus dem Icon (v4.121: Pastell)
   const ICON = '/chores/icon-192.png?v=51';
   const NAVY = '#12151F';
   // Was der Browser beim Parsen VOR dem ersten Abgleich sieht (DOMContentLoaded)
@@ -6564,12 +6596,12 @@ test.describe('Neues Bild fuer alle (v4.117.0)', () => {
       // Verlaufs-Test (Trial-Icon, Kacheln in den Icon-Farben); alle anderen
       // behalten das Navy-Bild mit den drei alten Toenen und Mint
       const trial = beta === true;
-      await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', trial ? '/chores/icon-trial-192.png?v=2' : ICON);
+      await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', trial ? '/chores/icon-trial-192.png?v=3' : ICON);
       expect(await css(page.locator('#headLogo'), 'content')).toContain('svg');
       expect(decodeURIComponent(await tile.locator('img.art').getAttribute('src'))).toContain('thick white outline drawing: Müll rausbringen');
       expect(['w', 'b', 'v']).toContain(await tile.getAttribute('data-tone'));
       expect(trial ? TRIAL_TONES : TONES).toContain(await css(tile, 'backgroundColor'));
-      expect(await css(page.locator('#oneOffTile'), 'backgroundColor')).toBe(trial ? 'rgb(245, 245, 241)' : MINT);
+      expect(await css(page.locator('#oneOffTile'), 'backgroundColor')).toBe(trial ? 'rgb(27, 29, 49)' : MINT);   // Trial: Navy-Karte (v4.123.0)
       expect(await page.evaluate(f => localStorage.getItem('haushalt.brand3:' + f), FAM)).toBeNull();
       expect(await page.evaluate(f => localStorage.getItem('haushalt.trial:' + f), FAM)).toBe(trial ? '1' : null);
       // zweiter Start mit verzoegertem Abgleich: das Bild kommt ohne jeden Cache
@@ -6708,7 +6740,7 @@ test.describe('Neues Bild fuer alle (v4.117.0)', () => {
       const g = c.getContext('2d'); g.drawImage(img, 0, 0, 512, 512);
       const at = (x, y) => Array.from(g.getImageData(x, y, 1, 1).data).slice(0, 3);
       // Augenring: Kreis cx 26 cy 33.1 r 12.5 (viewBox 100) → linker Rand bei x=13.5
-      return { bl: at(20, 492), br: at(492, 492), top: at(256, 12), eye: at(Math.round(13.5 * 5.12), Math.round(33.1 * 5.12)) };
+      return { bl: at(20, 492), br: at(492, 492), top: at(256, 12), eye: at(Math.round(17.5 * 5.12), Math.round(36.38 * 5.12)) };   // v4.123.0: Ring links (Designer-Geometrie)
     }, `${BASE}/icon-trial-512.png`);
     const [r1, , b1] = px.bl;      expect(b1).toBeGreaterThan(200); expect(b1).toBeGreaterThan(r1 + 80);              // blau
     const [r2, g2, b2] = px.br;    expect(r2).toBeGreaterThan(200); expect(b2).toBeGreaterThan(200); expect(g2).toBeLessThan(90);   // pink
@@ -6719,7 +6751,7 @@ test.describe('Neues Bild fuer alle (v4.117.0)', () => {
     const txt = await svg.text();
     expect(txt).toContain('viewBox="0 0 100 100"');
     expect(txt).toContain('stroke="#FFFFFF"');
-    expect(txt).toContain('M16.7 68.3C38 80.2 63 80.2 84.6 68.3');   // dieselbe Mund-Geometrie wie --b3-logo
+    expect(txt).toContain('M17.9 71.3C43.2 80.5 59.5 80.5 84.9 71.3');   // dieselbe Mund-Geometrie wie --b3-logo (Trial, v4.123.0: Designer)
   });
 
   test('v4.117.0 404.html: dieselben Icon-Links (?v=50) und Marken-Navy statt Weiss', async ({ page }) => {
@@ -7261,11 +7293,12 @@ test.describe('Auswahl und Einstellungen kleben (v4.118.1)', () => {
 test.describe('Verlaufs-Test nur fuer Beta (v4.121.0)', () => {
   const css = (loc, prop, pseudo) => loc.evaluate((el, a) => getComputedStyle(el, a[1] || null)[a[0]], [prop, pseudo]);
   const famRows = beta => () => [{ family_id: FAM, name: 'Testhaushalt', beta }];
-  const TRIAL = '/chores/icon-trial-192.png?v=2', NAVY_ICON = '/chores/icon-192.png?v=51';
-  // Kacheltoene: alt (Weiss, Blau, Violett, Einmalig Mint) vs. Trial (Pink,
-  // Blau, Violett aus dem Icon — OKLCH L .876 C .057 —, Einmalig Papierweiss)
+  const TRIAL = '/chores/icon-trial-192.png?v=3', NAVY_ICON = '/chores/icon-192.png?v=51';
+  // Kacheltoene: alt (Weiss, Blau, Violett, Einmalig Mint) vs. Trial (v4.123.0:
+  // SATT aus icon-grad.png — Magenta #CA0ADC, Blau #145BFF, Violett #9124FF,
+  // alle >= 4.5:1 unter Weiss; Einmalig = Navy-Karte). v4.121–122 waren es Pastelle.
   const OLD = { w: 'rgb(245, 245, 241)', b: 'rgb(199, 219, 255)', v: 'rgb(220, 201, 242)', g: 'rgb(181, 227, 204)' };
-  const NEW = { w: 'rgb(240, 199, 235)', b: 'rgb(191, 216, 252)', v: 'rgb(213, 208, 250)', g: 'rgb(245, 245, 241)' };
+  const NEW = { w: 'rgb(202, 10, 220)', b: 'rgb(20, 91, 255)', v: 'rgb(145, 36, 255)', g: 'rgb(27, 29, 49)' };
   const tones = page => page.evaluate(() => {
     const out = {};
     for (const t of ['w', 'b', 'v']) {
@@ -7302,9 +7335,19 @@ test.describe('Verlaufs-Test nur fuer Beta (v4.121.0)', () => {
     expect(await page.evaluate(f => localStorage.getItem('haushalt.trial:' + f), FAM)).toBe('1');
     await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
     expect(await tones(page)).toEqual(NEW);
-    // die echte Kachel traegt ihren Trial-Ton
+    // die echte Kachel traegt ihren Trial-Ton — und WEISSE Schrift/Pille darauf (v4.123.0)
     const tile = page.locator('.chore[data-cid="c-1"]');
     expect(Object.values(NEW).slice(0, 3)).toContain(await css(tile, 'backgroundColor'));
+    expect(await css(tile.locator('.cname'), 'color')).toBe('rgb(255, 255, 255)');
+    expect(await css(tile.locator('.pts'), 'color')).toBe('rgb(255, 255, 255)');
+    expect(await css(tile.locator('.pts'), 'borderTopColor')).toBe('rgb(255, 255, 255)');
+    expect(await css(tile.locator('.cnote'), 'color')).toBe('rgba(255, 255, 255, 0.78)');
+    expect(await css(tile.locator('.art'), 'mixBlendMode')).toBe('screen');              // weisse Kunst auf satter Farbe
+    expect(await css(page.locator('#oneOffTile'), 'borderTopColor')).toBe('rgba(255, 255, 255, 0.55)');
+    expect(await css(page.locator('#oneOffTile'), 'borderTopStyle')).toBe('dashed');
+    // Kontrast Weiss auf den drei Toenen >= 4.5:1 (WCAG AA fuer die Notiz)
+    const L = c => { const [r, g, b] = c.match(/\d+/g).map(Number).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return .2126 * r + .7152 * g + .0722 * b; };
+    for (const t of ['w', 'b', 'v']) expect(1.05 / (L(NEW[t]) + .05), t).toBeGreaterThanOrEqual(4.5);
     // Kopf-Logo = Gesicht auf dem Verlauf (weiss), nicht Navy
     const logo = decodeURIComponent(await css(page.locator('#headLogo'), 'content'));
     expect(logo).toContain('data:image/png;base64,'); expect(logo).toContain("stroke='#FFFFFF'"); expect(logo).not.toContain('#1B1D31');
@@ -7424,7 +7467,7 @@ test.describe('Verlaufs-Test nur fuer Beta (v4.121.0)', () => {
       const b = await (await fetch(h.replace(/&?b=1/, ''))).json();
       return { trial: a.icons.map(i => i.src), navy: b.icons.map(i => i.src) };
     });
-    expect(both.trial.map(s => s.split('/').pop())).toEqual(['icon-trial-192.png?v=2', 'icon-trial-512.png?v=2', 'icon-trial-512-maskable.png?v=2']);
+    expect(both.trial.map(s => s.split('/').pop())).toEqual(['icon-trial-192.png?v=3', 'icon-trial-512.png?v=3', 'icon-trial-512-maskable.png?v=3']);
     expect(both.navy.map(s => s.split('/').pop())).toEqual(['icon-192.png?v=51', 'icon-512.png?v=51', 'icon-512-maskable.png?v=51']);
     // die Dateien sind da und erreichbar
     for (const f of both.trial) expect((await page.request.get(f)).status(), f).toBe(200);

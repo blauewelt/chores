@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v230';   // v4.122.0 Verlauf im Beta-Test = Raster icon-grad.png (exakt wie der Designer), Trial-Icons neu gerendert (?v=2)
+const CACHE = 'haushalt-v231';   // v4.123.0 Beta-Test: Kacheln in satten Icon-Farben mit weisser Schrift
 // v4.113.1: Kachelkunst hat einen EIGENEN, versionsfesten Cache. Bis v4.113.0
 // lag sie im versionierten CACHE — und den loescht `activate` bei JEDEM Deploy.
 // Folge: nach jedem Deploy forderte jedes Geraet jedes Kachelbild neu an,
@@ -119,9 +119,9 @@ self.addEventListener('fetch', e => {
         // v4.121.0: b=1 (Beta-Haushalt im Verlaufs-Test) → Icons mit dem
         // Gesicht auf dem Verlauf; sonst das Navy-Gesicht (?v=51 = alte Bytes).
         icons: u.searchParams.get('b') === '1'
-          ? [icon('icon-trial-192.png?v=2', '192x192', 'any'),
-             icon('icon-trial-512.png?v=2', '512x512', 'any'),
-             icon('icon-trial-512-maskable.png?v=2', '512x512', 'maskable')]
+          ? [icon('icon-trial-192.png?v=3', '192x192', 'any'),
+             icon('icon-trial-512.png?v=3', '512x512', 'any'),
+             icon('icon-trial-512-maskable.png?v=3', '512x512', 'maskable')]
           : [icon('icon-192.png?v=51', '192x192', 'any'),
              icon('icon-512.png?v=51', '512x512', 'any'),
              icon('icon-512-maskable.png?v=51', '512x512', 'maskable')]
