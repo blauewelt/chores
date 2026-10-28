@@ -231,5 +231,8 @@
   "Neu": "Nuevo",
   "Klassisch": "Clásico",
   "Erweitert": "Avanzado",
-  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Solo se aplica a este dispositivo. El icono de la pantalla de inicio sigue siendo el nuevo."
+  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Solo se aplica a este dispositivo. El icono de la pantalla de inicio sigue siendo el nuevo.",
+  "Auch für": "También para",
+  "(je ein eigener Eintrag)": "(una entrada propia por persona)",
+  "+{p} auch für {names}": "+{p} también para {names}"
 }

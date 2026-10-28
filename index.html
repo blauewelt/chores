@@ -722,8 +722,17 @@
        lebhaftesten Pixel je Farbfamilie, die Weiss noch >= 4.5:1 tragen):
        Blau #145BFF (5.3:1), Violett #9124FF (5.4:1), Magenta #CA0ADC (4.6:1)
        statt Pastell + dunkler Tinte. Tinte weiss, Notiz weiss gedaempft.
+       v4.124.0 (Maintainer: «less in your face … pick the darker ones from
+       the gradient … more colours, not 4 or 5 tiles alike»): SECHS Pixel
+       direkt aus icon-grad.png, aus dem dunkleren Band des Verlaufs (Kontrast
+       unter Weiss 5.5–11.7:1), von oben links nach unten rechts gelesen:
+       Teal-Navy #0C3675 (.06,.14), Blau #423FCD (.08,.52), Indigo #6531D4
+       (.21,.53), Violett #851DC5 (.30,.47), Pflaume #90039F (.60,.33),
+       Magenta #BD00B6 (.72,.44). Zuordnung data-hue = Hash mod 6 (choreHue);
+       --b3-tw/-tb/-tv bleiben als Rueckfall (w/b/v) auf drei der sechs.
        «Einmalig» bleibt die Navy-Karte mit weisser gestrichelter Kontur. */
-    --b3-tw:#CA0ADC; --b3-tb:#145BFF; --b3-tv:#9124FF; --b3-tg:var(--card);
+    --b3-h0:#0C3675; --b3-h1:#423FCD; --b3-h2:#6531D4; --b3-h3:#851DC5; --b3-h4:#90039F; --b3-h5:#BD00B6;
+    --b3-tw:var(--b3-h5); --b3-tb:var(--b3-h1); --b3-tv:var(--b3-h3); --b3-tg:var(--card);
     --b3-tink:#FFFFFF; --b3-tmuted:rgba(255,255,255,.78);
   }
   /* Kunst auf satten Kacheln: WEISS per screen wie auf der Navy-Kachel (dunkle
@@ -734,6 +743,9 @@
   html.brand3.trial[data-b3tiles="fill"] .chore:is([data-tone],.oneoff) .art.ok{opacity:.9}
   html.brand3.trial[data-b3tiles="fill"] .chore:is([data-tone],.oneoff):has(img.art:not(.ok))::after{
     background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.12) 50%,transparent 70%); background-size:200% 100%}
+  html.brand3.trial .chore[data-hue="0"]{--tf:var(--b3-h0)} html.brand3.trial .chore[data-hue="1"]{--tf:var(--b3-h1)}
+  html.brand3.trial .chore[data-hue="2"]{--tf:var(--b3-h2)} html.brand3.trial .chore[data-hue="3"]{--tf:var(--b3-h3)}
+  html.brand3.trial .chore[data-hue="4"]{--tf:var(--b3-h4)} html.brand3.trial .chore[data-hue="5"]{--tf:var(--b3-h5)}
   html.brand3.trial[data-b3tiles="fill"] .chore.oneoff{border-color:rgba(255,255,255,.55)}
   html.brand3.trial[data-b3tiles="fill"] .chore:is([data-tone],.oneoff):active{filter:brightness(1.12)}
   /* Logo: dieselben <img>-Knoten (Splash-FLIP misst sie), nur der Inhalt
@@ -1163,7 +1175,7 @@
 <script src="qrcode.min.js" defer></script>
 <script>
 (() => {
-  const APP_VERSION = '4.123.0';
+  const APP_VERSION = '4.124.0';
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   // ---------- Familien-Routing ----------
@@ -2004,11 +2016,16 @@
   // v4.115.0 Marken-Test: Kachelton (w/b/v) aus der STABILEN id — eigener
   // FNV-1a-Hash, damit Sortieren/Anlegen nie umfaerbt und jedes Geraet gleich
   // faerbt. Nur unter brand3 im Markup (data-tone); ohne brand3 wird es nie gelesen.
-  const choreTone = id => {
+  const toneHash = id => {
     let h = 2166136261;
     for (const ch of String(id)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
-    return 'wbv'[h % 3];
+    return h;
   };
+  const choreTone = id => 'wbv'[toneHash(id) % 3];
+  // v4.124.0 (Verlaufs-Test): SECHS Farbplaetze aus dem Icon statt drei —
+  // derselbe stabile Hash (nie die Position), nur mod 6. Nur html.brand3.trial
+  // liest data-hue; fuer alle anderen gilt weiter data-tone (w/b/v).
+  const choreHue = id => toneHash(id) % 6;
   const choreColor = id => {
     let x = 0; for (const ch of String(id)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
     return CHORE_COLORS[x % CHORE_COLORS.length];
@@ -3478,7 +3495,7 @@
           <span class="pts">＋</span>
         </button>`;
       listEl.innerHTML = `<div class="grid">` + (QUERY.trim() ? '' : oneOffTile) + ordered.map(c =>
-            `<button class="chore" data-cid="${c.id}"${brandOn() ? ` data-tone="${choreTone(c.id)}"` : ''} style="--c:${choreColor(c.id)}; --dk:${artDim(c)}; min-height:${tileMinH(c.points)}px">
+            `<button class="chore" data-cid="${c.id}"${brandOn() ? ` data-tone="${choreTone(c.id)}" data-hue="${choreHue(c.id)}"` : ''} style="--c:${choreColor(c.id)}; --dk:${artDim(c)}; min-height:${tileMinH(c.points)}px">
               ${artTag(choreArt(c), 'art')}
               <span class="cname">${esc(c.name)}</span>
               ${c.note ? `<span class="cnote">${esc(c.note)}</span>` : ''}
@@ -4159,12 +4176,26 @@
         // Angeboten wird NUR, was der Link ohnehin darf (logWhoOptions()).
         // Bei genau einer Wahlmoeglichkeit gibt es nichts zu waehlen → das
         // Feld entfaellt ganz, statt als toter Ein-Chip dazustehen.
+        // v4.124.0 «Auch für» (zweite Reihe, Mehrfachwahl): je gewaehlter
+        // Person ein EIGENER Eintrag (Kopie: Aufgabe, Punkte, Notiz, Zeit).
+        // Live-Fund 28.10. (Maintainer): zu zweit erledigt, im Sheet die
+        // zweite Person angetippt — das BUCHTE UM statt dazuzulegen, der
+        // eigene Eintrag «verschwand». Umbuchen (Person) und Dazulegen (Auch
+        // für) sind darum zwei getrennte Reihen; die gewaehlte Person ist in
+        // der zweiten versteckt (syncAlso), damit niemand sich selbst kopiert.
         const opts = logWhoOptions();
         if (opts.length < 2) return '';
         return `<div class="field">
         <label>${t('Person')}</label>
         <div class="chiprow" id="lWho">${opts.map(m =>
           `<button type="button" class="chip" data-mid="${esc(m.id)}" aria-pressed="${m.id === first.member_id}">
+            <span class="dot" style="background:${esc(m.color)}; --pc:${esc(m.color)}">${esc(initial(m.name))}</span>${esc(m.name)}
+          </button>`).join('')}</div>
+      </div>
+      <div class="field">
+        <label>${t('Auch für')} <span style="font-weight:400;color:var(--muted)">${t('(je ein eigener Eintrag)')}</span></label>
+        <div class="chiprow" id="lAlso">${opts.map(m =>
+          `<button type="button" class="chip" data-mid="${esc(m.id)}" aria-pressed="false"${m.id === first.member_id ? ' style="display:none"' : ''}>
             <span class="dot" style="background:${esc(m.color)}; --pc:${esc(m.color)}">${esc(initial(m.name))}</span>${esc(m.name)}
           </button>`).join('')}</div>
       </div>`;
@@ -4223,10 +4254,22 @@
     // Personen-Chips: Auswahl ist EINFACH (aria-pressed als einzige Quelle).
     // Der `input`-Lauscher oben sieht Klicks nicht → dirty hier selbst setzen,
     // sonst schluckt der Backdrop-Schutz (Formular-Regel) die Aenderung.
-    const lwho = sh.querySelector('#lWho');
+    const lwho = sh.querySelector('#lWho'), lalso = sh.querySelector('#lAlso');
+    const syncAlso = () => {
+      if (!lalso) return;
+      const cur = (lwho.querySelector('.chip[aria-pressed="true"]') || {}).dataset || {};
+      // style statt [hidden]: .chip setzt display selbst und schluege das Attribut
+      lalso.querySelectorAll('.chip').forEach(x => { const own = x.dataset.mid === cur.mid; x.style.display = own ? 'none' : ''; if (own) x.setAttribute('aria-pressed', 'false'); });
+    };
     if (lwho) lwho.addEventListener('click', ev => {
       const c = ev.target.closest('.chip'); if (!c) return;
       lwho.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === c)));
+      syncAlso();
+      logSheetDirty = true;
+    });
+    if (lalso) lalso.addEventListener('click', ev => {
+      const c = ev.target.closest('.chip'); if (!c) return;
+      c.setAttribute('aria-pressed', String(c.getAttribute('aria-pressed') !== 'true'));
       logSheetDirty = true;
     });
     sh.querySelector('#saveLog').onclick = () => {
@@ -4277,10 +4320,29 @@
         first.member_id = newM.id;
         first.member_name = newM.name;   // Schnappschuss wie ueberall im Verlauf
       }
+      // «Auch für» (v4.124.0): je Person eine KOPIE des (gerade gespeicherten)
+      // Eintrags — Aufgabe, Notiz, Punkte, Zeit; member/logged_by eigen.
+      // Dieselbe 1-h-Regel wie recordEntry: hat die Person zur selben Sache
+      // schon eine Zeile binnen 1 h um diese Zeit, wachsen deren Punkte.
+      const alsoIds = [...sh.querySelectorAll('#lAlso .chip[aria-pressed="true"]')].map(x => x.dataset.mid)
+        .filter(id => id !== first.member_id && (!allowNow || allowNow.has(id)) && memberById(id));
+      const copies = [], grown = [];
+      for (const id of alsoIds) {
+        const m = memberById(id), key = first.chore_id || 'n:' + first.chore_name;
+        const near = state.log.find(e => !e.deleted_at && e.member_id === id && e.id !== first.id
+          && (e.chore_id || 'n:' + e.chore_name) === key
+          && Math.abs(new Date(e.done_at) - new Date(first.done_at)) < 3600e3);
+        if (near) { near.points += first.points || 0; bumpTotals(id, first.points || 0, 0); grown.push(near); continue; }
+        const c = { id: uid(), chore_id: first.chore_id || null, chore_name: first.chore_name, chore_note: first.chore_note || null,
+          member_id: id, member_name: m.name, logged_by: (slugSelf() || {}).id || null,
+          points: first.points || 0, done_at: first.done_at, app_version: APP_VERSION };
+        state.log.unshift(c); bumpTotals(id, c.points, 1); copies.push(c);
+      }
       // upsertRemote statt push(PATCH) (v4.47.5, Audit): letzter
       // ungeschützter Edit-Pfad — Verlauf-Änderungen verloren das Race
       // gegen pull wie zuvor Personen (v4.46.1) und Aufgaben (v4.47.1)
-      upsertRemote('log', [first]);
+      upsertRemote('log', [first, ...copies, ...grown]);
+      if (copies.length) state.log.sort((a, b) => new Date(b.done_at) - new Date(a.done_at));
       if (delta) state.log.sort((a, b) => new Date(b.done_at) - new Date(a.done_at));
       save(); render(); sh.close();   // save() entwertet laufende Pulls (mutationSeq)
       // Move-toast (v4.78.0): an edit that changes the date silently re-files
@@ -4304,6 +4366,7 @@
       // einer anderen auf — und faellt aus einem aktiven Personen-Filter
       // (LOGFILTER) sofort heraus. Das darf niemand suchen muessen.
       if (newM) msgs.push(t('Übertragen auf {name}', { name: newM.name }));
+      if (alsoIds.length) msgs.push(t('+{p} auch für {names}', { p: first.points || 0, names: alsoIds.map(id => memberById(id).name).join(', ') }));
       if (msgs.length) toast(msgs.join(' · '));
     };
     // Cache-Fall: fertig geladene Bilder feuern onload nicht zwingend nach
@@ -4525,7 +4588,7 @@
     tileEl.style.setProperty('--c', o.colour || 'var(--line)');
     tileEl.style.setProperty('--dk', String(o.opacity != null ? o.opacity : 1));
     // v4.115.0: dieselbe Kachelfarbe wie auf dem Brett (nur brand3)
-    if (brandOn() && o.id) tileEl.dataset.tone = choreTone(o.id); else delete tileEl.dataset.tone;
+    if (brandOn() && o.id) { tileEl.dataset.tone = choreTone(o.id); tileEl.dataset.hue = choreHue(o.id); } else { delete tileEl.dataset.tone; delete tileEl.dataset.hue; }
     const nm = tileEl.querySelector('.cname'); if (nm) nm.textContent = o.name || '';
     const nt = tileEl.querySelector('.cnote'); if (nt) nt.textContent = o.note || '';
     setTilePreviewPts(tileEl, o.points || 0);

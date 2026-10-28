@@ -231,5 +231,8 @@
   "Neu": "Nytt",
   "Klassisch": "Klassiskt",
   "Erweitert": "Avancerat",
-  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Gäller bara den här enheten. Ikonen på hemskärmen förblir den nya."
+  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Gäller bara den här enheten. Ikonen på hemskärmen förblir den nya.",
+  "Auch für": "Även för",
+  "(je ein eigener Eintrag)": "(en egen post var)",
+  "+{p} auch für {names}": "+{p} även för {names}"
 }

@@ -231,5 +231,8 @@
   "Neu": "New",
   "Klassisch": "Classic",
   "Erweitert": "Advanced",
-  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Applies to this device only. The home screen icon stays the new one."
+  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Applies to this device only. The home screen icon stays the new one.",
+  "Auch für": "Also for",
+  "(je ein eigener Eintrag)": "(one separate entry each)",
+  "+{p} auch für {names}": "+{p} also for {names}"
 }

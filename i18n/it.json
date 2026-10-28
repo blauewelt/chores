@@ -231,5 +231,8 @@
   "Neu": "Nuovo",
   "Klassisch": "Classico",
   "Erweitert": "Avanzate",
-  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Vale solo per questo dispositivo. L'icona nella schermata Home resta quella nuova."
+  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Vale solo per questo dispositivo. L'icona nella schermata Home resta quella nuova.",
+  "Auch für": "Anche per",
+  "(je ein eigener Eintrag)": "(una voce separata ciascuno)",
+  "+{p} auch für {names}": "+{p} anche per {names}"
 }

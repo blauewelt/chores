@@ -231,5 +231,8 @@
   "Neu": "Baru",
   "Klassisch": "Klasik",
   "Erweitert": "Lanjutan",
-  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Hanya berlaku di perangkat ini. Ikon di layar utama tetap yang baru."
+  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Hanya berlaku di perangkat ini. Ikon di layar utama tetap yang baru.",
+  "Auch für": "Juga untuk",
+  "(je ein eigener Eintrag)": "(masing-masing satu entri sendiri)",
+  "+{p} auch für {names}": "+{p} juga untuk {names}"
 }

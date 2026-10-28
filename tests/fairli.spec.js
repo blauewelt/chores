@@ -5192,6 +5192,113 @@ test.describe('Fairli', () => {
     await expect(page.locator('.entry', { hasText: 'Müll rausbringen' }).locator('.epname')).toHaveText('Mira');
   });
 
+  // ---- «Auch für»: dazulegen statt umbuchen (v4.124.0) ---------------------
+  // Live-Fund 28.10. (Maintainer): Autoprüfung zu zweit erledigt, eigenen
+  // Eintrag verbucht, im Sheet die zweite Person angetippt — das BUCHTE UM
+  // (v4.107.0), der eigene Eintrag «verschwand». Jetzt eine zweite Reihe:
+  // je gewaehlter Person ein eigener Eintrag, der erste bleibt.
+
+  test('«Auch für» (v4.124.0): zweite Reihe im Sheet; eigene Person versteckt; Wahl legt je Person eine KOPIE an — der eigene Eintrag bleibt, Toast sagt es', async ({ context, page }) => {
+    const rows = [{ id: 'l-ap', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: 'nur Restmüll',
+      member_id: 'm-chris', member_name: 'Timon', logged_by: 'm-chris', points: 2,
+      done_at: weekSafeAgo(4 * 60e3), family_id: FAM }];
+    await mockBackend(context, { logRows: () => rows });
+    const posts = [];
+    await context.route(`${SB}/rest/v1/log*`, route => {
+      const req = route.request();
+      if (req.method() === 'POST') { posts.push(req.postDataJSON()); return route.fulfill({ status: 201, body: '' }); }
+      return route.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('button.entry', { hasText: 'Müll rausbringen' }).click();
+    const sh = page.locator('#logSheet');
+    await expect(sh.locator('#lWho .chip[aria-pressed="true"]')).toHaveText(/Timon/);
+    // zweite Reihe: alle erlaubten Personen, die eigene versteckt, nichts gedrückt
+    await expect(sh.locator('#lAlso .chip')).toHaveCount(2);
+    await expect(sh.locator('#lAlso .chip', { hasText: 'Timon' })).toBeHidden();
+    await expect(sh.locator('#lAlso .chip', { hasText: 'Mira' })).toBeVisible();
+    await expect(sh.locator('#lAlso .chip[aria-pressed="true"]')).toHaveCount(0);
+    await sh.locator('#lAlso .chip', { hasText: 'Mira' }).click();
+    await expect(sh.locator('#lAlso .chip', { hasText: 'Mira' })).toHaveAttribute('aria-pressed', 'true');
+    await sh.locator('#saveLog').click();
+    // ZWEI Zeilen: Timons bleibt (gleiche ID), Miras Kopie traegt Aufgabe/Notiz/Punkte/Zeit
+    const entries = page.locator('.entry', { hasText: 'Müll rausbringen' });
+    await expect(entries).toHaveCount(2);
+    const names = await entries.locator('.epname').allTextContents();
+    expect(names.sort()).toEqual(['Mira', 'Timon']);
+    await expect(page.locator('#toast')).toContainText('+2 auch für Mira');
+    await expect.poll(() => posts.flat().filter(r => r && r.chore_name).length).toBeGreaterThanOrEqual(2);
+    const sent = posts.flat().filter(r => r && r.chore_name);
+    expect(sent.map(r => r.member_id).sort()).toEqual(['m-chris', 'm-mira']);
+    const orig = sent.find(r => r.member_id === 'm-chris'), copy = sent.find(r => r.member_id === 'm-mira');
+    expect(orig.id).toBe('l-ap');
+    expect(copy.id).not.toBe('l-ap');
+    expect(copy.chore_id).toBe('c-1'); expect(copy.chore_name).toBe('Müll rausbringen'); expect(copy.chore_note).toBe('nur Restmüll');
+    expect(copy.points).toBe(2); expect(copy.done_at).toBe(orig.done_at); expect(copy.member_name).toBe('Mira');
+    expect(copy.app_version).toBeTruthy();
+    // Punkte-Karten: beide haben die Punkte, Zeilenzahl je +1 bei Mira
+    await page.getByRole('tab', { name: 'Punkte' }).click();
+    await expect(page.locator('.score', { hasText: 'Mira' })).toContainText('2');
+    await expect(page.locator('.score', { hasText: 'Timon' })).toContainText('2');
+  });
+
+  test('«Auch für» folgt der Person-Reihe: wer umgebucht wird, verschwindet aus «Auch für», die alte Person taucht dort auf; beides zusammen = Umbuchung + Kopie', async ({ context, page }) => {
+    const rows = [{ id: 'l-ap2', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null,
+      member_id: 'm-mira', member_name: 'Mira', logged_by: 'm-mira', points: 3,
+      done_at: weekSafeAgo(2 * 3600e3), family_id: FAM }];
+    await mockBackend(context, { logRows: () => rows });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('button.entry', { hasText: 'Müll rausbringen' }).click();
+    const sh = page.locator('#logSheet');
+    await expect(sh.locator('#lAlso .chip', { hasText: 'Mira' })).toBeHidden();
+    await sh.locator('#lWho .chip', { hasText: 'Timon' }).click();      // umbuchen auf Timon
+    await expect(sh.locator('#lAlso .chip', { hasText: 'Timon' })).toBeHidden();
+    await expect(sh.locator('#lAlso .chip', { hasText: 'Mira' })).toBeVisible();
+    await sh.locator('#lAlso .chip', { hasText: 'Mira' }).click();      // … und Mira dazu
+    await sh.locator('#saveLog').click();
+    const names = await page.locator('.entry', { hasText: 'Müll rausbringen' }).locator('.epname').allTextContents();
+    expect(names.sort()).toEqual(['Mira', 'Timon']);
+    await expect(page.locator('#toast')).toContainText('Übertragen auf Timon');
+    await expect(page.locator('#toast')).toContainText('+3 auch für Mira');
+  });
+
+  test('«Auch für» mit 1-h-Regel: hat die Person dieselbe Sache binnen 1 h schon, wachsen deren Punkte statt einer zweiten Zeile', async ({ context, page }) => {
+    const t0 = weekSafeAgo(10 * 60e3);
+    const rows = [
+      { id: 'l-a', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null, member_id: 'm-chris', member_name: 'Timon', points: 2, done_at: t0, family_id: FAM },
+      { id: 'l-b', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null, member_id: 'm-mira', member_name: 'Mira', points: 1, done_at: t0, family_id: FAM },
+    ];
+    await mockBackend(context, { logRows: () => rows });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('button.entry', { hasText: 'Timon' }).click();
+    await page.locator('#logSheet #lAlso .chip', { hasText: 'Mira' }).click();
+    await page.locator('#logSheet #saveLog').click();
+    await expect(page.locator('.entry', { hasText: 'Müll rausbringen' })).toHaveCount(2);   // keine dritte Zeile
+    await expect(page.locator('.entry', { hasText: 'Mira' }).locator('.pts')).toHaveText('+3');   // 1 + 2
+  });
+
+  test('«Auch für» fehlt, wenn es nichts zu waehlen gibt (eine Person) — und i18n: die drei Texte in allen 19 Woerterbuechern', async ({ context, page }) => {
+    await mockBackend(context, { memberRows: () => [{ id: 'm-chris', name: 'Timon', color: '#3E6BD6', family_id: FAM, admin: true }],
+      logRows: () => [{ id: 'l-solo', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: null, member_id: 'm-chris', member_name: 'Timon', points: 2, done_at: weekSafeAgo(60e3), family_id: FAM }] });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('button.entry').first().click();
+    await expect(page.locator('#logSheet')).toBeVisible();
+    await expect(page.locator('#logSheet #lWho')).toHaveCount(0);
+    await expect(page.locator('#logSheet #lAlso')).toHaveCount(0);
+    for (const code of ['da', 'en', 'es', 'fr', 'hi', 'id', 'it', 'ja', 'ko', 'nl', 'pl', 'pt', 'ro', 'ru', 'sv', 'tr', 'uk', 'vi', 'zh']) {
+      const d = await (await page.request.get(`${BASE}/i18n/${code}.json`)).json();
+      for (const k of ['Auch für', '(je ein eigener Eintrag)', '+{p} auch für {names}']) {
+        expect(typeof d[k], `${code}: ${k}`).toBe('string'); expect(d[k].trim(), `${code}: ${k}`).not.toBe('');
+        if (code !== 'nl' && code !== 'sv' && code !== 'da') expect(d[k], `${code}: ${k}`).not.toBe(k);   // echt uebersetzt (Germanisch darf nah sein)
+      }
+      expect(d['+{p} auch für {names}']).toContain('{p}'); expect(d['+{p} auch für {names}']).toContain('{names}');
+    }
+  });
+
   test('Toast «Ändern»: greift auch auf die 1-h-Zusammenlegung — der Knopf zeigt auf die GEWACHSENE Zeile (v4.108.0)', async ({ context, page }) => {
     const rows = [{ id: 'l-run', chore_id: 'c-1', chore_name: 'Müll rausbringen', chore_note: 'nur Restmüll',
       member_id: 'm-chris', member_name: 'Timon', points: 2,
@@ -6547,7 +6654,8 @@ test.describe('Neues Bild fuer alle (v4.117.0)', () => {
   const css = (loc, prop, pseudo) => loc.evaluate((el, a) => getComputedStyle(el, a[1] || null)[a[0]], [prop, pseudo]);
   const TONES = ['rgb(245, 245, 241)', 'rgb(199, 219, 255)', 'rgb(220, 201, 242)'];
   const MINT = 'rgb(181, 227, 204)';
-  const TRIAL_TONES = ['rgb(202, 10, 220)', 'rgb(20, 91, 255)', 'rgb(145, 36, 255)'];   // v4.123.0: Magenta, Blau, Violett SATT aus dem Icon (v4.121: Pastell)
+  // v4.124.0: SECHS Pixel aus dem dunkleren Band des Icons (data-hue 0–5); v4.123: drei satte; v4.121: Pastell
+  const TRIAL_TONES = ['rgb(12, 54, 117)', 'rgb(66, 63, 205)', 'rgb(101, 49, 212)', 'rgb(133, 29, 197)', 'rgb(144, 3, 159)', 'rgb(189, 0, 182)'];
   const ICON = '/chores/icon-192.png?v=51';
   const NAVY = '#12151F';
   // Was der Browser beim Parsen VOR dem ersten Abgleich sieht (DOMContentLoaded)
@@ -7298,7 +7406,9 @@ test.describe('Verlaufs-Test nur fuer Beta (v4.121.0)', () => {
   // SATT aus icon-grad.png — Magenta #CA0ADC, Blau #145BFF, Violett #9124FF,
   // alle >= 4.5:1 unter Weiss; Einmalig = Navy-Karte). v4.121–122 waren es Pastelle.
   const OLD = { w: 'rgb(245, 245, 241)', b: 'rgb(199, 219, 255)', v: 'rgb(220, 201, 242)', g: 'rgb(181, 227, 204)' };
-  const NEW = { w: 'rgb(202, 10, 220)', b: 'rgb(20, 91, 255)', v: 'rgb(145, 36, 255)', g: 'rgb(27, 29, 49)' };
+  // v4.124.0: sechs Icon-Pixel (--b3-h0…h5); w/b/v = Rueckfall auf h5/h1/h3
+  const HUES = ['rgb(12, 54, 117)', 'rgb(66, 63, 205)', 'rgb(101, 49, 212)', 'rgb(133, 29, 197)', 'rgb(144, 3, 159)', 'rgb(189, 0, 182)'];
+  const NEW = { w: HUES[5], b: HUES[1], v: HUES[3], g: 'rgb(27, 29, 49)' };
   const tones = page => page.evaluate(() => {
     const out = {};
     for (const t of ['w', 'b', 'v']) {
@@ -7335,9 +7445,11 @@ test.describe('Verlaufs-Test nur fuer Beta (v4.121.0)', () => {
     expect(await page.evaluate(f => localStorage.getItem('haushalt.trial:' + f), FAM)).toBe('1');
     await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
     expect(await tones(page)).toEqual(NEW);
-    // die echte Kachel traegt ihren Trial-Ton — und WEISSE Schrift/Pille darauf (v4.123.0)
+    // die echte Kachel traegt ihren Farbplatz (data-hue, v4.124.0) — und WEISSE Schrift/Pille darauf (v4.123.0)
     const tile = page.locator('.chore[data-cid="c-1"]');
-    expect(Object.values(NEW).slice(0, 3)).toContain(await css(tile, 'backgroundColor'));
+    const hue = +await tile.getAttribute('data-hue');
+    expect(hue).toBeGreaterThanOrEqual(0); expect(hue).toBeLessThanOrEqual(5);
+    expect(await css(tile, 'backgroundColor')).toBe(HUES[hue]);
     expect(await css(tile.locator('.cname'), 'color')).toBe('rgb(255, 255, 255)');
     expect(await css(tile.locator('.pts'), 'color')).toBe('rgb(255, 255, 255)');
     expect(await css(tile.locator('.pts'), 'borderTopColor')).toBe('rgb(255, 255, 255)');
@@ -7347,10 +7459,48 @@ test.describe('Verlaufs-Test nur fuer Beta (v4.121.0)', () => {
     expect(await css(page.locator('#oneOffTile'), 'borderTopStyle')).toBe('dashed');
     // Kontrast Weiss auf den drei Toenen >= 4.5:1 (WCAG AA fuer die Notiz)
     const L = c => { const [r, g, b] = c.match(/\d+/g).map(Number).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return .2126 * r + .7152 * g + .0722 * b; };
-    for (const t of ['w', 'b', 'v']) expect(1.05 / (L(NEW[t]) + .05), t).toBeGreaterThanOrEqual(4.5);
+    for (const [i, h] of HUES.entries()) expect(1.05 / (L(h) + .05), 'h' + i).toBeGreaterThanOrEqual(4.5);
     // Kopf-Logo = Gesicht auf dem Verlauf (weiss), nicht Navy
     const logo = decodeURIComponent(await css(page.locator('#headLogo'), 'content'));
     expect(logo).toContain('data:image/png;base64,'); expect(logo).toContain("stroke='#FFFFFF'"); expect(logo).not.toContain('#1B1D31');
+  });
+
+  test('v4.124.0 Sechs Farbplaetze: data-hue = Hash mod 6 (stabil je id, nie Position), jede Kachel in ihrem Icon-Pixel; ohne Trial ignoriert — Pastell nach data-tone', async ({ context, page }) => {
+    const ids = ['c-1', 'c-3', 'c-cat', 'c-z9', 'c-q2', 'c-k7', 'c-b8', 'c-ko', 'c-wa', 'c-bl', 'c-fe', 'c-kp'];
+    const CH = ids.map((id, i) => ({ id, name: 'Aufgabe ' + i, points: 1, note: null, family_id: FAM }));
+    const chores = ctx => ctx.route(`${SB}/rest/v1/chores*`, r => r.request().method() === 'GET'
+      ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(CH) }) : r.fallback());
+    await mockBackend(context, { famRows: famRows(true) });
+    await chores(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('html')).toHaveClass(/trial/);
+    await expect(page.locator('.chore[data-cid]')).toHaveCount(ids.length);
+    const read = () => page.locator('.chore[data-cid]').evaluateAll(els => els.map(e => [e.dataset.cid, e.dataset.hue, getComputedStyle(e).backgroundColor]));
+    const first = await read();
+    for (const [id, hue, bg] of first) { expect(['0', '1', '2', '3', '4', '5'], id).toContain(hue); expect(bg, id).toBe(HUES[+hue]); }
+    // FNV-1a mod 6 — dieselbe Formel wie data-tone (mod 3), unabhaengig von der Reihenfolge
+    const fnv = id => { let h = 2166136261; for (const ch of id) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; } return h; };
+    for (const [id, hue] of first) expect(+hue, id).toBe(fnv(id) % 6);
+    expect(new Set(first.map(x => x[1])).size).toBeGreaterThanOrEqual(3);   // zwoelf Kacheln verteilen sich
+    await page.evaluate(() => localStorage.setItem('haushalt.sort', 'created'));
+    await page.reload();
+    await expect(page.locator('.chore[data-cid]')).toHaveCount(ids.length);
+    expect(Object.fromEntries((await read()).map(x => [x[0], x[1]]))).toEqual(Object.fromEntries(first.map(x => [x[0], x[1]])));
+    // Bearbeiten-Vorschau traegt denselben Farbplatz
+    await page.locator('[data-edit="c-cat"]').click();
+    await expect(page.locator('#cArtPrevW')).toHaveAttribute('data-hue', String(fnv('c-cat') % 6));
+    expect(await css(page.locator('#cArtPrevW'), 'backgroundColor')).toBe(HUES[fnv('c-cat') % 6]);
+  });
+
+  test('v4.124.0 Ohne Trial: data-hue steht zwar am Element (harmlos), die Farbe kommt aus data-tone (Pastell)', async ({ context, page }) => {
+    await mockBackend(context, { famRows: famRows(null) });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await expect(page.locator('.chore[data-cid="c-1"]')).toBeVisible();
+    await page.waitForTimeout(600);
+    await expect(page.locator('html')).not.toHaveClass(/trial/);
+    const tile = page.locator('.chore[data-cid="c-1"]');
+    expect(await tile.getAttribute('data-hue')).toMatch(/^[0-5]$/);
+    expect(await css(tile, 'backgroundColor')).toBe(OLD[await tile.getAttribute('data-tone')]);
   });
 
   test('Zweiter Start mit Beta: html.trial steht VOR dem Abgleich (Cache) — Splash und Favicon schon im Verlauf', async ({ context, page }) => {

@@ -231,5 +231,8 @@
   "Neu": "새 디자인",
   "Klassisch": "클래식",
   "Erweitert": "고급",
-  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "이 기기에만 적용됩니다. 홈 화면 아이콘은 새 아이콘으로 유지됩니다."
+  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "이 기기에만 적용됩니다. 홈 화면 아이콘은 새 아이콘으로 유지됩니다.",
+  "Auch für": "다음 사람에게도",
+  "(je ein eigener Eintrag)": "(각자 별도 기록)",
+  "+{p} auch für {names}": "+{p} {names}에게도"
 }

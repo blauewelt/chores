@@ -231,5 +231,8 @@
   "Neu": "Mới",
   "Klassisch": "Cổ điển",
   "Erweitert": "Nâng cao",
-  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Chỉ áp dụng cho thiết bị này. Biểu tượng trên màn hình chính vẫn là biểu tượng mới."
+  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Chỉ áp dụng cho thiết bị này. Biểu tượng trên màn hình chính vẫn là biểu tượng mới.",
+  "Auch für": "Cũng cho",
+  "(je ein eigener Eintrag)": "(mỗi người một mục riêng)",
+  "+{p} auch für {names}": "+{p} cũng cho {names}"
 }

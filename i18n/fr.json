@@ -231,5 +231,8 @@
   "Neu": "Nouveau",
   "Klassisch": "Classique",
   "Erweitert": "Avancé",
-  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "S'applique uniquement à cet appareil. L'icône de l'écran d'accueil reste la nouvelle."
+  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "S'applique uniquement à cet appareil. L'icône de l'écran d'accueil reste la nouvelle.",
+  "Auch für": "Aussi pour",
+  "(je ein eigener Eintrag)": "(une entrée distincte chacun)",
+  "+{p} auch für {names}": "+{p} aussi pour {names}"
 }

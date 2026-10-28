@@ -231,5 +231,8 @@
   "Neu": "Nyt",
   "Klassisch": "Klassisk",
   "Erweitert": "Avanceret",
-  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Gælder kun for denne enhed. Ikonet på hjemmeskærmen forbliver det nye."
+  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Gælder kun for denne enhed. Ikonet på hjemmeskærmen forbliver det nye.",
+  "Auch für": "Også for",
+  "(je ein eigener Eintrag)": "(hver sin egen post)",
+  "+{p} auch für {names}": "+{p} også for {names}"
 }

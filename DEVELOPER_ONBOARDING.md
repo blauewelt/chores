@@ -543,8 +543,11 @@ Mechanism, keep it this way:
   `trialOn()` branch in `FACE.make()`, favicon/touch-icon `icon-trial-192.png?v=1`
   (via `__look`), the personal manifest with `b=1` → `icon-trial-*` (sw.js),
   and the tile tones from the icon — **since v4.123.0 saturated, with white
-  type:** `--b3-tb #145BFF`, `--b3-tv #9124FF`, `--b3-tw #CA0ADC` (all ≥ 4.5:1
-  under white), `--b3-tink #fff`, `--b3-tmuted` white .78, art white via
+  type:** since v4.124.0 SIX slots `--b3-h0…h5` (#0C3675, #423FCD,
+  #6531D4, #851DC5, #90039F, #BD00B6 — pixels of the gradient's darker band,
+  all ≥ 5.5:1 under white) chosen by `data-hue` = `choreHue(id)` (FNV mod 6,
+  emitted next to `data-tone` on board and preview tiles; only the trial
+  reads it); `--b3-tw/-tb/-tv` fall back on h5/h1/h3, `--b3-tink #fff`, `--b3-tmuted` white .78, art white via
   `screen`, «Einmalig» = navy card + white dashed outline (v4.121–122 were
   pastels). **The trial face is the designer's geometry (`GT` in `FACE`,
   same numbers in `--b3-logo` and `render-icons.mjs`): rings r 10.65 /
@@ -813,6 +816,16 @@ The rebooking runs AFTER the points slider is applied and moves BOTH halves:
 `logged_by` is deliberately untouched (that is a record, not a setting).
 The transfer is announced in the SAME toast as a date move, joined with « · »
 — `toast()` replaces its text, so two calls would eat one another.
+
+**«Auch für» (v4.124.0)** is the second row under «Person»: multi-select,
+same options, the entry's own person hidden (`syncAlso` follows the Person
+row). Each chosen person gets a COPY of the entry as saved (chore, note,
+points, time; own id/member, `logged_by` = link identity, `app_version`),
+or — same 1-h rule as `recordEntry` — their existing row for the same chore
+within an hour of the entry grows. One `upsertRemote` for all rows, totals
+per person, toast «+{p} auch für {names}». Why two rows: the live finding of
+28.10. — «did it together, tapped the second person» rebooked the entry and
+read as data loss. Rebooking and adding must never share a gesture.
 
 ### Who logged it (v4.54.0)
 `log.logged_by` = member ID of the LINK (slugSelf()), NULL on the

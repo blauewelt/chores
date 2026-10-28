@@ -231,5 +231,8 @@
   "Neu": "Yeni",
   "Klassisch": "Klasik",
   "Erweitert": "Gelişmiş",
-  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Yalnızca bu cihaz için geçerlidir. Ana ekrandaki simge yeni simge olarak kalır."
+  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Yalnızca bu cihaz için geçerlidir. Ana ekrandaki simge yeni simge olarak kalır.",
+  "Auch für": "Şunlar için de",
+  "(je ein eigener Eintrag)": "(her biri için ayrı kayıt)",
+  "+{p} auch für {names}": "+{p} {names} için de"
 }

@@ -231,5 +231,8 @@
   "Neu": "Новий",
   "Klassisch": "Класичний",
   "Erweitert": "Додатково",
-  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Діє лише на цьому пристрої. Значок на головному екрані залишиться новим."
+  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Діє лише на цьому пристрої. Значок на головному екрані залишиться новим.",
+  "Auch für": "Також для",
+  "(je ein eigener Eintrag)": "(окремий запис для кожного)",
+  "+{p} auch für {names}": "+{p} також для {names}"
 }

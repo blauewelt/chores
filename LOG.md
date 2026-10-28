@@ -1,3 +1,51 @@
+## 2026-10-28 — v4.124.0 (SW haushalt-v232): «Auch für» in the entry sheet — adding a person is no longer the same tap as rebooking; trial tiles toned down
+
+- **Live finding (Maintainer, 28.10., screenshot):** «I logged my own
+  Autoprüfung … [the flatmate] was with me and each of us get a point …
+  somehow this was collapsed and my Autoprüfung was removed.» History shows
+  ONE entry, the flatmate's, 18:37, +1. Reading of the code: nothing in the app collapses entries
+  across persons (the 1-h accumulation in `recordEntry` is per member, the
+  v4.101.0 render bundling is gone). What does exactly this: the toast's
+  «Ändern» opens the fresh entry, and the v4.107.0 **Person** row there is a
+  single-select that REBOOKS — tap the second person and your own entry
+  becomes theirs (toast «Übertragen auf …», easy to miss). Two separate
+  intents shared one gesture; the sheet looked like «add the other person». The deleted
+  case can be told apart by the trash (settings → Papierkorb): a deleted
+  entry sits there, a rebooked one does not.
+- **Fix: a second row «Auch für (je ein eigener Eintrag)».** Multi-select
+  chips of the same allowed persons (`logWhoOptions()`), the entry's own
+  person hidden (follows the Person row via `syncAlso`). On save, every
+  chosen person gets a COPY of the entry as just saved — chore, note,
+  points, time; own `member_id`/`member_name`, own id, `logged_by` = the
+  link's identity, `app_version` set. Same 1-h rule as `recordEntry`: if that
+  person already has a row for the same chore within an hour of the entry's
+  time, its points grow instead of a second row. All rows go in ONE
+  `upsertRemote`; totals bumped per person (points + row count). Toast adds
+  «+{p} auch für {names}» to the existing move/transfer messages. Person row
+  unchanged (rebooking still one tap, all v4.107.0 tests untouched); with a
+  single allowed person neither row renders.
+- Three new i18n keys × 19 dictionaries («Auch für», «(je ein eigener
+  Eintrag)», «+{p} auch für {names}»); the test checks presence,
+  placeholders and that non-Germanic languages differ from the key.
+- **Trial tiles: six darker pixels of the gradient** (Maintainer, in three
+  messages: «a bit less in your face … a bit darker given the writing is
+  white» → «pick the gradient colours from the icon, but the darker ones» →
+  «more of the gradient colours, so we don't have 4 or 5 tiles the same»).
+  First attempt was the same three hues darkened in OKLCH (−.09 L, ×.8 C);
+  replaced before shipping by SIX pixels read straight from `icon-grad.png`
+  in its darker band, top-left to bottom-right: teal-navy `#0C3675`, blue
+  `#423FCD`, indigo `#6531D4`, violet `#851DC5`, plum `#90039F`, magenta
+  `#BD00B6` (5.5–11.7:1 under white). Tiles carry `data-hue` = FNV-1a mod 6
+  (`choreHue`, same hash as `data-tone`, stable per id, never position);
+  only `html.brand3.trial` reads it, `--b3-tw/-tb/-tv` keep w/b/v as a
+  fallback on three of the six. Twelve test tiles spread over 4 slots (max 3
+  alike); a hash can still pair tiles — balancing by position would recolour
+  tiles whenever one is added, which the brand rules forbid.
+- Tests: four «Auch für» tests (copy incl. posted rows and points cards;
+  Person + Auch für together = transfer + copy; 1-h growth instead of a third
+  row; absence with one person + i18n); six-slot tests (hash, stability
+  across sort/reload, edit preview, non-trial ignores `data-hue`).
+
 ## 2026-10-28 — v4.123.0 (SW haushalt-v231): trial tiles in the icon's saturated colours with white type — and the designer's own smile
 
 - Maintainer, looking at v4.121's pastels next to the icon: «we need to be

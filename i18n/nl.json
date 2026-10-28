@@ -231,5 +231,8 @@
   "Neu": "Nieuw",
   "Klassisch": "Klassiek",
   "Erweitert": "Geavanceerd",
-  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Geldt alleen voor dit apparaat. Het pictogram op het beginscherm blijft het nieuwe."
+  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "Geldt alleen voor dit apparaat. Het pictogram op het beginscherm blijft het nieuwe.",
+  "Auch für": "Ook voor",
+  "(je ein eigener Eintrag)": "(elk een eigen invoer)",
+  "+{p} auch für {names}": "+{p} ook voor {names}"
 }

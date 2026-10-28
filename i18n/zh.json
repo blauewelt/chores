@@ -231,5 +231,8 @@
   "Neu": "新版",
   "Klassisch": "经典",
   "Erweitert": "高级",
-  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "仅对此设备生效。主屏幕上的图标仍为新图标。"
+  "Gilt nur für dieses Gerät. Das Symbol auf dem Home-Bildschirm bleibt das neue.": "仅对此设备生效。主屏幕上的图标仍为新图标。",
+  "Auch für": "也记给",
+  "(je ein eigener Eintrag)": "（每人单独一条记录）",
+  "+{p} auch für {names}": "+{p} 也记给 {names}"
 }
