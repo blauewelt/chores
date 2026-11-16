@@ -413,9 +413,38 @@ key.
 - Supabase needs no change (no origin restriction on the publishable key —
   to confirm).
 
-Needed from the maintainer: access to the Cloudflare account that holds
-`blauewelt.org`, to add the host and the hosting project (or do those two
-steps by hand from instructions).
+**Status 16 November 2026: not started.** `fairli.blauewelt.org` does not
+resolve, this repo has no Cloudflare deploy workflow and no Cloudflare
+secrets, and the detailed migration plan has not been written. Releases
+v4.114–v4.125 were design and bug-fix work only.
+
+**Where things live (checked from outside, 16 November 2026):**
+
+| Thing | Where |
+|---|---|
+| `blauewelt.org` registration | Infomaniak (registrar only) |
+| `blauewelt.org` DNS | Cloudflare, free plan, the maintainer's personal Cloudflare account (zone activated 22.08.2026) |
+| Cloudflare Pages project `blauewelt` (`blauewelt.pages.dev`) | same Cloudflare account; serves `blauewelt.org/earth/` and `www.`; deployed by `blauewelt/earth` → `.github/workflows/deploy-cloudflare.yml` |
+| Deploy credentials for that project | repo secrets `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` in `blauewelt/earth` (token scope: Pages edit only, no DNS). Secret values cannot be read back out of GitHub |
+| Mail on `blauewelt.org` | Cloudflare Email Routing (per `blauewelt/earth` `docs/HOSTING.md` §6) |
+| `blauewelt.ch`, `blueworld.li` | Infomaniak DNS; both only forward to `blauewelt.org` |
+| Fairli today | GitHub Pages, `blauewelt.github.io/chores/`, no custom domain |
+
+So one Cloudflare account holds everything Fairli needs. `blauewelt/earth`
+`docs/HOSTING.md` §5 is the worked click-path for the same setup.
+
+**Needed from the maintainer, in that account** (about ten minutes, and
+harmless to do early — nothing points at it until the app is ready):
+
+1. A second Pages project for Fairli, created as Direct Upload (not
+   connected to Git). Note the `*.pages.dev` name it is given; it cannot be
+   changed later.
+2. An API token with the single permission Account → Cloudflare Pages →
+   Edit, and the Account ID; both stored as secrets in THIS repo under the
+   same two names as in `blauewelt/earth`.
+3. Later, when the app runs at the root path: attach `fairli.blauewelt.org`
+   to that project as a custom domain. Because the zone is in the same
+   account, Cloudflare adds the DNS record itself.
 
 ---
 
