@@ -1,3 +1,82 @@
+## 2026-11-16 — v4.125.0 (SW haushalt-v233): a tap series only grows while it is unbroken; the entry sheet saves on every close
+
+- **Live complaint (Maintainer):** he books chores for his kids, then one for
+  himself — and that tap disappears into an entry he made for himself earlier
+  («+2» instead of a new «+1»). Since v4.35.0 `recordEntry()` grew ANY
+  non-deleted entry of the same person and chore whose `done_at` was less than
+  an hour ago, no matter what was booked in between.
+- **New rule (Maintainer's words): a tap grows an existing entry only if the
+  last booking made on THIS device was that very entry.** The device remembers
+  its last tap as `{ entryId, at }` in `localStorage['haushalt.lasttap:<FAMILY>']`
+  (per family, so the automatic reload after a deploy, v4.115.1, does not break
+  a running series). `recordEntry` merges only when the old `recent` lookup
+  finds a row (same person, same chore, 1-h window from `done_at`, not a
+  tombstone — unchanged) AND `recent.id === lastTap.entryId`. Every new entry
+  becomes the new `lastTap`; a merge refreshes it. Device-local on purpose:
+  another phone's taps do not interrupt this one's series. `at` is diagnostic
+  only — the window is still the entry's hour.
+- **What ends a series (the next tap starts a fresh entry):** any booking of
+  another person / chore / one-off (they become `lastTap` themselves);
+  **deleting** the last entry clears `lastTap` immediately, so it can never
+  point at a tombstone (the v4.101.0 bug class) — and **«Rückgängig» does NOT
+  revive the series**: the restored entry stays as it was and the next tap is
+  a new entry (decision: a delete is an interruption; reviving would need the
+  pointer to survive a tombstone, which is exactly what v4.101.0 forbade);
+  **rebooking the entry's person** in the sheet (it is no longer the series
+  the tapper started); an **«Auch für» copy** (a booking, but not a tap — the
+  next tile tap starts fresh both for the copied person and for the tapper).
+  Editing points, note, title or time of the last entry (e.g. via the toast's
+  «Ändern») keeps the series: that is a correction, not an interruption.
+- **Left as is, deliberately:** the «Auch für» copy logic's own 1-h proximity
+  rule (v4.124.0: a copy grows the person's existing row for the same chore
+  within an hour of the entry's time). It is about copies at the same moment,
+  not about taps, and does not read or need `lastTap`.
+- The toast running total (v4.112.0) needed no change: it shows the points of
+  the entry that was written, so after an interruption it reads «+p» for the
+  fresh entry, not the old total.
+- **«Eintrag bearbeiten» has no cancel any more (Maintainer: the «Speichern»
+  at the bottom of the long sheet is below the fold / under the keyboard, and
+  cancelling an edit has no benefit).** «Speichern» is a filled pill on the
+  right of the top bar (`.barbtn.pill`, the same `id="saveLog"`), the bar is
+  sticky (`.sheetbar.sticky`, `top:-20px` = the `.sheet`'s padding, opaque
+  with the tabs' 12-px run-out) so it never scrolls away and sits above the
+  keyboard (the sheet is anchored over `--kb`, §11a B). «Löschen» stays top
+  left; the × and the bottom button are gone; «Eingetragen von …» stays at the
+  bottom. Both are styled so the task sheet can adopt the same bar later
+  (`.barbtn.pill` follows `.btn.primary`: accent in classic, ink/onink under
+  brand3 incl. the trial). The task sheet (`#choreSheet`) is untouched.
+- **Every close saves — one path.** `sh._commit` holds this opening's save;
+  `closeLogSheet(sh)` runs it synchronously and closes (pill, backdrop tap,
+  swipe-down via `enableBackdropClose(sh, () => closeLogSheet(sh))`), and a
+  `close` listener is the net for Esc and anything else. `_commit` is consumed
+  once, so the pill never saves twice; the net skips if the sheet is already
+  open again (a fast reopen cannot run the new sheet's commit early).
+  «Löschen» clears `_commit` first — a half-typed edit is not saved on delete.
+  The dirty guard (`logSheetDirty`) and its spring-back are removed: closing
+  now saves, so there is nothing to protect. Nothing changed → nothing written,
+  no toast. **Empty title at close:** no blocking (there is no «stay open»
+  without a cancel) and no loss — the original title is kept and every other
+  edit is saved. Move / transfer / «auch für» toasts unchanged. The time
+  picker keeps its own semantics (× and backdrop discard the picked time; the
+  entry sheet stays open).
+- No new UI strings (the pill reuses «Speichern»), so no i18n changes.
+- Tests (13 new, 12 red against v4.124.0 first — the 13th, «Löschen does not
+  save», is a guard that old code already met): (a) interrupted series → two
+  entries, toast +p; (b) three taps → one entry +1/+2/+3 and the stored
+  `lastTap`; (c) reload keeps both a series and an interruption; (d) delete +
+  undo → neither tombstone nor restored entry grows; (e) person rebooked ends
+  the series; (f) «Auch für» copy ends it; pill saves + closes with exactly
+  one upsert, no ×, no bottom button; backdrop saves (old: sprang back); swipe
+  and Esc save; unchanged close (also after the time picker's ×) writes
+  nothing; empty title restores the original and saves the note; delete does
+  not save the edit; keyboard open on 375×667 (`--kb` 260) keeps the pill
+  visible and hit-testable, also scrolled to the bottom. Adapted: three tests
+  that seed a recent entry and expect the 1-h merge now mark it as this
+  device's last tap (`seedLastTap`); five × clicks became the pill; the
+  v4.107.0 backdrop test now expects the save instead of the spring-back.
+- Visual check: entry sheet at 412×915 and 375×667, default / trial / classic
+  / French, open, keyboard open, keyboard open + scrolled to the bottom.
+
 ## 2026-10-28 — v4.124.0 (SW haushalt-v232): «Auch für» in the entry sheet — adding a person is no longer the same tap as rebooking; trial tiles toned down
 
 - **Live finding (Maintainer, 28.10., screenshot):** «I logged my own

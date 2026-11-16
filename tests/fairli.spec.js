@@ -39,6 +39,16 @@ function weekSafeAgo(ms) {
   return new Date(Math.max(w.getTime() + 1000, Date.now() - ms)).toISOString();
 }
 
+// v4.125.0: Ein Tipp waechst einen Eintrag nur, wenn die LETZTE Buchung auf
+// diesem Geraet genau er war (haushalt.lasttap:<fam>). Tests, die einen
+// frischen Eintrag SEEDEN und die 1-h-Zusammenlegung pruefen, erklaeren ihn
+// hiermit zum letzten Tipp dieses Geraets.
+async function seedLastTap(context, entryId) {
+  await context.addInitScript(([fam, id]) => {
+    try { localStorage.setItem('haushalt.lasttap:' + fam, JSON.stringify({ entryId: id, at: Date.now() })); } catch {}
+  }, [FAM, entryId]);
+}
+
 // v4.82.0: den eigenen Zeit-Picker bedienen — Feld-Knopf oeffnet das Sheet,
 // Zieltag antippen (bei Bedarf einen Monat zurueckblaettern: das 42er-Raster
 // zeigt Nachbarmonats-Tage, aber nicht beliebig weit), Stunde/Minute waehlen,
@@ -751,6 +761,7 @@ test.describe('Fairli', () => {
       member_id: 'm-mira', member_name: 'Mira', points: 2,
       done_at: new Date(Date.now() - 10 * 60e3).toISOString(), family_id: FAM };   // 10 min → Merge-Fenster
     await mockBackend(context, { logRows: () => [fresh] });
+    await seedLastTap(context, 'l-f');                               // v4.125.0: dieses Geraet hat l-f getippt
     await context.route(`${SB}/rest/v1/chores*`, route => {
       if (route.request().method() !== 'GET') return route.fulfill({ status: 204, body: '' });
       return route.fulfill({ status: 200, contentType: 'application/json',
@@ -814,7 +825,7 @@ test.describe('Fairli', () => {
     await own.click();
     await expect(page.locator('#logSheet')).toBeVisible();
     // Admin (Familien-Link) darf weiterhin ALLES bearbeiten
-    await page.locator('#closeLog').click();
+    await page.locator('#saveLog').click();   // v4.125.0: kein × mehr — die Pille schliesst (und speichert)
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
     await expect(page.locator('button.entry')).toHaveCount(2);
@@ -1675,7 +1686,7 @@ test.describe('Fairli', () => {
     await expect(page.locator('.entry').first()).not.toContainText('Eingetragen');
     await page.locator('button.entry', { hasText: 'Fressen geben' }).click();
     await expect(page.locator('#logSheet')).toContainText('Eingetragen von Mira');
-    await page.locator('#logSheet .x').click();
+    await page.locator('#logSheet #saveLog').click();   // v4.125.0: kein × mehr
     // Über den Familien-Link erfasst
     await page.locator('button.entry', { hasText: 'Müll rausbringen' }).click();
     await expect(page.locator('#logSheet')).toContainText('Familien-Link');
@@ -3709,7 +3720,7 @@ test.describe('Fairli', () => {
     // Live: Titel im Feld ändern → Overlay in der Kachel zieht nach
     await page.locator('#lName').fill('Müll rausbringen!');
     await expect(page.locator('#lArtName')).toHaveText('Müll rausbringen!');
-    await page.locator('#closeLog').click();
+    await page.locator('#saveLog').click();   // v4.125.0: kein × mehr — die Pille schliesst (und speichert)
     await page.locator('.entry', { hasText: 'Pizza holen' }).click();
     await expect(page.locator('#logSheet #lArtPrev')).toHaveCount(0);
   });
@@ -4106,6 +4117,7 @@ test.describe('Fairli', () => {
       member_id: 'm-mira', member_name: 'Mira', points: 2,
       done_at: new Date().toISOString(), created_at: new Date().toISOString(), family_id: FAM };
     await mockBackend(context, { logRows: () => [old] });
+    await seedLastTap(context, 'l-old');                             // v4.125.0: letzter Tipp dieses Geraets
     await context.route(`${SB}/rest/v1/log**`, route => {
       if (route.request().method() === 'POST') {
         upserts.push([].concat(route.request().postDataJSON()));
@@ -5145,7 +5157,7 @@ test.describe('Fairli', () => {
     expect(sent.member_name).toBe('Timon');
   });
 
-  test('Eintrag umbuchen: der Chip-Klick allein macht das Formular schmutzig — Backdrop verwirft nicht stumm (v4.107.0)', async ({ context, page }) => {
+  test('Eintrag umbuchen: der Chip-Klick allein reicht — Backdrop SPEICHERT die Umbuchung (v4.107.0; seit v4.125.0 speichert jedes Schliessen)', async ({ context, page }) => {
     await mockBackend(context);
     await page.goto(`${BASE}/f/${FAM}`);
     await page.getByRole('tab', { name: 'Verlauf' }).click();
@@ -5153,12 +5165,13 @@ test.describe('Fairli', () => {
     await expect(page.locator('#logSheet')).toBeVisible();
     // Nur den Chip antippen — kein input-Event, das der Sheet-Lauscher sähe
     await page.locator('#logSheet #lWho .chip', { hasText: 'Timon' }).click();
-    // ECHTER Backdrop-Tipp (Klick auf das dialog-Element selbst): der
-    // Dirty-Schutz muss greifen, das Sheet bleibt offen
+    // ECHTER Backdrop-Tipp (Klick auf das dialog-Element selbst): bis v4.124.0
+    // federte das Sheet zurueck (Dirty-Schutz); seit v4.125.0 gibt es kein
+    // Abbrechen — der Backdrop schliesst UND die Chip-Wahl wird gespeichert
     await page.evaluate(() => document.getElementById('logSheet')
       .dispatchEvent(new MouseEvent('click', { bubbles: true })));
-    await expect(page.locator('#logSheet')).toBeVisible();
-    await expect(page.locator('#logSheet #lWho .chip[aria-pressed="true"]')).toHaveText(/Timon/);
+    await expect(page.locator('#logSheet')).toBeHidden();
+    await expect(page.locator('.entry', { hasText: 'Müll rausbringen' }).locator('.epname')).toHaveText('Timon');
   });
 
   // ---- Verbuchungs-Toast führt zurück in den Eintrag (v4.108.0) -----------
@@ -5304,6 +5317,7 @@ test.describe('Fairli', () => {
       member_id: 'm-chris', member_name: 'Timon', points: 2,
       done_at: weekSafeAgo(10 * 60e3), family_id: FAM }];
     await mockBackend(context, { logRows: () => rows });
+    await seedLastTap(context, 'l-run');                                     // v4.125.0: Serie dieses Geraets
     await page.goto(`${BASE}/f/${FAM}`);
     await page.locator('.chip', { hasText: 'Timon' }).click();
     await page.locator('.chore', { hasText: 'Müll rausbringen' }).click();   // < 1 h → addiert auf l-run
@@ -5329,7 +5343,7 @@ test.describe('Fairli', () => {
     await page.locator('.chore', { hasText: 'Müll rausbringen' }).click();
     await page.locator('#toast .tact').click();
     await expect(page.locator('#logSheet')).toBeVisible();
-    await page.locator('#logSheet .x').click();
+    await page.locator('#logSheet #saveLog').click();   // v4.125.0: kein × mehr
     // Filter ist weg, der frische Eintrag steht sichtbar in der Liste
     await expect(page.locator('#clearLogFilter')).toHaveCount(0);
     await expect(page.locator('.entry', { hasText: 'Müll rausbringen' }).first()).toBeVisible();
@@ -6270,7 +6284,7 @@ test.describe('Kachelbild-Polaritaet unter brand3 (v4.113.1)', () => {
     await expect(page.locator('#lArtPrev')).toHaveClass(/\bartinv\b/);
     await expect(page.locator('#lArtPrev')).toHaveClass(/\bok\b/);
     expect(await filt(page.locator('#lArtPrev'))).not.toContain('invert');   // v4.115.0: Vorschau = gefuellte Kachel
-    await page.locator('#closeLog').click();
+    await page.locator('#saveLog').click();   // v4.125.0: kein × mehr — die Pille schliesst (und speichert)
     // Aufgaben-Vorschau: dunkle Kachel invertiert, danach dieselbe <img> fuer eine helle Kachel NICHT
     await page.getByRole('tab', { name: 'Aufgaben' }).click();
     await page.locator('[data-edit="c-dk"]').click();
@@ -7629,5 +7643,307 @@ test.describe('Verlaufs-Test nur fuer Beta (v4.121.0)', () => {
     const man = await (await page.request.get(`${BASE}/manifest.json`)).json();
     expect(JSON.stringify(man.icons)).not.toContain('icon-trial');
     expect(man.icons[0].src).toBe('icon-192.png?v=51');
+  });
+});
+
+// ---- v4.125.0: Tipp-Serie nur am Stück + Eintrag-Sheet speichert beim Schliessen ----
+// (1) Maintainer: «bucht für die Kinder, dann für sich — und der Tipp landet in
+// seinem Eintrag von vorhin». Neue Regel: ein Tipp wächst einen Eintrag NUR,
+// wenn die LETZTE Buchung auf diesem Gerät genau dieser Eintrag war
+// (haushalt.lasttap:<fam>), plus das bisherige 1-h-Fenster.
+// (2) «Eintrag bearbeiten»: kein Abbrechen mehr — «Speichern» als Pille oben,
+// JEDES Schliessen (Pille, Backdrop, Wisch, Esc) speichert.
+test.describe('Tipp-Serie + Eintrag-Sheet ohne Abbrechen (v4.125.0)', () => {
+  const ONE = [{ id: 'c-eins', name: 'Tisch decken', points: 1, note: null, family_id: FAM },
+               { id: 'c-1', name: 'Müll rausbringen', points: 2, note: 'nur Restmüll', family_id: FAM }];
+  // POST mit Objekt = neue Zeile (createRemote), mit Array = Upsert
+  async function recordLog(context) {
+    const rec = { creates: [], upserts: [] };
+    await context.route(`${SB}/rest/v1/log**`, r => {
+      if (r.request().method() === 'POST') {
+        const b = r.request().postDataJSON();
+        if (Array.isArray(b)) rec.upserts.push(b); else rec.creates.push(b);
+        return r.fulfill({ status: 201, body: '' });
+      }
+      return r.fallback();
+    });
+    return rec;
+  }
+  async function withChores(context, rows = ONE) {
+    await context.route(`${SB}/rest/v1/chores*`, route => {
+      if (route.request().method() !== 'GET') return route.fulfill({ status: 204, body: '' });
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows) });
+    });
+  }
+  const who = (page, name) => page.locator('#iamRow .chip', { hasText: name }).click();
+  const tap = async (page, name) => {
+    await page.locator('.chore[data-cid]', { hasText: name }).click();
+    await page.waitForTimeout(320);            // Geister-Klick-Filter (250 ms)
+  };
+  const rowsOf = (page, member) => page.evaluate(m =>
+    JSON.parse(localStorage.getItem('haushalt.v2:' + 'testfam-abc123')).log
+      .filter(e => e.member_id === m && !e.deleted_at).map(e => ({ id: e.id, chore_id: e.chore_id, points: e.points })), member);
+
+  test('(a) unterbrochene Serie: A für mich, A für das Kind, A für mich → ZWEI Einträge für mich, Toast +p statt +2p', async ({ context, page }) => {
+    await mockBackend(context, { logRows: () => [] });
+    await withChores(context);
+    const rec = await recordLog(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    const toast = page.locator('#toast');
+    await who(page, 'Timon'); await tap(page, 'Tisch decken');
+    await expect(toast).toContainText('+1 für Timon');
+    await who(page, 'Mira'); await tap(page, 'Tisch decken');
+    await expect(toast).toContainText('+1 für Mira');
+    await who(page, 'Timon'); await tap(page, 'Tisch decken');
+    await expect(toast).toContainText('+1 für Timon');           // NICHT +2: die Serie war unterbrochen
+    expect(await rowsOf(page, 'm-chris')).toHaveLength(2);
+    expect(rec.creates).toHaveLength(3);
+    expect(rec.upserts).toHaveLength(0);
+    // Unterbrechung durch eine ANDERE Aufgabe derselben Person zählt genauso
+    await tap(page, 'Müll rausbringen');
+    await tap(page, 'Tisch decken');
+    await expect(toast).toContainText('+1 für Timon');
+    expect((await rowsOf(page, 'm-chris')).filter(r => r.chore_id === 'c-eins')).toHaveLength(3);
+  });
+
+  test('(b) drei Tipps am Stück bleiben EIN Eintrag mit +1, +2, +3 — und das Gerät merkt sich genau diesen Eintrag', async ({ context, page }) => {
+    await mockBackend(context, { logRows: () => [] });
+    await withChores(context);
+    const rec = await recordLog(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await who(page, 'Timon');
+    for (const s of ['+1 für Timon', '+2 für Timon', '+3 für Timon']) {
+      await tap(page, 'Tisch decken');
+      await expect(page.locator('#toast')).toContainText(s);
+    }
+    const rows = await rowsOf(page, 'm-chris');
+    expect(rows).toEqual([{ id: rows[0].id, chore_id: 'c-eins', points: 3 }]);
+    expect(rec.creates).toHaveLength(1);
+    expect(rec.upserts).toHaveLength(2);
+    const lt = await page.evaluate(() => JSON.parse(localStorage.getItem('haushalt.lasttap:testfam-abc123')));
+    expect(lt.entryId).toBe(rows[0].id);
+    expect(typeof lt.at).toBe('number');
+  });
+
+  test('(c) ein Neuladen zwischen den Tipps bricht die Serie nicht — und vergisst auch keine Unterbrechung', async ({ context, page }) => {
+    // eigene Log-Quelle: der Server kennt, was der Client geschrieben hat
+    const server = [];
+    await mockBackend(context, { logRows: () => server });
+    await withChores(context);
+    await context.route(`${SB}/rest/v1/log**`, r => {
+      if (r.request().method() === 'POST') {
+        const b = r.request().postDataJSON();
+        for (const x of (Array.isArray(b) ? b : [b])) {
+          const i = server.findIndex(s => s.id === x.id);
+          const row = { ...x, family_id: FAM };
+          if (i >= 0) server[i] = { ...server[i], ...row }; else server.push(row);
+        }
+        return r.fulfill({ status: 201, body: '' });
+      }
+      return r.fallback();
+    });
+    await page.goto(`${BASE}/f/${FAM}`);
+    await who(page, 'Timon'); await tap(page, 'Tisch decken');
+    await page.reload();                                          // z. B. der Auto-Reload nach einem Deploy
+    await who(page, 'Timon'); await tap(page, 'Tisch decken');
+    await expect(page.locator('#toast')).toContainText('+2 für Timon');   // Serie lebt
+    await who(page, 'Mira'); await tap(page, 'Tisch decken');
+    await page.reload();
+    await who(page, 'Timon'); await tap(page, 'Tisch decken');
+    await expect(page.locator('#toast')).toContainText('+1 für Timon');   // Unterbrechung überlebt den Reload
+    expect((await rowsOf(page, 'm-chris')).map(r => r.points).sort()).toEqual([1, 2]);
+  });
+
+  test('(d) Löschen beendet die Serie: nach Löschen + Rückgängig wächst weder der Grabstein noch der wiederhergestellte Eintrag', async ({ context, page }) => {
+    await mockBackend(context, { logRows: () => [] });
+    await withChores(context);
+    const rec = await recordLog(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await who(page, 'Timon'); await tap(page, 'Tisch decken');
+    const firstId = (await rowsOf(page, 'm-chris'))[0].id;
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('button.entry').first().click();
+    await page.locator('#logSheet #delLog').click();
+    await expect(page.locator('.entry')).toHaveCount(0);
+    expect(await page.evaluate(() => localStorage.getItem('haushalt.lasttap:testfam-abc123'))).toBeNull();
+    await page.locator('#toast .tact', { hasText: 'Rückgängig' }).click();
+    await expect(page.locator('.entry')).toHaveCount(1);
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await tap(page, 'Tisch decken');
+    await expect(page.locator('#toast')).toContainText('+1 für Timon');   // frischer Eintrag
+    const rows = await rowsOf(page, 'm-chris');
+    expect(rows).toHaveLength(2);
+    expect(rows.find(r => r.id === firstId).points).toBe(1);            // der wiederhergestellte blieb, wie er war
+    expect(rec.upserts.flat().filter(u => u.id === firstId && u.points > 1)).toHaveLength(0);
+  });
+
+  test('(e) Person im Sheet umgebucht → die Serie endet; der nächste Tipp für die neue Person ist ein eigener Eintrag', async ({ context, page }) => {
+    await mockBackend(context, { logRows: () => [] });
+    await withChores(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await who(page, 'Timon'); await tap(page, 'Tisch decken');
+    await page.locator('#toast .tact', { hasText: 'Ändern' }).click();
+    await page.locator('#logSheet #lWho .chip', { hasText: 'Mira' }).click();
+    await page.locator('#logSheet #saveLog').click();
+    await expect(page.locator('#logSheet')).toBeHidden();
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await who(page, 'Mira'); await tap(page, 'Tisch decken');
+    await expect(page.locator('#toast')).toContainText('+1 für Mira');
+    expect(await rowsOf(page, 'm-mira')).toHaveLength(2);
+  });
+
+  test('(f) eine «Auch für»-Kopie ist keine Tipp-Serie: der nächste Tipp (Kopie-Person oder ich) legt neu an', async ({ context, page }) => {
+    await mockBackend(context, { logRows: () => [] });
+    await withChores(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await who(page, 'Timon'); await tap(page, 'Tisch decken');
+    await page.locator('#toast .tact', { hasText: 'Ändern' }).click();
+    await page.locator('#logSheet #lAlso .chip', { hasText: 'Mira' }).click();
+    await page.locator('#logSheet #saveLog').click();
+    await page.getByRole('tab', { name: 'Aufgaben' }).click();
+    await who(page, 'Mira'); await tap(page, 'Tisch decken');
+    await expect(page.locator('#toast')).toContainText('+1 für Mira');
+    expect(await rowsOf(page, 'm-mira')).toHaveLength(2);
+  });
+
+  // ---- Eintrag-Sheet: Speichern oben, jedes Schliessen speichert ----
+  const openEntry = async page => {
+    await page.getByRole('tab', { name: 'Verlauf' }).click();
+    await page.locator('button.entry').first().click();
+    await expect(page.locator('#logSheet')).toBeVisible();
+  };
+  const swipeDown = (page, sel) => page.evaluate(async sel => {
+    const el = document.querySelector(sel);
+    const ev = (type, y) => {
+      const e = new Event(type, { bubbles: true, cancelable: true });
+      const touch = { identifier: 1, target: el, clientX: 200, clientY: y };
+      Object.defineProperty(e, 'touches', { value: type === 'touchend' ? [] : [touch] });
+      Object.defineProperty(e, 'changedTouches', { value: [touch] });
+      return e;
+    };
+    el.dispatchEvent(ev('touchstart', 200));
+    for (let i = 1; i <= 6; i++) { el.dispatchEvent(ev('touchmove', 200 + 220 * i / 6)); await new Promise(r => setTimeout(r, 15)); }
+    el.dispatchEvent(ev('touchend', 420));
+  }, sel);
+
+  test('Pille «Speichern» oben rechts: speichert und schliesst; × gibt es nicht mehr, unten kein zweiter Knopf', async ({ context, page }) => {
+    await mockBackend(context);
+    const rec = await recordLog(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await openEntry(page);
+    const pill = page.locator('#logSheet .sheetbar .slot.end #saveLog');
+    await expect(pill).toHaveText('Speichern');
+    await expect(page.locator('#logSheet #closeLog')).toHaveCount(0);
+    await expect(page.locator('#logSheet .btn.primary')).toHaveCount(0);
+    await expect(page.locator('#logSheet .sheet > .subnote').last()).toContainText('Eingetragen über den Familien-Link');
+    await page.locator('#lNote').fill('mit Karton');
+    await pill.click();
+    await expect(page.locator('#logSheet')).toBeHidden();
+    await expect(page.locator('.entry .enote', { hasText: 'mit Karton' })).toBeVisible();
+    expect(rec.upserts).toHaveLength(1);                         // genau EIN Upsert — kein Doppel-Speichern über close
+  });
+
+  test('Backdrop-Tipp nach einer Änderung SPEICHERT (vorher federte das Sheet zurück)', async ({ context, page }) => {
+    await mockBackend(context);
+    const rec = await recordLog(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await openEntry(page);
+    await page.locator('#logSheet #lWho .chip', { hasText: 'Timon' }).click();
+    await page.evaluate(() => document.getElementById('logSheet').dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    await expect(page.locator('#logSheet')).toBeHidden();
+    await expect(page.locator('.entry', { hasText: 'Müll rausbringen' }).locator('.epname')).toHaveText('Timon');
+    await expect(page.locator('#toast')).toContainText('Übertragen auf Timon');
+    expect(rec.upserts).toHaveLength(1);
+  });
+
+  test('Runterwischen und Esc speichern ebenfalls', async ({ context, page }) => {
+    await mockBackend(context);
+    const rec = await recordLog(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await openEntry(page);
+    await page.locator('#lNote').fill('gewischt');
+    await page.locator('#lNote').blur();
+    await swipeDown(page, '#logSheet');
+    await expect(page.locator('#logSheet')).toBeHidden();
+    await expect(page.locator('.entry .enote', { hasText: 'gewischt' })).toBeVisible();
+    expect(rec.upserts).toHaveLength(1);
+    await page.locator('button.entry').first().click();
+    await page.locator('#lNote').fill('per Esc');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#logSheet')).toBeHidden();
+    await expect(page.locator('.entry .enote', { hasText: 'per Esc' })).toBeVisible();
+    expect(rec.upserts).toHaveLength(2);
+  });
+
+  test('Unverändert geschlossen: kein Upsert, kein Toast — auch nicht nach Zeit-Picker mit ×', async ({ context, page }) => {
+    await mockBackend(context);
+    const rec = await recordLog(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await openEntry(page);
+    // Zeit-Picker öffnen und mit × verwerfen (seine eigene Semantik bleibt: verwerfen)
+    await page.locator('#lTime').click();
+    await expect(page.locator('#timeSheet')).toBeVisible();
+    await page.locator('#tpClose').click();
+    await expect(page.locator('#timeSheet')).toBeHidden();
+    await expect(page.locator('#logSheet')).toBeVisible();      // der Picker schliesst NUR sich
+    await page.locator('#logSheet #saveLog').click();
+    await expect(page.locator('#logSheet')).toBeHidden();
+    await page.waitForTimeout(300);
+    expect(rec.upserts).toHaveLength(0);
+    await expect(page.locator('#toast')).not.toHaveClass(/\bshow\b/);
+  });
+
+  test('Leerer Titel beim Schliessen: kein Blockieren — der alte Titel kehrt zurück, die geänderte Notiz wird gespeichert', async ({ context, page }) => {
+    await mockBackend(context);
+    const rec = await recordLog(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await openEntry(page);
+    await page.locator('#lName').fill('   ');
+    await page.locator('#lNote').fill('neue Notiz');
+    await page.locator('#logSheet #saveLog').click();
+    await expect(page.locator('#logSheet')).toBeHidden();
+    const row = page.locator('.entry', { hasText: 'Müll rausbringen' });
+    await expect(row).toHaveCount(1);
+    await expect(row.locator('.enote')).toHaveText('neue Notiz');
+    expect(rec.upserts).toHaveLength(1);
+    expect(rec.upserts[0][0]).toMatchObject({ chore_name: 'Müll rausbringen', chore_note: 'neue Notiz' });
+  });
+
+  test('Löschen speichert NICHT mit: angefangene Änderung + «Löschen» → nur der Grabstein, kein Edit-Upsert', async ({ context, page }) => {
+    await mockBackend(context);
+    const rec = await recordLog(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await openEntry(page);
+    await page.locator('#lNote').fill('verworfen');
+    await page.locator('#logSheet #delLog').click();
+    await expect(page.locator('#logSheet')).toBeHidden();
+    await expect(page.locator('.entry')).toHaveCount(0);
+    await page.waitForTimeout(300);
+    expect(rec.upserts).toHaveLength(0);                         // Grabstein erst nach dem Undo-Fenster
+  });
+
+  test('Tastatur offen auf dem kleinen iPhone (375×667): die Pille steht sichtbar oben — auch ganz nach unten gescrollt', async ({ context, page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await mockBackend(context);
+    await page.goto(`${BASE}/f/${FAM}`);
+    await openEntry(page);
+    await page.evaluate(() => document.documentElement.style.setProperty('--kb', '260px'));
+    await page.locator('#lNote').focus();
+    await page.evaluate(() => Promise.all(document.getElementById('logSheet').getAnimations().map(a => a.finished)));   // sheetIn ausgelaufen
+    const visible = () => page.evaluate(() => {
+      const b = document.querySelector('#logSheet #saveLog'), r = b.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return { top: r.top, bottom: r.bottom, hit: !!hit && b.contains(hit) };
+    });
+    let v = await visible();
+    expect(v.top).toBeGreaterThanOrEqual(0);
+    expect(v.bottom).toBeLessThanOrEqual(667 - 260);
+    expect(v.hit).toBe(true);
+    await page.evaluate(() => { const s = document.querySelector('#logSheet .sheet'); s.scrollTop = s.scrollHeight; });
+    await page.waitForTimeout(100);
+    v = await visible();
+    expect(v.top).toBeGreaterThanOrEqual(0);
+    expect(v.bottom).toBeLessThanOrEqual(667 - 260);
+    expect(v.hit).toBe(true);                                    // sticky: nichts schiebt sich darüber
   });
 });

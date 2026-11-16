@@ -1,4 +1,4 @@
-const CACHE = 'haushalt-v232';   // v4.124.0 «Auch für» im Eintrag-Sheet; Beta-Kacheln gedaempft
+const CACHE = 'haushalt-v233';   // v4.125.0 Tipp-Serie nur am Stueck (lastTap); Eintrag-Sheet: Speichern oben, jedes Schliessen speichert
 // v4.113.1: Kachelkunst hat einen EIGENEN, versionsfesten Cache. Bis v4.113.0
 // lag sie im versionierten CACHE — und den loescht `activate` bei JEDEM Deploy.
 // Folge: nach jedem Deploy forderte jedes Geraet jedes Kachelbild neu an,

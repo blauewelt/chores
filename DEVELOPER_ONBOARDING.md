@@ -6,7 +6,7 @@ A static single-file app on GitHub Pages, Supabase as the sync backend,
 end-to-end encryption for new and migrated households.
 This document is the shortcut for a new session (human or AI):
 architecture, all design decisions WITH rationale, and the painfully
-learned platform quirks. As of: v4.118.1 (22.10.2026).
+learned platform quirks. As of: v4.125.0 (16.11.2026).
 
 ---
 
@@ -111,6 +111,15 @@ cross-family adoption report. The queries live in the migration file
 person, same chore_id or same one-off name) within 1 h ADDS the points
 into the existing row via PATCH; `done_at` stays the first tap — the
 window closes by itself.
+**Since v4.125.0 only an UNBROKEN series grows:** the row must also be the
+last booking made on THIS device — `lastTap = { entryId, at }` in
+`localStorage['haushalt.lasttap:<FAMILY>']` (survives the post-deploy
+reload), checked as `recent.id === lastTap.entryId`. Every new entry becomes
+`lastTap`; deleting it clears it (never a pointer to a tombstone, and undo
+does not revive the series); rebooking its person or an «Auch für» copy
+clears it; editing points/note/time keeps it. Live reason: booking for the
+kids and then for yourself merged into your entry from earlier. Tests that
+seed a recent row and expect the merge call `seedLastTap(context, id)`.
 Old runs (multi-row) still render grouped (×N, summed points);
 runs end at the day boundary. The former 600 ms double-tap PROTECTION
 is obsolete under this semantics → `pressLock` is now only a
@@ -383,6 +392,17 @@ ONE .btn.primary.wide AT THE BOTTOM`. `.slot`s are a fixed 84px.
 is ignored while dirty. Utility sheets (saved live): Done at the
 bottom. List entries are deleted only via the `⋯` kebab menu. Text
 fields in dialogs select on focus (value check in the rAF).
+**Save-on-close sheets (v4.125.0, so far ONLY #logSheet «Eintrag bearbeiten»):**
+no cancel — `Grabber · .sheetbar.sticky (Löschen · <h2> · .barbtn.pill
+«Speichern») · body`, no × and no bottom button. The bar sticks at
+`top:-20px` (the `.sheet` padding) so the pill stays above the keyboard.
+EVERY close saves through one path: `sh._commit` (consumed once) run by
+`closeLogSheet()` for pill / backdrop / swipe, plus a `close` listener as
+the net for Esc; a destructive action clears `_commit` before closing;
+unchanged = no write, no toast; an invalid field (empty title) falls back to
+the old value instead of blocking. The task sheet (#choreSheet) still uses
+the form-sheet rule above; it can adopt the same bar later (`.barbtn.pill`
+already follows `.btn.primary` in both looks).
 
 ### Head area
 Flex row, NOT sticky — the head scrolls out of view normally, only the
@@ -826,6 +846,9 @@ within an hour of the entry grows. One `upsertRemote` for all rows, totals
 per person, toast «+{p} auch für {names}». Why two rows: the live finding of
 28.10. — «did it together, tapped the second person» rebooked the entry and
 read as data loss. Rebooking and adding must never share a gesture.
+Since v4.125.0 a copy (and a rebooking) ends this device's tap series
+(`endTapSeries`, §3); the copies' own 1-h proximity rule is unchanged — it is
+about copies at the same moment, not taps.
 
 ### Who logged it (v4.54.0)
 `log.logged_by` = member ID of the LINK (slugSelf()), NULL on the
@@ -1450,6 +1473,20 @@ the plausible-sounding fix (DNS flag, UI automation) did not.
   `launchOptions.executablePath: '/opt/pw-browsers/chromium'`, its own port
   (> 8100) and only the `chromium` + `chromium-sw` projects; WebKit was covered
   by CI only. Check `ls /opt/pw-browsers` first.
+  **16.11.2026 (v4.125.0):** same pattern with `chromium-1243` (symlink
+  `/opt/pw-browsers/chromium`), no WebKit, port 8137: chromium + chromium-sw
+  = 290 tests. Note: a WebKit-only regression in the new save-on-close sheet
+  (Esc / swipe) would only show on CI.
+
+- **Save-on-close for the task sheet (#choreSheet) — follow-up to v4.125.0.**
+  The entry sheet now has the sticky top bar with the «Speichern» pill and no
+  cancel; the task sheet was deliberately left alone this round. Product
+  question before building: does «Neue Aufgabe» (create mode, with «Speichern
+  + eintragen» / «Nur speichern») keep a cancel, or only the edit mode adopts
+  save-on-close?
+- **Optional: updates.html** does not mention v4.119–v4.125 (NEWS_VERSION is
+  4.118.0). The «no cancel, every close saves» change is user-visible; a recap
+  is the maintainer's call (extend updates.html ⇒ bump NEWS_VERSION, §8).
 
 - **Store apps, notifications, voice logging — DESIGN DRAFT 03.10.2026,
   awaiting maintainer decisions:** `docs/NATIVE_APPS.md`. Read it before
